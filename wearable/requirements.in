@@ -1,0 +1,8 @@
+absl-py
+adafruit-circuitpython-dotstar
+google-auth
+gpiozero
+pyaudio
+pydub
+requests
+webcolors
