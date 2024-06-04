@@ -24,7 +24,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version: "lts/*"
 
       - name: Build games slides
         working-directory: ./games/slides
@@ -34,6 +34,10 @@ jobs:
           # only listed as a `peerDependencies`.
           npm install -D playwright-chromium
           npm run build -- --base /workshops/games
+
+      - name: Check the deployment
+        run: |
+          tree -Rl
 
       - uses: actions/configure-pages@v4
 
