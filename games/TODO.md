@@ -1,5 +1,10 @@
 # TODO
 
+## GitHub deployment
+
+Could also iteratively add to [tarball](https://klutometis.github.io/workshops)
+instead of creating root.
+
 ## Slide for source code
 
 - Have to clean and submit; do the pages trigger; README, etc.
