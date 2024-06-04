@@ -1,0 +1,42 @@
+digraph stack {
+  graph [layout=fdp, style="filled,rounded"]
+  
+  subgraph {
+    node [shape=note];
+    ares [label="Ares"]
+    athena [label="Athena"]
+  }
+  
+  subgraph cluster_pettingzoo {
+    label="PettingZoo";
+    color="#3498db40";
+    
+    game_loop [label="Game loop"]
+  }
+
+  subgraph cluster_crewai {
+    label="CrewAI";
+    color="#e74c3c40";
+    
+    agents [label="Agents"]
+    tasks [label="Tasks"]
+  }
+
+  subgraph cluster_langchain {
+    label="LangChain";
+    color="#f1c40f40";
+    
+    tools [label="Tools"]
+  }
+
+  subgraph cluster_vertexai {
+    label="Vertex AI"
+    color="#2ecc7140";
+    
+    gemini [label="Gemini"]
+  }
+
+  ares -> game_loop
+  athena -> game_loop
+  game_loop -> agents -> tasks -> tools -> gemini;
+}

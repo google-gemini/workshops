@@ -1,0 +1,11 @@
+# PyQt6
+absl-py
+crewai
+crewai[tools]
+discord
+langchain-google-genai
+matplotlib
+pandas
+pettingzoo
+pygame
+pyparsing
