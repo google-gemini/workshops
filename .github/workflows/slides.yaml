@@ -35,15 +35,16 @@ jobs:
           npm install -D playwright-chromium
           npm run build -- --base /workshops/games
 
-      - name: Check the deployment
+      - name: Create deployment root
         run: |
-          tree -Rl
+          mkdir -pv root
+          cp -frv ./games/slides/dist ./root/games
 
       - uses: actions/configure-pages@v4
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: games/slides/dist
+          path: root
 
       - name: Deploy
         id: deployment
