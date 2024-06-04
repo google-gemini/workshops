@@ -1,4 +1,4 @@
-name: Deploy pages
+name: Deploy slides
 
 on:
   workflow_dispatch: {}
@@ -27,7 +27,6 @@ jobs:
           node-version: 'lts/*'
 
       - name: Install dependencies
-        working-directory: ./slides
         run: npm install
 
       # Need to do this explicitly, since playwright-chromium is only
@@ -36,8 +35,8 @@ jobs:
         run: npm install -D playwright-chromium
 
       - name: Build
-        working-directory: ./slides
-        run: npm run build -- --base /gemini-persona/
+        working-directory: games/slides
+        run: npm run build -- --base /workshops/games
 
       - uses: actions/configure-pages@v4
 
