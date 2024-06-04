@@ -39,7 +39,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: slides/dist
+          path: games/slides/dist
 
       - name: Deploy
         id: deployment
