@@ -1,0 +1,51 @@
+name: Deploy slides
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Build games slides
+        working-directory: ./games/slides
+        run: |
+          npm install
+          # Need to do this explicitly, since playwright-chromium is
+          # only listed as a `peerDependencies`.
+          npm install -D playwright-chromium
+          npm run build -- --base /workshops/games
+
+      - name: Create deployment root
+        run: |
+          mkdir -pv root
+          cp -frv ./games/slides/dist ./root/games
+
+      - uses: actions/configure-pages@v4
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: root
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -32,7 +32,7 @@ Peter Danenberg
 </v-clicks>
 
 <div class="abs-br m-6 flex gap-2">
-  <a href="https://github.com/slidevjs/slidev" target="_blank" alt="GitHub" title="Open in GitHub"
+  <a href="https://github.com/google-gemini/workshops" target="_blank" alt="GitHub" title="Open in GitHub"
     class="text-xl slidev-icon-btn opacity-50 !border-none !hover:text-white">
     <carbon-logo-github />
   </a>
@@ -3262,7 +3262,7 @@ Also known as an “Olympic flex.”
   </svg>
 </div>
 
-<figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 5</strong>: Stack including PettingZoo, CrewAI, LangChain, VertexAI.</figcaption>
+<figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 5</strong>: Stack including <span v-mark.highlight.yellow="{ at: 2 }">PettingZoo</span>, <span v-mark.highlight.yellow="{ at: 3 }">CrewAI</span>, <span v-mark.highlight.yellow="{ at: 4 }">LangChain</span>, <span v-mark.highlight.yellow="{ at: 5 }">VertexAI</span>.</figcaption>
 
 </figure>
 
@@ -3284,6 +3284,8 @@ Also known as an “Olympic flex.”
 
             const isActive = stackFigure.value.classList.contains(
                 "slidev-vclick-current",
+            ) || stackFigure.value.classList.contains(
+                "slidev-vclick-prior",
             );
             svgElement.classList.toggle("active", isActive);
           }
@@ -3315,8 +3317,29 @@ layout: two-cols-header
 ::right::
 
 <figure class="p-5">
-  <img src="/discord.png" class="w-4/5 mx-auto" />
-  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 6</strong>: QR code for Discord.</figcaption>
+  <img src="/discord-qr.png" class="w-4/5 mx-auto" />
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 6</strong>: <a href="https://discord.gg/e8R6ydcgqd">discord.gg/e8R6ydcgqd</a></figcaption>
+</figure>
+
+---
+layout: two-cols-header
+---
+
+# Check out the code!
+
+::left::
+
+<div class="relative h-full w-full">
+  <div class="absolute inset-0 overflow-hidden">
+    <img src="/github.png" class="h-full w-full object-cover rounded shadow-lg" style="object-position: top;" />
+  </div>
+</div>
+
+::right::
+
+<figure class="p-5">
+  <img src="/discord-qr.png" class="w-4/5 mx-auto" />
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 7</strong>: <a href="https://github.com/google-gemini/workshops/tree/main/games">github.com/google-gemini/workshops</a></figcaption>
 </figure>
 
 ---
@@ -3337,5 +3360,5 @@ layout: two-cols-header
 
 <figure class="p-5">
   <img src="/meetup-qr.png" class="w-4/5 mx-auto" />
-  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 6</strong>: <a href="https://lu.ma/geminimeetup">lu.ma/geminimeetup</a></figcaption>
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 8</strong>: <a href="https://lu.ma/geminimeetup">lu.ma/geminimeetup</a></figcaption>
 </figure>
