@@ -4,8 +4,6 @@
 #
 #    pip-compile --generate-hashes requirements.in
 #
---extra-index-url https://www.piwheels.org/simple
-
 absl-py==2.1.0 \
     --hash=sha256:1fd0c96eadd11defa3631ceab6ea40baebd2d23033962b150d8a6bed1df5137f \
     --hash=sha256:526a04eadab8b4ee719ce68f204172ead1027549089702d99b9059f129ff1308 \
@@ -232,44 +230,17 @@ pyusb==1.2.1 \
     --hash=sha256:2b4c7cb86dbadf044dfb9d3a4ff69fd217013dbe78a792177a3feb172449ea36 \
     --hash=sha256:a4cc7404a203144754164b8b40994e2849fde1cfff06b08492f12fff9d9de7b9
     # via pyftdi
-requests==2.31.0 \
-    --hash=sha256:471e7795897eff62a8e31f26f241e3e67ee80d1bd0f64236538a3dda8d3f1acc \
-    --hash=sha256:58cd2187c01e70e6e26505bca751777aa9f2ee0b7f4300988b709f44e013003f \
-    --hash=sha256:942c5a758f98d790eaed1a29cb6eefc7ffb0d1cf7af05c3d2791656dbd6ad1e1
+requests==2.32.0 \
+    --hash=sha256:f2c3881dddb70d056c5bd7600a4fae312b2a300e39be6a118d30b90bd27262b5 \
+    --hash=sha256:f2c3881dddb70d056c5bd7600a4fae312b2a300e39be6a118d30b90bd27262b5 \
+    --hash=sha256:fa5490319474c82ef1d2c9bc459d3652e3ae4ef4c4ebdd18a21145a47ca4b6b8 \
+    --hash=sha256:fa5490319474c82ef1d2c9bc459d3652e3ae4ef4c4ebdd18a21145a47ca4b6b8
     # via -r requirements.in
-rpi-gpio==0.7.1 \
-    --hash=sha256:15311d3b063b71dee738cd26570effc9985a952454d162937c34e08c0fc99902 \
-    --hash=sha256:231f6142c25975a7e39b96faf4905f05f97dba6809e8c5f0d58f284b35b4b821 \
-    --hash=sha256:29226823da8b5ccb9001d795a944f2e00924eeae583490f0bc7317581172c624 \
-    --hash=sha256:5073d1972727cfad38a1a42f02da91dc41f137679290aa804ab6c410168347ac \
-    --hash=sha256:57b6c044ef5375a78c8dda27cdfadf329e76aa6943cd6cffbbbd345a9adf9ca5 \
-    --hash=sha256:77afb817b81331ce3049a4b8f94a85e41b7c404d8e56b61ac0f1eb75c3120868 \
-    --hash=sha256:b86b66dc02faa5461b443a1e1f0c1d209d64ab5229696f32fb3b0215e0600c8c \
-    --hash=sha256:cd61c4b03c37b62bba4a5acfea9862749c33c618e0295e7e90aa4713fb373b70 \
-    --hash=sha256:df02c92d1a55ff8cdfffea5012ea73a9b09fdcc4d14799d834b3840fcf4039ad \
-    --hash=sha256:e5dfec2c4ccb7dbe9eef3dfc76a3b04121fc62d77fd8fbe1a8e841468a1b0c4c
-    # via adafruit-blinka
-rpi-ws281x==5.0.0 \
-    --hash=sha256:00ce6db771436b778d0930245cf8ea2aae11008cc5fd67d57789c5422af3ee55 \
-    --hash=sha256:2d9d8cb8f54bf68c1935a9b466aef8960f2e4aec4328057c0a9e59fc8eaad187 \
-    --hash=sha256:3c4af921dda22a393e42793e799823918e7d7a5bb71e50e885c22769ffa00c73 \
-    --hash=sha256:da85589984679b06d877022bf2d8ce6cb9aa08a4c36c8dca297cb2dba83eaa42
-    # via adafruit-blinka
 rsa==4.9 \
     --hash=sha256:90260d9058e514786967344d0ef75fa8727eed8a7d2e43ce9f4bcf1b536174f7 \
     --hash=sha256:e38464a49c6c85d7f1351b0126661487a7e0a14a50f1675ec50eb34d4f20ef21 \
     --hash=sha256:f02a83140fe1c5bf83e14bfc66e0109bda4890ef9da7378732898aadd7e42f99
     # via google-auth
-sysv-ipc==1.1.0 \
-    --hash=sha256:0ef1f4360d0c4e353f63d43743911c060881ebf920c95ec8adfa4fcbf58955da \
-    --hash=sha256:0f063cbd36ec232032e425769ebc871f195a7d183b9af32f9901589ea7129ac3 \
-    --hash=sha256:30611dccecd8fa0dc9f83d4d465e5047692df0ec9a095abef8b90ccc64afbdaf \
-    --hash=sha256:3cc523ce39338200c0ad7735c48267a26735690977b4eb4879bd8e10b4e7a82d \
-    --hash=sha256:4bbbe4e5ad5ab859e6d21fc8ff3e3b01082b959fa5c2cd76289dbcd56350c5f9 \
-    --hash=sha256:5fb634b7ff62415d240a6a37a7e7c0ed6fe708b2bb541a81bfaf3da4df7a47ff \
-    --hash=sha256:61190b934b0277f7a189092dcabceee8d9736fd73de90fd9b50ea69f0bac4723 \
-    --hash=sha256:ff6e3c98d8aa3e1ae5378d86869c4699c76f94318705d08085c97fb010770a31
-    # via adafruit-blinka
 typing-extensions==4.11.0 \
     --hash=sha256:6aa47bf7f3ca4581002094184ca00889dd87807690c290608df37e52cd50a4f8 \
     --hash=sha256:83f085bd5ca59c80295fc2a82ab5dac679cbe02b9f33f7d83af68e241bea51b0 \
