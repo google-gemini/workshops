@@ -244,8 +244,10 @@ layout: two-cols-header
 
 # Let's write some agents!
 
+<div v-click=1>
+
 ````md magic-move {lines: true}
-```python {*|2|3|4-12|13|14|*}
+```python {*|*|2|3|4-12|13|14|*}
 ares = Agent(
     role="Ares the rock-paper-scissors player",
     goal="Play rock-paper-scissors with a brute-force heuristic",
@@ -281,8 +283,22 @@ athena = Agent(
 ```
 ````
 
+</div>
+
 <!--
-Flawlessly strategic, like Mary Poppins.
+Ares, straightforward, unambiguous; and, most importantly,
+attention-preserving. It turns out that, when you overburden agents
+with something akin to cognitive load (do this, don't do that, etc.);
+they perform worse: they begin to forget parts of the prompt; revert
+to innate, learned behavior.
+
+Flawlessly strategic, like Mary Poppins. Athena is pushing the
+boundary of the LLM's attention span; which is part of the reason why
+I had to reiterate the rules of the game: she would attempt to observe
+patterns; counter; remain unpredictable.
+
+But, in doing so, would invert the rules of the game: rock beats paper
+beats scissors, etc.
 -->
 
 ---
@@ -2108,6 +2124,16 @@ z
   });
 </script>
 
+<!--
+Athena diverges early on; Ares never has a chance to catch
+up. This probably isn't surprising to you if you ever read the Iliad:
+Ares usually gets bested by his (big?) sister.
+
+What's actually going on here? Has Athena actually learned something
+like a theory of mind? Let's peer into their inner dialog (so-called
+"chain of thought") to see what's going on.
+-->
+
 ---
 layout: two-cols-header
 ---
@@ -2143,19 +2169,23 @@ layout: two-cols-header
 </figure>
 
 <!--
-Mention that this is the actual internal dialog of the agents; so-called chain of thought: as the agents reason through their moves, we can see their inner dialog.
+Wouldn't it be nice to play rock-paper-scissors with this kind of
+conviction?
 
-Also, does anyone notice anything interesting about this first Ares quote: he switched from rock to scissors despite winning!
+Anyone notice anything funny about this quote? Right: Ares broke the
+Ares heuristic. This might be a little funny coming from programmers,
+but you don't really command the LLM like you command the shell or the
+compiler.
 
-You can suggest strategies to agents; but sometimes, they go their own way! Especially if the temperature is high.
+You can suggest things to LLMs; like, "hey, it would be great if you
+kept these facts in mind as you give the final answer;" or, "hey, it
+would be great that you kept in mind that today is June 6th."
 
-And I had temperature maxed out for this game.
+There's a non-zero probability, however, that the LLM goes its own
+way; especially if temperature is high; and I cranked up the
+temperature here to the max.
 
-Does anyone notice anything funny about this? Yeah, Ares contradicted the Ares principle.
-
-When working with LLMs, you don't really command (like programming); you suggest.
-
-Not sure when the last time I played RPS with such conviction; Ares also a fan of Occam's razor, apparently.
+Ares is also a fan of Occam's razor, apparently.
 -->
 
 ---
@@ -2209,19 +2239,23 @@ layout: two-cols-header
 </figure>
 
 <!--
-First thing, a little scary: she's aware of Nash Equilibrium; means she know the theoretically optimal strategy.
+By the way, when I asked for "Athena playing paper;" she's
+literally conjuring up paper. That must be how the gods roll: don't
+really need to fake rock-paper-scissors, can conjure the thing _ex
+niliho_. (Olympian flex.)
 
-She also pays attention; is gathering statistics.
+First off, formidable adversary: she's knows about the Nash
+Equilibrium, the theoretically optimal strategy.
 
-She deduced the circle.
+She also pays attention; is gathering statistics on the last n moves;
+where n = 12.
 
-She knows when to pull herself out of a local optimum.
+She deduced Ares' clockwise circle!
 
-Athena is a god and conjures up paper; GPT took me literally when I said "Athena plays paper."
-
-Gods can literally play rock-paper-scissers, though; don't need the hand-gestures.
-
-Also known as an “Olympic flex.”
+And, what's perhaps most miraculous to me, figures out at some point
+that she's at a local optimum; decides to retry the last move until
+she gets something different; which, if temperature is non-zero, will
+eventually happen.
 -->
 
 ---
@@ -3302,6 +3336,22 @@ Also known as an “Olympic flex.”
   });
 </script>
 
+<!--
+The idea is that we have a deterministic game loop (PettingZoo);
+we plug in our Ares and Athena agents; then:
+
+1. The game loop calls the agents; agents call tasks.
+2. Tasks call tools.
+3. And tools call Gemini.
+
+What this means is: having set up our agents; given them tasks;
+equipped them with tools; CrewAI will call Gemini in a so-called
+reasoning loop until we have a final response.
+
+That final response, in our case, is a rock-paper-scissors decision
+with a rationale.
+-->
+
 ---
 layout: two-cols-header
 ---
@@ -3338,7 +3388,7 @@ layout: two-cols-header
 ::right::
 
 <figure class="p-5">
-  <img src="/discord-qr.png" class="w-4/5 mx-auto" />
+  <img src="/github-qr.png" class="w-4/5 mx-auto" />
   <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 7</strong>: <a href="https://github.com/google-gemini/workshops/tree/main/games">github.com/google-gemini/workshops</a></figcaption>
 </figure>
 
