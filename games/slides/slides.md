@@ -3401,7 +3401,7 @@ layout: two-cols-header
 ::left::
 
 <div class="relative h-full w-full">
-  <div class="absolute inset-0 overflow-hidden">
+  <div class="">
     <img src="/gemini-analyzes-data.png" class="h-full w-full object-cover rounded shadow-lg" style="object-position: top;" />
   </div>
 </div>
