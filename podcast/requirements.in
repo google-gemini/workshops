@@ -1,0 +1,11 @@
+absl-py
+crewai
+crewai[tools]
+google-api-python-client
+google-cloud-texttospeech
+langchain-community
+langchain-google-genai
+newsapi-python
+pydub
+pyparsing
+pytube
