@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+import subprocess
+
+from moviepy.editor import ImageClip, AudioFileClip, CompositeVideoClip
+import requests
+import os
 from pathlib import Path
 from pytube import YouTube
 import tempfile
@@ -34,6 +39,19 @@ from pyparsing import (
     OneOrMore,
     Optional,
 )
+from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
+from langchain_core.prompts import PromptTemplate
+
+# from langchain_openai import OpenAI
+from langchain.chains import LLMChain
+from openai import OpenAI
+
+
+def make_openai() -> OpenAI:
+    # os.environ["OPENAI_API_KEY"] = params.OPEN_AI_KEY
+    return OpenAI(
+        api_key=params.OPEN_AI_KEY
+    )  # openai_api_key=params.OPEN_AI_KEY  # temperature=1.0,
 
 
 def make_gemini() -> ChatGoogleGenerativeAI:
@@ -386,6 +404,27 @@ def make_producer(gemini):
     )
 
 
+def make_image(topic: str) -> ImageClip:
+    openai = make_openai()
+
+    image = openai.images.generate(
+        model="dall-e-3",
+        prompt=f"Cover for podcast called '{topic}' starring Elena and Marcus",
+        size="1792x1024",
+        quality="standard",
+        n=1,
+    )
+
+    response = requests.get(image.data[0].url)
+
+    with open(
+        file := tempfile.NamedTemporaryFile(suffix=".png", delete=False).name, "wb"
+    ) as f:
+        f.write(response.content)
+
+    return file
+
+
 def main(_) -> None:
     topic = "LLMs"
 
@@ -428,7 +467,37 @@ def main(_) -> None:
     (
         mix_intro(record_dialog(intro), AudioSegment.from_file(music))
         + record_dialog(segment)
-    ).export("podcast.mp3")
+    ).export(podcast := tempfile.NamedTemporaryFile(suffix=".mp3", delete=False).name)
+
+    cover = make_image(topic)
+
+    ffmpeg_command = [
+        "ffmpeg",
+        "-loop",
+        "1",  # Loop the image
+        "-i",
+        cover,  # Input image file
+        "-i",
+        podcast,  # Input audio file
+        "-c:v",
+        "libx264",  # Video codec to use
+        "-tune",
+        "stillimage",  # Tune for still image
+        "-c:a",
+        "aac",  # Audio codec to use
+        "-b:a",
+        "192k",  # Audio bitrate
+        "-pix_fmt",
+        "yuv420p",  # Pixel format
+        "-shortest",  # Finish encoding when the shortest input stream ends
+        "-vf",
+        "fps=25",  # Set frame rate
+        "-t",
+        "10",  # Set the duration of the output file
+        "podcast.mp4",  # Output file
+    ]
+
+    subprocess.run(ffmpeg_command, check=True)
 
 
 if __name__ == "__main__":

@@ -18,9 +18,9 @@ function main() {
     python3 -m venv /tmp/venv
     . /tmp/venv/bin/activate
     python -m pip install pip-tools
-    # pip-compile --generate-hashes requirements.in
-    # pip install -r requirements.txt
-    "$@"
+    pip-compile --generate-hashes requirements.in
+    pip install -r requirements.txt
+    git ls-files | entr -r "$@"
 }
 
 # Fail early.
