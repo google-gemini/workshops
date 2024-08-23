@@ -1,0 +1,14 @@
+absl-py
+crewai
+crewai[tools]
+ffmpeg
+google-api-python-client
+google-cloud-texttospeech
+imageio-ffmpeg
+langchain-community
+langchain-google-genai
+moviepy
+newsapi-python
+pydub
+pyparsing
+pytube
