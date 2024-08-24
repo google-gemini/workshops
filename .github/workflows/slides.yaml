@@ -55,7 +55,7 @@ jobs:
           cp -frv ./games/slides/dist ./root/games
 
       - name: Build slides for cost
-        working-directory: ./cost/cost
+        working-directory: ./cost/slides
         run: |
           npm install
           # Need to do this explicitly, since playwright-chromium is
