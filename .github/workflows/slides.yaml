@@ -46,7 +46,7 @@ jobs:
         with:
           node-version: "lts/*"
 
-      - name: Build slides
+      - name: Build slides for ${{ matrix.slide_dir }}
         working-directory: ./${{ matrix.slide_dir }}/slides
         run: |
           npm install
@@ -55,7 +55,7 @@ jobs:
           npm install -D playwright-chromium
           npm run build -- --base /workshops/${{ matrix.slide_dir }}
 
-      - name: Create deployment root
+      - name: Create deployment root for ${{ matrix.slide_dir }}
         run: |
           mkdir -pv root
           cp -frv ./${{ matrix.slide_dir }}/slides/dist ./root/${{ matrix.slide_dir }}
