@@ -68,6 +68,20 @@ jobs:
           mkdir -pv root
           cp -frv ./cost/slides/dist ./root/cost
 
+      - name: Build slides for recap
+        working-directory: ./recap/slides
+        run: |
+          npm install
+          # Need to do this explicitly, since playwright-chromium is
+          # only listed as a `peerDependencies`.
+          npm install -D playwright-chromium
+          npm run build -- --base /workshops/recap
+
+      - name: Create deployment root for recap
+        run: |
+          mkdir -pv root
+          cp -frv ./recap/slides/dist ./root/recap
+
       - uses: actions/configure-pages@v4
 
       - uses: actions/upload-pages-artifact@v3
