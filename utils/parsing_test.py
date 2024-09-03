@@ -1,6 +1,7 @@
 import unittest
-from . import parsing
 from textwrap import dedent
+
+from . import parsing
 
 
 class TestExtractFencedCode(unittest.TestCase):

@@ -15,17 +15,7 @@
 
 from absl import app
 from pettingzoo.classic import rps_v2
-
-from play import (
-    play_game,
-    Move,
-    Reward,
-    make_ares,
-    make_athena,
-    Environment,
-    Player,
-    plot_scores,
-)
+from play import make_ares, make_athena, play_game, plot_scores
 
 
 def main(argv):

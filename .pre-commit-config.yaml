@@ -9,7 +9,7 @@ repos:
     rev: 5.13.2
     hooks:
     -   id: isort
-        args: ["--profile=black"]
+        args: ["--profile=black", "--line-length=79"]
 -   repo: https://github.com/psf/black
     rev: 24.2.0
     hooks:

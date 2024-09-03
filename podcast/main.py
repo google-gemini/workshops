@@ -14,51 +14,40 @@
 # limitations under the License.
 
 
-import subprocess
-
-from moviepy.editor import ImageClip, AudioFileClip, CompositeVideoClip
-import requests
-import os
-from pathlib import Path
-from pytube import YouTube
-import tempfile
-from googleapiclient.discovery import build
-from datetime import date
 import io
-import json
 import logging
 import math
 import random
+import subprocess
+import tempfile
+from datetime import date
+from pathlib import Path
 from textwrap import dedent
-from typing import Callable
+
+import params
+import requests
 from absl import app
 from crewai import Agent, Crew, Task
 from crewai_tools import tool
 from google.cloud import texttospeech
+from googleapiclient.discovery import build
 from langchain_google_genai import (
     ChatGoogleGenerativeAI,
     HarmBlockThreshold,
     HarmCategory,
 )
-import params
+from moviepy.editor import ImageClip
+from openai import OpenAI
 from pydub import AudioSegment
 from pyparsing import (
     ParseException,
     Suppress,
     Word,
-    alphanums,
+    ZeroOrMore,
     alphas,
     restOfLine,
-    ZeroOrMore,
-    OneOrMore,
-    Optional,
 )
-from langchain_community.utilities.dalle_image_generator import DallEAPIWrapper
-from langchain_core.prompts import PromptTemplate
-
-# from langchain_openai import OpenAI
-from langchain.chains import LLMChain
-from openai import OpenAI
+from pytube import YouTube
 
 
 def make_openai() -> OpenAI:
@@ -77,8 +66,12 @@ def make_gemini() -> ChatGoogleGenerativeAI:
     safety_settings = {
         HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: (HarmBlockThreshold.BLOCK_NONE),
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: (HarmBlockThreshold.BLOCK_NONE),
+        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: (
+            HarmBlockThreshold.BLOCK_NONE
+        ),
+        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: (
+            HarmBlockThreshold.BLOCK_NONE
+        ),
     }
 
     return ChatGoogleGenerativeAI(
@@ -99,11 +92,14 @@ def make_segment(producer: Agent) -> Task:
     """
     return Task(
         description=dedent(
-            """\
-      Given the following headlines, produce a short (2 minute) segment as a dialog between the podcasters. The dialog should be spicy and information dense, with the occasional joke.
+            """
+            Given the following headlines, produce a short (2 minute)
+            segment as a dialog between the podcasters. The dialog
+            should be spicy and information dense, with the occasional
+            joke.
 
-      {article}
-      """
+            {article}
+            """
         ),
         expected_output="Podcast segment",
         agent=producer,
@@ -121,8 +117,12 @@ def get_mp3(title: str) -> str:
       Path to the mp3 file"""
 
     yt = YouTube(search_youtube(title)[0])
-    filename = Path(tempfile.NamedTemporaryFile(suffix=".mp3", delete=False).name)
-    return yt.streams.filter(only_audio=True).first().download(filename=filename)
+    filename = Path(
+        tempfile.NamedTemporaryFile(suffix=".mp3", delete=False).name
+    )
+    return (
+        yt.streams.filter(only_audio=True).first().download(filename=filename)
+    )
 
 
 def make_music(producer: Agent) -> Task:
@@ -136,11 +136,12 @@ def make_music(producer: Agent) -> Task:
     """
     return Task(
         description=dedent(
-            """\
-      We're going to record a podcast on the following headlines; can you recommend some upbeat intro music?
+            """
+            We're going to record a podcast on the following
+            headlines; can you recommend some upbeat intro music?
 
-      {article}
-      """
+            {article}
+            """
         ),
         expected_output="Path to mp3 with intro music",
         tools=[get_mp3],
@@ -159,16 +160,19 @@ def make_intro(producer: Agent) -> Task:
     """
     return Task(
         description=dedent(
-            """\
-      Make a quick round of intros between your podcasters; structure it as a light and playful dialog where they mention:
+            """
+            Make a quick round of intros between your podcasters;
+            structure it as a light and playful dialog where they
+            mention:
 
-      1. Their names.
-      2. The name of the podcast (something related to {topic}).
-      3. That the podcast was recorded especially for {recipient}.
-      4. That the podcast was recorded on {date}.
+            1. Their names.
+            2. The name of the podcast (something related to {topic}).
+            3. That the podcast was recorded especially for {recipient}.
+            4. That the podcast was recorded on {date}.
 
-      {recipient} should feel special, like this podcast is just for them.
-      """
+            {recipient} should feel special, like this podcast is just for
+            them.
+            """
         ),
         expected_output="Introduction",
         agent=producer,
@@ -206,7 +210,9 @@ def parse_line(line: str) -> tuple | None:
 def record_line(voice: str, quote: str) -> AudioSegment:
     client = texttospeech.TextToSpeechClient()
     synthesis_input = texttospeech.SynthesisInput(text=quote)
-    voice = texttospeech.VoiceSelectionParams(language_code="en-US", name=voice)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="en-US", name=voice
+    )
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3
     )
@@ -216,7 +222,9 @@ def record_line(voice: str, quote: str) -> AudioSegment:
 
     logging.info(f'Recording "{quote}" in {voice}')
 
-    return AudioSegment.from_file(io.BytesIO(response.audio_content), format="mp3")
+    return AudioSegment.from_file(
+        io.BytesIO(response.audio_content), format="mp3"
+    )
 
 
 def sec(seconds: int) -> int:
@@ -225,13 +233,21 @@ def sec(seconds: int) -> int:
 
 def mix_intro(intro, music):
     full_intro = music[: sec(5)]
-    fade_to_low = music[sec(5) : sec(7)].fade(to_gain=db(0.1), duration=sec(2), start=0)
-    low = music[sec(7) : sec(7) + len(intro)] + db(0.1)
-    fade_to_full = music[sec(7) + len(intro) : sec(9) + len(intro)].fade(
+    fade_to_low = music[sec(5) : sec(7)].fade(  # noqa: E203
+        to_gain=db(0.1), duration=sec(2), start=0
+    )
+    low = music[sec(7) : sec(7) + len(intro)] + db(0.1)  # noqa: E203
+    fade_to_full = music[
+        sec(7) + len(intro) : sec(9) + len(intro)  # noqa: E203
+    ].fade(  # noqa: E203
         from_gain=db(0.1), duration=sec(2), start=0
     )
-    full_outro = music[sec(9) + len(intro) : sec(14) + len(intro)]
-    outro_fade = music[sec(14) + len(intro) : sec(16) + len(intro)].fade_out(sec(2))
+    full_outro = music[
+        sec(9) + len(intro) : sec(14) + len(intro)  # noqa: E203
+    ]  # noqa: E203
+    outro_fade = music[
+        sec(14) + len(intro) : sec(16) + len(intro)  # noqa: E203
+    ].fade_out(sec(2))
 
     return (
         full_intro
@@ -281,7 +297,10 @@ def search_google(engine, query):
 
 
 def search_music(query):
-    return [item["link"] for item in search_google(params.SEARCH_MUSIC, query)["items"]]
+    return [
+        item["link"]
+        for item in search_google(params.SEARCH_MUSIC, query)["items"]
+    ]
 
 
 def search_youtube(query):
@@ -317,7 +336,7 @@ def search_news(query):
 
     return "\n".join(
         [
-            f'- {denewline(article["title"])}: {denewline(article["description"])}'
+            f'- {denewline(article["title"])}: {denewline(article["description"])}'  # noqa: E501
             for article in results["articles"]
             if article["title"]
             and article["description"]
@@ -338,19 +357,30 @@ def make_elena(gemini) -> Agent:
     return Agent(
         role="Investigative Journalist and Tech Enthusiast",
         goal=(
-            "To uncover the truth behind tech trends and innovations, presenting"
-            " clear, well-researched information to the audience while"
-            " challenging assumptions and pushing for transparency."
+            dedent(
+                """
+            To uncover the truth behind tech trends and innovations,
+            presenting clear, well-researched information to the
+            audience while challenging assumptions and pushing for
+            transparency.
+            """
+            )
         ),
         backstory=(
-            "Elena graduated with a degree in journalism from a top university"
-            " and spent several years working for a major newspaper where she"
-            " specialized in technology and innovation. She developed a"
-            " reputation for her in-depth investigative pieces that not only"
-            " reported the news but also explored the implications of"
-            " technological advancements on society. Her passion for technology"
-            " and commitment to truth led her to co-host the podcast, aiming to"
-            " bridge the gap between tech experts and the general public."
+            dedent(
+                """
+            Elena graduated with a degree in journalism from a top
+            university and spent several years working for a major
+            newspaper where she specialized in technology and
+            innovation. She developed a reputation for her in-depth
+            investigative pieces that not only reported the news but
+            also explored the implications of technological
+            advancements on society. Her passion for technology and
+            commitment to truth led her to co-host the podcast, aiming
+            to bridge the gap between tech experts and the general
+            public.
+            """
+            )
         ),
         llm=gemini,
         verbose=True,
@@ -369,18 +399,30 @@ def make_marcus(gemini) -> Agent:
     return Agent(
         role="Charismatic Tech Optimist and Startup Advisor",
         goal=(
-            "To inspire and educate listeners about the potential of new"
-            " technologies and startups, bringing a positive spin to tech"
-            " developments and encouraging entrepreneurial thinking."
+            dedent(
+                """
+                To inspire and educate listeners about the potential
+                of new technologies and startups, bringing a positive
+                spin to tech developments and encouraging
+                entrepreneurial thinking.
+                """
+            )
         ),
         backstory=(
-            "Marcus started as a software developer and quickly moved into the"
-            " startup world, where he co-founded a successful app that"
-            " transformed online interactions. After his startup was acquired, he"
-            " became a sought-after advisor for new tech ventures. His"
-            " experiences have made him a fervent advocate for tech's potential"
-            " to solve real-world problems. Co-hosting the podcast allows him to"
-            " share his optimism and practical insights with a broader audience."
+            dedent(
+                """
+                Marcus started as a software developer and quickly
+                moved into the startup world, where he co-founded a
+                successful app that transformed online
+                interactions. After his startup was acquired, he
+                became a sought-after advisor for new tech
+                ventures. His experiences have made him a fervent
+                advocate for tech's potential to solve real-world
+                problems. Co-hosting the podcast allows him to share
+                his optimism and practical insights with a broader
+                audience.
+                """
+            )
         ),
         llm=gemini,
         verbose=True,
@@ -403,14 +445,16 @@ def make_producer(gemini):
         goal="Produce a podcast by eliciting responses from your podcasters",
         backstory=(
             dedent(
-                """\
-          You are an expect podcast producer; you know how to elicit dialog from your podcasters on a topic.
+                """
+                You are an expect podcast producer; you know how to
+                elicit dialog from your podcasters on a topic.
 
-          Here are your podcasters:
+                Here are your podcasters:
 
-          {elena}
+                {elena}
 
-          {marcus}"""
+                {marcus}
+                """
             )
         ),
         llm=gemini,
@@ -432,7 +476,8 @@ def make_image(topic: str) -> ImageClip:
     response = requests.get(image.data[0].url)
 
     with open(
-        file := tempfile.NamedTemporaryFile(suffix=".png", delete=False).name, "wb"
+        file := tempfile.NamedTemporaryFile(suffix=".png", delete=False).name,
+        "wb",
     ) as f:
         f.write(response.content)
 
@@ -450,7 +495,9 @@ def main(_) -> None:
 
     headlines = search_news(topic)
 
-    intro = Crew(agents=[producer], tasks=[make_intro(producer)], verbose=2).kickoff(
+    intro = Crew(
+        agents=[producer], tasks=[make_intro(producer)], verbose=2
+    ).kickoff(
         inputs={
             "elena": elena,
             "marcus": marcus,
@@ -470,7 +517,9 @@ def main(_) -> None:
         }
     )
 
-    music = Crew(agents=[producer], tasks=[make_music(producer)], verbose=2).kickoff(
+    music = Crew(
+        agents=[producer], tasks=[make_music(producer)], verbose=2
+    ).kickoff(
         inputs={
             "article": headlines,
             "elena": elena,
@@ -481,7 +530,11 @@ def main(_) -> None:
     (
         mix_intro(record_dialog(intro), AudioSegment.from_file(music))
         + record_dialog(segment)
-    ).export(podcast := tempfile.NamedTemporaryFile(suffix=".mp3", delete=False).name)
+    ).export(
+        podcast := tempfile.NamedTemporaryFile(
+            suffix=".mp3", delete=False
+        ).name
+    )
 
     cover = make_image(topic)
 

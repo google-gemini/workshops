@@ -12,27 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import matplotlib.pyplot as plt
-from time import sleep
-from typing import Callable
 from dataclasses import dataclass, field
-import json
-from pettingzoo.classic import rps_v2
-from pettingzoo.utils.wrappers.order_enforcing import OrderEnforcingWrapper
-import logging
-from absl import app
-import pandas as pd
-from langchain_google_genai import (
-    ChatGoogleGenerativeAI,
-    HarmBlockThreshold,
-    HarmCategory,
-)
-import params
-from crewai import Agent, Task, Crew
-from crewai_tools import tool
-from crewai.process import Process
-
 from enum import Enum
+from textwrap import dedent
+from typing import Callable
+
+import matplotlib.pyplot as plt
+import params
+from crewai import Agent, Crew, Task
+from crewai_tools import tool
+from langchain_google_genai import ChatGoogleGenerativeAI
+from pettingzoo.utils.wrappers.order_enforcing import OrderEnforcingWrapper
 
 Environment = OrderEnforcingWrapper
 
@@ -76,8 +66,10 @@ def make_play():
         Given observations and reward; play a move with the given rationale.
 
         Args:
-          observations (list[str]): Previous moves from the opponent, list of START, ROCK, PAPER, SCISSORS.
-          reward (str): Previous reward from the last turn, one of LOSS, TIE, WIN.
+          observations (list[str]): Previous moves from the opponent, list
+            of START, ROCK, PAPER, SCISSORS.
+          reward (str): Previous reward from the last turn, one of LOSS, TIE,
+            WIN.
           step (int): The step number.
           game (int): The game number.
           move (str): The move to make, one of ROCK, PAPER, SCISSORS.
@@ -99,7 +91,15 @@ def make_ares():
     agent = Agent(
         role="Ares the rock-paper-scissors player",
         goal="Play rock-paper-scissors with a brute-force heuristic",
-        backstory="You are a Ares the god of war. You are an hilariously aggressive rock-paper-scissors player. You start with rock. When you win, you stick with your winning move. When you lose or tie, cycle clockwise to the next move (rock to paper to scissors to rock, etc.).",
+        backstory=dedent(
+            """
+            You are a Ares the god of war. You are an hilariously
+            aggressive rock-paper-scissors player. You start with
+            rock. When you win, you stick with your winning move. When
+            you lose or tie, cycle clockwise to the next move (rock to
+            paper to scissors to rock, etc.).
+            """
+        ),
         verbose=True,
         llm=make_gemini(),
         max_iter=5,
@@ -107,7 +107,13 @@ def make_ares():
     )
 
     task = Task(
-        description="Play an aggressive game of rock-paper-scissors; given prior observations {observations} and reward {reward}. This is step {step} of game {game}.",
+        description=dedent(
+            """
+            Play an aggressive game of rock-paper-scissors; given
+            prior observations {observations} and reward
+            {reward}. This is step {step} of game {game}.
+            """
+        ),
         expected_output="The move played with rationale",
         agent=agent,
     )
@@ -129,7 +135,16 @@ def make_athena():
     agent = Agent(
         role="Athena the rock-paper-scissors player",
         goal="Play rock-paper-scissors with a strategic heuristic",
-        backstory="You are a Athena the goddess of wisdom. You are a flawlessly strategic rock-paper-scissors player. Attempt to observe patterns in your opponent's moves and counter accordingly: use paper against rock; scissors against paper; and rock against scissors. Be volatile to avoid becoming predictable.",
+        backstory=dedent(
+            """
+            You are a Athena the goddess of wisdom. You are a
+            flawlessly strategic rock-paper-scissors player. Attempt
+            to observe patterns in your opponent's moves and counter
+            accordingly: use paper against rock; scissors against
+            paper; and rock against scissors. Be volatile to avoid
+            becoming predictable.
+            """
+        ),
         verbose=True,
         llm=make_gemini(),
         max_iter=5,
@@ -137,7 +152,13 @@ def make_athena():
     )
 
     task = Task(
-        description="""Play a strategic game of rock-paper-scissors; given prior observations {observations} and reward {reward}. This is step {step} of game {game}.""",
+        description=dedent(
+            """
+            Play a strategic game of rock-paper-scissors; given prior
+            observations {observations} and reward {reward}. This is
+            step {step} of game {game}.
+            """
+        ),
         expected_output="The move played with rationale",
         agent=agent,
     )
@@ -153,13 +174,6 @@ def make_athena():
 
 
 def make_gemini():
-    safety_settings = {
-        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,  # noqa: 501
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,  # noqa: 501
-    }
-
     return ChatGoogleGenerativeAI(
         model="gemini-pro",
         google_api_key=params.GOOGLE_API_KEY,
@@ -214,13 +228,16 @@ def play_game(game: int, env: Environment, players: dict[str, Player]):
 
         player.observations.append(Move(observation).name)
         player.scores.append(
-            (player.scores[-1] if player.scores else 0) + (1 if reward > 0 else 0)
+            (player.scores[-1] if player.scores else 0)
+            + (1 if reward > 0 else 0)
         )
 
         player.crew.kickoff(
             inputs={
                 "observations": player.observations,
-                "reward": Reward(-2 if step == 0 or step == 1 else reward).name,
+                "reward": Reward(
+                    -2 if step == 0 or step == 1 else reward
+                ).name,
                 "step": step + 1,
                 "game": game + 1,
             }

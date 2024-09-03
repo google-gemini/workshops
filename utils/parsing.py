@@ -1,4 +1,4 @@
-from pyparsing import Literal, OneOrMore, ParseException, SkipTo, restOfLine, LineEnd
+from pyparsing import LineEnd, Literal, SkipTo, restOfLine
 
 
 def extract_fenced_code(code: str) -> str:
@@ -7,13 +7,14 @@ def extract_fenced_code(code: str) -> str:
     anything_until_newline = restOfLine()
     newline = LineEnd()
 
-    # The grammar captures everything between triple backticks
-    # It uses restOfLine after the opening triple backticks to consume the optional language specifier
+    # The grammar captures everything between triple backticks. It uses
+    # restOfLine after the opening triple backticks to consume the
+    # optional language specifier
     grammar = (
         triple_backtick
-        + anything_until_newline.suppress()  # Suppress the language specifier from results
-        + newline.suppress()  # Suppress the newline from results
-        + SkipTo(triple_backtick)("code")  # Capture the code
+        + anything_until_newline.suppress()
+        + newline.suppress()
+        + SkipTo(triple_backtick)("code")
         + triple_backtick
     )
 
