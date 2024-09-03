@@ -3,7 +3,7 @@
 }
 
 :8000 {
-	root * /home/danenberg/prg/workshops/artifacts
+	root * .
 	file_server browse
 
 	# Set CORS headers
