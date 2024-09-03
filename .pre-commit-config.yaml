@@ -1,0 +1,37 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    -   id: check-yaml
+    -   id: end-of-file-fixer
+    -   id: trailing-whitespace
+-   repo: https://github.com/PyCQA/isort
+    rev: 5.13.2
+    hooks:
+    -   id: isort
+        args: ["--profile=black"]
+-   repo: https://github.com/psf/black
+    rev: 24.2.0
+    hooks:
+    -   id: black
+        args: ["--line-length=79"]
+-   repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+    -   id: flake8
+-   repo: https://github.com/jazzband/pip-tools
+    rev: 7.4.1
+    hooks:
+    -   id: pip-compile
+        args: ["--generate-hashes"]
+        stages: ["manual"]
+- repo: https://github.com/nbQA-dev/nbQA
+  rev: 1.8.5
+  hooks:
+    - id: nbqa-black
+      additional_dependencies: [jupytext, black]  # optional, only if you're using Jupytext
+      args: ["--line-length=79"]
+    - id: nbqa-pyupgrade
+      args: ["--py37-plus"]
+    - id: nbqa-isort
+      args: ["--float-to-top", "--profile=black"]

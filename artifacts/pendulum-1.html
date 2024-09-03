@@ -1,0 +1,179 @@
+<!doctype html>
+<!--
+ Copyright 2024 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Two-Pendulum Simulation</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #f0f0f0;
+      }
+
+      canvas {
+        background-color: #fff;
+        border: 1px solid #ccc;
+      }
+
+      .controls {
+        display: flex;
+        flex-direction: column;
+        margin-top: 20px;
+      }
+
+      .controls label {
+        margin-bottom: 5px;
+      }
+
+      .controls input {
+        width: 100px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Two-Pendulum Simulation</h1>
+
+    <canvas id="canvas" width="500" height="500"></canvas>
+
+    <div class="controls">
+      <label for="length1">Length 1:</label>
+      <input type="number" id="length1" value="150" />
+
+      <label for="mass1">Mass 1:</label>
+      <input type="number" id="mass1" value="10" />
+
+      <label for="length2">Length 2:</label>
+      <input type="number" id="length2" value="150" />
+
+      <label for="mass2">Mass 2:</label>
+      <input type="number" id="mass2" value="10" />
+
+      <button id="resetButton">Reset</button>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const length1Input = document.getElementById("length1");
+      const mass1Input = document.getElementById("mass1");
+      const length2Input = document.getElementById("length2");
+      const mass2Input = document.getElementById("mass2");
+      const resetButton = document.getElementById("resetButton");
+
+      let length1 = parseFloat(length1Input.value);
+      let mass1 = parseFloat(mass1Input.value);
+      let length2 = parseFloat(length2Input.value);
+      let mass2 = parseFloat(mass2Input.value);
+      let angle1 = Math.PI / 2;
+      let angle2 = Math.PI / 2;
+      let velocity1 = 0;
+      let velocity2 = 0;
+      let gravity = 1;
+      let animationFrameId;
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const x1 = canvas.width / 2 + length1 * Math.sin(angle1);
+        const y1 = length1 * Math.cos(angle1);
+        const x2 = x1 + length2 * Math.sin(angle2);
+        const y2 = y1 + length2 * Math.cos(angle2);
+
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 0);
+        ctx.lineTo(x1, y1);
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(x1, y1, mass1, 0, Math.PI * 2);
+        ctx.fillStyle = "red";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(x2, y2, mass2, 0, Math.PI * 2);
+        ctx.fillStyle = "blue";
+        ctx.fill();
+      }
+
+      function update() {
+        const num1 = -gravity * (2 * mass1 + mass2) * Math.sin(angle1);
+        const num2 = -mass2 * gravity * Math.sin(angle1 - 2 * angle2);
+        const num3 = -2 * Math.sin(angle1 - angle2) * mass2;
+        const num4 =
+          velocity2 * velocity2 * length2 +
+          velocity1 * velocity1 * length1 * Math.cos(angle1 - angle2);
+        const den =
+          length1 *
+          (2 * mass1 + mass2 - mass2 * Math.cos(2 * angle1 - 2 * angle2));
+        const acceleration1 = (num1 + num2 + num3 * num4) / den;
+
+        const num5 = 2 * Math.sin(angle1 - angle2);
+        const num6 = velocity1 * velocity1 * length1 * (mass1 + mass2);
+        const num7 = gravity * (mass1 + mass2) * Math.cos(angle1);
+        const num8 =
+          velocity2 * velocity2 * length2 * mass2 * Math.cos(angle1 - angle2);
+        const den2 =
+          length2 *
+          (2 * mass1 + mass2 - mass2 * Math.cos(2 * angle1 - 2 * angle2));
+        const acceleration2 = (num5 * (num6 + num7 + num8)) / den2;
+
+        velocity1 += acceleration1;
+        velocity2 += acceleration2;
+        angle1 += velocity1;
+        angle2 += velocity2;
+
+        draw();
+        animationFrameId = requestAnimationFrame(update);
+      }
+
+      function resetSimulation() {
+        cancelAnimationFrame(animationFrameId);
+        length1 = parseFloat(length1Input.value);
+        mass1 = parseFloat(mass1Input.value);
+        length2 = parseFloat(length2Input.value);
+        mass2 = parseFloat(mass2Input.value);
+        angle1 = Math.PI / 2;
+        angle2 = Math.PI / 2;
+        velocity1 = 0;
+        velocity2 = 0;
+        draw();
+        update();
+      }
+
+      resetButton.addEventListener("click", resetSimulation);
+
+      resetSimulation();
+    </script>
+  </body>
+</html>
