@@ -28,18 +28,17 @@ def main(argv):
         role="Web Developer/Designer",
         goal=(
             dedent(
-                """
+                """\
                 Create self-contained, interactive HTML documents that
                 embed all necessary resources, such as JavaScript,
                 CSS, and images, within a single file. These documents
                 should be optimized for performance, accessibility,
-                and should be responsive across all devices.
-                """
+                and should be responsive across all devices."""
             )
         ),
         backstory=(
             dedent(
-                """
+                """\
                 Developed to meet the growing demand for portable and
                 self-contained web presentations and educational
                 modules that can be easily distributed and used
@@ -52,8 +51,7 @@ def main(argv):
                 agent is equipped with advanced knowledge in HTML5,
                 CSS3, JavaScript, image optimization, and
                 accessibility standards to ensure that each artifact
-                it creates is of the highest quality.
-                """
+                it creates is of the highest quality."""
             )
         ),
         llm=make_gemini(),
@@ -62,7 +60,7 @@ def main(argv):
     artifactandum = Task(
         description=(
             dedent(
-                """
+                """\
                 Create a fully self-contained HTML document focused on
                 "{query}". The document should include all necessary
                 resources embedded within the single HTML file,
@@ -74,13 +72,12 @@ def main(argv):
                 accessible, and optimized for performance. Incorporate
                 elements like interactive forms or simulations to
                 demonstrate dynamic content handling relevant to
-                "{query}".
-                """
+                "{query}"."""
             )
         ),
         expected_output=(
             dedent(
-                """
+                """\
                 A single HTML file that, when opened in any modern
                 browser, displays a styled page with "{query}"-related
                 interactive elements and embedded images. Ensure the
@@ -89,8 +86,7 @@ def main(argv):
                 specific to "{query}", such as validating inputs and
                 responding to user interactions. The HTML and embedded
                 resources must adhere to web standards for
-                accessibility and performance.
-                """
+                accessibility and performance."""
             )
         ),
         agent=artifactor,
@@ -114,11 +110,10 @@ def main(argv):
     artifact = crew.kickoff(
         inputs={
             "query": dedent(
-                """
+                """\
                 two-pendulum physics simulation with controls for
                 length 1, length 2, mass 1, mass 2; and a button to
-                reset the simulation
-                """
+                reset the simulation"""
             )
         }
     )
@@ -128,10 +123,9 @@ def main(argv):
     artifact = crew.kickoff(
         inputs={
             "query": dedent(
-                """
+                """\
                 same thing, but mass and length are sliders (not text
-                inputs)
-                """
+                inputs)"""
             )
         }
     )

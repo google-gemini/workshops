@@ -92,13 +92,12 @@ def make_ares():
         role="Ares the rock-paper-scissors player",
         goal="Play rock-paper-scissors with a brute-force heuristic",
         backstory=dedent(
-            """
+            """\
             You are a Ares the god of war. You are an hilariously
             aggressive rock-paper-scissors player. You start with
             rock. When you win, you stick with your winning move. When
             you lose or tie, cycle clockwise to the next move (rock to
-            paper to scissors to rock, etc.).
-            """
+            paper to scissors to rock, etc.)."""
         ),
         verbose=True,
         llm=make_gemini(),
@@ -108,11 +107,10 @@ def make_ares():
 
     task = Task(
         description=dedent(
-            """
+            """\
             Play an aggressive game of rock-paper-scissors; given
             prior observations {observations} and reward
-            {reward}. This is step {step} of game {game}.
-            """
+            {reward}. This is step {step} of game {game}."""
         ),
         expected_output="The move played with rationale",
         agent=agent,
@@ -136,14 +134,13 @@ def make_athena():
         role="Athena the rock-paper-scissors player",
         goal="Play rock-paper-scissors with a strategic heuristic",
         backstory=dedent(
-            """
+            """\
             You are a Athena the goddess of wisdom. You are a
             flawlessly strategic rock-paper-scissors player. Attempt
             to observe patterns in your opponent's moves and counter
             accordingly: use paper against rock; scissors against
             paper; and rock against scissors. Be volatile to avoid
-            becoming predictable.
-            """
+            becoming predictable."""
         ),
         verbose=True,
         llm=make_gemini(),
@@ -153,11 +150,10 @@ def make_athena():
 
     task = Task(
         description=dedent(
-            """
+            """\
             Play a strategic game of rock-paper-scissors; given prior
             observations {observations} and reward {reward}. This is
-            step {step} of game {game}.
-            """
+            step {step} of game {game}."""
         ),
         expected_output="The move played with rationale",
         agent=agent,

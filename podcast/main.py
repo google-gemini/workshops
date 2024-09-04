@@ -92,14 +92,13 @@ def make_segment(producer: Agent) -> Task:
     """
     return Task(
         description=dedent(
-            """
+            """\
             Given the following headlines, produce a short (2 minute)
             segment as a dialog between the podcasters. The dialog
             should be spicy and information dense, with the occasional
             joke.
 
-            {article}
-            """
+            {article}"""
         ),
         expected_output="Podcast segment",
         agent=producer,
@@ -136,12 +135,11 @@ def make_music(producer: Agent) -> Task:
     """
     return Task(
         description=dedent(
-            """
+            """\
             We're going to record a podcast on the following
             headlines; can you recommend some upbeat intro music?
 
-            {article}
-            """
+            {article}"""
         ),
         expected_output="Path to mp3 with intro music",
         tools=[get_mp3],
@@ -160,7 +158,7 @@ def make_intro(producer: Agent) -> Task:
     """
     return Task(
         description=dedent(
-            """
+            """\
             Make a quick round of intros between your podcasters;
             structure it as a light and playful dialog where they
             mention:
@@ -171,8 +169,7 @@ def make_intro(producer: Agent) -> Task:
             4. That the podcast was recorded on {date}.
 
             {recipient} should feel special, like this podcast is just for
-            them.
-            """
+            them."""
         ),
         expected_output="Introduction",
         agent=producer,
@@ -358,28 +355,26 @@ def make_elena(gemini) -> Agent:
         role="Investigative Journalist and Tech Enthusiast",
         goal=(
             dedent(
-                """
-            To uncover the truth behind tech trends and innovations,
-            presenting clear, well-researched information to the
-            audience while challenging assumptions and pushing for
-            transparency.
-            """
+                """\
+                To uncover the truth behind tech trends and
+                innovations, presenting clear, well-researched
+                information to the audience while challenging
+                assumptions and pushing for transparency."""
             )
         ),
         backstory=(
             dedent(
-                """
-            Elena graduated with a degree in journalism from a top
-            university and spent several years working for a major
-            newspaper where she specialized in technology and
-            innovation. She developed a reputation for her in-depth
-            investigative pieces that not only reported the news but
-            also explored the implications of technological
-            advancements on society. Her passion for technology and
-            commitment to truth led her to co-host the podcast, aiming
-            to bridge the gap between tech experts and the general
-            public.
-            """
+                """\
+                Elena graduated with a degree in journalism from a top
+                university and spent several years working for a major
+                newspaper where she specialized in technology and
+                innovation. She developed a reputation for her
+                in-depth investigative pieces that not only reported
+                the news but also explored the implications of
+                technological advancements on society. Her passion for
+                technology and commitment to truth led her to co-host
+                the podcast, aiming to bridge the gap between tech
+                experts and the general public."""
             )
         ),
         llm=gemini,
@@ -400,17 +395,16 @@ def make_marcus(gemini) -> Agent:
         role="Charismatic Tech Optimist and Startup Advisor",
         goal=(
             dedent(
-                """
+                """\
                 To inspire and educate listeners about the potential
                 of new technologies and startups, bringing a positive
                 spin to tech developments and encouraging
-                entrepreneurial thinking.
-                """
+                entrepreneurial thinking."""
             )
         ),
         backstory=(
             dedent(
-                """
+                """\
                 Marcus started as a software developer and quickly
                 moved into the startup world, where he co-founded a
                 successful app that transformed online
@@ -420,8 +414,7 @@ def make_marcus(gemini) -> Agent:
                 advocate for tech's potential to solve real-world
                 problems. Co-hosting the podcast allows him to share
                 his optimism and practical insights with a broader
-                audience.
-                """
+                audience."""
             )
         ),
         llm=gemini,
@@ -445,7 +438,7 @@ def make_producer(gemini):
         goal="Produce a podcast by eliciting responses from your podcasters",
         backstory=(
             dedent(
-                """
+                """\
                 You are an expect podcast producer; you know how to
                 elicit dialog from your podcasters on a topic.
 
@@ -453,8 +446,7 @@ def make_producer(gemini):
 
                 {elena}
 
-                {marcus}
-                """
+                {marcus}"""
             )
         ),
         llm=gemini,

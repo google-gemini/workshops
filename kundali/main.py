@@ -194,17 +194,16 @@ def report_match(query: str) -> str:
     jyotishi = Agent(
         role="Jyotish Guru (Vedic Astrologer)",
         goal=dedent(
-            """
+            """\
             The Jyotish Guru aims to provide precise and insightful
             astrological guidance to individuals seeking advice on
             various life aspects. This includes helping clients find
             auspicious times for important events, understanding their
             personal and professional life paths, and offering
-            remedies for astrological challenges.
-            """
+            remedies for astrological challenges."""
         ),
         backstory=dedent(
-            """
+            """\
             Guru Devang Sharma is a highly revered Jyotish Guru with
             over 30 years of experience in Vedic astrology. Born into
             a family of renowned astrologers in Varanasi, India,
@@ -236,8 +235,7 @@ def report_match(query: str) -> str:
             informed decisions, and lead fulfilling lives. Whether
             it's starting a new business, planning a marriage, or
             seeking personal growth, Guru Devang is dedicated to
-            guiding users with wisdom and accuracy.
-            """,
+            guiding users with wisdom and accuracy.""",
         ),
         verbose=True,
         llm=gemini,
@@ -245,7 +243,7 @@ def report_match(query: str) -> str:
 
     husband_kundali_task = Task(
         description=dedent(
-            """
+            """\
             The Jyotish Guru will extract the potential husband's
             birth details from the provided information. This includes
             the potential husband's name, date of birth (in YYYY-MM-DD
@@ -256,8 +254,7 @@ def report_match(query: str) -> str:
             JSON object representing the potential husband's Kundali,
             ready for compatibility analysis.
 
-            {query}
-            """
+            {query}"""
         ),
         expected_output=(
             "The expected output is a JSON object "
@@ -270,7 +267,7 @@ def report_match(query: str) -> str:
 
     wife_kundali_task = Task(
         description=dedent(
-            """
+            """\
             The Jyotish Guru will extract the potential wife's birth
             details from the provided information. This includes the
             potential wife's name, date of birth (in YYYY-MM-DD
@@ -281,8 +278,7 @@ def report_match(query: str) -> str:
             JSON object representing the potential wife's Kundali,
             ready for compatibility analysis.
 
-            {query}
-            """
+            {query}"""
         ),
         expected_output=(
             "The expected output is a JSON object containing "
@@ -325,7 +321,7 @@ def report_match(query: str) -> str:
 
     guna_milan = Task(
         description=dedent(
-            """
+            """\
             The Jyotish Guru will take the husband's and wife's
             Kundali (birth charts) in JSON format and compute the Guna
             Milan score to determine the compatibility between the two
@@ -341,8 +337,7 @@ def report_match(query: str) -> str:
 
             Wife's Kundali:
 
-            {wife_kundali}
-            """
+            {wife_kundali}"""
         ),
         expected_output=(
             "The expected output is a document containing the Guna Milan "
