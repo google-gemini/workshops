@@ -253,4 +253,3 @@ layout: two-cols-header
   <img src="/meetup-qr.png" class="w-4/5 mx-auto" />
   <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 9</strong>: <a href="https://lu.ma/geminimeetup">lu.ma/geminimeetup</a></figcaption>
 </figure>
-
