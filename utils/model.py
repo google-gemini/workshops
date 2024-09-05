@@ -1,8 +1,10 @@
+import os
 from langchain_google_genai import (
     ChatGoogleGenerativeAI,
     HarmBlockThreshold,
     HarmCategory,
 )
+import google.generativeai as genai
 
 from . import params
 
@@ -24,6 +26,10 @@ def make_gemini(model: str = "gemini-1.5-pro") -> ChatGoogleGenerativeAI:
         ),
     }
 
+    # TODO(danenberg): This became necessary at some point, for some
+    # reason! No longer covered by `google_api_key` below. Regression?
+    genai.configure(api_key = params.GOOGLE_API_KEY)
+    
     return ChatGoogleGenerativeAI(
         model=model,
         google_api_key=params.GOOGLE_API_KEY,

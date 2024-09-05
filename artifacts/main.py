@@ -54,7 +54,7 @@ def main(argv):
                 it creates is of the highest quality."""
             )
         ),
-        llm=make_gemini(),
+        llm=make_gemini(model="gemini-1.5-flash"),
     )
 
     artifactandum = Task(
