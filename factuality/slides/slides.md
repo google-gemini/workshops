@@ -319,7 +319,7 @@ layout: two-cols-header
 
 ::left::
 
-<div class="relative h-full w-full">
+<div class="relative h-full w-full" v-click=1>
   <div class="absolute inset-0 overflow-hidden">
     <img src="/github.png" class="h-full w-full object-cover rounded shadow-lg" style="object-position: top;" />
   </div>
@@ -329,7 +329,7 @@ layout: two-cols-header
 
 <figure class="p-5">
   <img src="/github-qr.png" class="w-4/5 mx-auto" />
-  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 7</strong>: <a href="https://github.com/google-gemini/workshops/tree/main/factuality">github.com/google-gemini/workshops</a></figcaption>
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 11</strong>: <a href="https://github.com/google-gemini/workshops/tree/main/factuality">github.com/google-gemini/workshops</a></figcaption>
 </figure>
 
 ---
@@ -340,7 +340,7 @@ layout: two-cols-header
 
 ::left::
 
-<div class="relative h-full w-full">
+<div class="relative h-full w-full" v-click=1>
   <div class="">
     <img src="/meetup.png" class="h-full w-full object-cover rounded shadow-lg" style="object-position: top;" />
   </div>
@@ -350,5 +350,5 @@ layout: two-cols-header
 
 <figure class="p-5">
   <img src="/meetup-qr.png" class="w-4/5 mx-auto" />
-  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 8</strong>: <a href="https://lu.ma/geminimeetup">lu.ma/geminimeetup</a></figcaption>
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 12</strong>: <a href="https://lu.ma/geminimeetup">lu.ma/geminimeetup</a></figcaption>
 </figure>
