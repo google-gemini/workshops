@@ -6,7 +6,7 @@ digraph stack {
 		node [shape=note];
 		news	[label=News,
 			shape=note];
-		response	[label=Response,
+		response	[label="Factual summary",
 			shape=note];
 	}
 	subgraph cluster_crewai {

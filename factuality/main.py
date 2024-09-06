@@ -235,7 +235,7 @@ def main(argv):
         agent=redactor,
     )
 
-    news = search_news("AI")
+    news = search_news("Rings of Power")
 
     summary = Crew(
         agents=[news_summarizer],
