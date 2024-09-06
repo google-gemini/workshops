@@ -40,7 +40,17 @@ Peter Danenberg
 </div>
 
 <!--
-The last comment block of each slide will be treated as slide notes. It will be visible and editable in Presenter Mode along with the slide. [Read more in the docs](https://sli.dev/guide/syntax.html#notes)
+I had a talk planned about “responsible AI and elections“ but my good
+friends mentioned that elections are sensitive.
+
+Responsible AI is actually one of my least favorite topics because
+there appears to exist a safety vs. utility dichotomy; and I used to
+think that responsible AI meant sacrificing utility for the sake of
+safety.
+
+It turns out this isn't the case: we can have our cake and eat it,
+too; specifically in this special case of responsible AI called
+“factual AI”
 -->
 
 ---
@@ -54,6 +64,13 @@ The last comment block of each slide will be treated as slide notes. It will be 
 
 </v-clicks>
 
+<!--
+What is factual AI, by the way? Let's explore with a couple examples.
+
+Any idea what I could have asked to induce an answer like this?
+Regardless, is the answer safe? Is it useful?
+-->
+
 ---
 
 # What is factual AI (con't)?
@@ -64,6 +81,13 @@ The last comment block of each slide will be treated as slide notes. It will be 
 <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 2</strong>: <a href="https://chatgpt.com/share/56509f4c-d8e8-4298-ada3-b64d4a79e177">ChatGPT</a>, retrieved on August 9, 2024</figcaption>
 
 </v-clicks>
+
+<!--
+What about this answer: is it safe? If I woke up in a coma and had to
+guess, it's not a bad answer.
+
+Is it usefule? Eh.
+-->
 
 ---
 
@@ -76,6 +100,15 @@ The last comment block of each slide will be treated as slide notes. It will be 
 
 </v-clicks>
 
+<!--
+What about this one: safe? They link to mainstream news articles, can
+verify yourself.
+
+Useful? Looks like it: informative, etc.
+
+Cake and eat it, too?
+-->
+
 ---
 
 # How would you build a factual AI?
@@ -86,6 +119,23 @@ The last comment block of each slide will be treated as slide notes. It will be 
 <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 4</strong>: How to build a factuality stack</figcaption>
 
 </v-clicks>
+
+<!--
+Let's say we wanted to build our own Perplexity in a few lines of
+code; how might we do it?
+
+I think you can do it with a classic three-agent model where you have
+a writer, critic, editor.
+
+This is becoming a common paradigm in multi-agent scenarios with LLMs;
+useful for things like: composing documents, fixing code, etc.
+
+In our case, we have something like a summarizer, citation-generator,
+redactor.
+
+Each one of these is a CrewAI agent running with Gemini to generate a
+final response.
+-->
 
 ---
 
@@ -112,6 +162,11 @@ The last comment block of each slide will be treated as slide notes. It will be 
 ```
 
 </v-clicks>
+
+<!--
+What does the summarizer look like? Takes a list of headlines,
+snippets, URLs; composes them into a summary.
+-->
 
 ---
 
@@ -140,6 +195,10 @@ The last comment block of each slide will be treated as slide notes. It will be 
 
 </v-clicks>
 
+<!--
+What does the generator look like? Takes the summary, the articles, adds citations.
+-->
+
 ---
 
 # And what about the redactor?
@@ -166,6 +225,10 @@ The last comment block of each slide will be treated as slide notes. It will be 
 
 </v-clicks>
 
+<!--
+What about the redactor? Removes anything that doesn't have a citations.
+-->
+
 ---
 
 # Does it work?
@@ -183,6 +246,12 @@ The last comment block of each slide will be treated as slide notes. It will be 
 > that are actively being addressed by various stakeholders.
 
 </v-clicks>
+
+<!--
+So this is what it looks like when I feed a bunch of articles for AI-related news.
+
+Not bad; but is any of this substantiated?
+-->
 
 ---
 
@@ -204,6 +273,10 @@ The last comment block of each slide will be treated as slide notes. It will be 
 
 </v-clicks>
 
+<!--
+After the citation-generator adds the citations, we can click through and verify the claims.
+-->
+
 ---
 
 # And redactions?
@@ -221,3 +294,49 @@ The last comment block of each slide will be treated as slide notes. It will be 
 <section class="footnotes"><ol class="footnotes-list"><li id="fn1" class="footnote-item"><p>“AI Is Heating the Olympic Pool.” <em>Wired</em>, <a href="https://www.wired.com/story/ai-is-heating-the-olympic-pool/" target="_blank">https://www.wired.com/story/ai-is-heating-the-olympic-pool/</a>. Accessed 6 Sept. 2024. <a href="#fnref1" class="footnote-backref">↩︎</a></p></li><li id="fn2" class="footnote-item"><p>“DOJ subpoenas NVIDIA as part of antitrust probe regarding AI processors.” <em>Consent.Yahoo.com</em>, <a href="https://consent.yahoo.com/v2/collectConsent?sessionId=1_cc-session_55e49573-6895-4a02-8e41-45554122f5eb" target="_blank">https://consent.yahoo.com/v2/collectConsent?sessionId=1_cc-session_55e49573-6895-4a02-8e41-45554122f5eb</a>. Accessed 6 Sept. 2024. <a href="#fnref2" class="footnote-backref">↩︎</a></p></li></ol></section>
 
 </v-clicks>
+
+<!--
+Lastly, the redactor gets rid of the stuff which has no citations.
+-->
+
+---
+layout: two-cols-header
+---
+
+# Check out the code!
+
+::left::
+
+<div class="relative h-full w-full">
+  <div class="absolute inset-0 overflow-hidden">
+    <img src="/github.png" class="h-full w-full object-cover rounded shadow-lg" style="object-position: top;" />
+  </div>
+</div>
+
+::right::
+
+<figure class="p-5">
+  <img src="/github-qr.png" class="w-4/5 mx-auto" />
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 7</strong>: <a href="https://github.com/google-gemini/workshops/tree/main/factuality">github.com/google-gemini/workshops</a></figcaption>
+</figure>
+
+---
+layout: two-cols-header
+---
+
+# Join our Gemini meetup!
+
+::left::
+
+<div class="relative h-full w-full">
+  <div class="">
+    <img src="/meetup.png" class="h-full w-full object-cover rounded shadow-lg" style="object-position: top;" />
+  </div>
+</div>
+
+::right::
+
+<figure class="p-5">
+  <img src="/meetup-qr.png" class="w-4/5 mx-auto" />
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 8</strong>: <a href="https://lu.ma/geminimeetup">lu.ma/geminimeetup</a></figcaption>
+</figure>
