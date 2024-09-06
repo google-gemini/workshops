@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tetris</title>
+<style>
+body {
+  background-color: #222;
+  color: #eee;
+  font-family: monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+}
+
+#game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #333;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(10, 25px);
+  grid-template-rows: repeat(20, 25px);
+  border: 2px solid #eee;
+}
+
+.cell {
+  width: 25px;
+  height: 25px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background-color: #111;
+}
+
+.cell.active {
+  background-color: #777;
+}
+
+.cell.filled {
+  background-color: #eee;
+}
+
+#next-piece {
+  display: grid;
+  grid-template-columns: repeat(4, 25px);
+  grid-template-rows: repeat(4, 25px);
+  border: 2px solid #eee;
+  margin-top: 20px;
+}
+
+.next-cell {
+  width: 25px;
+  height: 25px;
+  border: 1px solid #555;
+  border-radius: 3px;
+  background-color: #111;
+}
+
+#score {
+  font-size: 20px;
+  margin-top: 20px;
+}
+
+button {
+  background-color: #eee;
+  color: #222;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #ddd;
+}
+
+#game-over {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #333;
+  padding: 20px;
+  border-radius: 10px;
+  display: none;
+  z-index: 1;
+}
+
+#game-over p {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+#game-over button {
+  margin: 0;
+}
+</style>
+</head>
+<body>
+<div id="game-container">
+  <h1>Tetris</h1>
+  <div id="game-board"></div>
+  <div id="next-piece"></div>
+  <div id="score">Score: 0</div>
+  <button id="start-button">Start</button>
+  <button id="pause-button" disabled>Pause</button>
+</div>
+<div id="game-over">
+  <p>Game Over!</p>
+  <p>Final Score: <span id="final-score"></span></p>
+  <button id="restart-button">Restart</button>
+</div>
+
+<script>
+const gameBoard = document.getElementById('game-board');
+const nextPieceDisplay = document.getElementById('next-piece');
+const scoreDisplay = document.getElementById('score');
+const startButton = document.getElementById('start-button');
+const pauseButton = document.getElementById('pause-button');
+const gameOverScreen = document.getElementById('game-over');
+const finalScoreDisplay = document.getElementById('final-score');
+const restartButton = document.getElementById('restart-button');
+
+const ROWS = 20;
+const COLS = 10;
+const BLOCK_SIZE = 25;
+const COLORS = [
+  'cyan', 'blue', 'orange', 'yellow', 'green', 'purple', 'red'
+];
+
+let board = []; // 2D array representing the game board
+let currentPiece = {};
+let nextPiece = {};
+let score = 0;
+let gameOver = false;
+let gameRunning = false;
+let intervalId;
+
+const tetrominoes = [
+  // I Tetromino
+  {
+    shape: [
+      [0, 0, 0, 0],
+      [1, 1, 1, 1],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0]
+    ],
+    color: 'cyan'
+  },
+  // J Tetromino
+  {
+    shape: [
+      [1, 0, 0],
+      [1, 1, 1],
+      [0, 0, 0]
+    ],
+    color: 'blue'
+  },
+  // L Tetromino
+  {
+    shape: [
+      [0, 0, 1],
+      [1, 1, 1],
+      [0, 0, 0]
+    ],
+    color: 'orange'
+  },
+  // O Tetromino
+  {
+    shape: [
+      [1, 1],
+      [1, 1]
+    ],
+    color: 'yellow'
+  },
+  // S Tetromino
+  {
+    shape: [
+      [0, 1, 1],
+      [1, 1, 0],
+      [0, 0, 0]
+    ],
+    color: 'green'
+  },
+  // T Tetromino
+  {
+    shape: [
+      [0, 1, 0],
+      [1, 1, 1],
+      [0, 0, 0]
+    ],
+    color: 'purple'
+  },
+  // Z Tetromino
+  {
+    shape: [
+      [1, 1, 0],
+      [0, 1, 1],
+      [0, 0, 0]
+    ],
+    color: 'red'
+  }
+];
+
+function initializeGame() {
+  // Initialize the game board
+  board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+
+  // Generate the first piece and next piece
+  currentPiece = getRandomTetromino();
+  nextPiece = getRandomTetromino();
+
+  // Reset score
+  score = 0;
+  scoreDisplay.textContent = 'Score: 0';
+
+  // Set game state
+  gameOver = false;
+  gameRunning = false;
+
+  // Clear the game board and next piece display
+  gameBoard.innerHTML = '';
+  nextPieceDisplay.innerHTML = '';
+
+  // Draw the next piece
+  drawNextPiece();
+}
+
+function startGame() {
+  initializeGame();
+  gameRunning = true;
+  intervalId = setInterval(movePieceDown, 1000);
+  startButton.disabled = true;
+  pauseButton.disabled = false;
+}
+
+function pauseGame() {
+  gameRunning = false;
+  clearInterval(intervalId);
+  pauseButton.textContent = 'Resume';
+  startButton.disabled = false;
+}
+
+function resumeGame() {
+  gameRunning = true;
+  intervalId = setInterval(movePieceDown, 1000);
+  pauseButton.textContent = 'Pause';
+  startButton.disabled = true;
+}
+
+function gameOverFunction() {
+  clearInterval(intervalId);
+  gameOver = true;
+  gameRunning = false;
+  gameOverScreen.style.display = 'block';
+  finalScoreDisplay.textContent = score;
+  startButton.disabled = false;
+  pauseButton.disabled = true;
+}
+
+function restartGame() {
+  gameOverScreen.style.display = 'none';
+  startGame();
+}
+
+function getRandomTetromino() {
+  const randomIndex = Math.floor(Math.random() * tetrominoes.length);
+  return { ...tetrominoes[randomIndex], x: 3, y: 0 }; // Place piece at starting position
+}
+
+function drawNextPiece() {
+  nextPieceDisplay.innerHTML = '';
+  nextPiece.shape.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (value) {
+        const cell = document.createElement('div');
+        cell.classList.add('next-cell', 'filled');
+        cell.style.backgroundColor = nextPiece.color;
+        nextPieceDisplay.appendChild(cell);
+      } else {
+        const cell = document.createElement('div');
+        cell.classList.add('next-cell');
+        nextPieceDisplay.appendChild(cell);
+      }
+    });
+  });
+}
+
+function drawPiece(piece) {
+  piece.shape.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (value) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell', 'filled');
+        cell.style.backgroundColor = piece.color;
+        gameBoard.appendChild(cell);
+      }
+    });
+  });
+}
+
+function clearPiece(piece) {
+  piece.shape.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (value) {
+        const cell = document.querySelector(`.cell:nth-child(${y * COLS + x + 1})`);
+        if (cell) {
+          cell.classList.remove('filled');
+          cell.style.backgroundColor = '#111';
+        }
+      }
+    });
+  });
+}
+
+function movePieceDown() {
+  if (canMovePiece(currentPiece, 0, 1)) {
+    clearPiece(currentPiece);
+    currentPiece.y++;
+    drawPiece(currentPiece);
+  } else {
+    freezePiece();
+  }
+}
+
+function freezePiece() {
+  currentPiece.shape.forEach((row, y) => {
+    row.forEach((value, x) => {
+      if (value) {
+        board[currentPiece.y + y][currentPiece.x + x] = 1;
+      }
+    });
+  });
+  checkCompleteRows();
+  currentPiece = nextPiece;
+  nextPiece = getRandomTetromino();
+  drawNextPiece();
+  if (!canMovePiece(currentPiece, 0, 0)) {
+    gameOverFunction();
+  }
+}
+
+function checkCompleteRows() {
+  let rowsCleared = 0;
+  for (let y = 0; y < ROWS; y++) {
+    if (board[y].every(cell => cell === 1)) {
+      board.splice(y, 1);
+      board.unshift(Array(COLS).fill(0));
+      rowsCleared++;
+      score += 100 * rowsCleared;
+      scoreDisplay.textContent = 'Score: ' + score;
+    }
+  }
+}
+
+function canMovePiece(piece, dx, dy) {
+  return piece.shape.every((row, y) => {
+    return row.every((value, x) => {
+      if (value) {
+        const newX = piece.x + x + dx;
+        const newY = piece.y + y + dy;
+        return (
+          newX >= 0 &&
+          newX < COLS &&
+          newY < ROWS &&
+          (newY < 0 || board[newY][newX] === 0)
+        );
+      }
+      return true;
+    });
+  });
+}
+
+// Event listeners
+startButton.addEventListener('click', startGame);
+pauseButton.addEventListener('click', () => {
+  if (pauseButton.textContent === 'Pause') {
+    pauseGame();
+  } else {
+    resumeGame();
+  }
+});
+restartButton.addEventListener('click', restartGame);
+
+// Keyboard controls
+document.addEventListener('keydown', (e) => {
+  if (gameRunning && !gameOver) {
+    switch (e.key) {
+      case 'ArrowLeft':
+        if (canMovePiece(currentPiece, -1, 0)) {
+          clearPiece(currentPiece);
+          currentPiece.x--;
+          drawPiece(currentPiece);
+        }
+        break;
+      case 'ArrowRight':
+        if (canMovePiece(currentPiece, 1, 0)) {
+          clearPiece(currentPiece);
+          currentPiece.x++;
+          drawPiece(currentPiece);
+        }
+        break;
+      case 'ArrowDown':
+        movePieceDown();
+        break;
+      case 'ArrowUp':
+        // Implement rotation logic
+        break;
+    }
+  }
+});
+
+// Initial game setup
+initializeGame();
+</script>
+</body>
+</html>
