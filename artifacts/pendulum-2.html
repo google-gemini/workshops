@@ -1,0 +1,212 @@
+<!doctype html>
+<!--
+ Copyright 2024 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Double Pendulum Simulation</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: sans-serif;
+        background-color: #f0f0f0;
+      }
+
+      canvas {
+        background-color: #fff;
+        display: block;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+
+      .controls {
+        background-color: rgba(240, 240, 240, 0.8);
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+      }
+
+      .controls label,
+      .controls input {
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      .controls button {
+        padding: 8px 16px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="controls">
+        <label for="length1">Length 1:</label>
+        <input type="range" id="length1" min="10" max="150" value="100" />
+
+        <label for="length2">Length 2:</label>
+        <input type="range" id="length2" min="10" max="150" value="100" />
+
+        <label for="mass1">Mass 1:</label>
+        <input type="range" id="mass1" min="1" max="10" value="5" />
+
+        <label for="mass2">Mass 2:</label>
+        <input type="range" id="mass2" min="1" max="10" value="5" />
+
+        <button id="resetButton">Reset</button>
+      </div>
+      <canvas id="canvas" width="800" height="600"></canvas>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const length1Slider = document.getElementById("length1");
+      const length2Slider = document.getElementById("length2");
+      const mass1Slider = document.getElementById("mass1");
+      const mass2Slider = document.getElementById("mass2");
+      const resetButton = document.getElementById("resetButton");
+
+      let length1 = length1Slider.value;
+      let length2 = length2Slider.value;
+      let mass1 = mass1Slider.value;
+      let mass2 = mass2Slider.value;
+      let angle1 = Math.PI / 2;
+      let angle2 = Math.PI / 2;
+      let angularVelocity1 = 0;
+      let angularVelocity2 = 0;
+      let gravity = 1;
+
+      function drawPendulum() {
+        const x1 = length1 * Math.sin(angle1);
+        const y1 = length1 * Math.cos(angle1);
+        const x2 = x1 + length2 * Math.sin(angle2);
+        const y2 = y1 + length2 * Math.cos(angle2);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw lines
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, canvas.height / 2);
+        ctx.lineTo(canvas.width / 2 + x1, canvas.height / 2 + y1);
+        ctx.lineTo(canvas.width / 2 + x2, canvas.height / 2 + y2);
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw bobs
+        ctx.beginPath();
+        ctx.arc(
+          canvas.width / 2 + x1,
+          canvas.height / 2 + y1,
+          mass1 * 5,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(
+          canvas.width / 2 + x2,
+          canvas.height / 2 + y2,
+          mass2 * 5,
+          0,
+          Math.PI * 2,
+        );
+        ctx.fill();
+      }
+
+      function updatePendulum() {
+        // Calculate accelerations using the double pendulum equations of motion
+        const num1 =
+          -gravity * (2 * mass1 + mass2) * Math.sin(angle1) -
+          mass2 * gravity * Math.sin(angle1 - 2 * angle2);
+        const num2 = -2 * Math.sin(angle1 - angle2) * mass2;
+        const num3 =
+          angularVelocity2 * angularVelocity2 * length2 +
+          angularVelocity1 *
+            angularVelocity1 *
+            length1 *
+            Math.cos(angle1 - angle2);
+        const den =
+          length1 *
+          (2 * mass1 + mass2 - mass2 * Math.cos(2 * angle1 - 2 * angle2));
+        const angularAcceleration1 = (num1 + num2 * num3) / den;
+
+        const num4 = 2 * Math.sin(angle1 - angle2);
+        const num5 =
+          angularVelocity1 * angularVelocity1 * length1 * (mass1 + mass2);
+        const num6 =
+          gravity * (mass1 + mass2) * Math.cos(angle1) +
+          angularVelocity2 *
+            angularVelocity2 *
+            length2 *
+            mass2 *
+            Math.cos(angle1 - angle2);
+        const den2 =
+          length2 *
+          (2 * mass1 + mass2 - mass2 * Math.cos(2 * angle1 - 2 * angle2));
+        const angularAcceleration2 = (num4 * (num5 + num6)) / den2;
+
+        // Update angular velocities and angles
+        angularVelocity1 += angularAcceleration1;
+        angularVelocity2 += angularAcceleration2;
+        angle1 += angularVelocity1;
+        angle2 += angularVelocity2;
+
+        // Apply damping
+        angularVelocity1 *= 0.999;
+        angularVelocity2 *= 0.999;
+
+        drawPendulum();
+        requestAnimationFrame(updatePendulum);
+      }
+
+      function resetSimulation() {
+        angle1 = Math.PI / 2;
+        angle2 = Math.PI / 2;
+        angularVelocity1 = 0;
+        angularVelocity2 = 0;
+      }
+
+      length1Slider.addEventListener(
+        "input",
+        () => (length1 = length1Slider.value),
+      );
+      length2Slider.addEventListener(
+        "input",
+        () => (length2 = length2Slider.value),
+      );
+      mass1Slider.addEventListener("input", () => (mass1 = mass1Slider.value));
+      mass2Slider.addEventListener("input", () => (mass2 = mass2Slider.value));
+      resetButton.addEventListener("click", resetSimulation);
+
+      updatePendulum();
+    </script>
+  </body>
+</html>

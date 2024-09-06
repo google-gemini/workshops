@@ -29,14 +29,13 @@ from urllib.parse import urlencode, urlunparse
 import adafruit_dotstar as dotstar
 import board
 import google.auth
+import params
 import requests
 import webcolors
 from absl import app
 from google.auth.transport.requests import Request
 from gpiozero import Button
 from pydub import AudioSegment
-
-import params
 
 
 def get_rgb(color: str) -> tuple[int, int, int]:

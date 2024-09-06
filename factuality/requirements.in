@@ -1,0 +1,6 @@
+absl-py
+crewai
+crewai[tools]
+langchain-google-genai
+newsapi-python
+pyparsing

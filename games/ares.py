@@ -13,18 +13,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import threading
-import discord
-from absl import app
 import logging
+import re
+import threading
+
+import discord
 import params
 import play
-import re
 import pyparsing
+from absl import app
 
 
 def purge_mentions(message: str):
-    mentions = pyparsing.Suppress("<@") + pyparsing.SkipTo(">", include=True).suppress()
+    mentions = (
+        pyparsing.Suppress("<@")
+        + pyparsing.SkipTo(">", include=True).suppress()
+    )
     return mentions.transform_string(message)
 
 
@@ -68,10 +72,13 @@ def main(argv):
             return
 
         # Check if the client was mentioned in the message
-        if client.user.mentioned_in(message) and message.mention_everyone is False:
-            if (move := extract_move(purge_mentions(message.content))) == None:
+        if (
+            client.user.mentioned_in(message)
+            and message.mention_everyone is False
+        ):
+            if (move := extract_move(purge_mentions(message.content))) is None:
                 return await message.channel.send(
-                    f"{message.author.mention}, what move are you trying to make?"
+                    f"{message.author.mention}, what move are you trying to make?"  # noqa: E501
                 )
 
             move = move.upper()
@@ -134,7 +141,7 @@ def main(argv):
                     last_move = "START"
 
                 return await message.channel.send(
-                    f"{message.author.mention}, {response} ({wins} / {plays} wins)"
+                    f"{message.author.mention}, {response} ({wins} / {plays} wins)"  # noqa: E501
                 )
 
     client.run(params.ARES_TOKEN)

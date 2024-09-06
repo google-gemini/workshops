@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env sh
 # Copyright 2024 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,21 +12,24 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from absl import app
-from pettingzoo.classic import rps_v2
-from play import make_ares, make_athena, play_game, plot_scores
-
-
-def main(argv):
-    env = rps_v2.env(render_mode="human", num_actions=3, max_cycles=25)
-    players = {"player_0": make_ares(), "player_1": make_athena()}
-
-    for game in range(1):
-        play_game(game, env, players)
-
-    plot_scores(players)
+#
+# Create a venv; compiles requirements; reruns binary on file-change:
+#
+#   ../scripts/run.sh python -m main.py
 
 
-if __name__ == "__main__":
-    app.run(main)
+function main() {
+    python3 -m venv /tmp/venv
+    . /tmp/venv/bin/activate
+    python -m pip install pip-tools
+    pip-compile --generate-hashes requirements.in
+    pip install -r requirements.txt
+    ack -f --follow | entr -r "$@"
+}
+
+# Fail early.
+set -e
+set -o pipefail
+
+# Start!
+main "$@"

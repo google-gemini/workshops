@@ -1,0 +1,20 @@
+{
+    admin 127.0.0.1:2020  # Change 2020 to an available port
+}
+
+:8000 {
+	root * .
+	file_server browse
+
+	# Set CORS headers
+	header Access-Control-Allow-Origin *
+	header Access-Control-Allow-Methods "GET, POST, OPTIONS"
+	header Access-Control-Allow-Headers "Content-Type, X-Requested-With"
+	header Access-Control-Allow-Credentials true
+
+	# Special handling for OPTIONS method
+	@options {
+		method OPTIONS
+	}
+	respond @options 204
+}

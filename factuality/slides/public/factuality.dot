@@ -1,0 +1,31 @@
+digraph stack {
+	graph [layout=fdp,
+		style="filled,rounded"
+	];
+	{
+		node [shape=note];
+		news	[label=News,
+			shape=note];
+		response	[label="Factual summary",
+			shape=note];
+	}
+	subgraph cluster_crewai {
+		graph [color="#3498db40",
+			label=Agents
+		];
+		summarize	[label=Summarize];
+		cite	[label=Cite];
+		redact	[label=Redact];
+	}
+	subgraph cluster_vertexai {
+		graph [color="#e74c3c40",
+			label="Vertex AI"
+		];
+		gemini	[label=Gemini];
+	}
+	news -> summarize;
+	summarize -> cite;
+	cite -> redact;
+	redact -> gemini;
+	gemini -> response;
+}

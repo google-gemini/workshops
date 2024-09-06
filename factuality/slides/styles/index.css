@@ -1,5 +1,5 @@
 /**
- * Copyright 2024 Google LLC
+ * Copyright 2024 -l
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 
-/* eslint-disable no-console */
-
-// #region snippet
-// Inside ./snippets/external.ts
-export function emptyArray<T>(length: number) {
-  return Array.from<T>({ length })
+.footnotes-sep {
+  @apply mt-5 opacity-10;
 }
-// #endregion snippet
-
-export function sayHello() {
-  console.log('Hello from snippets/external.ts')
+.footnotes {
+  @apply text-xs opacity-75;
+}
+.footnote-backref {
+  display: none;
 }
