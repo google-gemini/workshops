@@ -161,6 +161,8 @@ final response.
     )
 ```
 
+<figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 5</strong>: The news-summarizer agent</figcaption>
+
 </v-clicks>
 
 <!--
@@ -193,6 +195,8 @@ snippets, URLs; composes them into a summary.
     )
 ```
 
+<figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 6</strong>: The citation-generator agent</figcaption>
+
 </v-clicks>
 
 <!--
@@ -223,6 +227,8 @@ What does the generator look like? Takes the summary, the articles, adds citatio
     )
 ```
 
+<figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 7</strong>: The redactor agent</figcaption>
+
 </v-clicks>
 
 <!--
@@ -244,6 +250,8 @@ What about the redactor? Removes anything that doesn't have a citations.
 > industry's competitive landscape. In conclusion, the proliferation of AI
 > brings forth a complex web of opportunities, challenges, and ethical dilemmas
 > that are actively being addressed by various stakeholders.
+
+<figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 8</strong>: Summary without citations</figcaption>
 
 </v-clicks>
 
@@ -271,6 +279,8 @@ Not bad; but is any of this substantiated?
 
 <section class="footnotes"><ol class="footnotes-list"><li id="fn1" class="footnote-item"><p>“AI Is Heating the Olympic Pool.” <em>Wired</em>, <a href="https://www.wired.com/story/ai-is-heating-the-olympic-pool/" target="_blank">https://www.wired.com/story/ai-is-heating-the-olympic-pool/</a>. Accessed 6 Sept. 2024. <a href="#fnref1" class="footnote-backref">↩︎</a></p></li><li id="fn2" class="footnote-item"><p>“DOJ subpoenas NVIDIA as part of antitrust probe regarding AI processors.” <em>Consent.Yahoo.com</em>, <a href="https://consent.yahoo.com/v2/collectConsent?sessionId=1_cc-session_55e49573-6895-4a02-8e41-45554122f5eb" target="_blank">https://consent.yahoo.com/v2/collectConsent?sessionId=1_cc-session_55e49573-6895-4a02-8e41-45554122f5eb</a>. Accessed 6 Sept. 2024. <a href="#fnref2" class="footnote-backref">↩︎</a></p></li></ol></section>
 
+<figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 9</strong>: Summary with citations</figcaption>
+
 </v-clicks>
 
 <!--
@@ -293,6 +303,8 @@ After the citation-generator adds the citations, we can click through and verify
 
 <section class="footnotes"><ol class="footnotes-list"><li id="fn1" class="footnote-item"><p>“AI Is Heating the Olympic Pool.” <em>Wired</em>, <a href="https://www.wired.com/story/ai-is-heating-the-olympic-pool/" target="_blank">https://www.wired.com/story/ai-is-heating-the-olympic-pool/</a>. Accessed 6 Sept. 2024. <a href="#fnref1" class="footnote-backref">↩︎</a></p></li><li id="fn2" class="footnote-item"><p>“DOJ subpoenas NVIDIA as part of antitrust probe regarding AI processors.” <em>Consent.Yahoo.com</em>, <a href="https://consent.yahoo.com/v2/collectConsent?sessionId=1_cc-session_55e49573-6895-4a02-8e41-45554122f5eb" target="_blank">https://consent.yahoo.com/v2/collectConsent?sessionId=1_cc-session_55e49573-6895-4a02-8e41-45554122f5eb</a>. Accessed 6 Sept. 2024. <a href="#fnref2" class="footnote-backref">↩︎</a></p></li></ol></section>
 
+<figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 10</strong>: Redacted summary</figcaption>
+
 </v-clicks>
 
 <!--
@@ -307,9 +319,9 @@ layout: two-cols-header
 
 ::left::
 
-<div class="relative h-full w-full">
+<div class="relative h-full w-full" v-click=1>
   <div class="absolute inset-0 overflow-hidden">
-    <img src="/github.png" class="h-full w-full object-cover rounded shadow-lg" style="object-position: top;" />
+    <img src="/github.png" class="h-full w-full object-contain rounded shadow-lg" style="object-position: top;" />
   </div>
 </div>
 
@@ -317,7 +329,7 @@ layout: two-cols-header
 
 <figure class="p-5">
   <img src="/github-qr.png" class="w-4/5 mx-auto" />
-  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 7</strong>: <a href="https://github.com/google-gemini/workshops/tree/main/factuality">github.com/google-gemini/workshops</a></figcaption>
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 11</strong>: <a href="https://github.com/google-gemini/workshops/tree/main/factuality">github.com/google-gemini/workshops</a></figcaption>
 </figure>
 
 ---
@@ -328,7 +340,7 @@ layout: two-cols-header
 
 ::left::
 
-<div class="relative h-full w-full">
+<div class="relative h-full w-full" v-click=1>
   <div class="">
     <img src="/meetup.png" class="h-full w-full object-cover rounded shadow-lg" style="object-position: top;" />
   </div>
@@ -338,5 +350,5 @@ layout: two-cols-header
 
 <figure class="p-5">
   <img src="/meetup-qr.png" class="w-4/5 mx-auto" />
-  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 8</strong>: <a href="https://lu.ma/geminimeetup">lu.ma/geminimeetup</a></figcaption>
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 12</strong>: <a href="https://lu.ma/geminimeetup">lu.ma/geminimeetup</a></figcaption>
 </figure>
