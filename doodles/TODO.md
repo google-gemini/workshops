@@ -5,7 +5,7 @@
 Invocation:
 
 ```shell
-potrace iea.bmp -s --group --turdsize 2 --alphamax 1 --opttolerance 0.2 -o iea.svg
+potrace iea.bmp -s --group --turdsize 5 --alphamax 1 --opttolerance 0.2 -o iea.svg
 ```
 
 ## Timing
