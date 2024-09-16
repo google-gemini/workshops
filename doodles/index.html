@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vivus SVG Animation</title>
+    <style>
+      /* Center the SVG on the page */
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+      }
+      #my-svg {
+        width: 80%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The SVG will be loaded here -->
+    <div id="my-svg-container">
+      <!-- SVG object reference -->
+      <object id="my-svg" type="image/svg+xml" data="iea.svg"></object>
+    </div>
+
+    <!-- Vivus.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/vivus@latest/dist/vivus.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.7.1/gsap.min.js"></script>
+
+    <script>
+      // Ensure the SVG is fully loaded before running Vivus
+      document.getElementById("my-svg").addEventListener("load", function () {
+        // Get the SVG document inside the <object> tag
+        var svgDocument = document.getElementById("my-svg").contentDocument;
+        var paths = svgDocument.querySelectorAll("path");
+
+        // Set fill to none, stroke to black, and stroke-width to 10 for all paths
+        paths.forEach(function (path) {
+          path.style.fill = "none"; // Start with no fill
+          path.style.stroke = "black"; // Stroke color
+          path.style.strokeWidth = "10"; // Stroke width set to 10
+        });
+
+        // Vivus animation for stroke
+        var myVivus = new Vivus(
+          "my-svg",
+          {
+            type: "oneByOne",
+            duration: 1000, // Duration for the stroke animation
+            start: "autostart", // Start the animation automatically
+            reverseStack: true, // Reverse order of path animation
+            onReady: function () {
+              console.log("SVG is ready to animate.");
+            },
+          },
+          function () {
+            console.log("Animation complete. Adjusting stroke and fill.");
+
+            gsap.to(paths, {
+              duration: 1,
+              strokeWidth: 1,
+              stagger: {
+                each: 0.01, // Reduce delay between each animation
+                amount: 5, // Total time the stagger should take
+              },
+            });
+
+            gsap.to(paths, {
+              duration: 1,
+              fill: "black",
+              stagger: {
+                each: 0.01,
+                amount: 5,
+                delay: 1, // Delay the fill animation slightly
+              },
+            });
+          },
+        );
+      });
+    </script>
+  </body>
+</html>
