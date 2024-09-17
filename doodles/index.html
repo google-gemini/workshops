@@ -10,13 +10,17 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
+        height: 100vh; /* Full viewport height */
         margin: 0;
         background-color: #f0f0f0;
       }
+
+      /* SVG container */
       #my-svg {
-        width: 80%;
-        height: auto;
+        max-width: 100%; /* Ensure it doesn’t exceed the width of the viewport */
+        max-height: 100vh; /* Ensure it doesn’t exceed the height of the viewport */
+        width: auto; /* Maintain aspect ratio */
+        height: auto; /* Maintain aspect ratio */
       }
     </style>
   </head>
