@@ -1,5 +1,6 @@
 <template>
-  <div :id="containerId" class="w-full h-auto"></div> <!-- Added class for responsive sizing -->
+  <!-- Removed 'h-auto' since 'fixed-height' should define the height -->
+  <div :id="containerId" class="svg-container w-full"></div>
 </template>
 
 <script setup lang="ts">
@@ -20,6 +21,7 @@ function animateSVG(svgFile: string, containerId: string) {
   fetch(svgFile)
     .then((response) => response.text())
     .then((svgContent) => {
+      // Inject SVG content
       document.getElementById(containerId).innerHTML = svgContent
 
       const svgElement = document.querySelector(`#${containerId} svg`)
@@ -34,18 +36,7 @@ function animateSVG(svgFile: string, containerId: string) {
         path.style.strokeDashoffset = length
       })
 
-      const pathsWithoutStroke = Array.from(svgElement.querySelectorAll('path')).filter(
-        (path) => {
-          const hasStrokeInStyle =
-            window.getComputedStyle(path).stroke !== 'none' &&
-            window.getComputedStyle(path).stroke !== ''
-          return !hasStrokeInStyle
-        }
-      )
-
-      gsap.set(pathsWithoutStroke, { opacity: 0 }) // Set initial opacity to 0
-
-      // Simple GSAP animation without ScrollTrigger
+      // GSAP animation for paths
       allPaths.forEach((path) => {
         gsap.to(path, {
           strokeDashoffset: 0,
@@ -55,6 +46,7 @@ function animateSVG(svgFile: string, containerId: string) {
         })
       })
 
+      // Fade in all paths
       gsap.fromTo(
         allPaths,
         { opacity: 0 },
@@ -64,7 +56,7 @@ function animateSVG(svgFile: string, containerId: string) {
     .catch((error) => console.error('Error loading the SVG:', error))
 }
 
-// MutationObserver to detect when the class changes
+// MutationObserver to detect when the slide becomes visible
 function observeSlideVisibility(containerId: string) {
   const figureElement = document.querySelector(`#${containerId}`).closest('figure')
 

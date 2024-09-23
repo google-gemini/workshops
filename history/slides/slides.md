@@ -44,13 +44,39 @@ The last comment block of each slide will be treated as slide notes. It will be 
 transition: fade-out
 ---
 
-# LLM Collapse
+# LLM super-intelligence
 
-<figure class="p-5" v-click=1>
+<figure class="p-5" v-click="1">
+  <div class="wrapper w-full max-w-xl mx-auto p-5 overflow-visible"> <!-- Set overflow to visible -->
+    <AnimatableSvg svgFile="/hockey-stick.svg" />
+  </div>
+  <figcaption class="mt-2 text-center text-sm text-gray-500" v-click="2">
+    <strong>Figure 1</strong>: The "hockey-stick" trajectory would be the equivalent of LLMs achieving <span v-mark.highlight.yellow="{ at: 3 }">runaway self-improvement</span>.
+  </figcaption>
+</figure>
+
+---
+
+# LLM saturation
+
+<figure class="p-5" v-click="1">
+  <div class="wrapper w-full max-w-xl mx-auto p-5 overflow-visible"> <!-- Set overflow to visible -->
+    <AnimatableSvg svgFile="/fixed-point.svg" />
+  </div>
+  <figcaption class="mt-2 text-center text-sm text-gray-500" v-click="2">
+    <strong>Figure 2</strong>: This is the scenario where LLMs reach a kind of <span v-mark.highlight.yellow="{ at: 3 }">saturation point</span>—having learned everything they can from human-generated data.
+  </figcaption>
+</figure>
+
+---
+
+# LLM collapse
+
+<figure class="p-5" v-click="1">
   <div class="wrapper w-full max-w-xl mx-auto p-5 overflow-visible"> <!-- Set overflow to visible -->
     <AnimatableSvg svgFile="/decay.svg" />
   </div>
-  <figcaption class="mt-2 text-center text-sm text-gray-500">
-    <strong>Figure 1</strong>: LLM Collapse
+  <figcaption class="mt-2 text-center text-sm text-gray-500" v-click="2">
+    <strong>Figure 3</strong>: This scenario occurs if LLMs start relying heavily on synthetic data, which could lead to <span v-mark.highlight.yellow="{ at: 3 }">model collapse</span>.
   </figcaption>
 </figure>
