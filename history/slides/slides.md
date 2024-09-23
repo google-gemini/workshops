@@ -44,6 +44,20 @@ The last comment block of each slide will be treated as slide notes. It will be 
 transition: fade-out
 ---
 
+# Where did LLMs come from?
+
+<div style="width: 100%; max-width: 1200px; margin: 0 auto; overflow: hidden;">
+  <iframe
+    src='https://cdn.knightlab.com/libs/timeline3/latest/embed/index.html?source=19gFSR7FjiNNvA00PXdJxZRPJYNqdVlEpVQ4V3cMe4Cs&font=Default&lang=en&initial_zoom=2&height=400'
+    style="width: 100%; height: 400px; border: none;"
+    webkitallowfullscreen
+    mozallowfullscreen
+    allowfullscreen>
+  </iframe>
+</div>
+
+---
+
 # LLM super-intelligence
 
 <figure class="p-5" v-click="1">
