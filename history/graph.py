@@ -72,7 +72,12 @@ for performance_function, title, file_name, custom_labels in [
         decay,
         "Decay Over Time",
         "decay.svg",
-        [("Initial Growth", 2.5), ("Decline", 8.75), ("Recovery", 15)],
+        [
+            ("Initial Growth", 0),
+            ("Decline", 2.5),
+            ("Recovery", 8.75),
+            ("Saturation", 15.0),
+        ],
     ),
 ]:
 
@@ -167,6 +172,8 @@ for performance_function, title, file_name, custom_labels in [
     # Display the plot
     ax.grid(True)
     plt.tight_layout()
+
+    file_name = f"slides/public/{file_name}"
 
     # Save the plot as an SVG file
     plt.savefig(file_name, format="svg")
