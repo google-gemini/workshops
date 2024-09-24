@@ -5,12 +5,9 @@ theme: seriph
 # like them? see https://unsplash.com/collections/94734566/slidev
 background: https://cover.sli.dev
 # some information about your slides (markdown enabled)
-title: Welcome to Slidev
+title: LLMs why now?
 info: |
-  ## Slidev Starter Template
-  Presentation slides for developers.
-
-  Learn more at [Sli.dev](https://sli.dev)
+  Past, present, future of LLMs
 # apply unocss classes to the current slide
 class: text-center
 # https://sli.dev/features/drawing
@@ -47,6 +44,10 @@ layout: section
 
 # Where did LLMs come from?
 
+<!--
+Brief history of LLMs; where they came frame; state of the art.
+-->
+
 ---
 
 # Timeline of LLMs
@@ -61,6 +62,7 @@ layout: section
     mozallowfullscreen
     allowfullscreen>
   </iframe>
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 1</strong>: LLMs from paper to production</figcaption>
 </div>
 
 </v-clicks>
@@ -199,6 +201,10 @@ layout: section
 
 # Where are LLMs going?
 
+<!--
+Future of LLMs might fall into one of three scenarios, like the future of the universe (perpetually expanding, contracting, or achieving equilibrium).
+-->
+
 ---
 
 # LLM super-intelligence
@@ -208,9 +214,13 @@ layout: section
     <AnimatableSvg svgFile="/hockey-stick.svg" />
   </div>
   <figcaption class="mt-2 text-center text-sm text-gray-500" v-click="2">
-    <strong>Figure 1</strong>: The "hockey-stick" trajectory would be the equivalent of LLMs achieving <span v-mark.highlight.yellow="{ at: 3 }">runaway self-improvement</span>.
+    <strong>Figure 2</strong>: The "hockey-stick" trajectory would be the equivalent of LLMs achieving <span v-mark.highlight.yellow="{ at: 3 }">runaway self-improvement</span>.
   </figcaption>
 </figure>
+
+<!--
+LLMs achieve super-human intelligence; new physics; inter-planetary travel; etc.
+-->
 
 ---
 
@@ -221,9 +231,13 @@ layout: section
     <AnimatableSvg svgFile="/fixed-point.svg" />
   </div>
   <figcaption class="mt-2 text-center text-sm text-gray-500" v-click="2">
-    <strong>Figure 2</strong>: This is the scenario where LLMs reach a kind of <span v-mark.highlight.yellow="{ at: 3 }">saturation point</span>—having learned everything they can from human-generated data.
+    <strong>Figure 3</strong>: This is the scenario where LLMs reach a kind of <span v-mark.highlight.yellow="{ at: 3 }">saturation point</span>—having learned everything they can from human-generated data.
   </figcaption>
 </figure>
+
+<!--
+LLMs peter out after the saturation of training data.
+-->
 
 ---
 
@@ -234,6 +248,19 @@ layout: section
     <AnimatableSvg svgFile="/decay.svg" />
   </div>
   <figcaption class="mt-2 text-center text-sm text-gray-500" v-click="2">
-    <strong>Figure 3</strong>: This scenario occurs if LLMs start relying heavily on synthetic data, which could lead to <span v-mark.highlight.yellow="{ at: 3 }">model collapse</span>.
+    <strong>Figure 4</strong>: This scenario occurs if LLMs start relying heavily on synthetic data, which could lead to <span v-mark.highlight.yellow="{ at: 3 }">model collapse</span>.
   </figcaption>
+</figure>
+
+<!--
+Due to over-reliance on synthetic data, LLMs collapse.
+-->
+
+---
+
+# Let's connect!
+
+<figure class="p-5">
+  <img src="/linkedin.png" class="w-2/5 mx-auto" />
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 5</strong>: <a href="https://www.linkedin.com/in/peterdanenberg/">linkedin.com/in/peterdanenberg</a></figcaption>
 </figure>
