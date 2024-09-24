@@ -14,6 +14,7 @@
  limitations under the License.
 -->
 
+
 <template>
   <!-- Removed 'h-auto' since 'fixed-height' should define the height -->
   <div :id="containerId" class="svg-container w-full"></div>
