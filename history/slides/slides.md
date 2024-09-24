@@ -211,7 +211,7 @@ Future of LLMs might fall into one of three scenarios, like the future of the un
 
 <figure class="p-5" v-click="1">
   <div class="wrapper w-full max-w-xl mx-auto p-5 overflow-visible"> <!-- Set overflow to visible -->
-    <AnimatableSvg svgFile="/hockey-stick.svg" />
+    <AnimatableSvg svgFile="hockey-stick.svg" />
   </div>
   <figcaption class="mt-2 text-center text-sm text-gray-500" v-click="2">
     <strong>Figure 2</strong>: The "hockey-stick" trajectory would be the equivalent of LLMs achieving <span v-mark.highlight.yellow="{ at: 3 }">runaway self-improvement</span>.
@@ -228,7 +228,7 @@ LLMs achieve super-human intelligence; new physics; inter-planetary travel; etc.
 
 <figure class="p-5" v-click="1">
   <div class="wrapper w-full max-w-xl mx-auto p-5 overflow-visible"> <!-- Set overflow to visible -->
-    <AnimatableSvg svgFile="/fixed-point.svg" />
+    <AnimatableSvg svgFile="fixed-point.svg" />
   </div>
   <figcaption class="mt-2 text-center text-sm text-gray-500" v-click="2">
     <strong>Figure 3</strong>: This is the scenario where LLMs reach a kind of <span v-mark.highlight.yellow="{ at: 3 }">saturation point</span>—having learned everything they can from human-generated data.
@@ -245,7 +245,7 @@ LLMs peter out after the saturation of training data.
 
 <figure class="p-5" v-click="1">
   <div class="wrapper w-full max-w-xl mx-auto p-5 overflow-visible"> <!-- Set overflow to visible -->
-    <AnimatableSvg svgFile="/decay.svg" />
+    <AnimatableSvg svgFile="decay.svg" />
   </div>
   <figcaption class="mt-2 text-center text-sm text-gray-500" v-click="2">
     <strong>Figure 4</strong>: This scenario occurs if LLMs start relying heavily on synthetic data, which could lead to <span v-mark.highlight.yellow="{ at: 3 }">model collapse</span>.
