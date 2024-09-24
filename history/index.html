@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SVG Animation with GSAP</title>
+    <!-- Include GSAP from a CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <!-- RoughEase, ExpoScaleEase and SlowMo are all included in the EasePack file -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/EasePack.min.js"></script>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f5f5f5;
+      }
+      svg {
+        width: 80%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The SVG will be injected here -->
+    <div id="my-svg-container"></div>
+
+    <!-- GSAP script -->
+    <script>
+      // Fetch and embed external SVG
+      fetch("slides/public/fixed-point.svg")
+        .then((response) => response.text())
+        .then((svgContent) => {
+          // Inject the SVG into the container
+          document.getElementById("my-svg-container").innerHTML = svgContent;
+
+          // Get the inserted SVG element by querying it
+          const svgElement = document.querySelector("svg");
+
+          // Select all paths
+          const allPaths = svgElement.querySelectorAll("path");
+
+          // Animate all paths with GSAP using stroke-dasharray and stroke-dashoffset
+          allPaths.forEach((path) => {
+            // Get the length of each path
+            const length = path.getTotalLength();
+
+            // Set up the stroke-dasharray and stroke-dashoffset to "hide" the stroke
+            path.style.strokeDasharray = length;
+            path.style.strokeDashoffset = length;
+
+            // Animate the stroke to look like it's being drawn
+            gsap.to(path, {
+              strokeDashoffset: 0, // Draw the path
+              duration: 10, // You can adjust the duration
+              ease: "power1.inOut", // Smooth easing
+              stagger: 0.2, // Stagger the animation for multiple paths
+            });
+          });
+
+          // Optionally, animate text or paths without stroke with opacity or other effects
+          // Select all paths and filter based on stroke in the style attribute
+          const pathsWithoutStroke = Array.from(
+            svgElement.querySelectorAll("path"),
+          ).filter((path) => {
+            // Check if the stroke is defined in the style attribute
+            const hasStrokeInStyle =
+              window.getComputedStyle(path).stroke !== "none" &&
+              window.getComputedStyle(path).stroke !== "";
+
+            // Return only paths that don't have a stroke in the style attribute
+            return !hasStrokeInStyle;
+          });
+
+          gsap.fromTo(
+            pathsWithoutStroke,
+            { opacity: 0 },
+            {
+              opacity: 1,
+              duration: 10,
+              ease: "power1.out",
+            },
+          );
+        })
+        .catch((error) => console.error("Error loading the SVG:", error));
+    </script>
+  </body>
+</html>

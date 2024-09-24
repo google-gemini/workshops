@@ -72,7 +72,13 @@ def main(argv):
                 accessible, and optimized for performance. Incorporate
                 elements like interactive forms or simulations to
                 demonstrate dynamic content handling relevant to
-                "{query}"."""
+                "{query}".
+
+                Here's the previous version:
+
+                ```html
+                {previous_artifact}
+                ```"""
             )
         ),
         expected_output=(
@@ -107,30 +113,22 @@ def main(argv):
         },
     )
 
-    artifact = crew.kickoff(
-        inputs={
-            "query": dedent(
-                """\
-                two-pendulum physics simulation with controls for
-                length 1, length 2, mass 1, mass 2; and a button to
-                reset the simulation"""
-            )
-        }
-    )
+    previous_artifact = ""
 
-    logging.info(extract_fenced_code(artifact))
+    while user_input := input("artifact> "):
+        new_artifact = crew.kickoff(
+            inputs={
+                "query": user_input,
+                "previous_artifact": previous_artifact,
+            }
+        )
 
-    artifact = crew.kickoff(
-        inputs={
-            "query": dedent(
-                """\
-                same thing, but mass and length are sliders (not text
-                inputs)"""
-            )
-        }
-    )
+        previous_artifact = "\n".join(extract_fenced_code(new_artifact.raw))
 
-    logging.info(extract_fenced_code(artifact))
+        logging.info(previous_artifact)
+
+        with open("index.html", "w") as html:
+            html.write(previous_artifact)
 
 
 if __name__ == "__main__":
