@@ -101,7 +101,7 @@ layout: section
 </v-clicks>
 
 <!--
-Kenya
+Kenya, 1 doctor for every 65,000 people
 -->
 
 ---
@@ -132,7 +132,7 @@ South Sudan
 </v-clicks>
 
 <!--
-Nigeria
+Nigeria, 500 languages
 -->
 
 ---
