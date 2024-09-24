@@ -42,9 +42,16 @@ The last comment block of each slide will be treated as slide notes. It will be 
 
 ---
 transition: fade-out
+layout: section
 ---
 
 # Where did LLMs come from?
+
+---
+
+# Timeline of LLMs
+
+<v-clicks>
 
 <div style="width: 100%; max-width: 1200px; margin: 0 auto; overflow: hidden;">
   <iframe
@@ -55,6 +62,142 @@ transition: fade-out
     allowfullscreen>
   </iframe>
 </div>
+
+</v-clicks>
+
+<!--
+Tay was not an LLM; but became a warning for reputational risk
+of chatbots.
+
+Transformers paper, paved the way for LLMs; came out in 2017.
+
+Google announces first true LLM, LaMDA, in 2021; what happened in the
+mean time? Working on scaling; taking a paper and productionizing a
+lot of work: infrastructure, data, efficient training algorithms,
+development of new chips, etc.
+
+ChatGPT in 2022; and Gemini in 2023. What a difference a couple months
+makes!
+-->
+
+---
+layout: section
+---
+
+# What can LLMs do now?
+
+---
+
+# Medical triage in rural areas
+
+<v-clicks>
+
+- In Turkana County, LLMs can guide rural health workers in diagnosing common
+  diseases like malaria via mobile apps, reducing the need for travel to distant
+  clinics.
+
+</v-clicks>
+
+<!--
+Kenya
+-->
+
+---
+
+# Preservation of languages
+
+<v-clicks>
+
+- LLMs trained on Dinka can create educational tools and translations, helping
+  preserve the language for future generations.
+
+</v-clicks>
+
+<!--
+South Sudan
+-->
+
+---
+
+# Multilingual government communication
+
+<v-clicks>
+
+- An LLM can translate voter education materials into Yoruba, Igbo, and Hausa,
+  making government information accessible to non-English speakers during
+  elections.
+
+</v-clicks>
+
+<!--
+Nigeria
+-->
+
+---
+
+# Disaster response
+
+<v-clicks>
+
+- LLMs can provide flood warnings and evacuation routes in both Portuguese and
+  Umbundu, ensuring rural communities stay informed during the rainy season.
+
+</v-clicks>
+
+<!--
+Angola
+-->
+
+---
+
+# Agricultural support
+
+<v-clicks>
+
+- In Southern Province, LLMs could provide drought-resistant crop advice in
+  Tonga, helping farmers sustain maize production during dry seasons.
+
+</v-clicks>
+
+<!--
+Zambia
+-->
+
+---
+
+# Education and remote learning
+
+<v-clicks>
+
+- LLMs could offer math and science lessons in Bajan Creole, supporting students
+  in rural areas with remote learning resources.
+
+</v-clicks>
+
+<!--
+Barbados
+-->
+
+---
+
+# Legal document simplification
+
+<v-clicks>
+
+- LLMs could explain land ownership laws in Lozi, helping rural communities
+  navigate the process of obtaining legal land titles.
+
+</v-clicks>
+
+<!--
+Zambia
+-->
+
+---
+layout: section
+---
+
+# Where are LLMs going?
 
 ---
 
