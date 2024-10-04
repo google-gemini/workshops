@@ -5,7 +5,7 @@ theme: seriph
 # like them? see https://unsplash.com/collections/94734566/slidev
 background: https://cover.sli.dev
 # some information about your slides (markdown enabled)
-title: Welcome to Slidev
+title: Gemini retrospective
 info: |
   ## Slidev Starter Template
   Presentation slides for developers.
@@ -227,6 +227,29 @@ layout: two-cols-header
 <figure class="p-5">
   <img src="/cost.png" class="w-4/5 mx-auto" />
   <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 8</strong>: <a href="https://klutometis.github.io/workshops/cost">klutometis.github.io/workshops/cost</a></figcaption>
+</figure>
+
+---
+layout: two-cols-header
+---
+
+# Video games
+
+::left::
+
+<v-clicks>
+
+- Gemini can generate playable Super Mario Brothers levels.
+- The levels get more sophisticated with more data.
+- Gemini has the last laugh.
+
+</v-clicks>
+
+::right::
+
+<figure class="p-5">
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/6fCr_C1UuCs?si=bXx6-QQky9q55vDq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 9</strong>: Gemini generates Super Mario Brothers levels.</figcaption>
 </figure>
 
 ---
