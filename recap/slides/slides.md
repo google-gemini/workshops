@@ -239,6 +239,29 @@ layout: two-cols-header
 
 <v-clicks>
 
+- Gemini is competitive with Claude on zero-shot artifacts (snake, tetris, etc.).
+- Responds well to screenshots / videos for followups.
+- Are artifacts more than toys?
+
+</v-clicks>
+
+::right::
+
+<figure class="p-5">
+  <img src="/artifacts.png" class="w-4/5 mx-auto" />
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 9</strong>: <a href="https://google-gemini.github.io/workshops/artifacts">google-gemini.github.io/workshops/artifacts</a></figcaption>
+</figure>
+
+---
+layout: two-cols-header
+---
+
+# Video games
+
+::left::
+
+<v-clicks>
+
 - Gemini can generate playable Super Mario Brothers levels.
 - The levels get more sophisticated with more data.
 - Gemini has the last laugh.
@@ -249,7 +272,7 @@ layout: two-cols-header
 
 <figure class="p-5">
   <iframe width="560" height="315" src="https://www.youtube.com/embed/6fCr_C1UuCs?si=bXx6-QQky9q55vDq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 9</strong>: Gemini generates Super Mario Brothers levels.</figcaption>
+  <figcaption class="mt-2 text-center text-sm text-gray-500"><strong>Figure 10</strong>: Gemini generates Super Mario Brothers levels.</figcaption>
 </figure>
 
 ---
