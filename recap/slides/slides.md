@@ -233,7 +233,7 @@ layout: two-cols-header
 layout: two-cols-header
 ---
 
-# Video games
+# Artifacts
 
 ::left::
 
