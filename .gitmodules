@@ -1,0 +1,6 @@
+[submodule "bricks/lib/shflags"]
+	path = bricks/lib/shflags
+	url = https://github.com/kward/shflags.git
+[submodule "bricks/lib/bashlog"]
+	path = bricks/lib/bashlog
+	url = https://github.com/Zordrak/bashlog.git
