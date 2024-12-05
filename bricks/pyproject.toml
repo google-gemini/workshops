@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "bricks"
+version = "0.1.0"
+description = ""
+authors = ["Peter Danenberg"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+langchain-google-vertexai = { version = "^2.0.8", allow-prereleases = true }
+python = ">=3.10,<=3.13"
+selenium = "^4.26.1"
+absl-py = "^2.1.0"
+pydantic = ">=2.9,<2.10"
+crewai = "^0.83.0"
+langchain-core = "^0.3.21"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
