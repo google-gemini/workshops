@@ -120,6 +120,7 @@ jobs:
           npm run build -- --base /workshops/bricks
 
       - name: Create deployment root for bricks
+        if: steps.build_bricks.outcome == 'success'
         run: |
           mkdir -pv root
           cp -frv ./bricks/slides/dist ./root/bricks
