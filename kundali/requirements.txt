@@ -975,6 +975,7 @@ httpx[http2]==0.27.0 \
     #   cohere
     #   fastapi
     #   groq
+    #   langsmith
     #   openai
     #   qdrant-client
 httpx-sse==0.4.0 \
@@ -1130,9 +1131,9 @@ lancedb==0.5.7 \
     --hash=sha256:6169966f715ef530be545950e1aaf9f3f160967e4ba7456cd67c9f30f678095d \
     --hash=sha256:878914b493f91d09a77b14f1528104741f273234cbdd6671be705f447701fd51
     # via crewai-tools
-langchain==0.2.11 \
-    --hash=sha256:5a7a8b4918f3d3bebce9b4f23b92d050699e6f7fb97591e8941177cf07a260a2 \
-    --hash=sha256:d7a9e4165f02dca0bd78addbc2319d5b9286b5d37c51d784124102b57e9fd297
+langchain==0.2.17 \
+    --hash=sha256:5a99ce94aae05925851777dba45cbf2c475565d1e91cbe7d82c5e329d514627e \
+    --hash=sha256:a97a33e775f8de074370aecab95db148b879c794695d9e443c95457dce5eb525
     # via
     #   crewai
     #   crewai-tools
@@ -1142,16 +1143,16 @@ langchain-cohere==0.1.9 \
     --hash=sha256:549620d23bc3d77f62d1045787095fe2c1cfa233dba69455139f9a2f65f952fa \
     --hash=sha256:96d6a15125797319474ac84b54024e5024f3f5fc45032ebf228d95d6998c9b13
     # via embedchain
-langchain-community==0.2.10 \
-    --hash=sha256:3a0404bad4bd07d6f86affdb62fb3d080a456c66191754d586a409d9d6024d62 \
-    --hash=sha256:9f4d1b5ab7f0b0a704f538e26e50fce45a461da6d2bf6b7b636d24f22fbc088a
+langchain-community==0.2.19 \
+    --hash=sha256:651d761f2d37d63f89de75d65858f6c7f6ea99c455622e9c13ca041622dad0c5 \
+    --hash=sha256:74f8db6992d03668c3d82e0d896845c413d167dad3b8e349fb2a9a57fd2d1396
     # via
     #   -r requirements.in
     #   embedchain
     #   langchain-experimental
-langchain-core==0.2.23 \
-    --hash=sha256:ac8165f283d8f5214576ffc38387106ef0de7eb8d2c52576d06e8dd3285294b0 \
-    --hash=sha256:ef0b4184b37e356a27182514aedcc8c41ffacbd6348a801bc775c1ce1f608637
+langchain-core==0.2.43 \
+    --hash=sha256:42c2ef6adedb911f4254068b6adc9eb4c4075f6c8cb3d83590d3539a815695f5 \
+    --hash=sha256:619601235113298ebf8252a349754b7c28d3cf7166c7c922da24944b78a9363a
     # via
     #   langchain
     #   langchain-cohere
@@ -1176,9 +1177,9 @@ langchain-text-splitters==0.2.2 \
     --hash=sha256:1c80d4b11b55e2995f02d2a326c0323ee1eeff24507329bb22924e420c782dff \
     --hash=sha256:a1e45de10919fa6fb080ef0525deab56557e9552083600455cb9fa4238076140
     # via langchain
-langsmith==0.1.93 \
-    --hash=sha256:285b6ad3a54f50fa8eb97b5f600acc57d0e37e139dd8cf2111a117d0435ba9b4 \
-    --hash=sha256:811210b9d5f108f36431bd7b997eb9476a9ecf5a2abd7ddbb606c1cdcf0f43ce
+langsmith==0.1.142 \
+    --hash=sha256:f639ca23c9a0bb77af5fb881679b2f66ff1f21f19d0bebf4e51375e7585a8b38 \
+    --hash=sha256:f8a84d100f3052233ff0a1d66ae14c5dfc20b7e41a1601de011384f16ee6cb82
     # via
     #   langchain
     #   langchain-community
@@ -2348,12 +2349,17 @@ requests==2.32.3 \
     #   opentelemetry-exporter-otlp-proto-http
     #   posthog
     #   requests-oauthlib
+    #   requests-toolbelt
     #   tiktoken
     #   together
 requests-oauthlib==2.0.0 \
     --hash=sha256:7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36 \
     --hash=sha256:b3dffaebd884d8cd778494369603a9e7b58d29111bf6b41bdc2dcd87203af4e9
     # via kubernetes
+requests-toolbelt==1.0.0 \
+    --hash=sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6 \
+    --hash=sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06
+    # via langsmith
 retry==0.9.2 \
     --hash=sha256:ccddf89761fa2c726ab29391837d4327f819ea14d244c232a1d24c67a2f98606 \
     --hash=sha256:f8bfa8b99b69c4506d6f5bd3b0aabf77f98cdb17f3c9fc3f5ca820033336fba4
@@ -2722,6 +2728,7 @@ typing-extensions==4.12.2 \
     #   google-generativeai
     #   groq
     #   huggingface-hub
+    #   langchain-core
     #   openai
     #   opentelemetry-sdk
     #   pydantic
