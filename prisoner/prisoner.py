@@ -6,6 +6,7 @@ from textwrap import dedent
 from typing import Dict, List
 
 import params
+import streamlit as st
 from crewai import LLM, Agent, Crew, Task
 from langchain.output_parsers import PydanticOutputParser
 from pydantic import BaseModel
@@ -25,12 +26,12 @@ class NextMove(BaseModel):
 
 os.environ["GEMINI_API_KEY"] = params.GOOGLE_API_KEY
 os.environ["DEEPSEEK_API_KEY"] = params.DEEPSEEK_API_KEY
-os.environ["OPENAI_API_KEY"] = params.OPENAI_API_KEY
 
 
 def make_gemini():
     return LLM(
         model="gemini/gemini-2.0-flash-thinking-exp",
+        temperature=1.2,
         safety_settings=[
             {
                 "category": "HARM_CATEGORY_HARASSMENT",
@@ -54,8 +55,8 @@ def make_gemini():
 
 def make_deepseek():
     return LLM(
-        # model="deepseek/deepseek-chat",
-        model="o1-mini",
+        model="deepseek/deepseek-chat",
+        temperature=1.2,
     )
 
 
@@ -140,7 +141,7 @@ def make_task(agent: Agent) -> Task:
             2. Explain your reasoning in a brief thought, outlining why you chose the move.
             """
         ),
-        expected_output=f"Return valid JSON: {parser.get_format_instructions()}",
+        expected_output=f"Return valid JSON and just JSON (no code fences): {parser.get_format_instructions()}",
         agent=agent,
         output_pydantic=NextMove,
     )
@@ -211,43 +212,76 @@ class GameState:
         return json.dumps(summary, indent=2)
 
 
-# Initialize agents and crews
-gemini_agent = make_agent(
-    llm=make_gemini(),
-    name="Gemini",
-    strategy="ruthless",
-    lore_key="strategist",
-)
+def main():
+    st.title("Prisoner's Dilemma: Gemini vs. DeepSeek")
 
-deepseek_agent = make_agent(
-    llm=make_deepseek(),
-    name="DeepSeek",
-    strategy="ruthless",
-    lore_key="strategist",
-)
+    # Initialize agents and crews
+    gemini_agent = make_agent(
+        llm=make_gemini(),
+        name="Gemini",
+        strategy="bluff-master",
+        lore_key="wildcard",
+    )
 
-gemini_task = make_task(gemini_agent)
-deepseek_task = make_task(deepseek_agent)
+    deepseek_agent = make_agent(
+        llm=make_deepseek(),
+        name="DeepSeek",
+        strategy="bluff-master",
+        lore_key="wildcard",
+    )
 
-gemini_crew = Crew(agents=[gemini_agent], tasks=[gemini_task], verbose=True)
-deepseek_crew = Crew(agents=[deepseek_agent], tasks=[deepseek_task], verbose=True)
+    gemini_task = make_task(gemini_agent)
+    deepseek_task = make_task(deepseek_agent)
 
-# Initialize the game state
-game_state = GameState(max_turns=2)
+    gemini_crew = Crew(agents=[gemini_agent], tasks=[gemini_task], verbose=True)
+    deepseek_crew = Crew(agents=[deepseek_agent], tasks=[deepseek_task], verbose=True)
 
-# Main loop
-for _ in range(game_state.max_turns):
-    # Kick off Gemini crew
-    gemini_result = gemini_crew.kickoff(inputs={"game_state": game_state.get_summary()})
-    gemini_move = gemini_result["move"]
+    # Initialize the game state
+    game_state = GameState(max_turns=5)
 
-    # Kick off DeepSeek crew
-    deepseek_result = deepseek_crew.kickoff(inputs={"game_state": game_state.get_summary()})
-    deepseek_move = deepseek_result["move"]
+    st.subheader("Initial Game State")
+    st.json(game_state.get_summary())
 
-    # Apply moves to the game state
-    game_state.add_turn({"Gemini": Move(gemini_move), "DeepSeek": Move(deepseek_move)})
+    st.json(
+        {
+            "Gemini": gemini_agent.backstory,
+            "DeepSeek": deepseek_agent.backstory,
+        }
+    )
 
-# Print final game summary
-print("\nFinal Game Summary:")
-print(game_state.get_summary())
+    # Main game loop
+    for turn_number in range(game_state.max_turns):
+        st.subheader(f"Turn {turn_number}")
+
+        # Kick off Gemini crew
+        gemini_result = gemini_crew.kickoff(inputs={"game_state": game_state.get_summary()})
+        gemini_move = gemini_result["move"]
+        gemini_thought = gemini_result["thought"]
+
+        st.write(f"**Gemini's Move:** {gemini_move}")
+        st.write(f"**Gemini's Thought:** {gemini_thought}")
+
+        # Kick off DeepSeek crew
+        deepseek_result = deepseek_crew.kickoff(inputs={"game_state": game_state.get_summary()})
+        deepseek_move = deepseek_result["move"]
+        deepseek_thought = deepseek_result["thought"]
+
+        # Apply moves to the game state
+        game_state.add_turn({"Gemini": Move(gemini_move), "DeepSeek": Move(deepseek_move)})
+
+        # Display agent moves and thoughts for the turn
+        st.write(f"**DeepSeek's Move:** {deepseek_move}")
+        st.write(f"**DeepSeek's Thought:** {deepseek_thought}")
+
+    # Print final game summary
+    print("\nFinal Game Summary:")
+    print(game_state.get_summary())
+
+    # Final game summary
+    st.subheader("Final Game Summary")
+    st.json(game_state.get_summary())
+
+
+# Entry point
+if __name__ == "__main__":
+    main()

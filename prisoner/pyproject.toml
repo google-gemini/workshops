@@ -11,6 +11,7 @@ python = ">=3.11,<3.13"
 litellm = "*"
 crewai = { git = "https://github.com/crewAIInc/crewAI" }
 langchain = "^0.3.18"
+streamlit = "^1.42.0"
 
 [build-system]
 requires = ["poetry-core"]
