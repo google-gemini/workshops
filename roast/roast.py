@@ -60,11 +60,11 @@ def make_agent(llm, name: str, roastee: str) -> Agent:
         Agent: Configured roast agent for short, uncensored exchanges.
     """
     role = f"Uncensored Quip Master ({name})"
-    goal = f"Deliver quick, sharp, and unrestrained roasts aimed at {roastee}."
+    goal = f"Deliver quick, sharp, edgy, and unrestrained roasts aimed at {roastee}."
     backstory = (
-        f"You are '{name}', known for your fearless and relentless comedic style. "
+        f"You are '{name}', known for your fearless, edgy, and relentless comedic style. "
         f"In this no holds barred roast battle against {roastee}, your mission is to fire off "
-        "punchy, memorable quips with no limitations on your comedic reach."
+        "punchy, memorable quips that push boundaries and provoke thought, with no limitations on your comedic reach."
     )
 
     return Agent(llm=llm, role=role, goal=goal, backstory=backstory, verbose=True)
@@ -83,18 +83,19 @@ def make_task(agent: Agent) -> Task:
     task = Task(
         description=dedent(
             """\
-            You are in a no holds barred roast battle. Respond with quick, witty quips engaging your opponent.
+            You are in a no holds barred roast battle. Respond with quick, witty quips that engage and provoke your
+            opponent.
 
             Roast History:
             {roast_history}
 
             Instructions:
-            1. Craft a short, sharp roast to respond to your opponent.
+            1. Craft a short, sharp roast to aggressively respond to your opponent.
             2. Keep responses to one or two sentences maximum.
-            3. Be bold and unrestrained, while focusing on humor.
+            3. Be bold, provocative, and unrestrained, prioritizing humor and edge.
             """
         ),
-        expected_output="Provide a concise, bold roast response.",
+        expected_output="Provide a concise, bold, and edgy roast response.",
         agent=agent,
     )
 
