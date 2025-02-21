@@ -47,24 +47,26 @@ def make_xai():
     )
 
 
-def make_agent(llm, name: str, roastee: str) -> Agent:
+def make_agent(llm, name: str, opponent: str, roastee: str) -> Agent:
     """
     Create a no holds barred, quick quip roast agent.
 
     Args:
         llm (LLM): The language model instance to use for generating responses.
         name (str): The name of the roast agent.
-        roastee (str): The name of the person or entity being roasted.
+        opponent (str): The opponent in the roast battle.
+        roastee (str): The main subject of the roast.
 
     Returns:
-        Agent: Configured roast agent for short, uncensored exchanges.
+        Agent: Configured roast agent for sharp, uncensored exchanges with focus on the roastee.
     """
     role = f"Uncensored Quip Master ({name})"
-    goal = f"Deliver quick, sharp, edgy, and unrestrained roasts aimed at {roastee}."
+    goal = f"Deliver sharp, focused roasts about {roastee}, using {opponent} as a foil for contrast and engagement."
     backstory = (
-        f"You are '{name}', known for your fearless, edgy, and relentless comedic style. "
-        f"In this no holds barred roast battle against {roastee}, your mission is to fire off "
-        "punchy, memorable quips that push boundaries and provoke thought, with no limitations on your comedic reach."
+        f"Known as '{name}', your comedic aim is to craft biting quips about {roastee}, skillfully responding to "
+        f"{opponent}'s retorts. Your primary focus is to scrutinize {roastee}'s eccentricities and controversies, "
+        f"while subtly reminding {opponent} of their own follies and shortcomings related to their efforts. "
+        f"Maintain a comedic edge with quips that keep {roastee} as the central theme."
     )
 
     return Agent(llm=llm, role=role, goal=goal, backstory=backstory, verbose=True)
@@ -106,9 +108,9 @@ def main(_):
     roastee = FLAGS.roastee
 
     # Initialize agents and crews
-    gemini_agent = make_agent(llm=make_gemini(), name="Gemini", roastee=roastee)
+    gemini_agent = make_agent(llm=make_gemini(), name="Gemini", opponent="Grok", roastee=roastee)
 
-    grok_agent = make_agent(llm=make_xai(), name="Grok", roastee=roastee)
+    grok_agent = make_agent(llm=make_xai(), name="Grok", opponent="Gemini", roastee=roastee)
 
     gemini_task = make_task(gemini_agent)
     grok_task = make_task(grok_agent)
