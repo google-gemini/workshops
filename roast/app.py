@@ -3,7 +3,7 @@ from crewai import Crew
 
 import roast
 
-st.title("AI Roast Battle App")
+st.title("AI Roast Battle App: Gemini vs. Grok")
 
 
 def format_history(roast_history):
@@ -72,10 +72,8 @@ def main():
             )
 
             # Judge's decision in expandable sections
-            with st.expander("Judge's Winner"):
+            with st.expander("Judge's Decision (ChatGPT)"):
                 st.write(f"**Winner**: {judge_result.pydantic.winner}")
-
-            with st.expander("Judge's Thought"):
                 st.write(f"**Thought**: {judge_result.pydantic.thought}")
 
             st.write("---")  # Separator after the judge's decision
