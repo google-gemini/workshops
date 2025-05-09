@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "llm-smashbot"
+version = "0.1.0"
+description = "LLM-controlled virtual gamepad"
+authors = ["Your Name"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+python-uinput = "^1.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
