@@ -97,9 +97,6 @@ def wait(frames):
         yield (f, fn)
 
 
-# === Move Library (Comprehensive Set) ===
-
-
 def move_left(frames=8):
     yield (0, move_axis('X', AXIS_LEFT))
     yield (frames, move_axis('X', AXIS_CENTER))
@@ -120,7 +117,7 @@ def down(frames=8):
     yield (frames, move_axis('Y', AXIS_CENTER))
 
 
-def dash(direction='right', dash_frames=4):
+def dash(direction='right', dash_frames=6):
     axis = 'X'
     val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
     yield (0, move_axis(axis, val))
@@ -153,7 +150,7 @@ def guard():
 
 
 def escape_roll(direction='right'):
-    yield from guard()
+    yield (0, press('Z'))
     axis = 'X'
     val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
     yield (2, move_axis(axis, val))
@@ -169,44 +166,44 @@ def strong_attack(direction='right'):
     axis = 'X'
     val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
     yield (0, move_axis(axis, val))
-    yield (2, press('A'))
-    yield (8, release('A'))
-    yield (9, move_axis(axis, AXIS_CENTER))
+    yield (4, press('A'))
+    yield (13, release('A'))
+    yield (14, move_axis(axis, AXIS_CENTER))
 
 
 def high_attack():
     yield (0, move_axis('Y', AXIS_UP))
-    yield (2, press('A'))
-    yield (8, release('A'))
-    yield (9, move_axis('Y', AXIS_CENTER))
+    yield (4, press('A'))
+    yield (13, release('A'))
+    yield (14, move_axis('Y', AXIS_CENTER))
 
 
 def low_attack():
     yield (0, move_axis('Y', AXIS_DOWN))
-    yield (2, press('A'))
-    yield (8, release('A'))
-    yield (9, move_axis('Y', AXIS_CENTER))
+    yield (4, press('A'))
+    yield (13, release('A'))
+    yield (14, move_axis('Y', AXIS_CENTER))
 
 
 def dashing_attack(direction='right'):
-    yield from dash(direction)
-    yield (2, press('A'))
-    yield (8, release('A'))
+    yield from dash(direction, dash_frames=5)
+    yield (6, press('A'))
+    yield (14, release('A'))
 
 
 def jumping_attack():
     yield from jump()
-    yield (2, press('A'))
-    yield (8, release('A'))
+    yield (4, press('A'))
+    yield (14, release('A'))
 
 
 def forward_attack(direction='right'):
     axis = 'X'
     val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
     yield (0, move_axis(axis, val))
-    yield (2, press('A'))
-    yield (8, release('A'))
-    yield (9, move_axis(axis, AXIS_CENTER))
+    yield (4, press('A'))
+    yield (13, release('A'))
+    yield (14, move_axis(axis, AXIS_CENTER))
 
 
 def backward_attack(direction='left'):
@@ -215,42 +212,42 @@ def backward_attack(direction='left'):
 
 def upward_attack():
     yield (0, move_axis('Y', AXIS_UP))
-    yield (2, press('A'))
-    yield (8, release('A'))
-    yield (9, move_axis('Y', AXIS_CENTER))
+    yield (4, press('A'))
+    yield (13, release('A'))
+    yield (14, move_axis('Y', AXIS_CENTER))
 
 
 def downward_attack():
     yield (0, move_axis('Y', AXIS_DOWN))
-    yield (2, press('A'))
-    yield (8, release('A'))
-    yield (9, move_axis('Y', AXIS_CENTER))
+    yield (4, press('A'))
+    yield (13, release('A'))
+    yield (14, move_axis('Y', AXIS_CENTER))
 
 
 def forward_smash_attack(direction='right'):
     axis = 'X'
     val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
     yield (0, move_axis(axis, val))
-    yield (1, move_axis(axis, AXIS_CENTER))
-    yield (2, press('A'))
-    yield (12, release('A'))
-    yield (13, move_axis(axis, AXIS_CENTER))
+    yield (3, move_axis(axis, AXIS_CENTER))
+    yield (6, press('A'))
+    yield (23, release('A'))
+    yield (24, move_axis(axis, AXIS_CENTER))
 
 
 def high_smash_attack():
     yield (0, move_axis('Y', AXIS_UP))
-    yield (1, move_axis('Y', AXIS_CENTER))
-    yield (2, press('A'))
-    yield (12, release('A'))
-    yield (13, move_axis('Y', AXIS_CENTER))
+    yield (3, move_axis('Y', AXIS_CENTER))
+    yield (6, press('A'))
+    yield (23, release('A'))
+    yield (24, move_axis('Y', AXIS_CENTER))
 
 
 def low_smash_attack():
     yield (0, move_axis('Y', AXIS_DOWN))
-    yield (1, move_axis('Y', AXIS_CENTER))
-    yield (2, press('A'))
-    yield (12, release('A'))
-    yield (13, move_axis('Y', AXIS_CENTER))
+    yield (3, move_axis('Y', AXIS_CENTER))
+    yield (6, press('A'))
+    yield (23, release('A'))
+    yield (24, move_axis('Y', AXIS_CENTER))
 
 
 def special_attack_ground():
@@ -260,42 +257,42 @@ def special_attack_ground():
 
 def special_attack_air():
     yield from jump()
-    yield (2, press('B'))
-    yield (10, release('B'))
+    yield (4, press('B'))
+    yield (14, release('B'))
 
 
 def up_special():
     yield (0, move_axis('Y', AXIS_UP))
-    yield (1, press('B'))
-    yield (10, release('B'))
-    yield (11, move_axis('Y', AXIS_CENTER))
+    yield (4, press('B'))
+    yield (16, release('B'))
+    yield (17, move_axis('Y', AXIS_CENTER))
 
 
 def down_special():
     yield (0, move_axis('Y', AXIS_DOWN))
-    yield (1, press('B'))
-    yield (10, release('B'))
-    yield (11, move_axis('Y', AXIS_CENTER))
+    yield (4, press('B'))
+    yield (16, release('B'))
+    yield (17, move_axis('Y', AXIS_CENTER))
 
 
 def left_special():
     yield (0, move_axis('X', AXIS_LEFT))
-    yield (1, press('B'))
-    yield (10, release('B'))
-    yield (11, move_axis('X', AXIS_CENTER))
+    yield (4, press('B'))
+    yield (16, release('B'))
+    yield (17, move_axis('X', AXIS_CENTER))
 
 
 def right_special():
     yield (0, move_axis('X', AXIS_RIGHT))
-    yield (1, press('B'))
-    yield (10, release('B'))
-    yield (11, move_axis('X', AXIS_CENTER))
+    yield (4, press('B'))
+    yield (16, release('B'))
+    yield (17, move_axis('X', AXIS_CENTER))
 
 
 def jump_attack():
     yield from jump()
-    yield (1, press('A'))
-    yield (10, release('A'))
+    yield (4, press('A'))
+    yield (14, release('A'))
 
 
 def attack_only():
@@ -424,10 +421,10 @@ def dummy_planner(move_queue, cancel_event):
     i = 0
     while True:
         time.sleep(1.5)
-        logging.info(f'Planner: Attempting to enqueue jump_attack()')
+        logging.info(f'Planner: Attempting to enqueue dashing_attack()')
         move = Move(
-            name='jump_attack',
-            generator=jump_attack(),
+            name='dashing_attack',
+            generator=dashing_attack(),
             urgent=False if i % 2 == 0 else True,
         )
         enqueue_move(move, move_queue, cancel_event)
