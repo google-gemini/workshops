@@ -8,6 +8,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.8"
 python-uinput = "^1.0.1"
+absl-py = "^2.2.2"
 
 
 [build-system]
