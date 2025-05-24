@@ -1,46 +1,30 @@
-# Stage 1: Build Poetry environment
-FROM python:3.9-slim AS builder
-
-# Install build tools and Python headers needed for C extensions
-# THIS IS THE KEY FIX SECTION
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    python3-dev \
-    libudev-dev \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Install poetry
-RUN pip install --no-cache-dir poetry
-
-# Configure poetry to create venv in project directory for easier copying
-RUN poetry config virtualenvs.in-project true
-
-# Copy dependency definition files
-COPY pyproject.toml poetry.lock ./
-
-# Install Python dependencies (excluding development ones)
-# The --sync option deprecation is a warning, not a fatal error for now.
-# Added --without dev as it's good practice.
-RUN poetry install --no-root --without dev --no-interaction --no-ansi --sync
-
-# Stage 2: Main application image
-FROM ubuntu:22.04
+FROM ubuntu:latest
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV POETRY_HOME="/opt/poetry"
+ENV PATH="$POETRY_HOME/bin:$PATH"
 
-# Install system dependencies
+# Install system dependencies including Python, build tools, and runtime needs
+# This will use the default python3, python3-dev, etc. from ubuntu:latest
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Python (default for the Ubuntu base) and related tools
     python3 \
+    python3-dev \
+    python3-venv \
     python3-pip \
+    # Build tools for C extensions (like python-uinput)
+    build-essential \
+    libudev-dev \
+    # Flatpak and X environment
     flatpak \
     xvfb \
     xauth \
     xorg \
+    # Runtime for uinput
     libudev1 \
+    # Tesseract
     tesseract-ocr \
     # Runtime libraries for mss (screenshots)
     libx11-6 \
@@ -48,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrandr2 \
     libxinerama1 \
     libxfixes3 \
-    # For run.sh (entr & git ls-files). Consider simplifying run.sh for Docker.
+    # For run.sh (if still used as is) - consider simplifying run.sh
     entr \
     git \
     # Utilities
@@ -56,10 +40,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Poetry system-wide (using the system's default python3)
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
 # Install RetroArch and N64 core using Flatpak SYSTEM-WIDE
 RUN flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 RUN flatpak install -y flathub org.libretro.RetroArch
-# Install Parallel N64 core (or Mupen64PlusNext if preferred)
 RUN flatpak install -y flathub org.libretro.RetroArch.Core.ParallelN64
 # Example: RUN flatpak install -y flathub org.libretro.RetroArch.Core.Mupen64PlusNext
 
@@ -69,17 +55,21 @@ ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 RUN groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-    # Add user to video and input groups for potential hardware access
     && usermod -aG video $USERNAME \
     && usermod -aG input $USERNAME
 
 USER $USERNAME
 WORKDIR /home/$USERNAME/app
 
-# Copy Python environment from builder stage
-COPY --from=builder --chown=$USERNAME:$USERNAME /app/.venv /home/$USERNAME/app/.venv
-# Add the venv to PATH
-ENV PATH="/home/$USERNAME/app/.venv/bin:$PATH"
+# Configure poetry to create venv in project directory (as user)
+RUN poetry config virtualenvs.in-project true
+
+# Copy dependency definition files
+COPY --chown=$USERNAME:$USERNAME pyproject.toml poetry.lock ./
+
+# Install Python dependencies (as user)
+# Poetry will use the Python version active in the PATH, which should be the system's default python3
+RUN poetry install --no-root --no-interaction --no-ansi --sync
 
 # Copy application code (ensure ownership by the non-root user)
 COPY --chown=$USERNAME:$USERNAME . .
@@ -87,7 +77,6 @@ COPY --chown=$USERNAME:$USERNAME . .
 # Create ROMs directory.
 RUN mkdir -p /home/$USERNAME/var/roms
 # IMPORTANT: You need to ADD your ROM file here during build, or mount it as a volume.
-# Make sure the ROM filename here matches what's in your virtual_controller.py script.
 # Example:
 # ADD --chown=$USERNAME:$USERNAME path/to/your/rom/Super\ Smash\ Bros.\ \(U\)\ \[!\].z64 /home/$USERNAME/var/roms/"Super Smash Bros. (U) [!].z64"
 
