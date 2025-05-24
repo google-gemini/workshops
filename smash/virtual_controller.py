@@ -1,32 +1,52 @@
+import base64
+import os
 import queue
 import signal
 import sys
 import threading
 import time
 from typing import Callable
-from absl import app, logging
+
+import mss
+import mss.tools
 import uinput
+from absl import app, logging
+from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
+from langchain_core.messages import HumanMessage
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.image import ImagePromptTemplate
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.tools import tool
+from retroarch import (  # Assuming retroarch.py is accessible
+    RetroArchController,
+    list_cores,
+    list_roms,
+    load_rom,
+    load_state,
+)
+
+from utils.model import make_gemini
 
 # === Controller Definition ===
 
 BUTTONS = {
-    'A': uinput.BTN_A,
-    'B': uinput.BTN_B,
-    'X': uinput.BTN_X,
-    'Y': uinput.BTN_Y,
-    'TL': uinput.BTN_TL,
-    'TR': uinput.BTN_TR,
-    'SELECT': uinput.BTN_SELECT,
-    'START': uinput.BTN_START,
-    'THUMBL': uinput.BTN_THUMBL,
-    'THUMBR': uinput.BTN_THUMBR,
-    'L': uinput.BTN_TL,  # Aliases for custom buttons; adjust as needed
-    'R': uinput.BTN_TR,
-    'Z': uinput.BTN_SELECT,
+    "A": uinput.BTN_A,
+    "B": uinput.BTN_X,  # Have to map B to X for special attack
+    "X": uinput.BTN_B,  # Vice versa
+    "Y": uinput.BTN_Y,
+    "TL": uinput.BTN_TL,
+    "TR": uinput.BTN_TR,
+    "SELECT": uinput.BTN_SELECT,
+    "START": uinput.BTN_START,
+    "THUMBL": uinput.BTN_THUMBL,
+    "THUMBR": uinput.BTN_THUMBR,
+    "L": uinput.BTN_TL,  # Aliases for custom buttons; adjust as needed
+    "R": uinput.BTN_TR,
+    "Z": uinput.BTN_SELECT,
 }
 AXES = {
-    'X': uinput.ABS_X,
-    'Y': uinput.ABS_Y,
+    "X": uinput.ABS_X,
+    "Y": uinput.ABS_Y,
 }
 
 AXIS_CENTER = 128
@@ -39,6 +59,12 @@ uinput_events = list(BUTTONS.values()) + [
     (uinput.ABS_X + (0, 255, 0, 0)),
     (uinput.ABS_Y + (0, 255, 0, 0)),
 ]
+
+
+def image_to_base64(png_file: str) -> str:
+    with open(png_file, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
 
 # === Move Object ===
 
@@ -54,7 +80,7 @@ class Move:
         return iter(self.generator)
 
     def __repr__(self):
-        return f'<Move name={self.name} urgent={self.urgent}>'
+        return f"<Move name={self.name} urgent={self.urgent}>"
 
 
 # === Action Primitives ===
@@ -62,28 +88,28 @@ class Move:
 
 def press(button):
     def fn(d):
-        logging.info(f'Press {button}')
+        logging.info(f"Press {button}")
         d.emit(BUTTONS[button], 1)
 
-    fn._desc = f'press({button})'
+    fn._desc = f"press({button})"
     return fn
 
 
 def release(button):
     def fn(d):
-        logging.info(f'Release {button}')
+        logging.info(f"Release {button}")
         d.emit(BUTTONS[button], 0)
 
-    fn._desc = f'release({button})'
+    fn._desc = f"release({button})"
     return fn
 
 
 def move_axis(axis, value):
     def fn(d):
-        logging.info(f'Move axis {axis} -> {value}')
+        logging.info(f"Move axis {axis} -> {value}")
         d.emit(AXES[axis], value)
 
-    fn._desc = f'move_axis({axis}, {value})'
+    fn._desc = f"move_axis({axis}, {value})"
     return fn
 
 
@@ -91,213 +117,420 @@ def wait(frames):
     for f in range(frames):
 
         def fn(d):
-            logging.info(f'wait({frames}) noop @ frame {f}')
+            logging.info(f"wait({frames}) noop @ frame {f}")
 
-        fn._desc = f'wait({frames})[{f}]'
+        fn._desc = f"wait({frames})[{f}]"
         yield (f, fn)
 
 
+@tool
 def move_left(frames=8):
-    yield (0, move_axis('X', AXIS_LEFT))
-    yield (frames, move_axis('X', AXIS_CENTER))
+    """Performs a leftward movement along the X-axis.
+
+    The character moves left immediately and returns to the center
+    position on the X-axis after `frames` duration.
+    """
+    yield (0, move_axis("X", AXIS_LEFT))
+    yield (frames, move_axis("X", AXIS_CENTER))
 
 
+@tool
 def move_right(frames=8):
-    yield (0, move_axis('X', AXIS_RIGHT))
-    yield (frames, move_axis('X', AXIS_CENTER))
+    """Performs a rightward movement along the X-axis.
+
+    The character moves right immediately and returns to the center
+    position on the X-axis after `frames` duration.
+    """
+    yield (0, move_axis("X", AXIS_RIGHT))
+    yield (frames, move_axis("X", AXIS_CENTER))
 
 
+@tool
 def jump():
-    yield (0, move_axis('Y', AXIS_UP))
-    yield (2, move_axis('Y', AXIS_CENTER))
+    """Performs a jump action.
+
+    This action consists of an immediate upward movement along the Y-axis,
+    followed by a return to the center position on the Y-axis after a short
+    delay.
+    """
+    yield (0, move_axis("Y", AXIS_UP))
+    yield (2, move_axis("Y", AXIS_CENTER))
 
 
+@tool
 def down(frames=8):
-    yield (0, move_axis('Y', AXIS_DOWN))
-    yield (frames, move_axis('Y', AXIS_CENTER))
+    """Performs a downward movement along the Y-axis (e.g., crouching).
+
+    The character moves down immediately and returns to the center
+    position on the Y-axis after `frames` duration.
+    """
+    yield (0, move_axis("Y", AXIS_DOWN))
+    yield (frames, move_axis("Y", AXIS_CENTER))
 
 
-def dash(direction='right', dash_frames=6):
-    axis = 'X'
-    val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
+@tool
+def dash(direction="right", dash_frames=6):
+    """Performs a dash action in the specified direction.
+
+    The character dashes horizontally (left or right) and returns
+    to the center X-axis position after `dash_frames`.
+    `direction` can be 'left' or 'right'.
+    """
+    axis = "X"
+    val = AXIS_RIGHT if direction == "right" else AXIS_LEFT
     yield (0, move_axis(axis, val))
     yield (dash_frames, move_axis(axis, AXIS_CENTER))
 
 
+@tool
 def normal_attack():
-    yield (0, press('A'))
-    yield (8, release('A'))
+    """Performs a normal attack.
+
+    This action consists of pressing the 'A' button and releasing it
+    after a short delay (8 frames).
+    """
+    yield (0, press("A"))
+    yield (8, release("A"))
 
 
+@tool
 def special_attack():
-    yield (0, press('B'))
-    yield (8, release('B'))
+    """Performs a special attack.
+
+    This action consists of pressing the 'B' button and releasing it
+    after a short delay (8 frames). This is a generic special attack,
+    often a neutral special when performed on the ground.
+    """
+    yield (0, press("B"))
+    yield (8, release("B"))
 
 
+@tool
 def throw():
-    yield (0, press('Z'))
-    yield (8, release('Z'))
+    """Performs a throw action.
+
+    This action typically involves pressing the 'Z' button (often grab)
+    and releasing it after a short delay (8 frames).
+    Assumes a grab has already connected or is part of a grab input.
+    """
+    yield (0, press("Z"))
+    yield (8, release("Z"))
 
 
+@tool
 def taunt():
-    yield (0, press('L'))
-    yield (8, release('L'))
+    """Performs a taunt action.
+
+    This action consists of pressing the 'L' button and releasing it
+    after a short delay (8 frames).
+    """
+    yield (0, press("L"))
+    yield (8, release("L"))
 
 
+@tool
 def guard():
-    yield (0, press('Z'))
-    yield (8, release('Z'))
+    """Performs a guard or shield action.
+
+    This action consists of pressing the 'Z' button (often shield/guard)
+    and releasing it after a short delay (8 frames).
+    Note: In many games, guard is held. This simulates a brief guard press.
+    """
+    yield (0, press("Z"))
+    yield (8, release("Z"))
 
 
-def escape_roll(direction='right'):
-    yield (0, press('Z'))
-    axis = 'X'
-    val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
+@tool
+def escape_roll(direction="right"):
+    """Performs an escape roll in the specified direction.
+
+    The character presses 'Z' (guard), moves in the specified `direction`
+    ('left' or 'right'), returns to center X-axis, and then releases 'Z'.
+    """
+    yield (0, press("Z"))
+    axis = "X"
+    val = AXIS_RIGHT if direction == "right" else AXIS_LEFT
     yield (2, move_axis(axis, val))
     yield (8, move_axis(axis, AXIS_CENTER))
-    yield (9, release('Z'))
+    yield (9, release("Z"))
 
 
+@tool
 def weak_attack():
-    yield from normal_attack()
+    """Performs a weak attack.
+
+    This is an alias for `normal_attack()`, involving a quick press
+    and release of the 'A' button.
+    """
+    yield from normal_attack.invoke({})
 
 
-def strong_attack(direction='right'):
-    axis = 'X'
-    val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
+@tool
+def strong_attack(direction="right"):
+    """Performs a strong attack in the specified direction (tilt attack).
+
+    The character moves in the `direction` ('left' or 'right'),
+    presses 'A', releases 'A', and then returns to the center X-axis.
+    Typically a forward tilt or side tilt attack.
+    """
+    axis = "X"
+    val = AXIS_RIGHT if direction == "right" else AXIS_LEFT
     yield (0, move_axis(axis, val))
-    yield (4, press('A'))
-    yield (13, release('A'))
+    yield (4, press("A"))
+    yield (13, release("A"))
     yield (14, move_axis(axis, AXIS_CENTER))
 
 
+@tool
 def high_attack():
-    yield (0, move_axis('Y', AXIS_UP))
-    yield (4, press('A'))
-    yield (13, release('A'))
-    yield (14, move_axis('Y', AXIS_CENTER))
+    """Performs a high attack (up tilt attack).
+
+    The character moves briefly up along the Y-axis, presses 'A',
+    releases 'A', and then returns to the center Y-axis.
+    """
+    yield (0, move_axis("Y", AXIS_UP))
+    yield (4, press("A"))
+    yield (13, release("A"))
+    yield (14, move_axis("Y", AXIS_CENTER))
 
 
+@tool
 def low_attack():
-    yield (0, move_axis('Y', AXIS_DOWN))
-    yield (4, press('A'))
-    yield (13, release('A'))
-    yield (14, move_axis('Y', AXIS_CENTER))
+    """Performs a low attack (down tilt attack).
+
+    The character moves briefly down along the Y-axis (crouch),
+    presses 'A', releases 'A', and then returns to the center Y-axis.
+    """
+    yield (0, move_axis("Y", AXIS_DOWN))
+    yield (4, press("A"))
+    yield (13, release("A"))
+    yield (14, move_axis("Y", AXIS_CENTER))
 
 
-def dashing_attack(direction='right'):
-    yield from dash(direction, dash_frames=5)
-    yield (6, press('A'))
-    yield (14, release('A'))
+@tool
+def dashing_attack(direction="right"):
+    """Performs a dashing attack in the specified direction.
+
+    The character first performs a dash in the `direction` ('left' or 'right')
+    for 5 frames, then presses 'A' and releases it.
+    """
+    yield from dash.invoke({"direction": direction, "dash_frame": 5})
+    yield (6, press("A"))
+    yield (14, release("A"))
 
 
+@tool
 def jumping_attack():
-    yield from jump()
-    yield (4, press('A'))
-    yield (14, release('A'))
+    """Performs a jumping attack (neutral air attack).
+
+    The character first performs a jump action, then presses 'A'
+    and releases it while in the air.
+    """
+    yield from jump.invoke({})
+    yield (4, press("A"))
+    yield (14, release("A"))
 
 
-def forward_attack(direction='right'):
-    axis = 'X'
-    val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
+@tool
+def forward_attack(direction="right"):
+    """Performs a forward attack (directional aerial or ground attack).
+
+    The character moves in the specified `direction` ('left' or 'right')
+    along the X-axis, presses 'A', releases 'A', and then returns to
+    the center X-axis. Can represent a forward air or forward tilt.
+    """
+    axis = "X"
+    val = AXIS_RIGHT if direction == "right" else AXIS_LEFT
     yield (0, move_axis(axis, val))
-    yield (4, press('A'))
-    yield (13, release('A'))
+    yield (4, press("A"))
+    yield (13, release("A"))
     yield (14, move_axis(axis, AXIS_CENTER))
 
 
-def backward_attack(direction='left'):
-    yield from forward_attack(direction='left')
+@tool
+def backward_attack(direction="left"):
+    """Performs a backward attack.
+
+    This is an alias for `forward_attack(direction='left')`.
+    The character moves left (or specified `direction`), presses 'A',
+    releases 'A', and returns to center X-axis.
+    """
+    yield from forward_attack.invoke({"direction": direction})
 
 
+@tool
 def upward_attack():
-    yield (0, move_axis('Y', AXIS_UP))
-    yield (4, press('A'))
-    yield (13, release('A'))
-    yield (14, move_axis('Y', AXIS_CENTER))
+    """Performs an upward attack (up air or up tilt).
+
+    The character moves briefly up along the Y-axis, presses 'A',
+    releases 'A', and then returns to the center Y-axis.
+    """
+    yield (0, move_axis("Y", AXIS_UP))
+    yield (4, press("A"))
+    yield (13, release("A"))
+    yield (14, move_axis("Y", AXIS_CENTER))
 
 
+@tool
 def downward_attack():
-    yield (0, move_axis('Y', AXIS_DOWN))
-    yield (4, press('A'))
-    yield (13, release('A'))
-    yield (14, move_axis('Y', AXIS_CENTER))
+    """Performs a downward attack (down air or down tilt).
+
+    The character moves briefly down along the Y-axis, presses 'A',
+    releases 'A', and then returns to the center Y-axis.
+    """
+    yield (0, move_axis("Y", AXIS_DOWN))
+    yield (4, press("A"))
+    yield (13, release("A"))
+    yield (14, move_axis("Y", AXIS_CENTER))
 
 
-def forward_smash_attack(direction='right'):
-    axis = 'X'
-    val = AXIS_RIGHT if direction == 'right' else AXIS_LEFT
+@tool
+def forward_smash_attack(direction="right"):
+    """Performs a forward smash attack.
+
+    The character tilts in the specified `direction` ('left' or 'right'),
+    briefly returns to center X-axis (simulating smash input charge-up),
+    presses 'A' for an extended duration, releases 'A', and then
+    returns to the center X-axis.
+    """
+    axis = "X"
+    val = AXIS_RIGHT if direction == "right" else AXIS_LEFT
     yield (0, move_axis(axis, val))
     yield (3, move_axis(axis, AXIS_CENTER))
-    yield (6, press('A'))
-    yield (23, release('A'))
+    yield (6, press("A"))
+    yield (23, release("A"))
     yield (24, move_axis(axis, AXIS_CENTER))
 
 
+@tool
 def high_smash_attack():
-    yield (0, move_axis('Y', AXIS_UP))
-    yield (3, move_axis('Y', AXIS_CENTER))
-    yield (6, press('A'))
-    yield (23, release('A'))
-    yield (24, move_axis('Y', AXIS_CENTER))
+    """Performs a high smash attack (up smash).
+
+    The character tilts up along the Y-axis, briefly returns to center
+    Y-axis (simulating smash input charge-up), presses 'A' for an
+    extended duration, releases 'A', and then returns to the center Y-axis.
+    """
+    yield (0, move_axis("Y", AXIS_UP))
+    yield (3, move_axis("Y", AXIS_CENTER))
+    yield (6, press("A"))
+    yield (23, release("A"))
+    yield (24, move_axis("Y", AXIS_CENTER))
 
 
+@tool
 def low_smash_attack():
-    yield (0, move_axis('Y', AXIS_DOWN))
-    yield (3, move_axis('Y', AXIS_CENTER))
-    yield (6, press('A'))
-    yield (23, release('A'))
-    yield (24, move_axis('Y', AXIS_CENTER))
+    """Performs a low smash attack (down smash).
+
+    The character tilts down along the Y-axis, briefly returns to center
+    Y-axis (simulating smash input charge-up), presses 'A' for an
+    extended duration, releases 'A', and then returns to the center Y-axis.
+    """
+    yield (0, move_axis("Y", AXIS_DOWN))
+    yield (3, move_axis("Y", AXIS_CENTER))
+    yield (6, press("A"))
+    yield (23, release("A"))
+    yield (24, move_axis("Y", AXIS_CENTER))
 
 
+@tool
 def special_attack_ground():
-    yield (0, press('B'))
-    yield (8, release('B'))
+    """Performs a special attack on the ground (neutral special).
+
+    This action consists of pressing the 'B' button and releasing it
+    after a short delay (8 frames). Equivalent to a neutral special move
+    when performed on the ground.
+    """
+    yield (0, press("B"))
+    yield (8, release("B"))
 
 
+@tool
 def special_attack_air():
-    yield from jump()
-    yield (4, press('B'))
-    yield (14, release('B'))
+    """Performs a special attack in the air (neutral air special).
+
+    The character first performs a jump action, then presses 'B'
+    and releases it while in the air.
+    """
+    yield from jump.invoke({})
+    yield (4, press("B"))
+    yield (14, release("B"))
 
 
+@tool
 def up_special():
-    yield (0, move_axis('Y', AXIS_UP))
-    yield (4, press('B'))
-    yield (16, release('B'))
-    yield (17, move_axis('Y', AXIS_CENTER))
+    """Performs an up special attack.
+
+    The character moves up along the Y-axis, presses 'B', releases 'B'
+    after a duration, and then returns to the center Y-axis.
+    Often used for recovery.
+    """
+    yield (0, move_axis("Y", AXIS_UP))
+    yield (4, press("B"))
+    yield (16, release("B"))
+    yield (17, move_axis("Y", AXIS_CENTER))
 
 
+@tool
 def down_special():
-    yield (0, move_axis('Y', AXIS_DOWN))
-    yield (4, press('B'))
-    yield (16, release('B'))
-    yield (17, move_axis('Y', AXIS_CENTER))
+    """Performs a down special attack.
+
+    The character moves down along the Y-axis, presses 'B', releases 'B'
+    after a duration, and then returns to the center Y-axis.
+    """
+    yield (0, move_axis("Y", AXIS_DOWN))
+    yield (4, press("B"))
+    yield (16, release("B"))
+    yield (17, move_axis("Y", AXIS_CENTER))
 
 
+@tool
 def left_special():
-    yield (0, move_axis('X', AXIS_LEFT))
-    yield (4, press('B'))
-    yield (16, release('B'))
-    yield (17, move_axis('X', AXIS_CENTER))
+    """Performs a left special attack (side special to the left).
+
+    The character moves left along the X-axis, presses 'B', releases 'B'
+    after a duration, and then returns to the center X-axis.
+    """
+    yield (0, move_axis("X", AXIS_LEFT))
+    yield (4, press("B"))
+    yield (16, release("B"))
+    yield (17, move_axis("X", AXIS_CENTER))
 
 
+@tool
 def right_special():
-    yield (0, move_axis('X', AXIS_RIGHT))
-    yield (4, press('B'))
-    yield (16, release('B'))
-    yield (17, move_axis('X', AXIS_CENTER))
+    """Performs a right special attack (side special to the right).
+
+    The character moves right along the X-axis, presses 'B', releases 'B'
+    after a duration, and then returns to the center X-axis.
+    """
+    yield (0, move_axis("X", AXIS_RIGHT))
+    yield (4, press("B"))
+    yield (16, release("B"))
+    yield (17, move_axis("X", AXIS_CENTER))
 
 
+@tool
 def jump_attack():
-    yield from jump()
-    yield (4, press('A'))
-    yield (14, release('A'))
+    """Performs a jumping attack (neutral air attack).
+
+    The character first performs a jump action, then presses 'A'
+    and releases it while in the air. This is functionally identical
+    to `jumping_attack`.
+    """
+    yield from jump.invoke({})
+    yield (4, press("A"))
+    yield (14, release("A"))
 
 
+@tool
 def attack_only():
-    yield (0, press('A'))
-    yield (8, release('A'))
+    """Performs a basic attack by pressing and releasing 'A'.
+
+    This action consists of pressing the 'A' button and releasing it
+    after a short delay (8 frames). Similar to `normal_attack`.
+    """
+    yield (0, press("A"))
+    yield (8, release("A"))
 
 
 # === Instrumented Planner Queue Helpers ===
@@ -310,18 +543,14 @@ class InstrumentedQueue(queue.Queue):
 
     def put(self, item, block=True, timeout=None):
         move_name = repr(item)
-        logging.info(
-            f'ENQUEUE move {move_name!r} (queue size before: {self.qsize()})'
-        )
+        logging.info(f"ENQUEUE move {move_name!r} (queue size before: {self.qsize()})")
         super().put(item, block, timeout)
-        logging.info(f'Queue size after ENQUEUE: {self.qsize()}')
+        logging.info(f"Queue size after ENQUEUE: {self.qsize()}")
 
     def get(self, block=True, timeout=None):
         val = super().get(block, timeout)
         move_name = repr(val)
-        logging.info(
-            f'DEQUEUE move {move_name!r} (queue size after: {self.qsize()})'
-        )
+        logging.info(f"DEQUEUE move {move_name!r} (queue size after: {self.qsize()})")
         return val
 
 
@@ -329,27 +558,23 @@ class InstrumentedQueue(queue.Queue):
 
 
 def enqueue_move(move, move_queue, cancel_event):
-    if getattr(move, 'urgent', False):
+    if getattr(move, "urgent", False):
         with move_queue.mutex:
             move_queue.queue.clear()
         cancel_event.set()
-        logging.info(
-            'Enqueued URGENT move, cleared queue and canceled current.'
-        )
+        logging.info("Enqueued URGENT move, cleared queue and canceled current.")
     try:
         move_queue.put(move, block=False)
-        logging.info(
-            'Enqueued move: %r (queue size: %d)', move, move_queue.qsize()
-        )
+        logging.info("Enqueued move: %r (queue size: %d)", move, move_queue.qsize())
     except queue.Full:
-        logging.warning('Queue full! Dropping move %r', move)
+        logging.warning("Queue full! Dropping move %r", move)
 
 
 # === Move Scheduler/Event Loop ===
 
 
 def describe_step(step):
-    if hasattr(step, '_desc'):
+    if hasattr(step, "_desc"):
         return step._desc
     return repr(step)
 
@@ -361,101 +586,392 @@ def control_loop(device, move_queue, cancel_event):
         try:
             move = move_queue.get(timeout=0.1)
         except queue.Empty:
-            logging.info(f'Queue idle (len={move_queue.qsize()})')
+            # logging.info(f'Queue idle (len={move_queue.qsize()})')
             time.sleep(TICK)
             continue
         move_counter += 1
         move_name = repr(move)
-        logging.info(
-            f'Started MOVE #{move_counter}: {move_name!r}; queue size:'
-            f' {move_queue.qsize()}'
-        )
+        logging.info(f"Started MOVE #{move_counter}: {move_name!r}; queue size:" f" {move_queue.qsize()}")
         steps = list(move)
         if not steps:
-            logging.info(f'Move {move_name!r} is empty: skipping')
+            logging.info(f"Move {move_name!r} is empty: skipping")
             continue
         for idx, (frame_offset, action) in enumerate(steps):
-            stepdesc = getattr(action, '_desc', repr(action))
-            logging.info(
-                f'Step {idx}: at frame_offset {frame_offset}, does: {stepdesc}'
-            )
+            stepdesc = getattr(action, "_desc", repr(action))
+            logging.info(f"Step {idx}: at frame_offset {frame_offset}, does: {stepdesc}")
         current_frame = 0
         next_idx = 0
         while next_idx < len(steps):
             if cancel_event.is_set():
                 logging.info(
-                    f'Move #{move_counter} {move_name!r} canceled at frame'
-                    f' {current_frame}, step {next_idx}'
+                    f"Move #{move_counter} {move_name!r} canceled at frame" f" {current_frame}, step {next_idx}"
                 )
                 cancel_event.clear()
                 break
             frame_offset, action = steps[next_idx]
             if current_frame == frame_offset:
-                stepdesc = getattr(action, '_desc', repr(action))
-                logging.info(
-                    f'Executing step {next_idx}/{len(steps)}: {stepdesc} (frame'
-                    f' {current_frame})'
-                )
+                stepdesc = getattr(action, "_desc", repr(action))
+                logging.info(f"Executing step {next_idx}/{len(steps)}: {stepdesc} (frame" f" {current_frame})")
                 action(device)
                 next_idx += 1
-            logging.info(
-                f'Tick {current_frame}, (queue size: {move_queue.qsize()})'
-            )
+            logging.info(f"Tick {current_frame}, (queue size: {move_queue.qsize()})")
             start = time.perf_counter()
             time.sleep(max(0, TICK - (time.perf_counter() - start)))
             current_frame += 1
         for btn in BUTTONS:
-            logging.info(f'Reset {btn} to 0')
+            logging.info(f"Reset {btn} to 0")
             device.emit(BUTTONS[btn], 0, syn=False)
-        device.emit(AXES['X'], AXIS_CENTER, syn=False)
-        device.emit(AXES['Y'], AXIS_CENTER, syn=False)
+        device.emit(AXES["X"], AXIS_CENTER, syn=False)
+        device.emit(AXES["Y"], AXIS_CENTER, syn=False)
         device.syn()
-        logging.info(f'Move #{move_counter} ({move_name!r}) COMPLETE')
-        logging.info(f'Current queue size (post-move): {move_queue.qsize()}')
+        logging.info(f"Move #{move_counter} ({move_name!r}) COMPLETE")
+        logging.info(f"Current queue size (post-move): {move_queue.qsize()}")
 
 
 # === Example Planner Thread (dummy) ===
 
 
 def dummy_planner(move_queue, cancel_event):
+    # List of all move functions to check
+    move_funcs = [
+        move_left,
+        move_right,
+        jump,
+        down,
+        dash,
+        normal_attack,
+        special_attack,
+        throw,
+        taunt,
+        guard,
+        escape_roll,
+        weak_attack,
+        strong_attack,
+        high_attack,
+        low_attack,
+        dashing_attack,
+        jumping_attack,
+        forward_attack,
+        backward_attack,
+        upward_attack,
+        downward_attack,
+        forward_smash_attack,
+        high_smash_attack,
+        low_smash_attack,
+        special_attack_ground,
+        special_attack_air,
+        up_special,
+        down_special,
+        left_special,
+        right_special,
+        jump_attack,
+        attack_only,
+    ]
     i = 0
     while True:
-        time.sleep(1.5)
-        logging.info(f'Planner: Attempting to enqueue dashing_attack()')
-        move = Move(
-            name='dashing_attack',
-            generator=dashing_attack(),
-            urgent=False if i % 2 == 0 else True,
-        )
-        enqueue_move(move, move_queue, cancel_event)
-        time.sleep(0.5)
+        for fn in move_funcs:
+            move_name = fn.__name__
+            logging.info(f"Planner: Attempting to enqueue {move_name}()")
+            try:
+                move = Move(
+                    name=move_name,
+                    generator=fn(),
+                    urgent=False,
+                )
+            except TypeError:
+                # Some moves require a direction argument
+                if "direction" in fn.__code__.co_varnames:
+                    move = Move(
+                        name=f"{move_name}_right",
+                        generator=fn("right"),
+                        urgent=False,
+                    )
+                else:
+                    raise
+            enqueue_move(move, move_queue, cancel_event)
+            time.sleep(2.0)
         i += 1
+
+
+def capture_fullscreen_screenshot_to_base64() -> str:
+    """Captures the primary monitor and returns it as a base64 encoded PNG string."""
+    with mss.mss() as sct:
+        # Get information of the primary monitor
+        monitor = sct.monitors[1]  # sct.monitors[0] is the virtual "all monitors" screen
+
+        # Grab the data
+        sct_img = sct.grab(monitor)
+
+        # Create an in-memory bytes buffer for the PNG image
+        # mss.tools.to_png returns bytes
+        png_bytes = mss.tools.to_png(sct_img.rgb, sct_img.size)
+
+        return base64.b64encode(png_bytes).decode("utf-8")
+
+
+def llm_planner(move_queue, cancel_event, retroarch):
+    logging.info("LLM Planner: Initializing...")
+
+    try:
+        llm = make_gemini(model="gemini-1.5-flash-latest")  # Or your preferred model
+    except Exception as e:
+        logging.error(
+            f"LLM Planner: Failed to initialize Gemini model: {e}",
+            exc_info=True,
+        )
+        return
+    logging.info("LLM Planner: Gemini model initialized.")
+
+    # --- Define the tools available to the LLM ---
+    # These are your @tool decorated action generator functions
+    available_tools = [
+        move_left,
+        move_right,
+        jump,
+        down,
+        dash,
+        normal_attack,
+        special_attack,
+        throw,
+        taunt,
+        guard,
+        escape_roll,
+        weak_attack,
+        strong_attack,
+        high_attack,
+        low_attack,
+        dashing_attack,
+        jumping_attack,
+        forward_attack,
+        backward_attack,
+        upward_attack,
+        downward_attack,
+        forward_smash_attack,
+        high_smash_attack,
+        low_smash_attack,
+        special_attack_ground,
+        special_attack_air,
+        up_special,
+        down_special,
+        left_special,
+        right_special,
+        jump_attack,  # Note: This is a duplicate of jumping_attack functionality
+        attack_only,
+    ]
+    if not available_tools:
+        logging.error("LLM Planner: No tools defined or found. Planner will not run.")
+        return
+
+    # Create a dispatch table for easy lookup (optional, but good practice)
+    # Tool objects (from @tool) have a .name attribute
+    tool_dispatch_table = {t.name: t for t in available_tools}
+
+    llm_with_tools = llm.bind_tools(available_tools)
+    logging.info(f"LLM Planner: Tools bound: {[t.name for t in available_tools]}")
+
+    # loop_delay_seconds = 3.0  # How often to query the LLM (adjust as needed)
+    loop_delay_seconds = 0  # How often to query the LLM (adjust as needed)
+
+    while not cancel_event.is_set():
+        try:
+            prompt_text = (
+                "You are playing Super Smash Bros. as Donkey Kong. An image of"
+                " the current game screen is directly provided. Your primary"
+                " task is to analyze this image to understand the game state."
+                " Based EXCLUSIVELY on your visual analysis of the provided"
+                " image, you MUST select and call EXACTLY ONE action tool from"
+                " your available tools that is most appropriate for Donkey Kong"
+                " in this situation. A tool call is mandatory. Do not respond"
+                " with explanatory text before or after the tool call. Only"
+                " call a tool."
+            )
+            # human_message = HumanMessage(content=prompt_text)
+            human_message = HumanMessagePromptTemplate(
+                prompt=[
+                    PromptTemplate(template=prompt_text),
+                    ImagePromptTemplate(
+                        input_variables=["image_data"],
+                        template={"url": "data:image/png;base64,{image_data}"},
+                    ),
+                ]
+            )
+
+            prompt = ChatPromptTemplate.from_messages([human_message])
+
+            chain = {"image_data": RunnablePassthrough()} | prompt | llm_with_tools
+
+            logging.debug("LLM Planner: Querying LLM for next move...")
+            # ai_msg = llm_with_tools.invoke([human_message])
+            # png = retroarch.take_screenshot()
+            # ai_msg = chain.invoke(image_to_base64(png))
+            png = capture_fullscreen_screenshot_to_base64()
+            ai_msg = chain.invoke(png)
+            logging.debug(f"LLM Planner: Raw LLM response: {ai_msg}")
+
+            if ai_msg.tool_calls:
+                for tool_call in ai_msg.tool_calls:
+                    tool_name = tool_call["name"]
+                    tool_args = tool_call["args"]
+                    logging.info(f"LLM Planner: Gemini chose tool: {tool_name} with" f" args: {tool_args}")
+
+                    # Find the actual tool object (which is our generator function)
+                    if tool_name in tool_dispatch_table:
+                        actual_tool_function = tool_dispatch_table[tool_name]
+
+                        # Invoke the tool function (our generator) to get the generator instance
+                        # Langchain's Tool.invoke() calls the underlying function.
+                        # If the function is a generator, .invoke() returns the generator instance.
+                        move_generator_instance = actual_tool_function.invoke(tool_args)
+
+                        # Check if we got a generator
+                        if hasattr(move_generator_instance, "__iter__") and hasattr(
+                            move_generator_instance, "__next__"
+                        ):
+                            move = Move(
+                                name=tool_name,  # Use the tool's name
+                                generator=move_generator_instance,
+                                urgent=False,  # Or determine urgency based on tool/context
+                            )
+                            enqueue_move(move, move_queue, cancel_event)
+                            logging.info(f"LLM Planner: Enqueued move for '{tool_name}'")
+                        else:
+                            # This would happen if a @tool function didn't return a generator
+                            logging.warning(
+                                f"LLM Planner: Tool '{tool_name}' did not"
+                                " return a generator. Result was:"
+                                f" {move_generator_instance}. Move not"
+                                " enqueued."
+                            )
+                    else:
+                        logging.warning(
+                            f"LLM Planner: Tool '{tool_name}' chosen by LLM not" " found in dispatch table."
+                        )
+            else:
+                logging.info("LLM Planner: Gemini did not suggest a tool call." f" Response: {ai_msg.content}")
+
+            if cancel_event.is_set():
+                break
+            time.sleep(loop_delay_seconds)
+
+        except Exception as e:
+            logging.error(f"LLM Planner: Error in planning loop: {e}", exc_info=True)
+            if not cancel_event.is_set():
+                time.sleep(loop_delay_seconds * 2)  # Longer sleep on error
+
+    logging.info("LLM Planner: Shutdown signal received, exiting.")
 
 
 # === Setup and Main ===
 
 
+def make_retroarch():
+    # --- Step 1: Instantiate a RetroArch controller ---
+    logging.info("Instantiating RetroArchController...")
+    retro_controller = RetroArchController()  # Uses default IP and port
+
+    # Optional: Check if RetroArch is alive (good practice)
+    if not retro_controller.is_alive(retries=2, delay=0.5):  # Quick check
+        logging.error("RetroArch is not responding. Please ensure it's running and" " network commands are enabled.")
+        # Before trying to load_rom, RetroArch itself needs to be launched if it's not already.
+        # The load_rom tool in retroarch.py launches RetroArch if it's not running.
+        # So, the is_alive check here is more for pre-existing instances.
+        # If load_rom is meant to start RetroArch, this check might be less critical *before* load_rom.
+        # return # Exit if not alive and you expect it to be already running
+
+    # --- Define your ROM and Core paths ---
+    # You'll need to adjust these paths to match your system.
+    # Use list_roms() and list_cores() to find valid paths if unsure.
+
+    # Example ROM (from your 'roms' buffer)
+    # Make sure the path is exactly correct.
+    # Using os.path.expanduser to handle "~"
+    smash_rom_path = os.path.expanduser("~/var/roms/Super Smash Bros. (U) [!].z64")
+
+    # Example Core - you'll need to find the correct .so file for N64
+    # Common N64 core name: mupen64plus_next_libretro.so
+    # Use list_cores() to find available cores on your system.
+    # e.g., print(list_cores())
+    n64_core_path = os.path.expanduser(
+        "~/.var/app/org.libretro.RetroArch/config/retroarch/cores/parallel_n64_libretro.so"
+    )
+    # If list_cores() returns something like:
+    # ['/home/danenberg/.var/app/org.libretro.RetroArch/config/retroarch/cores/mupen64plus_next_libretro.so']
+    # then n64_core_path should be that full path.
+
+    # Verify paths exist (good practice)
+    if not os.path.exists(smash_rom_path):
+        logging.error(f"ROM file not found: {smash_rom_path}")
+        # You can print available ROMs to help debug:
+        # logging.info(f"Available ROMs: {list_roms()}")
+        return
+    if not os.path.exists(n64_core_path):
+        logging.error(f"Core file not found: {n64_core_path}")
+        # You can print available cores to help debug:
+        # logging.info(f"Available cores: {list_cores()}")
+        return
+
+    logging.info(f"Attempting to load ROM: {smash_rom_path} with Core: {n64_core_path}")
+
+    # --- Step 2: Load Super Smash Bros ---
+    # The load_rom function from retroarch.py is a @tool but can be called directly.
+    # It handles launching RetroArch if it's not already running.
+    load_rom_result = load_rom(core=n64_core_path, rom=smash_rom_path)
+    logging.info(f"Load ROM result: {load_rom_result}")
+
+    if "failed" in load_rom_result.lower():
+        logging.error("Failed to load ROM. Exiting.")
+        return
+
+    # After loading a ROM, it's good to verify RetroArch is still responsive via network commands
+    # because the new RetroArch instance started by load_rom needs its network commands active.
+    # The default RetroArch config usually has this enabled.
+    if not retro_controller.is_alive():
+        logging.error(
+            "RetroArch became unresponsive after attempting to load ROM, or"
+            " network commands are not enabled in the newly launched instance."
+        )
+        return
+
+    # --- Step 3: Load state ---
+    # The load_state function from retroarch.py is also a @tool.
+    # Assumes you have a savestate in the default slot (or the slot RetroArch is set to load).
+    logging.info("Attempting to load state...")
+    load_state_result = load_state()
+    logging.info(f"Load state result: {load_state_result}")
+
+    if "failed" in load_state_result.lower():
+        logging.error("Failed to load state.")
+    else:
+        logging.info("Successfully initiated load state command.")
+
+    logging.info("Script finished. Check RetroArch.")
+
+    return retro_controller
+
+
 def main(argv):
     del argv
-    print('Starting virtual controller. Press Ctrl-C to exit.')
+    retroarch = make_retroarch()
+
+    print("Starting virtual controller. Press Ctrl-C to exit.")
     signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     move_queue = InstrumentedQueue(maxsize=2)
     cancel_event = threading.Event()
     try:
-        with uinput.Device(uinput_events, name='gemma') as device:
+        with uinput.Device(uinput_events, name="gemma") as device:
             planner_thread = threading.Thread(
-                target=dummy_planner,
-                args=(move_queue, cancel_event),
+                target=llm_planner,
+                args=(move_queue, cancel_event, retroarch),
                 daemon=True,
             )
             planner_thread.start()
             control_loop(device, move_queue, cancel_event)
     except OSError as e:
-        logging.error('uinput error: %s', e)
-        logging.error('Try: sudo modprobe uinput && sudo chmod 666 /dev/uinput')
+        logging.error("uinput error: %s", e)
+        logging.error("Try: sudo modprobe uinput && sudo chmod 666 /dev/uinput")
         sys.exit(1)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(main)
