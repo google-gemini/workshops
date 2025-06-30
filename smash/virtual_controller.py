@@ -1,16 +1,23 @@
 import base64
 import os
 import queue
+import shutil
 import signal
+import subprocess
 import sys
+import tempfile
 import threading
 import time
+from pathlib import Path
+from textwrap import dedent
 from typing import Callable
 
 import mss
 import mss.tools
 import uinput
 from absl import app, logging
+from inference_sdk import InferenceHTTPClient
+from langchain.globals import set_debug, set_verbose
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
@@ -25,7 +32,11 @@ from retroarch import (  # Assuming retroarch.py is accessible
     load_state,
 )
 
+from utils import params
 from utils.model import make_gemini
+
+# set_verbose(True)
+# set_debug(True)
 
 # === Controller Definition ===
 
@@ -42,7 +53,7 @@ BUTTONS = {
     "THUMBR": uinput.BTN_THUMBR,
     "L": uinput.BTN_TL,  # Aliases for custom buttons; adjust as needed
     "R": uinput.BTN_TR,
-    "Z": uinput.BTN_SELECT,
+    "Z": uinput.BTN_Z,
 }
 AXES = {
     "X": uinput.ABS_X,
@@ -54,6 +65,8 @@ AXIS_LEFT = 0
 AXIS_RIGHT = 255
 AXIS_UP = 0
 AXIS_DOWN = 255
+
+TICK = 1 / 60.0
 
 uinput_events = list(BUTTONS.values()) + [
     (uinput.ABS_X + (0, 255, 0, 0)),
@@ -124,25 +137,25 @@ def wait(frames):
 
 
 @tool
-def move_left(frames=8):
+def move_left():
     """Performs a leftward movement along the X-axis.
 
     The character moves left immediately and returns to the center
     position on the X-axis after `frames` duration.
     """
     yield (0, move_axis("X", AXIS_LEFT))
-    yield (frames, move_axis("X", AXIS_CENTER))
+    yield (8, move_axis("X", AXIS_CENTER))
 
 
 @tool
-def move_right(frames=8):
+def move_right():
     """Performs a rightward movement along the X-axis.
 
     The character moves right immediately and returns to the center
     position on the X-axis after `frames` duration.
     """
     yield (0, move_axis("X", AXIS_RIGHT))
-    yield (frames, move_axis("X", AXIS_CENTER))
+    yield (8, move_axis("X", AXIS_CENTER))
 
 
 @tool
@@ -277,8 +290,8 @@ def strong_attack(direction="right"):
     val = AXIS_RIGHT if direction == "right" else AXIS_LEFT
     yield (0, move_axis(axis, val))
     yield (4, press("A"))
-    yield (13, release("A"))
-    yield (14, move_axis(axis, AXIS_CENTER))
+    yield (8, release("A"))
+    yield (12, move_axis(axis, AXIS_CENTER))
 
 
 @tool
@@ -290,8 +303,8 @@ def high_attack():
     """
     yield (0, move_axis("Y", AXIS_UP))
     yield (4, press("A"))
-    yield (13, release("A"))
-    yield (14, move_axis("Y", AXIS_CENTER))
+    yield (8, release("A"))
+    yield (12, move_axis("Y", AXIS_CENTER))
 
 
 @tool
@@ -303,8 +316,8 @@ def low_attack():
     """
     yield (0, move_axis("Y", AXIS_DOWN))
     yield (4, press("A"))
-    yield (13, release("A"))
-    yield (14, move_axis("Y", AXIS_CENTER))
+    yield (8, release("A"))
+    yield (12, move_axis("Y", AXIS_CENTER))
 
 
 @tool
@@ -314,8 +327,8 @@ def dashing_attack(direction="right"):
     The character first performs a dash in the `direction` ('left' or 'right')
     for 5 frames, then presses 'A' and releases it.
     """
-    yield from dash.invoke({"direction": direction, "dash_frame": 5})
-    yield (6, press("A"))
+    yield from dash.invoke({"direction": direction, "dash_frame": 6})
+    yield (10, press("A"))
     yield (14, release("A"))
 
 
@@ -328,7 +341,7 @@ def jumping_attack():
     """
     yield from jump.invoke({})
     yield (4, press("A"))
-    yield (14, release("A"))
+    yield (8, release("A"))
 
 
 @tool
@@ -343,8 +356,8 @@ def forward_attack(direction="right"):
     val = AXIS_RIGHT if direction == "right" else AXIS_LEFT
     yield (0, move_axis(axis, val))
     yield (4, press("A"))
-    yield (13, release("A"))
-    yield (14, move_axis(axis, AXIS_CENTER))
+    yield (8, release("A"))
+    yield (12, move_axis(axis, AXIS_CENTER))
 
 
 @tool
@@ -398,8 +411,8 @@ def forward_smash_attack(direction="right"):
     yield (0, move_axis(axis, val))
     yield (3, move_axis(axis, AXIS_CENTER))
     yield (6, press("A"))
-    yield (23, release("A"))
-    yield (24, move_axis(axis, AXIS_CENTER))
+    yield (12, release("A"))
+    yield (15, move_axis(axis, AXIS_CENTER))
 
 
 @tool
@@ -413,8 +426,8 @@ def high_smash_attack():
     yield (0, move_axis("Y", AXIS_UP))
     yield (3, move_axis("Y", AXIS_CENTER))
     yield (6, press("A"))
-    yield (23, release("A"))
-    yield (24, move_axis("Y", AXIS_CENTER))
+    yield (12, release("A"))
+    yield (15, move_axis("Y", AXIS_CENTER))
 
 
 @tool
@@ -576,11 +589,11 @@ def enqueue_move(move, move_queue, cancel_event):
 def describe_step(step):
     if hasattr(step, "_desc"):
         return step._desc
+
     return repr(step)
 
 
 def control_loop(device, move_queue, cancel_event):
-    TICK = 1 / 60.0
     move_counter = 0
     while True:
         try:
@@ -624,6 +637,7 @@ def control_loop(device, move_queue, cancel_event):
         device.emit(AXES["X"], AXIS_CENTER, syn=False)
         device.emit(AXES["Y"], AXIS_CENTER, syn=False)
         device.syn()
+        time.sleep(TICK * 16)
         logging.info(f"Move #{move_counter} ({move_name!r}) COMPLETE")
         logging.info(f"Current queue size (post-move): {move_queue.qsize()}")
 
@@ -670,12 +684,13 @@ def dummy_planner(move_queue, cancel_event):
     i = 0
     while True:
         for fn in move_funcs:
-            move_name = fn.__name__
+            logging.error(dir(fn))
+            move_name = fn.name
             logging.info(f"Planner: Attempting to enqueue {move_name}()")
             try:
                 move = Move(
                     name=move_name,
-                    generator=fn(),
+                    generator=fn.invoke({}),
                     urgent=False,
                 )
             except TypeError:
@@ -689,8 +704,189 @@ def dummy_planner(move_queue, cancel_event):
                 else:
                     raise
             enqueue_move(move, move_queue, cancel_event)
-            time.sleep(2.0)
+            time.sleep(TICK * 4)
         i += 1
+
+
+def capture_fullscreen_screenshot_to_file(filename="screenshot.png"):
+    with mss.mss() as sct:
+        monitor = sct.monitors[1]
+        sct_img = sct.grab(monitor)
+        with open(filename, "wb") as f:
+            f.write(mss.tools.to_png(sct_img.rgb, sct_img.size))
+    return filename
+
+
+def screenshot_window(window_name="RetroArch", out_filename="screenshot.png"):
+    # Step 1: Dump window to xwd format
+    with tempfile.NamedTemporaryFile(suffix=".xwd", delete=False) as tmp_xwd:
+        xwd_path = tmp_xwd.name
+    try:
+        subprocess.run(
+            ["xwd", "-silent", "-name", window_name, "-out", xwd_path],
+            check=True,
+        )
+        # Step 2: Convert xwd to png
+        subprocess.run(
+            ["convert", xwd_path, out_filename],  # Needs ImageMagick 'convert'
+            check=True,
+        )
+    finally:
+        if os.path.exists(xwd_path):
+            os.unlink(xwd_path)
+    return out_filename
+
+
+def screenshot_window_or_fallback(window_name, out_filename, retroarch_controller):
+    try:
+        return screenshot_window(window_name, out_filename)
+    except subprocess.CalledProcessError:
+        # Fallback: use RetroArch's screenshot, then move it to desired location
+        print("xwd failed; using RetroArch screenshot fallback!")
+        fallback_file = retroarch_controller.take_screenshot()
+        shutil.move(fallback_file, out_filename)
+        return out_filename
+
+
+def call_roboflow_inference(image_path):
+    client = InferenceHTTPClient(
+        api_url="https://serverless.roboflow.com",
+        api_key=params.ROBOFLOW_API_KEY,
+    )
+    result = client.run_workflow(
+        workspace_name="smash-64-agents",
+        workflow_id="detect-count-and-visualize-3",
+        images={"image": image_path},
+        use_cache=True,
+    )
+    return result
+
+
+def summarize_smash_detection(result):
+    if not result or not result[0].get("predictions", {}).get("predictions"):
+        return "No characters detected."
+
+    preds = result[0]["predictions"]["predictions"]
+
+    mario = next((p for p in preds if p["class"] == "Mario"), None)
+    dk = next((p for p in preds if p["class"] == "DonkeyKong"), None)
+
+    if not mario or not dk:
+        return "Could not find both Mario and Donkey Kong."
+
+    def classify_platform(y):
+        if y < 650:
+            return "upper platform"
+        elif y < 1000:
+            return "main platform"
+        return "lower area"
+
+    mario_platform = classify_platform(mario["y"])
+    dk_platform = classify_platform(dk["y"])
+
+    if mario["x"] < dk["x"]:
+        horizontal = "to the left of"
+    else:
+        horizontal = "to the right of"
+
+    same_platform = abs(mario["y"] - dk["y"]) < 100
+    platform_phrase = "They are on the same platform." if same_platform else "They are on different platforms."
+
+    return f"Mario is on the {mario_platform}, {horizontal} Donkey Kong. " f"{platform_phrase}"
+
+
+def summarize_smash_detection(result):
+    if not result or not result[0].get("predictions", {}).get("predictions"):
+        return "No characters detected."
+
+    preds = result[0]["predictions"]["predictions"]
+
+    mario = next((p for p in preds if p["class"] == "Mario"), None)
+    dk = next((p for p in preds if p["class"] == "DonkeyKong"), None)
+
+    if not mario or not dk:
+        return "Could not find both Mario and Donkey Kong."
+
+    def classify_platform(y):
+        if y < 650:
+            return "upper platform"
+        elif y < 1000:
+            return "main platform"
+        return "lower area"
+
+    mario_platform = classify_platform(mario["y"])
+    dk_platform = classify_platform(dk["y"])
+
+    dx = abs(mario["x"] - dk["x"])
+    dy = abs(mario["y"] - dk["y"])
+
+    # Simple thresholds, tune for your game scale!
+    if dx < 70 and dy < 50:
+        proximity = "close"
+    elif dx < 150 and dy < 80:
+        proximity = "medium"
+    else:
+        proximity = "far"
+
+    if mario["x"] < dk["x"]:
+        horizontal = "to the left of"
+    else:
+        horizontal = "to the right of"
+
+    same_platform = abs(mario["y"] - dk["y"]) < 100
+    platform_phrase = "They are on the same platform." if same_platform else "They are on different platforms."
+
+    return (
+        f"Mario is on the {mario_platform}, {horizontal} Donkey Kong. "
+        f"{platform_phrase} "
+        f"Horizontal distance: {dx} pixels; vertical distance: {dy} pixels. "
+        f"Proximity: {proximity}."
+    )
+
+
+def summarize_smash_detection(result):
+    """Summarize character detection results with as little assumption as possible.
+
+    Raw positions and bounding box sizes are reported; no proximity or platform
+    inference is made, as pixel-based measurements can be misleading with camera
+    zoom.
+
+    Returns a fact-only summary for the LLM.
+    """
+    if not result or not result[0].get("predictions", {}).get("predictions"):
+        return "No characters detected."
+
+    preds = result[0]["predictions"]["predictions"]
+
+    mario = next((p for p in preds if p.get("class") == "Mario"), None)
+    dk = next((p for p in preds if p.get("class") == "DonkeyKong"), None)
+
+    if not mario or not dk:
+        return "Could not find both Mario and Donkey Kong."
+
+    def get_box_info(p):
+        # Some models have width/height, some min_x/min_y/max_x/max_y
+        w = p.get("width")
+        h = p.get("height")
+        if w is not None and h is not None:
+            return f"w={w}, h={h}"
+        if all(k in p for k in ("x", "y", "max_x", "max_y", "min_x", "min_y")):
+            w = float(p["max_x"]) - float(p["min_x"])
+            h = float(p["max_y"]) - float(p["min_y"])
+            return f"w={w}, h={h}"
+        return "size unknown"
+
+    dx = abs(mario["x"] - dk["x"])
+    dy = abs(mario["y"] - dk["y"])
+
+    summary = (
+        f"Mario: x={mario['x']}, y={mario['y']}, box({get_box_info(mario)}) | "
+        f"DonkeyKong: x={dk['x']}, y={dk['y']}, box({get_box_info(dk)}) | "
+        f"Horizontal diff: dx={dx} px, Vertical diff: dy={dy} px. "
+        "Pixel units only; scale may vary with camera zoom. "
+        "Use raw values, do not assume 'close' or 'far'."
+    )
+    return summary
 
 
 def capture_fullscreen_screenshot_to_base64() -> str:
@@ -725,21 +921,28 @@ def llm_planner(move_queue, cancel_event, retroarch):
     # --- Define the tools available to the LLM ---
     # These are your @tool decorated action generator functions
     available_tools = [
-        move_left,
-        move_right,
-        jump,
-        down,
-        dash,
         normal_attack,
         special_attack,
-        throw,
-        taunt,
-        guard,
-        escape_roll,
+        # throw,
+        # taunt,
+        # guard,
         weak_attack,
-        strong_attack,
         high_attack,
         low_attack,
+        special_attack_ground,
+        special_attack_air,
+        up_special,
+        down_special,
+        jump_attack,
+        attack_only,
+        # Movement related
+        # move_left,
+        # move_right,
+        # jump,
+        # down,
+        # dash,
+        # escape_roll,
+        strong_attack,
         dashing_attack,
         jumping_attack,
         forward_attack,
@@ -749,15 +952,10 @@ def llm_planner(move_queue, cancel_event, retroarch):
         forward_smash_attack,
         high_smash_attack,
         low_smash_attack,
-        special_attack_ground,
-        special_attack_air,
-        up_special,
-        down_special,
         left_special,
         right_special,
-        jump_attack,  # Note: This is a duplicate of jumping_attack functionality
-        attack_only,
     ]
+
     if not available_tools:
         logging.error("LLM Planner: No tools defined or found. Planner will not run.")
         return
@@ -774,39 +972,133 @@ def llm_planner(move_queue, cancel_event, retroarch):
 
     while not cancel_event.is_set():
         try:
-            prompt_text = (
-                "You are playing Super Smash Bros. as Donkey Kong. An image of"
-                " the current game screen is directly provided. Your primary"
-                " task is to analyze this image to understand the game state."
-                " Based EXCLUSIVELY on your visual analysis of the provided"
-                " image, you MUST select and call EXACTLY ONE action tool from"
-                " your available tools that is most appropriate for Donkey Kong"
-                " in this situation. A tool call is mandatory. Do not respond"
-                " with explanatory text before or after the tool call. Only"
-                " call a tool."
+            logging.debug("LLM Planner: Querying LLM for next move...")
+            # ai_msg = llm_with_tools.invoke([human_message])
+            # png = retroarch.take_screenshot()
+            # screenshot_file = retroarch.take_screenshot()
+            # ai_msg = chain.invoke(image_to_base64(png))
+            # png = capture_fullscreen_screenshot_to_base64()
+            screenshot_file = capture_fullscreen_screenshot_to_file("last_screen.png")
+            output_image_b64 = image_to_base64(screenshot_file)
+            # screenshot_file = screenshot_window_or_fallback(
+            #     "RetroArch ParaLLEl N64 2.0-rc2 f860534",
+            #     "last_screen.png",
+            #     retroarch,
+            # )
+            # result = call_roboflow_inference(screenshot_file)
+            # print(result)
+            # time.sleep(2)  # Wait to avoid rate limiting
+            # desc = summarize_smash_detection(result)  # your text summary
+            desc = "Mario is to the left of Donkey Kong"
+            # output_image_b64 = result[0][
+            #     "output_image"
+            # ]  # base64-encoded jpeg (or png)
+            logging.error(f"{output_image_b64=}")
+            logging.error(f"{desc=}")
+
+            # prompt_text = (
+            #     "You are playing Super Smash Bros. as Donkey Kong. Your goal"
+            #     " is to defeat Mario.\nBelow is an automated description of"
+            #     f" the inferred game state:\n\n{desc}\n\nBelow is an annotated"
+            #     " image with bounding boxes of the"
+            #     " characters.\nINSTRUCTIONS:\n- If Donkey Kong is close enough"
+            #     " to attack Mario, choose the most effective attack(s).\n- If"
+            #     " not, choose a series of movement/action tools to bring"
+            #     " Donkey Kong closer and attack.\n- Plan the next 2 seconds"
+            #     " (up to 4 actions). Output your choice as a list of tool"
+            #     " calls, in the order they should be executed.\n- Only choose"
+            #     " up to 4 tools, and only use the action tools provided.\n"
+            # )
+            prompt_text = dedent(
+                f"""
+                You are playing Super Smash Bros. as Mario. Your goal is to defeat Donkey Kong.
+
+                Below is an automated description of the inferred game state:
+
+                {desc}
+
+                Below is an annotated image with bounding boxes of the characters.
+
+                INSTRUCTIONS:
+                - PLAN AHEAD: Always plan a sequence of eight actions to execute in the next 2 seconds.
+                - If Mario is close enough to attack Donkey Kong, choose the most effective attack(s).
+                - If not, choose a series of movement/action tools to bring Mario closer and attack.
+                - Output your choice as a list of tool calls, in the order they should be executed.
+                - Only choose actions from the provided tools.
+                - IMPORTANT: Always output exactly eight tool calls in your answer.
+            """
             )
-            # human_message = HumanMessage(content=prompt_text)
+
+            prompt_text = dedent(
+                f"""
+                You are playing Super Smash Bros. as Mario. Your goal is to defeat Donkey Kong.
+
+                Game state summary:
+                {desc}
+
+                INSTRUCTIONS:
+                - Plan **exactly eight** actions (tool calls) to execute in the next 2 seconds.
+                - You must use a **mix of movement and attack actions**. Never attack more than 4 times in a row, and always position Mario safely first.
+                - If Mario is not near Donkey Kong, focus on getting close. Only attack when it's advantageous.
+                - Do NOT use forward_smash_attack if Mario is at the edge.
+                - Only use tools from this list:
+                    (list the subset you want)
+                - Output ONLY a list of 8 tool calls **in the exact order** to use.
+            """
+            )
+
+            prompt_text = dedent(
+                f"""
+                You are Mario, playing Super Smash Bros.
+                Your goal is to defeat Donkey Kong.
+
+                Here is the current state of the characters:
+                {desc}
+
+                Select the next eight actions to take from the available tools.
+                Output a list of eight tool calls in the order you will use them.
+            """
+            )
+
+            prompt_text = dedent(
+                f"""
+                You are Donkey Kong, playing Super Smash Bros.
+                Your goal is to defeat Mario.
+
+                Here is the current state of the characters:
+                {desc}
+
+                Select the next eight actions to take from the available tools.
+                Output a list of eight tool calls in the order you will use them.
+            """
+            )
+
+            logging.info(prompt_text)
+
             human_message = HumanMessagePromptTemplate(
                 prompt=[
                     PromptTemplate(template=prompt_text),
                     ImagePromptTemplate(
                         input_variables=["image_data"],
-                        template={"url": "data:image/png;base64,{image_data}"},
+                        template={"url": "data:image/jpeg;base64,{image_data}"},
                     ),
                 ]
             )
 
             prompt = ChatPromptTemplate.from_messages([human_message])
 
-            chain = {"image_data": RunnablePassthrough()} | prompt | llm_with_tools
+            chain = (
+                {
+                    "image_data": RunnablePassthrough(),
+                    # "desc": RunnablePassthrough(),
+                }
+                | prompt
+                | llm_with_tools
+            )
 
-            logging.debug("LLM Planner: Querying LLM for next move...")
-            # ai_msg = llm_with_tools.invoke([human_message])
-            # png = retroarch.take_screenshot()
-            # ai_msg = chain.invoke(image_to_base64(png))
-            png = capture_fullscreen_screenshot_to_base64()
-            ai_msg = chain.invoke(png)
-            logging.debug(f"LLM Planner: Raw LLM response: {ai_msg}")
+            # ai_msg = chain.invoke({"image_data": png, "desc": desc})
+            ai_msg = chain.invoke(output_image_b64)
+            logging.info(f"LLM Planner: Raw LLM response: {ai_msg}")
 
             if ai_msg.tool_calls:
                 for tool_call in ai_msg.tool_calls:
@@ -952,14 +1244,27 @@ def make_retroarch():
 def main(argv):
     del argv
     retroarch = make_retroarch()
+    time.sleep(2)  # Wait a couple seconds for rom to load, etc.
 
     print("Starting virtual controller. Press Ctrl-C to exit.")
     signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
-    move_queue = InstrumentedQueue(maxsize=2)
+    move_queue = InstrumentedQueue(maxsize=8)
     cancel_event = threading.Event()
     try:
         with uinput.Device(uinput_events, name="gemma") as device:
+            # Reset axes to neutral immediately after device creation
+            device.emit(AXES["X"], AXIS_CENTER, syn=False)
+            device.emit(AXES["Y"], AXIS_CENTER, syn=False)
+            device.syn()
+            # Optionally sleep a moment to ensure emulator samples center
+            time.sleep(0.1)
+
+            # planner_thread = threading.Thread(
+            #     target=dummy_planner,
+            #     args=(move_queue, cancel_event),
+            #     daemon=True,
+            # )
             planner_thread = threading.Thread(
                 target=llm_planner,
                 args=(move_queue, cancel_event, retroarch),
