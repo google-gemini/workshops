@@ -11,3 +11,9 @@ figcaption::before {
   content: "Figure " counter(figcaption-counter) ": ";
   font-weight: bold;
 }
+
+.slidev-layout.two-cols-header {
+  grid-template-rows: auto 1fr !important;
+  row-gap: 2rem;
+  column-gap: 2rem;
+}

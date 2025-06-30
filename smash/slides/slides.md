@@ -30,25 +30,66 @@ layout: full
 </figure>
 
 ---
+layout: two-cols-header
+---
 
 # To build a game-playing agent, you need…
 
-<div class="text-left w-3/4 mx-auto">
+::left::
 
-- ✅ Virtual controller <v-click/>
-- ✅ Multimodal LLM <v-click/>
-- ✅ Tool use <v-click/>
-- ⏳ A reasoning loop (~2 sec per turn) <v-click/>
+<div class="my-auto">
+<v-clicks class="text-left">
+
+- ✅ Virtual controller
+- ✅ Multimodal LLM
+- ✅ Tool use
+- ⏳ A reasoning loop (~1–2 sec per turn)
+
+</v-clicks>
+</div>
+
+::right::
+
+<div v-click class="prose my-auto">
+
+> Sounds simple, right? Let’s see how it actually goes.
 
 </div>
 
-<br>
+---
+layout: two-cols-header
+---
 
-<div v-click>
+# Step 0: Frame-Perfect Actions
 
-> “Sounds simple, right? Let’s see how it actually goes.”
+::left::
 
-</div>
+<v-clicks>
+
+First, we define a vocabulary of high-level moves. Each move is a Python
+generator that `yield`s a sequence of low-level controller actions at precise
+frame intervals.
+
+This lets our agent think in terms of “high attack” instead of “move stick up,
+wait 4 frames, press A...”.
+
+</v-clicks>
+
+::right::
+
+<v-click at="+1">
+
+```python {2|4|5|6|7|all}
+@tool
+def high_attack():
+    # (frame, action)
+    yield (0, move_axis("Y", AXIS_UP))
+    yield (4, press("A"))
+    yield (8, release("A"))
+    yield (12, move_axis("Y", AXIS_CENTER))
+```
+
+</v-click>
 
 ---
 
