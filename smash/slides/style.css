@@ -1,0 +1,13 @@
+/*
+  This file is automatically included by Slidev.
+  See https://sli.dev/custom/config-styles.html
+*/
+body {
+  counter-reset: figcaption-counter;
+}
+
+figcaption::before {
+  counter-increment: figcaption-counter;
+  content: "Figure " counter(figcaption-counter) ": ";
+  font-weight: bold;
+}

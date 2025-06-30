@@ -1,63 +1,58 @@
 ---
-title: "Teaching Gemini to Play Super Smash Bros"
+title: "Teaching Gemini to Fight: Building a Smash Bros Agent"
 theme: seriph
+background: https://cover.sli.dev
 transition: slide-left
 ---
 
-# Teaching Gemini to Play Super Smash Bros
+<v-clicks>
 
-A presentation for ODSC
+# Gemini plays Super Smash Bros
 
----
-layout: two-cols-header
----
+## Peter Danenberg
 
-# How the hell do you teach an LLM to fight?
-
-::left::
-
-This is Donkey Kong. He’s a sweet guy, but he doesn’t know what he’s doing… yet.
-
-::right::
-
-<video autoplay loop muted playsinline width="640">
-  <source src="/dk-flail.mp4" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+</v-clicks>
 
 ---
+layout: full
+---
 
-# What does an agent need to play a game like Smash?
+# What happens when you teach an LLM to fight?
+
+<figure class="w-full h-5/6">
+  <v-clicks>
+  <video autoplay loop muted playsinline class="w-full h-full object-contain">
+    <source src="/dk-flail.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <figcaption class="mt-2 text-center text-sm">This is Donkey Kong. And this is what happens when you ask Gemini to fight without teaching it how.</figcaption>
+  </v-clicks>
+</figure>
+
+---
+
+# To build a game-playing agent, you need…
 
 <div class="text-left w-3/4 mx-auto">
 
-- A way to **see** (game screen) <v-click/>
-- A way to **think** (reason about what’s happening) <v-click/>
-- A way to **act** (send precise button presses) <v-click/>
-- All that, **looped every second** <v-click/>
+- ✅ Virtual controller <v-click/>
+- ✅ Multimodal LLM <v-click/>
+- ✅ Tool use <v-click/>
+- ⏳ A reasoning loop (~2 sec per turn) <v-click/>
+
+</div>
+
+<br>
+
+<div v-click>
+
+> “Sounds simple, right? Let’s see how it actually goes.”
 
 </div>
 
 ---
 
-# A Multi-Modal Reasoning Loop
-
-```mermaid
-graph TD
-    A[Game Screen] --> B(Vision Model);
-    B --> C(Prompt Builder);
-    C --> D{Gemini Reasoning};
-    D --> E[Move Selection];
-    E --> F[Frame-Precise Translator];
-    F --> G(Virtual Controller);
-    G --> A;
-```
-
----
-
-# Phase 1: Random Chaos
-
-## Baseline: Random Move Generator
+# Step 1: Just press buttons randomly
 
 ```python
 import random
@@ -69,171 +64,153 @@ def random_move():
 <!-- You can embed a video here of DK flailing -->
 <!-- <video src="/dk-flailing.mp4" autoplay loop controls muted class="w-2/3 mx-auto"></video> -->
 
-“He looks like me on a Monday.”
+> “You can technically call this an agent. But it’s more like a slot machine in
+> a gorilla suit.”
 
 ---
 
-# Phase 2: Multi-Modal LLM Alone
+# Step 2: Ask Gemini what to do from a screenshot
 
-## Gemini Sees, but Doesn’t Understand
-
-<!-- Add screenshot of DK and Mario mid-fight -->
-<!-- <img src="/dk-mario-fight.png" class="h-64 mx-auto my-4"/> -->
-
-> You are Donkey Kong. What move should you do now?
+> You are Donkey Kong. What move should you make?
 
 <!-- Add video clip of DK walking offstage -->
 <!-- <video src="/dk-walks-offstage.mp4" autoplay loop controls muted class="w-2/3 mx-auto"></video> -->
 
-“LLMs struggle with implicit spatial reasoning.”
+> “Turns out Gemini’s spatial reasoning is... aspirational.”
 
 ---
 
-# Phase 3: Adding a Vision Model
+# Step 3: Add a vision model via Roboflow
 
-## Roboflow: Finding Mario
+<div class="grid grid-cols-2 gap-4">
+<div>
+
+<!-- Add side-by-side image: original screen + bounding boxes -->
+
+A screenshot with bounding boxes around characters would go here.
+
+</div>
+<div>
 
 ```python
-# Assuming a function `detect` that calls a vision model
-mario_pos = detect("Mario", frame)
-
-# Create a more informed prompt
-prompt = f"You're Donkey Kong. Mario is at {mario_pos}. What do you do?"
+mario_pos = detect("Mario", screen)
+prompt = f"You're Donkey Kong. Mario is {mario_pos}. What do you do?"
 ```
+
+</div>
+</div>
 
 <!-- Add video clip of DK punching Mario -->
 <!-- <video src="/dk-punches-mario.mp4" autoplay loop controls muted class="w-2/3 mx-auto"></video> -->
 
-“Sometimes, seeing really _is_ believing.”
+> “This tiny model fixed everything. DK can now _see_ Mario and act
+> accordingly.”
 
 ---
 
-# Phase 4: Vocabulary + Queue
-
-## High-Level Moves → Low-Level Precision
+# Step 4: High-level strategy → Frame-perfect action
 
 <div class="grid grid-cols-2 gap-8">
 <div>
 
-### LLM Intent
+### Gemini response
 
 ```json
-["short hop fair", "dash grab", "ledge guard"]
+ledge_guard()
 ```
 
 </div>
 <div>
 
-### Frame-Perfect Execution
+### Frame-timed input chart
 
-Diagrams showing frame-by-frame inputs for each move. (e.g., `Frame 1: Press A`,
-`Frame 2: Tilt Left`, etc.)
+<!-- Diagram showing frame-by-frame inputs for each move. -->
 
 </div>
 </div>
 
-“LLMs plan, but they’re not frame-perfect. So we translated intent into
-pre-programmed motion chunks.”
+> “We give Gemini a vocabulary of high-level moves and queue up the
+> frame-perfect inputs behind the scenes.”
 
 ---
 
-# Phase 5: Tool Use + Planning
-
-## Gemini Calls the Shots
+# Step 5: Gemini calls tools, not buttons
 
 ```python
-# Gemini's output is now a structured tool call
-Gemini: use(move="ledge_guard", target="Mario")
+Agent: use(tool="dash_grab", target="Mario")
 ```
 
-<!-- Visual of a queue of moves being consumed -->
-<div class="font-mono text-left w-2/3 mx-auto">
-<p class="p-2 bg-gray-200 rounded">Queue: [ledge_guard, dash_attack, up_smash]</p>
-<p class="p-2 mt-2">Executing: <span class="text-green-500">ledge_guard</span></p>
-</div>
-
-“The LLM reasons about strategy. A toolchain handles execution.”
+> “Gemini doesn’t touch buttons. It thinks in terms of intentions. The system
+> handles execution.”
 
 ---
 
-# Reasoning Constraints
-
-## Gemini Needs Time to Think
-
-The loop takes ~2 seconds, requiring anticipatory planning.
+# Each decision takes ~2 seconds
 
 <div class="text-left w-3/4 mx-auto">
 
 **Timeline of a single move:**
 
-1.  **T+0s:** Capture Screen
-2.  **T+0.5s:** Vision Model Analysis (Where is Mario?)
-3.  **T+1.5s:** Gemini Reasoning (What should I do?)
-4.  **T+2.0s:** Action Execution (Press buttons)
-
-The agent isn't reacting to the present, but predicting the near future.
-
-</div>
-
----
-
-# Debugging the Agentic Mind
-
-## LangSmith: Watching the Mind Work
-
-<!-- Add a real LangSmith trace screenshot -->
-<!-- <img src="/langsmith-trace.png" class="h-96 mx-auto my-4"/> -->
-
-“Why did DK down-smash into thin air? Turns out, Gemini thought Mario was still
-there.”
-
----
-
-# Future Work
-
-## Smarter, Faster, Stronger
-
-<div class="text-left w-1/2 mx-auto">
-
-- Run vision model locally for **latency**
-- Try **Gemma** for faster, fine-tunable loops
-- Add **platform abstraction** and **percent awareness**
-- Combine **LLM for strategy** + **RL for tactics**
-
-</div>
-
-“The real power is in the hybrid.”
-
----
-
-# Live Demo
-
-## Live: DK Learns to Fight
-
-<!--
-This slide is for a live demonstration
--->
-
----
-class: text-center
----
-
-# Broader Implications
-
-## Smash Bros is Just a Testbed
-
-<div class="text-left w-3/4 mx-auto">
-
-- **Strategic delegation** to LLMs
-- **Tactical execution** via RL or hardcoded control
-- Works in: **trading, robotics, code agents, sim games**
+1.  **Frame → Vision** (T+0.5s)
+2.  **Vision → Gemini** (T+1.5s)
+3.  **Gemini → Tool Call → Controller** (T+2.0s)
 
 </div>
 
 <br/>
 
-> “The idea isn’t Smash. It’s that _strategy and tactics belong to different
-> minds._”
+> “So we have to plan just enough ahead — not forever, but a couple seconds.”
+
+---
+
+# LangSmith: Why did DK smash the air 3 times?
+
+<!-- Add a real LangSmith trace screenshot -->
+<!-- <img src="/langsmith-trace.png" class="h-96 mx-auto my-4"/> -->
+
+> “LangSmith helped us realize: Gemini thought Mario was still there. We were
+> debugging _a belief._”
+
+---
+
+# Live: DK learns to fight
+
+<!--
+This slide is for a live demonstration
+-->
+
+> “Let’s run it live. If Eris shows up, we welcome her.”
+
+---
+
+# This Pattern Applies Everywhere
+
+<div class="grid grid-cols-3 gap-8 text-center mb-8">
+<div>
+  <h3 class="font-bold">LLM</h3>
+  <p>Strategic Reasoning</p>
+</div>
+<div>
+  <h3 class="font-bold">Vision / Context</h3>
+  <p>Perception</p>
+</div>
+<div>
+  <h3 class="font-bold">RL / Scripts</h3>
+  <p>Tactical Execution</p>
+</div>
+</div>
+
+**Examples:**
+
+- Trading
+- Robotics
+- DevOps agents
+- Real-time assistants
+
+<br/>
+
+> “Smash is a metaphor. What we really built is an agentic control loop — and
+> this pattern’s everywhere.”
 
 ---
 layout: image
@@ -241,9 +218,7 @@ layout: image
 # image: /dk-glorious.png
 ---
 
-# Q&A
-
-Thanks — and beware the cargo-shorts Donkey Kong agent.
+# Thanks! Questions? Code? Ideas? Let’s jam.
 
 <div class="mt-8">
   <p>Code: github.com/your-repo/smash-ai</p>

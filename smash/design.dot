@@ -1,0 +1,13 @@
+digraph SmashMicroColored {
+	graph [rankdir=LR];
+	node [fontsize=14,
+		shape=box,
+		style=rounded
+	];
+	Emulator	[label="Game Emulator"];
+	AIPlanner	[label="AI Planner\n(Vision + Gemini LLM)"];
+	Emulator -> AIPlanner	[label="screen\n(state)"];
+	Controller	[label="Virtual Controller"];
+	AIPlanner -> Controller	[label="actions:\nmove_right(), jump(),\nattack(), special_attack()\netc."];
+	Controller -> Emulator	[label=inputs];
+}
