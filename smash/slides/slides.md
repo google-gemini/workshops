@@ -25,8 +25,8 @@ layout: full
     <source src="/dk-flail.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
-  <figcaption class="mt-2 text-center text-sm">This is Donkey Kong. And this is what happens when you ask Gemini to fight without teaching it how.</figcaption>
   </v-clicks>
+  <figcaption class="mt-2 text-center text-sm">This is Donkey Kong. And this is what happens when you ask Gemini to fight without teaching it how.</figcaption>
 </figure>
 
 ---
@@ -242,108 +242,65 @@ def llm_planner(move_queue, ...):
 ::right::
 
 <figure class="w-full h-5/6">
+    <v-switch>
+      <template #1>
+        <video autoplay loop muted playsinline class="w-full h-full object-contain">
+          <source src="/dk-vision-one.mp4" type="video/mp4">
+        </video>
+      </template>
+      <template #2>
+        <video autoplay loop muted playsinline class="w-full h-full object-contain">
+          <source src="/dk-vision-two.mp4" type="video/mp4">
+        </video>
+      </template>
+    </v-switch>
+    <figcaption v-click="+8" style="counter-set: figcaption-counter 7;" class="mt-2 text-center text-sm">With vision, the agent can now react to Mario's position, leading to more intentional behavior.</figcaption>
+</figure>
+
+---
+layout: two-cols-header
+---
+
+# Step 5: Debugging with LangSmith
+
+::left::
+
+<v-clicks>
+
+```bash
+# Set environment variables
+export LANGSMITH_TRACING=true
+export LANGSMITH_ENDPOINT="..."
+export LANGSMITH_API_KEY="..."
+export LANGSMITH_PROJECT="..."
+
+# Run the script
+./run.sh
+```
+
+</v-clicks>
+
+::right::
+
+<figure class="w-full h-5/6">
   <v-clicks>
   <video autoplay loop muted playsinline class="w-full h-full object-contain">
-    <source src="/dk-vision-one.mp4" type="video/mp4">
+    <source src="/dk-langsmith.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
-  <figcaption style="counter-set: figcaption-counter 7;" class="mt-2 text-center text-sm">With vision, the agent can now react to Mario's position, leading to more intentional behavior.</figcaption>
+  <figcaption style="counter-set: figcaption-counter 8;" class="mt-2 text-center text-sm">A LangSmith trace shows the exact inputs (prompt, image) and outputs (tool calls) for each LLM invocation.</figcaption>
   </v-clicks>
 </figure>
 
 ---
 
-# Step 5: Gemini calls tools, not buttons
-
-```python
-Agent: use(tool="dash_grab", target="Mario")
-```
-
-> “Gemini doesn’t touch buttons. It thinks in terms of intentions. The system
-> handles execution.”
+# DK learns to fight?
 
 ---
 
-# Each decision takes ~2 seconds
+# Thanks!
 
-<div class="text-left w-3/4 mx-auto">
-
-**Timeline of a single move:**
-
-1.  **Frame → Vision** (T+0.5s)
-2.  **Vision → Gemini** (T+1.5s)
-3.  **Gemini → Tool Call → Controller** (T+2.0s)
-
-</div>
-
-<br/>
-
-> “So we have to plan just enough ahead — not forever, but a couple seconds.”
-
----
-
-# LangSmith: Why did DK smash the air 3 times?
-
-<!-- Add a real LangSmith trace screenshot -->
-<!-- <img src="/langsmith-trace.png" class="h-96 mx-auto my-4"/> -->
-
-> “LangSmith helped us realize: Gemini thought Mario was still there. We were
-> debugging _a belief._”
-
----
-
-# Live: DK learns to fight
-
-<!--
-This slide is for a live demonstration
--->
-
-> “Let’s run it live. If Eris shows up, we welcome her.”
-
----
-
-# This Pattern Applies Everywhere
-
-<div class="grid grid-cols-3 gap-8 text-center mb-8">
-<div>
-  <h3 class="font-bold">LLM</h3>
-  <p>Strategic Reasoning</p>
-</div>
-<div>
-  <h3 class="font-bold">Vision / Context</h3>
-  <p>Perception</p>
-</div>
-<div>
-  <h3 class="font-bold">RL / Scripts</h3>
-  <p>Tactical Execution</p>
-</div>
-</div>
-
-**Examples:**
-
-- Trading
-- Robotics
-- DevOps agents
-- Real-time assistants
-
-<br/>
-
-> “Smash is a metaphor. What we really built is an agentic control loop — and
-> this pattern’s everywhere.”
-
----
-
-layout: image
-
-# Add a freeze-frame of DK doing something glorious
-
-# image: /dk-glorious.png
-
----
-
-# Thanks! Questions? Code? Ideas? Let’s jam.
-
-<div class="mt-8">
-  <p>Code: github.com/your-repo/smash-ai</p>
-  <p>Contact: @your-handle</p>
-</div>
+<figure class="w-full h-full flex flex-col items-center justify-center">
+  <img src="/github-qr.svg" class="w-2/3 h-2/3 object-contain"/>
+  <figcaption style="counter-set: figcaption-counter 9;" class="mt-2 text-center text-sm"><a href="https://github.com/google-gemini/workshops">https://github.com/google-gemini/workshops</a></figcaption>
+</figure>
