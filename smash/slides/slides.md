@@ -50,11 +50,12 @@ layout: two-cols-header
 
 ::right::
 
-<div v-click class="prose my-auto">
-
-> Sounds simple, right? Let’s see how it actually goes.
-
-</div>
+<figure class="w-full h-5/6 my-auto">
+  <v-clicks>
+  <img src="/reasoning-loop.svg" class="w-full object-contain"/>
+  <figcaption style="counter-set: figcaption-counter 2;" class="mt-2 text-center text-sm">The agent follows a continuous loop of perceiving the game, reasoning with an LLM, and acting with tools.</figcaption>
+  </v-clicks>
+</figure>
 
 ---
 layout: two-cols-header
@@ -66,19 +67,6 @@ layout: two-cols-header
 
 <v-clicks>
 
-First, we define a vocabulary of high-level moves. Each move is a Python
-generator that `yield`s a sequence of low-level controller actions at precise
-frame intervals.
-
-This lets our agent think in terms of “high attack” instead of “move stick up,
-wait 4 frames, press A...”.
-
-</v-clicks>
-
-::right::
-
-<v-click at="+1">
-
 ```python {2|4|5|6|7|all}
 @tool
 def high_attack():
@@ -89,24 +77,52 @@ def high_attack():
     yield (12, move_axis("Y", AXIS_CENTER))
 ```
 
-</v-click>
+</v-clicks>
+
+::right::
+
+<figure class="w-full h-5/6">
+  <v-clicks>
+  <video autoplay loop muted playsinline class="w-full h-full object-contain">
+    <source src="/dk-high-attack.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <figcaption style="counter-set: figcaption-counter 3;" class="mt-2 text-center text-sm">Each high-level move is a generator that yields precise, frame-perfect actions. This creates a vocabulary for the agent.</figcaption>
+  </v-clicks>
+</figure>
 
 ---
+layout: two-cols-header
+---
 
-# Step 1: Just press buttons randomly
+# Step 1: Just pick moves randomly
+
+::left::
 
 ```python
-import random
+# A list of our high-level moves
+all_moves = [
+    high_attack, low_attack,
+    forward_smash_attack, ...
+]
 
-def random_move():
-    return random.choice(["jump", "left", "smash", "roll"])
+# A planner that endlessly picks
+# and executes a random move.
+def random_planner():
+    while True:
+        move = random.choice(all_moves)
+        execute_move(move)
+        time.sleep(0.5)
 ```
 
-<!-- You can embed a video here of DK flailing -->
-<!-- <video src="/dk-flailing.mp4" autoplay loop controls muted class="w-2/3 mx-auto"></video> -->
+::right::
 
-> “You can technically call this an agent. But it’s more like a slot machine in
-> a gorilla suit.”
+<div class="prose my-auto">
+
+> You can technically call this an agent. But it’s more like a slot machine in a
+> gorilla suit.
+
+</div>
 
 ---
 

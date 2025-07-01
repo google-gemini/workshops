@@ -648,38 +648,38 @@ def control_loop(device, move_queue, cancel_event):
 def dummy_planner(move_queue, cancel_event):
     # List of all move functions to check
     move_funcs = [
-        move_left,
-        move_right,
-        jump,
-        down,
-        dash,
-        normal_attack,
-        special_attack,
-        throw,
-        taunt,
-        guard,
-        escape_roll,
-        weak_attack,
-        strong_attack,
+        # move_left,
+        # move_right,
+        # jump,
+        # down,
+        # dash,
+        # normal_attack,
+        # special_attack,
+        # throw,
+        # taunt,
+        # guard,
+        # escape_roll,
+        # weak_attack,
+        # strong_attack,
         high_attack,
-        low_attack,
-        dashing_attack,
-        jumping_attack,
-        forward_attack,
-        backward_attack,
-        upward_attack,
-        downward_attack,
-        forward_smash_attack,
-        high_smash_attack,
-        low_smash_attack,
-        special_attack_ground,
-        special_attack_air,
-        up_special,
-        down_special,
-        left_special,
-        right_special,
-        jump_attack,
-        attack_only,
+        # low_attack,
+        # dashing_attack,
+        # jumping_attack,
+        # forward_attack,
+        # backward_attack,
+        # upward_attack,
+        # downward_attack,
+        # forward_smash_attack,
+        # high_smash_attack,
+        # low_smash_attack,
+        # special_attack_ground,
+        # special_attack_air,
+        # up_special,
+        # down_special,
+        # left_special,
+        # right_special,
+        # jump_attack,
+        # attack_only,
     ]
     i = 0
     while True:
@@ -704,7 +704,7 @@ def dummy_planner(move_queue, cancel_event):
                 else:
                     raise
             enqueue_move(move, move_queue, cancel_event)
-            time.sleep(TICK * 4)
+        time.sleep(TICK * 120)
         i += 1
 
 
@@ -1260,16 +1260,16 @@ def main(argv):
             # Optionally sleep a moment to ensure emulator samples center
             time.sleep(0.1)
 
-            # planner_thread = threading.Thread(
-            #     target=dummy_planner,
-            #     args=(move_queue, cancel_event),
-            #     daemon=True,
-            # )
             planner_thread = threading.Thread(
-                target=llm_planner,
-                args=(move_queue, cancel_event, retroarch),
+                target=dummy_planner,
+                args=(move_queue, cancel_event),
                 daemon=True,
             )
+            # planner_thread = threading.Thread(
+            #     target=llm_planner,
+            #     args=(move_queue, cancel_event, retroarch),
+            #     daemon=True,
+            # )
             planner_thread.start()
             control_loop(device, move_queue, cancel_event)
     except OSError as e:
