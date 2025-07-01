@@ -99,7 +99,9 @@ layout: two-cols-header
 
 ::left::
 
-```python
+<v-clicks>
+
+```python {none|1-5|7-14|all}
 # A list of our high-level moves
 all_moves = [
     high_attack, low_attack,
@@ -115,14 +117,19 @@ def random_planner():
         time.sleep(0.5)
 ```
 
+</v-clicks>
+
 ::right::
 
-<div class="prose my-auto">
-
-> You can technically call this an agent. But it’s more like a slot machine in a
-> gorilla suit.
-
-</div>
+<figure class="w-full h-5/6">
+  <v-clicks>
+  <video autoplay loop muted playsinline class="w-full h-full object-contain">
+    <source src="/dk-random.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <figcaption style="counter-set: figcaption-counter 4;" class="mt-2 text-center text-sm">You can technically call this an agent. But it’s more like a slot machine in a gorilla suit.</figcaption>
+  </v-clicks>
+</figure>
 
 ---
 
@@ -270,9 +277,13 @@ This slide is for a live demonstration
 > this pattern’s everywhere.”
 
 ---
+
 layout: image
+
 # Add a freeze-frame of DK doing something glorious
+
 # image: /dk-glorious.png
+
 ---
 
 # Thanks! Questions? Code? Ideas? Let’s jam.
