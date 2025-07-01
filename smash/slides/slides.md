@@ -132,69 +132,124 @@ def random_planner():
 </figure>
 
 ---
+layout: two-cols-header
+---
 
 # Step 2: Ask Gemini what to do from a screenshot
 
-> You are Donkey Kong. What move should you make?
+::left::
 
-<!-- Add video clip of DK walking offstage -->
-<!-- <video src="/dk-walks-offstage.mp4" autoplay loop controls muted class="w-2/3 mx-auto"></video> -->
+<v-clicks>
+```python {none|1|2-3|4-7|9-10|11-12|13-14|all}
+def llm_planner(move_queue, ...):
+    # Create a Gemini-powered LLM
+    llm = make_gemini()
+    # Bind our high-level moves as tools
+    llm_with_tools = llm.bind_tools(
+        [high_attack, low_attack, ...]
+    )
+    while True:
+        # Capture screen
+        png = capture_screenshot()
+        # Ask the LLM to choose a tool
+        ai_msg = llm_with_tools.invoke(png)
+        # Enqueue the chosen move
+        enqueue_move(ai_msg.tool_calls)
+```
+</v-clicks>
 
-> “Turns out Gemini’s spatial reasoning is... aspirational.”
+::right::
+
+<figure class="w-full h-5/6">
+  <v-clicks>
+  <video autoplay loop muted playsinline class="w-full h-full object-contain">
+    <source src="/dk-llm.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <figcaption style="counter-set: figcaption-counter 5;" class="mt-2 text-center text-sm">Now hooked up to a multimodal reasoning loop, DK has a mind of his own. Turns out Gemini’s spatial reasoning is... aspirational.</figcaption>
+  </v-clicks>
+</figure>
 
 ---
-
-# Step 3: Add a vision model via Roboflow
-
-<div class="grid grid-cols-2 gap-4">
-<div>
-
-<!-- Add side-by-side image: original screen + bounding boxes -->
-
-A screenshot with bounding boxes around characters would go here.
-
-</div>
-<div>
-
-```python
-mario_pos = detect("Mario", screen)
-prompt = f"You're Donkey Kong. Mario is {mario_pos}. What do you do?"
-```
-
-</div>
-</div>
-
-<!-- Add video clip of DK punching Mario -->
-<!-- <video src="/dk-punches-mario.mp4" autoplay loop controls muted class="w-2/3 mx-auto"></video> -->
-
-> “This tiny model fixed everything. DK can now _see_ Mario and act
-> accordingly.”
-
+layout: two-cols-header
 ---
 
-# Step 4: High-level strategy → Frame-perfect action
+# Step 3: Train a vision model via Roboflow
 
-<div class="grid grid-cols-2 gap-8">
-<div>
+::left::
 
-### Gemini response
+<v-clicks>
 
-```json
-ledge_guard()
+```python {none|1|2-5|7-9|11-12|all}
+def summarize_smash_detection(result):
+    # Find Mario and Donkey Kong
+    preds = result[0]["predictions"]
+    mario = find(preds, "Mario")
+    dk = find(preds, "DonkeyKong")
+
+    # Calculate differences
+    dx = abs(mario["x"] - dk["x"])
+    dy = abs(mario["y"] - dk["y"])
+
+    # Create a summary string
+    return f"Mario: x={mario['x']} | DK: x={dk['x']} | dx={dx}"
+
 ```
 
-</div>
-<div>
+</v-clicks>
 
-### Frame-timed input chart
+::right::
 
-<!-- Diagram showing frame-by-frame inputs for each move. -->
+<figure class="w-full h-5/6">
+  <v-clicks>
+  <img src="/smash-annotated.png" class="w-full h-full object-contain"/>
+  <figcaption style="counter-set: figcaption-counter 6;" class="mt-2 text-center text-sm">A Roboflow vision model annotates Mario and DK, providing the raw data for our reasoning loop.</figcaption>
+  </v-clicks>
+</figure>
 
-</div>
-</div>
+---
+layout: two-cols-header
+---
 
-> “We give Gemini a vocabulary of high-level moves and queue up the
-> frame-perfect inputs behind the scenes.”
+# Step 4: Integrate vision with Gemini
+
+::left::
+
+<v-clicks>
+
+```python {none|1-3|4-6|8-9|11-12|14-16|all}
+def llm_planner(move_queue, ...):
+    # ... (LLM setup)
+    while True:
+        # Capture screen and call Roboflow
+        png = capture_screenshot()
+        result = call_roboflow_inference(png)
+
+        # Summarize detection results
+        desc = summarize_smash_detection(result)
+
+        # Create a prompt with the summary
+        prompt = f"State: {desc}. Select your next eight actions."
+
+        # Ask the LLM to choose a tool
+        ai_msg = llm_with_tools.invoke(prompt, png)
+        enqueue_move(ai_msg.tool_calls)
+
+```
+
+</v-clicks>
+
+::right::
+
+<figure class="w-full h-5/6">
+  <v-clicks>
+  <video autoplay loop muted playsinline class="w-full h-full object-contain">
+    <source src="/dk-vision-one.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <figcaption style="counter-set: figcaption-counter 7;" class="mt-2 text-center text-sm">With vision, the agent can now react to Mario's position, leading to more intentional behavior.</figcaption>
+  </v-clicks>
+</figure>
 
 ---
 

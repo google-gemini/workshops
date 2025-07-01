@@ -1017,11 +1017,11 @@ def llm_planner(move_queue, cancel_event, retroarch):
       #     "last_screen.png",
       #     retroarch,
       # )
-      # result = call_roboflow_inference(screenshot_file)
+      result = call_roboflow_inference(screenshot_file)
       # print(result)
       # time.sleep(2)  # Wait to avoid rate limiting
-      # desc = summarize_smash_detection(result)  # your text summary
-      desc = "Mario is to the left of Donkey Kong"
+      desc = summarize_smash_detection(result)  # your text summary
+      # desc = "Mario is to the left of Donkey Kong"
       # output_image_b64 = result[0][
       #     "output_image"
       # ]  # base64-encoded jpeg (or png)
