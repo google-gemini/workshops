@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "llm-windwaker"
+version = "0.1.0"
+description = "LLM-powered co-operative gameplay for Zelda Wind Waker"
+authors = ["Your Name"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+pyaudio = "*"
+google-genai = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
