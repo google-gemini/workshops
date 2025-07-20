@@ -49,6 +49,7 @@ import traceback
 
 import pyaudio
 from google import genai
+from google.genai import types
 
 if sys.version_info < (3, 11, 0):
     import exceptiongroup
@@ -68,8 +69,26 @@ CONFIG = {
     "response_modalities": ["AUDIO"],
     "system_instruction": """You are a helpful gaming companion for The Legend of Zelda: Wind Waker.
     You're knowledgeable about the game's mechanics, locations, items, and story.
-    You can provide guidance, tips, and engage in friendly conversation about the game.
+    You can help sail to different locations and provide guidance about the game.
     Keep responses conversational and not too long since this is voice chat.""",
+    "tools": [
+        {"function_declarations": [
+            {
+                "name": "sail_to",
+                "description": "Sail to a specific location in Wind Waker",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The destination to sail to (e.g., 'Dragon Roost Island', 'Windfall Island')"
+                        }
+                    },
+                    "required": ["location"]
+                }
+            }
+        ]}
+    ]
 }
 
 
@@ -138,10 +157,42 @@ class WindWakerVoiceChat:
                     continue
                 if text := response.text:
                     print(f"🤖 Gemini: {text}", end="")
+                    continue
+                
+                # Handle tool calls
+                tool_call = response.tool_call
+                if tool_call is not None:
+                    await self.handle_tool_call(tool_call)
+                    continue
 
             # Handle interruptions - clear audio queue
             while not self.audio_in_queue.empty():
                 self.audio_in_queue.get_nowait()
+
+    async def handle_tool_call(self, tool_call):
+        """Handle tool calls from Gemini"""
+        function_responses = []
+        for fc in tool_call.function_calls:
+            print(f"\n🔧 Tool call: {fc.name}")
+            
+            if fc.name == "sail_to":
+                location = fc.args.get("location", "unknown location")
+                print(f"🚢 Sailing to {location}...")
+                result = {
+                    "status": "sailing", 
+                    "destination": location,
+                    "message": f"Setting sail for {location}! Keep an eye out for enemies and obstacles."
+                }
+            else:
+                result = {"error": f"Unknown function: {fc.name}"}
+            
+            function_responses.append(types.FunctionResponse(
+                id=fc.id,
+                name=fc.name,
+                response=result
+            ))
+        
+        await self.session.send_tool_response(function_responses=function_responses)
 
     async def play_audio(self):
         """Play audio responses"""
