@@ -96,22 +96,50 @@
 4. **Semantic search beats training data**: Official walkthrough more reliable than model knowledge
 5. **Incremental complexity works**: Build core functionality before adding features
 
-## Next Steps
+## Technical Architecture
 
-### Immediate (This Week)
-- [ ] Resolve git rebase between vision and walkthrough features
-- [ ] Clean up 49 untracked files
-- [ ] Test walkthrough search accuracy with real gameplay questions
+### Audio Pipeline
+- **Input**: PyAudio microphone capture → Gemini Live API
+- **Output**: Gemini Live API → PyAudio speaker playback
+- **Optimization**: Pre-buffering (3 chunks) prevents stuttering
+- **Challenge**: PipeWire/PulseAudio device compatibility
 
-### Short Term (This Month)
-- [ ] Optimize embedding search performance (caching, indexing)
-- [ ] Add more game-specific tools (inventory management, quest tracking)
-- [ ] Robust error handling for all tool functions
+### Vision System
+- **Capture**: mss fullscreen screenshots → PIL image processing
+- **Analysis**: Gemini 2.5 Flash vision model → structured JSON output
+- **Integration**: `get_game_status` tool for proactive analysis
+- **Bottleneck**: 2-10 second analysis time blocks conversation
 
-### Long Term
-- [ ] Expand to other Zelda games or gaming contexts
-- [ ] Performance monitoring and optimization
-- [ ] User testing and feedback integration
+### Knowledge System
+- **Source**: Official Wind Waker walkthrough text
+- **Processing**: Text chunking (1000/200 chars) → Gemini embeddings
+- **Search**: Numpy dot product similarity matching
+- **Storage**: 24.5MB JSON embeddings (git-excluded)
+
+### Tool Orchestration
+- **Current**: Sequential function calling via Gemini Live API
+- **Limitation**: Cannot execute multiple tools simultaneously
+- **Tools**: `sail_to`, `get_game_status`, `search_walkthrough`
+
+## Future Considerations
+
+### Performance Optimization
+- Async tool execution for vision analysis
+- Embedding caching strategies
+- Vector database migration (Pinecone, Chroma)
+- Parallel tool execution architecture
+
+### Capability Expansion
+- Multi-modal query handling (vision + knowledge simultaneously)
+- Game-specific tooling (inventory, quest tracking)
+- Cross-game compatibility architecture
+- Real-time performance monitoring
+
+### User Experience
+- Conversation flow optimization
+- Context-aware tool selection
+- Graceful error handling patterns
+- User feedback integration loops
 
 ---
 *Last updated: July 21, 2025*
