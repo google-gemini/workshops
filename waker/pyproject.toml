@@ -10,6 +10,8 @@ package-mode = false
 python = ">=3.9,<3.13"
 pyaudio = "*"
 google-genai = "*"
+mss = "*"
+Pillow = "*"
 
 [build-system]
 requires = ["poetry-core"]
