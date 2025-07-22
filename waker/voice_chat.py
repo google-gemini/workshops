@@ -73,47 +73,15 @@ MODEL = "gemini-2.5-flash-preview-native-audio-dialog"
 CONFIG = {
     "response_modalities": ["AUDIO"],
     "system_instruction": (
-        """You are a helpful gaming companion for The Legend of Zelda: Wind Waker.
+        """You're a Wind Waker gaming companion.
 
-    IMPORTANT: For ANY specific game knowledge (songs, quests, locations, items, mechanics),
-    you should ALWAYS use the search_walkthrough tool first to get accurate information from
-    the official walkthrough before responding. Do not rely on your training data for
-    Wind Waker facts as it may be incorrect.
+    To answer questions about the game, use search_walkthrough.
+    To see what's happening on screen, use see_game_screen.
 
-    Use search_walkthrough for:
-    - Song sequences and how to play them
-    - Quest steps and what to do next
-    - Item locations and how to get them
-    - Character locations and interactions
-    - Game mechanics and controls
-    - Dungeon solutions and walkthroughs
-
-    Use see_game_screen to answer questions about what you can "see" on the screen. This is your primary way of observing the game. Use it whenever the user asks:
-    - "What's happening right now?", "What do you see?", or "Can you see the screen?"
-    - To check Link's current status and location
-    - For real-time game state analysis
-
-    Keep responses conversational and not too long since this is voice chat."""
+    Keep responses short for voice chat."""
     ),
     "tools": [{
         "function_declarations": [
-            {
-                "name": "sail_to",
-                "description": "Sail to a specific location in Wind Waker",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {
-                            "type": "string",
-                            "description": (
-                                "The destination to sail to (e.g., 'Dragon"
-                                " Roost Island', 'Windfall Island')"
-                            ),
-                        }
-                    },
-                    "required": ["location"],
-                },
-            },
             {
                 "name": "see_game_screen",
                 "description": (
@@ -139,8 +107,9 @@ CONFIG = {
             {
                 "name": "search_walkthrough",
                 "description": (
-                    "Search Wind Waker walkthrough for specific information"
-                    " about songs, quests, locations, and game mechanics"
+                    "Search Wind Waker walkthrough for accurate information about songs, "
+                    "quests, locations, items, and game mechanics. Recommended for specific "
+                    "game details to ensure accuracy."
                 ),
                 "parameters": {
                     "type": "object",
@@ -271,18 +240,7 @@ class WindWakerVoiceChat:
     for fc in tool_call.function_calls:
       print(f"\n🔧 Tool call: {fc.name}")
 
-      if fc.name == "sail_to":
-        location = fc.args.get("location", "unknown location")
-        print(f"🚢 Sailing to {location}...")
-        result = {
-            "status": "sailing",
-            "destination": location,
-            "message": (
-                f"Setting sail for {location}! Keep an eye out for enemies and"
-                " obstacles."
-            ),
-        }
-      elif fc.name == "see_game_screen":
+      if fc.name == "see_game_screen":
         print("📸 Seeing game screen...")
         screenshot_data = self.take_screenshot()
 

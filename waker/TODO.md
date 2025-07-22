@@ -6,6 +6,10 @@
 
 Switched vision model to `gemini-2.0-flash-lite`, which is fast enough to be used synchronously. An attempt to make the tool call async was unsuccessful; the model would either get stuck in a loop calling the tool or give confusing "tool in progress" updates. The current synchronous approach with the faster model has acceptable latency.
 
+## Re-add sail_to tool with actual game actuation
+
+The `sail_to` tool was temporarily removed because it was distracting Gemini from using the walkthrough search. Once the core functionality is solid, re-add it with actual game control capabilities (keyboard/controller input) so it can actually sail Link to destinations rather than just pretending.
+
 ## Enable parallel tool calling
 
 Right now it can only do one thing at a time - either look at the screen OR search the walkthrough, but not both. For complex questions like "what should I do here?" it really needs to do both simultaneously. The function calling is all sequential which feels dumb.
@@ -48,7 +52,7 @@ Need to actually test this systematically with real gameplay questions and see i
 
 ## Ideas for later
 
-Multiple tools per query would be cool - vision + walkthrough + game state all at once. Async vision with background screenshots for faster responses. More game-specific tools like inventory management, quest tracking, map stuff. Maybe expand beyond Wind Waker to other games eventually.
+Multiple tools per query would be cool - vision + walkthrough + game state all at once. Async vision with background screenshots for faster responses. More game-specific tools like inventory management, quest tracking, map stuff. Game actuation for sail_to and other movement commands. Maybe expand beyond Wind Waker to other games eventually.
 
 ---
 

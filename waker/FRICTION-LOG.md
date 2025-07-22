@@ -59,6 +59,17 @@
 - **Resolution**: Sticking with a synchronous call for `see_game_screen` was deemed the best user experience. The latency of `gemini-2.0-flash-lite` is acceptable, and it avoids the conversational breakdown of the async approach.
 **Status**: ✅ Confirmed synchronous vision analysis is the optimal approach for now.
 
+### Prompt Engineering for Tool Usage (Late July 2025)
+**Date**: July 22, 2025
+**Obstacle**: Gemini consistently preferred to hallucinate Wind Waker information rather than use the search_walkthrough tool, even with aggressive system instructions.
+**Solution**: Applied Occam's Razor to drastically simplify the system prompt.
+- **Initial approach**: Complex, aggressive prompt with warnings about incorrect training data, detailed examples, and behavioral patterns (~40 lines)
+- **Problem**: Despite explicit instructions, Gemini would claim it would search the walkthrough but then provide answers from memory
+- **Resolution**: Simplified to just 3 lines: "To answer questions about the game, use search_walkthrough. To see what's happening on screen, use see_game_screen. Keep responses short for voice chat."
+- **Result**: Gemini now consistently searches the walkthrough multiple times per query, providing accurate game information
+- Also removed the `sail_to` tool temporarily as it was distracting from core functionality
+**Status**: ✅ Minimal prompt approach proven highly effective
+
 ## Current Challenges
 
 ### Repository Management
@@ -127,7 +138,7 @@
 ### Tool Orchestration
 - **Current**: Sequential function calling via Gemini Live API
 - **Limitation**: Cannot execute multiple tools simultaneously
-- **Tools**: `sail_to`, `see_game_screen`, `search_walkthrough`
+- **Tools**: `see_game_screen`, `search_walkthrough` (temporarily removed `sail_to`)
 
 ## Future Considerations
 
