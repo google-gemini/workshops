@@ -23,8 +23,8 @@
 **Obstacle**: Voice assistant was blind to actual game state on screen
 **Solution**: Added comprehensive computer vision capability
 - Screenshot capture using mss and PIL for fullscreen monitoring
-- Integrated Gemini 2.5 Flash vision model for game state analysis
-- Created `get_game_status` tool with structured JSON output
+- Integrated gemini-2.0-flash-lite vision model for game state analysis
+- Created `see_game_screen` tool with structured JSON output
 - Fixed PulseAudio device detection for PipeWire compatibility
 - Added `mvp_chat.py` as minimal audio chat proof-of-concept
 
@@ -50,6 +50,15 @@
 - Enables accurate, contextual Wind Waker gameplay help
 **Status**: ✅ Accurate game knowledge established
 
+### Vision Performance Tuning (Late July 2025)
+**Date**: July 22, 2025
+**Obstacle**: Even with the faster `gemini-2.0-flash-lite` model, there was a desire to eliminate any blocking I/O by making the vision tool call asynchronous.
+**Solution**: After experimentation, synchronous execution was retained.
+- An attempt to make the `see_game_screen` tool call asynchronous was unsuccessful.
+- **Problem**: When `see_game_screen` was async, the model would either get stuck in a loop of calling the tool repeatedly, or provide confusing "tool in progress" updates to the user if we returned an intermediate status.
+- **Resolution**: Sticking with a synchronous call for `see_game_screen` was deemed the best user experience. The latency of `gemini-2.0-flash-lite` is acceptable, and it avoids the conversational breakdown of the async approach.
+**Status**: ✅ Confirmed synchronous vision analysis is the optimal approach for now.
+
 ## Current Challenges
 
 ### Repository Management
@@ -63,7 +72,7 @@
 - **Audio latency**: Pre-buffering helped but may need further tuning
 
 ### Real-World Usage Issues (Observed July 21, 2025)
-- **Vision analysis too slow**: Screenshot capture and analysis takes 2-10 seconds, blocking conversation flow
+- **Vision analysis latency**: While switching to `gemini-2.0-flash-lite` significantly improved performance, the synchronous nature of the call still introduces a noticeable pause. An attempt at an async tool call was unsuccessful, as it caused the model to either loop calling the tool or give confusing intermediate updates.
 - **Sequential tool calling limitation**: Can't call multiple tools simultaneously (e.g., vision + walkthrough search)
 - **Tool selection imbalance**: Over-indexing on walkthrough search, under-utilizing vision analysis - needs better decision logic
 - **Mixed query types**: Some questions are non-walkthrough related but system handles them reasonably well
@@ -106,9 +115,8 @@
 
 ### Vision System
 - **Capture**: mss fullscreen screenshots → PIL image processing
-- **Analysis**: Gemini 2.5 Flash vision model → structured JSON output
-- **Integration**: `get_game_status` tool for proactive analysis
-- **Bottleneck**: 2-10 second analysis time blocks conversation
+- **Analysis**: gemini-2.0-flash-lite vision model → structured JSON output
+- **Integration**: `see_game_screen` tool for proactive analysis
 
 ### Knowledge System
 - **Source**: Official Wind Waker walkthrough text
@@ -119,7 +127,7 @@
 ### Tool Orchestration
 - **Current**: Sequential function calling via Gemini Live API
 - **Limitation**: Cannot execute multiple tools simultaneously
-- **Tools**: `sail_to`, `get_game_status`, `search_walkthrough`
+- **Tools**: `sail_to`, `see_game_screen`, `search_walkthrough`
 
 ## Future Considerations
 
@@ -142,4 +150,4 @@
 - User feedback integration loops
 
 ---
-*Last updated: July 21, 2025*
+*Last updated: July 22, 2025*

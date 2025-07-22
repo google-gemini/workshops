@@ -1,10 +1,10 @@
 # Wind Waker Voice Chat - TODO
 
-*Updated: July 21, 2025*
+*Updated: July 22, 2025*
 
-## Fix vision analysis performance (2-10 second delay)
+## ✅ Fix vision analysis performance (2-10 second delay)
 
-Vision is way too slow right now, like watching paint dry. The mss screenshot + Gemini vision analysis takes forever and just kills the conversation flow. Need to make this async somehow, maybe take screenshots in the background or find a faster vision model. This is breaking the user experience pretty badly.
+Switched vision model to `gemini-2.0-flash-lite`, which is fast enough to be used synchronously. An attempt to make the tool call async was unsuccessful; the model would either get stuck in a loop calling the tool or give confusing "tool in progress" updates. The current synchronous approach with the faster model has acceptable latency.
 
 ## Enable parallel tool calling
 

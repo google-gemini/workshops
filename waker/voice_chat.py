@@ -13,8 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-Wind Waker Voice Chat with Gemini 2.5 Live API
+"""Wind Waker Voice Chat with Gemini 2.5 Live API
 
 ## Setup
 
@@ -50,19 +49,19 @@ import json
 import sys
 import traceback
 
+from google import genai
+from google.genai import types
 import mss
 import numpy as np
 import PIL.Image
 import pyaudio
-from google import genai
-from google.genai import types
 
 if sys.version_info < (3, 11, 0):
-    import exceptiongroup
-    import taskgroup
+  import exceptiongroup
+  import taskgroup
 
-    asyncio.TaskGroup = taskgroup.TaskGroup
-    asyncio.ExceptionGroup = exceptiongroup.ExceptionGroup
+  asyncio.TaskGroup = taskgroup.TaskGroup
+  asyncio.ExceptionGroup = exceptiongroup.ExceptionGroup
 
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
@@ -73,7 +72,8 @@ CHUNK_SIZE = 1024
 MODEL = "gemini-2.5-flash-preview-native-audio-dialog"
 CONFIG = {
     "response_modalities": ["AUDIO"],
-    "system_instruction": """You are a helpful gaming companion for The Legend of Zelda: Wind Waker.
+    "system_instruction": (
+        """You are a helpful gaming companion for The Legend of Zelda: Wind Waker.
 
     IMPORTANT: For ANY specific game knowledge (songs, quests, locations, items, mechanics),
     you should ALWAYS use the search_walkthrough tool first to get accurate information from
@@ -93,248 +93,247 @@ CONFIG = {
     - To check Link's current status and location
     - For real-time game state analysis
 
-    IMPORTANT: After calling see_game_screen, WAIT for the analysis result before taking further action. Do NOT call it again if an analysis is already in progress.
-
-    Keep responses conversational and not too long since this is voice chat.""",
-    "tools": [
-        {
-            "function_declarations": [
-                {
-                    "name": "sail_to",
-                    "description": "Sail to a specific location in Wind Waker",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "location": {
-                                "type": "string",
-                                "description": "The destination to sail to (e.g., 'Dragon Roost Island', 'Windfall Island')",
-                            }
-                        },
-                        "required": ["location"],
+    Keep responses conversational and not too long since this is voice chat."""
+    ),
+    "tools": [{
+        "function_declarations": [
+            {
+                "name": "sail_to",
+                "description": "Sail to a specific location in Wind Waker",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": (
+                                "The destination to sail to (e.g., 'Dragon"
+                                " Roost Island', 'Windfall Island')"
+                            ),
+                        }
                     },
+                    "required": ["location"],
                 },
-                {
-                    "name": "see_game_screen",
-                    "description": "Sees and analyzes the game screen to understand what is currently happening. This is your way of looking at the game to answer questions about the visuals.",
-                    "behavior": "NON_BLOCKING",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {
-                                "type": "string",
-                                "description": "The user's question about what is on screen. This provides context for the visual analysis.",
-                            }
-                        },
-                        "required": ["query"],
+            },
+            {
+                "name": "see_game_screen",
+                "description": (
+                    "Sees and analyzes the game screen to understand what is"
+                    " currently happening. This is your way of looking at the"
+                    " game to answer questions about the visuals."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": (
+                                "The user's question about what is on screen."
+                                " This provides context for the visual"
+                                " analysis."
+                            ),
+                        }
                     },
+                    "required": ["query"],
                 },
-                {
-                    "name": "search_walkthrough",
-                    "description": "Search Wind Waker walkthrough for specific information about songs, quests, locations, and game mechanics",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "query": {
-                                "type": "string",
-                                "description": "What to search for (e.g., 'Wind's Requiem sequence', 'Dragon Roost Island walkthrough', 'Triforce Shard locations')",
-                            }
-                        },
-                        "required": ["query"],
+            },
+            {
+                "name": "search_walkthrough",
+                "description": (
+                    "Search Wind Waker walkthrough for specific information"
+                    " about songs, quests, locations, and game mechanics"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": (
+                                "What to search for (e.g., 'Wind's Requiem"
+                                " sequence', 'Dragon Roost Island walkthrough',"
+                                " 'Triforce Shard locations')"
+                            ),
+                        }
                     },
+                    "required": ["query"],
                 },
-            ]
-        }
-    ],
+            },
+        ]
+    }],
 }
 
 
 class WindWakerVoiceChat:
-    def __init__(self):
-        self.audio_in_queue = None
-        self.out_queue = None
-        self.session = None
-        self.audio_stream = None
-        self.pya = None
-        self.client = None
-        self.seeing_screen = False
 
-    def find_pulse_device(self):
-        """Find a PulseAudio device that works with PipeWire"""
-        for i in range(self.pya.get_device_count()):
-            info = self.pya.get_device_info_by_index(i)
-            if "pulse" in info["name"].lower() and info["maxInputChannels"] > 0:
-                return info
-        return self.pya.get_default_input_device_info()
+  def __init__(self):
+    self.audio_in_queue = None
+    self.out_queue = None
+    self.session = None
+    self.audio_stream = None
+    self.pya = None
+    self.client = None
 
-    async def setup_audio(self):
-        """Initialize PyAudio with error handling"""
-        try:
-            self.pya = pyaudio.PyAudio()
-            print("✓ Audio system initialized")
-            return True
-        except Exception as e:
-            print(f"✗ Failed to initialize audio: {e}")
-            print("Make sure you have audio devices available and portaudio installed")
-            return False
+  def find_pulse_device(self):
+    """Find a PulseAudio device that works with PipeWire"""
+    for i in range(self.pya.get_device_count()):
+      info = self.pya.get_device_info_by_index(i)
+      if "pulse" in info["name"].lower() and info["maxInputChannels"] > 0:
+        return info
+    return self.pya.get_default_input_device_info()
 
-    async def listen_audio(self):
-        """Capture audio from microphone"""
-        try:
-            mic_info = self.find_pulse_device()
-            print(f"🎤 Using microphone: {mic_info['name']}")
+  async def setup_audio(self):
+    """Initialize PyAudio with error handling"""
+    try:
+      self.pya = pyaudio.PyAudio()
+      print("✓ Audio system initialized")
+      return True
+    except Exception as e:
+      print(f"✗ Failed to initialize audio: {e}")
+      print(
+          "Make sure you have audio devices available and portaudio installed"
+      )
+      return False
 
-            self.audio_stream = await asyncio.to_thread(
-                self.pya.open,
-                format=FORMAT,
-                channels=CHANNELS,
-                rate=SEND_SAMPLE_RATE,
-                input=True,
-                input_device_index=mic_info["index"],
-                frames_per_buffer=CHUNK_SIZE,
-            )
+  async def listen_audio(self):
+    """Capture audio from microphone"""
+    try:
+      mic_info = self.find_pulse_device()
+      print(f"🎤 Using microphone: {mic_info['name']}")
 
-            if __debug__:
-                kwargs = {"exception_on_overflow": False}
-            else:
-                kwargs = {}
+      self.audio_stream = await asyncio.to_thread(
+          self.pya.open,
+          format=FORMAT,
+          channels=CHANNELS,
+          rate=SEND_SAMPLE_RATE,
+          input=True,
+          input_device_index=mic_info["index"],
+          frames_per_buffer=CHUNK_SIZE,
+      )
 
-            while True:
-                data = await asyncio.to_thread(self.audio_stream.read, CHUNK_SIZE, **kwargs)
-                await self.out_queue.put({"data": data, "mime_type": "audio/pcm"})
+      if __debug__:
+        kwargs = {"exception_on_overflow": False}
+      else:
+        kwargs = {}
 
-        except Exception as e:
-            print(f"✗ Audio capture error: {e}")
-            raise
+      while True:
+        data = await asyncio.to_thread(
+            self.audio_stream.read, CHUNK_SIZE, **kwargs
+        )
+        await self.out_queue.put({"data": data, "mime_type": "audio/pcm"})
 
-    async def send_realtime(self):
-        """Send audio data to Gemini"""
-        while True:
-            msg = await self.out_queue.get()
-            await self.session.send_realtime_input(audio=msg)
+    except Exception as e:
+      print(f"✗ Audio capture error: {e}")
+      raise
 
-    async def receive_audio(self):
-        """Receive responses from Gemini"""
-        while True:
-            turn = self.session.receive()
-            async for response in turn:
-                if data := response.data:
-                    self.audio_in_queue.put_nowait(data)
-                    continue
-                if text := response.text:
-                    print(f"🤖 Gemini: {text}", end="")
-                    continue
+  async def send_realtime(self):
+    """Send audio data to Gemini"""
+    while True:
+      msg = await self.out_queue.get()
+      await self.session.send_realtime_input(audio=msg)
 
-                # Handle tool calls
-                tool_call = response.tool_call
-                if tool_call is not None:
-                    await self.handle_tool_call(tool_call)
-                    continue
+  async def receive_audio(self):
+    """Receive responses from Gemini"""
+    while True:
+      turn = self.session.receive()
+      async for response in turn:
+        if data := response.data:
+          self.audio_in_queue.put_nowait(data)
+          continue
+        if text := response.text:
+          print(f"🤖 Gemini: {text}", end="")
+          continue
 
-                # Handle code execution parts
-                server_content = response.server_content
-                if server_content is not None:
-                    model_turn = server_content.model_turn
-                    if model_turn:
-                        for part in model_turn.parts:
-                            if part.executable_code:
-                                print(f"🧠 Gemini thinking: {part.executable_code.code}")
-                            if part.code_execution_result:
-                                print(f"💭 Result: {part.code_execution_result.output}")
-                    continue
+        # Handle tool calls
+        tool_call = response.tool_call
+        if tool_call is not None:
+          await self.handle_tool_call(tool_call)
+          continue
 
-            # Handle interruptions - clear audio queue
-            while not self.audio_in_queue.empty():
-                self.audio_in_queue.get_nowait()
+        # Handle code execution parts
+        server_content = response.server_content
+        if server_content is not None:
+          model_turn = server_content.model_turn
+          if model_turn:
+            for part in model_turn.parts:
+              if part.executable_code:
+                print(f"🧠 Gemini thinking: {part.executable_code.code}")
+              if part.code_execution_result:
+                print(f"💭 Result: {part.code_execution_result.output}")
+          continue
 
-    async def _see_game_screen_async(self, fc):
-        """Handle see_game_screen tool call asynchronously"""
-        try:
-            print("📸 Seeing game screen (async)...")
+      # Handle interruptions - clear audio queue
+      while not self.audio_in_queue.empty():
+        self.audio_in_queue.get_nowait()
 
-            # Run synchronous screenshot code in a separate thread
-            screenshot_data = await asyncio.to_thread(self.take_screenshot)
+  async def handle_tool_call(self, tool_call):
+    """Handle tool calls from Gemini"""
+    function_responses = []
 
-            if screenshot_data:
-                user_query = fc.args.get("query", "")
-                # Run synchronous analysis code in a separate thread
-                vision_analysis = await asyncio.to_thread(
-                    self.analyze_screenshot_with_gemini, screenshot_data, user_query
-                )
-                result = {
-                    "scheduling": "INTERRUPT",
-                    "user_query": user_query,
-                    "vision_analysis": vision_analysis,
-                    "screenshot_captured": True,
-                }
-            else:
-                result = {
-                    "scheduling": "INTERRUPT",
-                    "user_query": fc.args.get("query", ""),
-                    "vision_analysis": {"error": "Failed to capture screenshot"},
-                    "screenshot_captured": False,
-                }
+    for fc in tool_call.function_calls:
+      print(f"\n🔧 Tool call: {fc.name}")
 
-            function_response = types.FunctionResponse(id=fc.id, name=fc.name, response=result)
+      if fc.name == "sail_to":
+        location = fc.args.get("location", "unknown location")
+        print(f"🚢 Sailing to {location}...")
+        result = {
+            "status": "sailing",
+            "destination": location,
+            "message": (
+                f"Setting sail for {location}! Keep an eye out for enemies and"
+                " obstacles."
+            ),
+        }
+      elif fc.name == "see_game_screen":
+        print("📸 Seeing game screen...")
+        screenshot_data = self.take_screenshot()
 
-            # Send the tool response when the async work is done
-            await self.session.send_tool_response(function_responses=[function_response])
-            print("📤 Screenshot analysis complete - vision data sent via tool response")
-        finally:
-            self.seeing_screen = False
+        if screenshot_data:
+          user_query = fc.args.get("query", "")
+          vision_analysis = self.analyze_screenshot_with_gemini(
+              screenshot_data, user_query
+          )
+          result = {
+              "user_query": user_query,
+              "vision_analysis": vision_analysis,
+              "screenshot_captured": True,
+          }
+        else:
+          result = {
+              "user_query": fc.args.get("query", ""),
+              "vision_analysis": {"error": "Failed to capture screenshot"},
+              "screenshot_captured": False,
+          }
+      elif fc.name == "search_walkthrough":
+        query = fc.args.get("query", "")
+        print(f"📚 Searching walkthrough for: {query}")
+        search_results = self.search_walkthrough(query)
+        result = {"query": query, "results": search_results}
+      else:
+        result = {"error": f"Unknown function: {fc.name}"}
 
-    async def handle_tool_call(self, tool_call):
-        """Handle tool calls from Gemini"""
-        function_responses = []
+      function_responses.append(
+          types.FunctionResponse(id=fc.id, name=fc.name, response=result)
+      )
 
-        for fc in tool_call.function_calls:
-            print(f"\n🔧 Tool call: {fc.name}")
+    # Send tool responses for synchronous tools immediately
+    if function_responses:
+      await self.session.send_tool_response(
+          function_responses=function_responses
+      )
 
-            if fc.name == "see_game_screen":
-                # Prevent multiple concurrent screenshot analyses
-                if self.seeing_screen:
-                    print("🛠️ Screen analysis already in progress. Ignoring duplicate request.")
-                    continue
-                self.seeing_screen = True
-                # Run the long-running task in the background and continue
-                asyncio.create_task(self._see_game_screen_async(fc))
-                continue
+  def analyze_screenshot_with_gemini(self, screenshot_data, user_query=""):
+    """Analyze screenshot using Gemini 2.5 Flash"""
+    try:
+      print(f"🔍 Analyzing screenshot with Gemini 2.5 Flash...")
+      print(f"🔍 User query: '{user_query}'")
 
-            if fc.name == "sail_to":
-                location = fc.args.get("location", "unknown location")
-                print(f"🚢 Sailing to {location}...")
-                result = {
-                    "status": "sailing",
-                    "destination": location,
-                    "message": f"Setting sail for {location}! Keep an eye out for enemies and obstacles.",
-                }
-            elif fc.name == "search_walkthrough":
-                query = fc.args.get("query", "")
-                print(f"📚 Searching walkthrough for: {query}")
-                search_results = self.search_walkthrough(query)
-                result = {"query": query, "results": search_results}
-            else:
-                result = {"error": f"Unknown function: {fc.name}"}
+      client = genai.Client()
 
-            function_responses.append(types.FunctionResponse(id=fc.id, name=fc.name, response=result))
+      # Convert base64 back to bytes
+      image_bytes = base64.b64decode(screenshot_data["data"])
+      print(f"🔍 Decoded image: {len(image_bytes)} bytes")
 
-        # Send tool responses for synchronous tools immediately
-        if function_responses:
-            await self.session.send_tool_response(function_responses=function_responses)
-
-    def analyze_screenshot_with_gemini(self, screenshot_data, user_query=""):
-        """Analyze screenshot using Gemini 2.5 Flash"""
-        try:
-            print(f"🔍 Analyzing screenshot with Gemini 2.5 Flash...")
-            print(f"🔍 User query: '{user_query}'")
-
-            client = genai.Client()
-
-            # Convert base64 back to bytes
-            image_bytes = base64.b64decode(screenshot_data["data"])
-            print(f"🔍 Decoded image: {len(image_bytes)} bytes")
-
-            # Create the prompt
-            prompt = f"""
+      # Create the prompt
+      prompt = f"""
             Analyze this Wind Waker screenshot and provide detailed observations about the current game state.
 
             User query: {user_query if user_query else "General game status"}
@@ -353,168 +352,183 @@ class WindWakerVoiceChat:
             Focus especially on details relevant to the user's query. Return your observations as JSON.
             """
 
-            print(f"🔍 Sending request to Gemini...")
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=[types.Part.from_bytes(data=image_bytes, mime_type=screenshot_data["mime_type"]), prompt],
-                config=types.GenerateContentConfig(response_mime_type="application/json"),
-            )
+      print(f"🔍 Sending request to Gemini...")
+      response = client.models.generate_content(
+          model="gemini-2.0-flash-lite",
+          contents=[
+              types.Part.from_bytes(
+                  data=image_bytes, mime_type=screenshot_data["mime_type"]
+              ),
+              prompt,
+          ],
+          config=types.GenerateContentConfig(
+              response_mime_type="application/json"
+          ),
+      )
 
-            print(f"🔍 Received response from Gemini")
-            analysis = json.loads(response.text)
-            print(f"🔍 Analysis result: {analysis}")
-            return analysis
+      print(f"🔍 Received response from Gemini")
+      analysis = json.loads(response.text)
+      print(f"🔍 Analysis result: {analysis}")
+      return analysis
 
-        except Exception as e:
-            print(f"🔍 Vision analysis error: {e}")
-            traceback.print_exc()
-            return {
-                "location": "unknown",
-                "health": "unknown",
-                "enemies": [],
-                "items_visible": [],
-                "boat_status": "unknown",
-                "weather": "unknown",
-                "analysis": f"Vision analysis failed: {str(e)}",
-            }
+    except Exception as e:
+      print(f"🔍 Vision analysis error: {e}")
+      traceback.print_exc()
+      return {
+          "location": "unknown",
+          "health": "unknown",
+          "enemies": [],
+          "items_visible": [],
+          "boat_status": "unknown",
+          "weather": "unknown",
+          "analysis": f"Vision analysis failed: {str(e)}",
+      }
 
-    def search_walkthrough(self, query, top_k=3):
-        """Search walkthrough using embeddings"""
-        try:
-            print(f"🔍 Searching walkthrough for: '{query}'")
+  def search_walkthrough(self, query, top_k=3):
+    """Search walkthrough using embeddings"""
+    try:
+      print(f"🔍 Searching walkthrough for: '{query}'")
 
-            # Load embeddings
-            with open("walkthrough_embeddings.json", "r") as f:
-                embeddings_data = json.load(f)
+      # Load embeddings
+      with open("walkthrough_embeddings.json", "r") as f:
+        embeddings_data = json.load(f)
 
-            print(f"🔍 Loaded {len(embeddings_data)} chunks")
+      print(f"🔍 Loaded {len(embeddings_data)} chunks")
 
-            # Get query embedding
-            client = genai.Client()
-            query_response = client.models.embed_content(
-                model="gemini-embedding-001",
-                contents=query,
-                config=types.EmbedContentConfig(task_type="retrieval_query"),
-            )
-            query_embedding = query_response.embeddings[0].values
+      # Get query embedding
+      client = genai.Client()
+      query_response = client.models.embed_content(
+          model="gemini-embedding-001",
+          contents=query,
+          config=types.EmbedContentConfig(task_type="retrieval_query"),
+      )
+      query_embedding = query_response.embeddings[0].values
 
-            # Calculate similarities
-            similarities = []
-            for item in embeddings_data:
-                similarity = np.dot(query_embedding, item["embedding"])
-                similarities.append((similarity, item["text"], item["chunk_id"]))
+      # Calculate similarities
+      similarities = []
+      for item in embeddings_data:
+        similarity = np.dot(query_embedding, item["embedding"])
+        similarities.append((similarity, item["text"], item["chunk_id"]))
 
-            # Get top results
-            similarities.sort(reverse=True)
-            results = []
-            for i in range(min(top_k, len(similarities))):
-                score, text, chunk_id = similarities[i]
-                print(f"🔍 Match {i+1}: chunk {chunk_id}, score {score:.3f}")
-                results.append(text)
+      # Get top results
+      similarities.sort(reverse=True)
+      results = []
+      for i in range(min(top_k, len(similarities))):
+        score, text, chunk_id = similarities[i]
+        print(f"🔍 Match {i+1}: chunk {chunk_id}, score {score:.3f}")
+        results.append(text)
 
-            return "\n\n---\n\n".join(results)
+      return "\n\n---\n\n".join(results)
 
-        except Exception as e:
-            print(f"🔍 Walkthrough search error: {e}")
-            traceback.print_exc()
-            return f"Search failed: {e}"
+    except Exception as e:
+      print(f"🔍 Walkthrough search error: {e}")
+      traceback.print_exc()
+      return f"Search failed: {e}"
 
-    def take_screenshot(self):
-        """Take screenshot using mss, similar to Get_started_LiveAPI.py"""
-        try:
-            print("📷 Starting screenshot capture...")
-            sct = mss.mss()
-            monitor = sct.monitors[0]  # All monitors
-            print(f"📷 Using monitor: {monitor}")
-            screenshot = sct.grab(monitor)
-            print(f"📷 Screenshot captured: {screenshot.size}")
+  def take_screenshot(self):
+    """Take screenshot using mss, similar to Get_started_LiveAPI.py"""
+    try:
+      print("📷 Starting screenshot capture...")
+      sct = mss.mss()
+      monitor = sct.monitors[0]  # All monitors
+      print(f"📷 Using monitor: {monitor}")
+      screenshot = sct.grab(monitor)
+      print(f"📷 Screenshot captured: {screenshot.size}")
 
-            # Convert to PIL Image
-            img = PIL.Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
-            img = img.resize((1024, int(1024 * img.size[1] / img.size[0])), PIL.Image.Resampling.LANCZOS)
-            print(f"📷 Image resized to: {img.size}")
+      # Convert to PIL Image
+      img = PIL.Image.frombytes(
+          "RGB", screenshot.size, screenshot.bgra, "raw", "BGRX"
+      )
+      img = img.resize(
+          (1024, int(1024 * img.size[1] / img.size[0])),
+          PIL.Image.Resampling.LANCZOS,
+      )
+      print(f"📷 Image resized to: {img.size}")
 
-            # Convert to base64 JPEG
-            image_io = io.BytesIO()
-            img.save(image_io, format="jpeg")
-            image_io.seek(0)
+      # Convert to base64 JPEG
+      image_io = io.BytesIO()
+      img.save(image_io, format="jpeg")
+      image_io.seek(0)
 
-            image_bytes = image_io.read()
-            print(f"📷 Screenshot converted to {len(image_bytes)} bytes")
-            return {"mime_type": "image/jpeg", "data": base64.b64encode(image_bytes).decode()}
-        except Exception as e:
-            print(f"📸 Screenshot error: {e}")
-            return None
+      image_bytes = image_io.read()
+      print(f"📷 Screenshot converted to {len(image_bytes)} bytes")
+      return {
+          "mime_type": "image/jpeg",
+          "data": base64.b64encode(image_bytes).decode(),
+      }
+    except Exception as e:
+      print(f"📸 Screenshot error: {e}")
+      return None
 
-    async def play_audio(self):
-        """Play audio with pre-buffering"""
-        # Wait for initial buffer
-        initial_chunks = []
-        for _ in range(3):  # Buffer 3 chunks before starting
-            chunk = await self.audio_in_queue.get()
-            initial_chunks.append(chunk)
+  async def play_audio(self):
+    """Play audio with pre-buffering"""
+    # Wait for initial buffer
+    initial_chunks = []
+    for _ in range(3):  # Buffer 3 chunks before starting
+      chunk = await self.audio_in_queue.get()
+      initial_chunks.append(chunk)
 
-        stream = await asyncio.to_thread(
-            self.pya.open,
-            format=FORMAT,
-            channels=CHANNELS,
-            rate=RECEIVE_SAMPLE_RATE,
-            output=True,
-            frames_per_buffer=CHUNK_SIZE * 2,  # Larger internal buffer
-        )
+    stream = await asyncio.to_thread(
+        self.pya.open,
+        format=FORMAT,
+        channels=CHANNELS,
+        rate=RECEIVE_SAMPLE_RATE,
+        output=True,
+        frames_per_buffer=CHUNK_SIZE * 2,  # Larger internal buffer
+    )
 
-        # Play buffered chunks first
-        for chunk in initial_chunks:
-            await asyncio.to_thread(stream.write, chunk)
+    # Play buffered chunks first
+    for chunk in initial_chunks:
+      await asyncio.to_thread(stream.write, chunk)
 
-        # Continue normal playback
-        while True:
-            bytestream = await self.audio_in_queue.get()
-            await asyncio.to_thread(stream.write, bytestream)
+    # Continue normal playback
+    while True:
+      bytestream = await self.audio_in_queue.get()
+      await asyncio.to_thread(stream.write, bytestream)
 
-    async def run(self):
-        """Main chat loop"""
-        if not await self.setup_audio():
-            return
+  async def run(self):
+    """Main chat loop"""
+    if not await self.setup_audio():
+      return
 
-        try:
-            self.client = genai.Client()  # GOOGLE_API_KEY must be set
-            print("✓ Connected to Gemini")
+    try:
+      self.client = genai.Client()  # GOOGLE_API_KEY must be set
+      print("✓ Connected to Gemini")
 
-            async with (
-                self.client.aio.live.connect(model=MODEL, config=CONFIG) as session,
-                asyncio.TaskGroup() as tg,
-            ):
-                self.session = session
-                print("✓ Live session established")
-                print("🎮 Wind Waker Voice Chat Ready!")
-                print("💬 Start talking about Wind Waker... (Ctrl+C to exit)")
+      async with (
+          self.client.aio.live.connect(model=MODEL, config=CONFIG) as session,
+          asyncio.TaskGroup() as tg,
+      ):
+        self.session = session
+        print("✓ Live session established")
+        print("🎮 Wind Waker Voice Chat Ready!")
+        print("💬 Start talking about Wind Waker... (Ctrl+C to exit)")
 
-                self.audio_in_queue = asyncio.Queue()
-                self.out_queue = asyncio.Queue(maxsize=5)
+        self.audio_in_queue = asyncio.Queue()
+        self.out_queue = asyncio.Queue(maxsize=5)
 
-                tg.create_task(self.send_realtime())
-                tg.create_task(self.listen_audio())
-                tg.create_task(self.receive_audio())
-                tg.create_task(self.play_audio())
+        tg.create_task(self.send_realtime())
+        tg.create_task(self.listen_audio())
+        tg.create_task(self.receive_audio())
+        tg.create_task(self.play_audio())
 
-        except KeyboardInterrupt:
-            print("\n👋 Goodbye! Thanks for chatting about Wind Waker!")
-        except asyncio.CancelledError:
-            pass
-        except Exception as e:
-            print(f"✗ Error: {e}")
-            traceback.print_exc()
-        finally:
-            if self.audio_stream:
-                self.audio_stream.close()
-            if self.pya:
-                self.pya.terminate()
+    except KeyboardInterrupt:
+      print("\n👋 Goodbye! Thanks for chatting about Wind Waker!")
+    except asyncio.CancelledError:
+      pass
+    except Exception as e:
+      print(f"✗ Error: {e}")
+      traceback.print_exc()
+    finally:
+      if self.audio_stream:
+        self.audio_stream.close()
+      if self.pya:
+        self.pya.terminate()
 
 
 if __name__ == "__main__":
-    chat = WindWakerVoiceChat()
-    try:
-        asyncio.run(chat.run())
-    except KeyboardInterrupt:
-        print("\n👋 Goodbye!")
+  chat = WindWakerVoiceChat()
+  try:
+    asyncio.run(chat.run())
+  except KeyboardInterrupt:
+    print("\n👋 Goodbye!")
