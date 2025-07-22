@@ -88,10 +88,12 @@ CONFIG = {
     - Game mechanics and controls
     - Dungeon solutions and walkthroughs
 
-    Use get_game_status for:
-    - What's currently happening on screen
-    - Link's current status and location
-    - Real-time game state analysis
+    Use see_game_screen to answer questions about what you can "see" on the screen. This is your primary way of observing the game. Use it whenever the user asks:
+    - "What's happening right now?", "What do you see?", or "Can you see the screen?"
+    - To check Link's current status and location
+    - For real-time game state analysis
+
+    IMPORTANT: After calling see_game_screen, WAIT for the analysis result before taking further action. Do NOT call it again if an analysis is already in progress.
 
     Keep responses conversational and not too long since this is voice chat.""",
     "tools": [
@@ -112,17 +114,18 @@ CONFIG = {
                     },
                 },
                 {
-                    "name": "get_game_status",
-                    "description": "Get current Wind Waker game state including screenshot and metadata",
+                    "name": "see_game_screen",
+                    "description": "Sees and analyzes the game screen to understand what is currently happening. This is your way of looking at the game to answer questions about the visuals.",
+                    "behavior": "NON_BLOCKING",
                     "parameters": {
                         "type": "object",
                         "properties": {
                             "query": {
                                 "type": "string",
-                                "description": "Specific question or context about what to analyze in the game (optional)",
+                                "description": "The user's question about what is on screen. This provides context for the visual analysis.",
                             }
                         },
-                        "required": [],
+                        "required": ["query"],
                     },
                 },
                 {
@@ -153,6 +156,7 @@ class WindWakerVoiceChat:
         self.audio_stream = None
         self.pya = None
         self.client = None
+        self.seeing_screen = False
 
     def find_pulse_device(self):
         """Find a PulseAudio device that works with PipeWire"""
@@ -242,13 +246,58 @@ class WindWakerVoiceChat:
             while not self.audio_in_queue.empty():
                 self.audio_in_queue.get_nowait()
 
+    async def _see_game_screen_async(self, fc):
+        """Handle see_game_screen tool call asynchronously"""
+        try:
+            print("📸 Seeing game screen (async)...")
+
+            # Run synchronous screenshot code in a separate thread
+            screenshot_data = await asyncio.to_thread(self.take_screenshot)
+
+            if screenshot_data:
+                user_query = fc.args.get("query", "")
+                # Run synchronous analysis code in a separate thread
+                vision_analysis = await asyncio.to_thread(
+                    self.analyze_screenshot_with_gemini, screenshot_data, user_query
+                )
+                result = {
+                    "scheduling": "INTERRUPT",
+                    "user_query": user_query,
+                    "vision_analysis": vision_analysis,
+                    "screenshot_captured": True,
+                }
+            else:
+                result = {
+                    "scheduling": "INTERRUPT",
+                    "user_query": fc.args.get("query", ""),
+                    "vision_analysis": {"error": "Failed to capture screenshot"},
+                    "screenshot_captured": False,
+                }
+
+            function_response = types.FunctionResponse(id=fc.id, name=fc.name, response=result)
+
+            # Send the tool response when the async work is done
+            await self.session.send_tool_response(function_responses=[function_response])
+            print("📤 Screenshot analysis complete - vision data sent via tool response")
+        finally:
+            self.seeing_screen = False
+
     async def handle_tool_call(self, tool_call):
         """Handle tool calls from Gemini"""
         function_responses = []
-        screenshot_to_send = None
 
         for fc in tool_call.function_calls:
             print(f"\n🔧 Tool call: {fc.name}")
+
+            if fc.name == "see_game_screen":
+                # Prevent multiple concurrent screenshot analyses
+                if self.seeing_screen:
+                    print("🛠️ Screen analysis already in progress. Ignoring duplicate request.")
+                    continue
+                self.seeing_screen = True
+                # Run the long-running task in the background and continue
+                asyncio.create_task(self._see_game_screen_async(fc))
+                continue
 
             if fc.name == "sail_to":
                 location = fc.args.get("location", "unknown location")
@@ -258,28 +307,6 @@ class WindWakerVoiceChat:
                     "destination": location,
                     "message": f"Setting sail for {location}! Keep an eye out for enemies and obstacles.",
                 }
-            elif fc.name == "get_game_status":
-                print("📸 Taking game screenshot...")
-                screenshot_data = self.take_screenshot()
-
-                if screenshot_data:
-                    # Get user query from function arguments if provided
-                    user_query = fc.args.get("query", "")
-
-                    # Analyze screenshot with Gemini vision
-                    vision_analysis = self.analyze_screenshot_with_gemini(screenshot_data, user_query)
-
-                    # Pass complete vision analysis with context
-                    result = {"user_query": user_query, "vision_analysis": vision_analysis, "screenshot_captured": True}
-
-                    # Store screenshot to send as separate user message
-                    screenshot_to_send = screenshot_data
-                else:
-                    result = {
-                        "user_query": fc.args.get("query", ""),
-                        "vision_analysis": {"error": "Failed to capture screenshot"},
-                        "screenshot_captured": False,
-                    }
             elif fc.name == "search_walkthrough":
                 query = fc.args.get("query", "")
                 print(f"📚 Searching walkthrough for: {query}")
@@ -290,13 +317,9 @@ class WindWakerVoiceChat:
 
             function_responses.append(types.FunctionResponse(id=fc.id, name=fc.name, response=result))
 
-        # Send tool response first
-        await self.session.send_tool_response(function_responses=function_responses)
-
-        # Skip sending screenshot as separate message since vision analysis
-        # already provides detailed information to the chat model
-        if screenshot_to_send:
-            print("📤 Screenshot analysis complete - vision data sent via tool response")
+        # Send tool responses for synchronous tools immediately
+        if function_responses:
+            await self.session.send_tool_response(function_responses=function_responses)
 
     def analyze_screenshot_with_gemini(self, screenshot_data, user_query=""):
         """Analyze screenshot using Gemini 2.5 Flash"""
@@ -408,7 +431,7 @@ class WindWakerVoiceChat:
 
             # Convert to PIL Image
             img = PIL.Image.frombytes("RGB", screenshot.size, screenshot.bgra, "raw", "BGRX")
-            img.thumbnail([1024, 1024])  # Resize like in the example
+            img = img.resize((1024, int(1024 * img.size[1] / img.size[0])), PIL.Image.Resampling.LANCZOS)
             print(f"📷 Image resized to: {img.size}")
 
             # Convert to base64 JPEG
