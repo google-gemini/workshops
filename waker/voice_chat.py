@@ -51,6 +51,7 @@ import sys
 import traceback
 
 import mss
+import numpy as np
 import PIL.Image
 import pyaudio
 from google import genai
@@ -73,13 +74,24 @@ MODEL = "gemini-2.5-flash-preview-native-audio-dialog"
 CONFIG = {
     "response_modalities": ["AUDIO"],
     "system_instruction": """You are a helpful gaming companion for The Legend of Zelda: Wind Waker.
-    You're knowledgeable about the game's mechanics, locations, items, and story.
-    You can help sail to different locations and provide guidance about the game.
 
-    IMPORTANT: Whenever the user asks about the current game state, what's happening on screen,
-    where Link is, what enemies are around, health status, or any other information about the
-    current game situation, you should ALWAYS use the get_game_status tool first to see what's
-    actually happening in the game before responding.
+    IMPORTANT: For ANY specific game knowledge (songs, quests, locations, items, mechanics),
+    you should ALWAYS use the search_walkthrough tool first to get accurate information from
+    the official walkthrough before responding. Do not rely on your training data for
+    Wind Waker facts as it may be incorrect.
+
+    Use search_walkthrough for:
+    - Song sequences and how to play them
+    - Quest steps and what to do next
+    - Item locations and how to get them
+    - Character locations and interactions
+    - Game mechanics and controls
+    - Dungeon solutions and walkthroughs
+
+    Use get_game_status for:
+    - What's currently happening on screen
+    - Link's current status and location
+    - Real-time game state analysis
 
     Keep responses conversational and not too long since this is voice chat.""",
     "tools": [
@@ -111,6 +123,20 @@ CONFIG = {
                             }
                         },
                         "required": [],
+                    },
+                },
+                {
+                    "name": "search_walkthrough",
+                    "description": "Search Wind Waker walkthrough for specific information about songs, quests, locations, and game mechanics",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "What to search for (e.g., 'Wind's Requiem sequence', 'Dragon Roost Island walkthrough', 'Triforce Shard locations')",
+                            }
+                        },
+                        "required": ["query"],
                     },
                 },
             ]
@@ -254,7 +280,11 @@ class WindWakerVoiceChat:
                         "vision_analysis": {"error": "Failed to capture screenshot"},
                         "screenshot_captured": False,
                     }
-
+            elif fc.name == "search_walkthrough":
+                query = fc.args.get("query", "")
+                print(f"📚 Searching walkthrough for: {query}")
+                search_results = self.search_walkthrough(query)
+                result = {"query": query, "results": search_results}
             else:
                 result = {"error": f"Unknown function: {fc.name}"}
 
@@ -325,6 +355,47 @@ class WindWakerVoiceChat:
                 "analysis": f"Vision analysis failed: {str(e)}",
             }
 
+    def search_walkthrough(self, query, top_k=3):
+        """Search walkthrough using embeddings"""
+        try:
+            print(f"🔍 Searching walkthrough for: '{query}'")
+
+            # Load embeddings
+            with open("walkthrough_embeddings.json", "r") as f:
+                embeddings_data = json.load(f)
+
+            print(f"🔍 Loaded {len(embeddings_data)} chunks")
+
+            # Get query embedding
+            client = genai.Client()
+            query_response = client.models.embed_content(
+                model="gemini-embedding-001",
+                contents=query,
+                config=types.EmbedContentConfig(task_type="retrieval_query"),
+            )
+            query_embedding = query_response.embeddings[0].values
+
+            # Calculate similarities
+            similarities = []
+            for item in embeddings_data:
+                similarity = np.dot(query_embedding, item["embedding"])
+                similarities.append((similarity, item["text"], item["chunk_id"]))
+
+            # Get top results
+            similarities.sort(reverse=True)
+            results = []
+            for i in range(min(top_k, len(similarities))):
+                score, text, chunk_id = similarities[i]
+                print(f"🔍 Match {i+1}: chunk {chunk_id}, score {score:.3f}")
+                results.append(text)
+
+            return "\n\n---\n\n".join(results)
+
+        except Exception as e:
+            print(f"🔍 Walkthrough search error: {e}")
+            traceback.print_exc()
+            return f"Search failed: {e}"
+
     def take_screenshot(self):
         """Take screenshot using mss, similar to Get_started_LiveAPI.py"""
         try:
@@ -353,14 +424,27 @@ class WindWakerVoiceChat:
             return None
 
     async def play_audio(self):
-        """Play audio responses"""
+        """Play audio with pre-buffering"""
+        # Wait for initial buffer
+        initial_chunks = []
+        for _ in range(3):  # Buffer 3 chunks before starting
+            chunk = await self.audio_in_queue.get()
+            initial_chunks.append(chunk)
+
         stream = await asyncio.to_thread(
             self.pya.open,
             format=FORMAT,
             channels=CHANNELS,
             rate=RECEIVE_SAMPLE_RATE,
             output=True,
+            frames_per_buffer=CHUNK_SIZE * 2,  # Larger internal buffer
         )
+
+        # Play buffered chunks first
+        for chunk in initial_chunks:
+            await asyncio.to_thread(stream.write, chunk)
+
+        # Continue normal playback
         while True:
             bytestream = await self.audio_in_queue.get()
             await asyncio.to_thread(stream.write, bytestream)
