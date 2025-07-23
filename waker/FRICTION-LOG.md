@@ -70,6 +70,31 @@
 - Also removed the `sail_to` tool temporarily as it was distracting from core functionality
 **Status**: ✅ Minimal prompt approach proven highly effective
 
+### Logging and Debug Output Management (Late July 2025)
+**Date**: July 22, 2025
+**Obstacle**: Needed detailed logging to debug tool interactions but genai library produced thousands of verbose warnings.
+**Solution**: Implemented selective logging with aggressive warning suppression.
+- **Problem**: The genai library prints warnings directly to stderr whenever accessing response attributes (e.g., "Warning: there are non-text parts in the response: ['inline_data']")
+- **Attempted fixes**: warnings.filterwarnings(), logging level changes - none worked because warnings were printed directly
+- **Resolution**: Used contextlib.redirect_stderr() to suppress stderr output during response processing
+- Added selective logging that only shows "interesting" responses (tool calls, executable code, etc.)
+- Successfully captures Gemini's internal reasoning via executable_code for understanding user intent
+**Status**: ✅ Clean logging achieved while preserving useful debug information
+
+### Episodic Memory Integration with mem0 (Late July 2025)
+**Date**: July 22, 2025
+**Obstacle**: Wanted to add conversational memory but discovered audio-to-audio limitations and latency issues.
+**Solution**: Implemented async one-sided memory storage using tool interactions.
+- **Discovery**: Gemini Live API in audio mode provides no text transcripts - only audio streams
+- **Latency issue**: mem0.add() calls added 2-3 seconds of blocking time, interrupting audio playback
+- **Resolution**: 
+  - Extract user intent from Gemini's executable_code (e.g., "query='What's on screen?'")
+  - Store only user queries, not full conversations
+  - Use asyncio.create_task() for fire-and-forget memory storage
+  - Memory search integrated into walkthrough tool for context-aware responses
+- **Limitation**: Can only capture what users asked via tool calls, not their actual spoken words
+**Status**: ✅ Working episodic memory with acceptable performance trade-offs
+
 ## Current Challenges
 
 ### Repository Management
@@ -82,11 +107,12 @@
 - **Embedding search**: Could optimize similarity calculations
 - **Audio latency**: Pre-buffering helped but may need further tuning
 
-### Real-World Usage Issues (Observed July 21, 2025)
+### Real-World Usage Issues (Observed July 21-22, 2025)
 - **Vision analysis latency**: While switching to `gemini-2.0-flash-lite` significantly improved performance, the synchronous nature of the call still introduces a noticeable pause. An attempt at an async tool call was unsuccessful, as it caused the model to either loop calling the tool or give confusing intermediate updates.
 - **Sequential tool calling limitation**: Can't call multiple tools simultaneously (e.g., vision + walkthrough search)
-- **Tool selection imbalance**: Over-indexing on walkthrough search, under-utilizing vision analysis - needs better decision logic
-- **Mixed query types**: Some questions are non-walkthrough related but system handles them reasonably well
+- **Audio-only conversational context**: Live API provides no text transcripts, limiting memory storage to tool interactions only
+- **Audio cutoff issues**: Discovered that certain response handling (like `continue` after server_content) can interrupt audio playback
+- **stderr pollution**: genai library prints warnings directly to stderr, requiring aggressive suppression tactics
 
 ### Error Handling
 - **Missing dependencies**: Screenshot capture varies across environments

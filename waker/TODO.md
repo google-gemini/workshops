@@ -6,6 +6,13 @@
 
 Switched vision model to `gemini-2.0-flash-lite`, which is fast enough to be used synchronously. An attempt to make the tool call async was unsuccessful; the model would either get stuck in a loop calling the tool or give confusing "tool in progress" updates. The current synchronous approach with the faster model has acceptable latency.
 
+## ✅ Add episodic memory with mem0
+
+Successfully integrated mem0 for conversational memory, though with limitations:
+- Only captures user queries extracted from tool calls (no audio transcription)
+- Had to make storage async to avoid 2-3 second blocking delays
+- Memory search integrated into walkthrough tool for context-aware responses
+
 ## Re-add sail_to tool with actual game actuation
 
 The `sail_to` tool was temporarily removed because it was distracting Gemini from using the walkthrough search. Once the core functionality is solid, re-add it with actual game control capabilities (keyboard/controller input) so it can actually sail Link to destinations rather than just pretending.

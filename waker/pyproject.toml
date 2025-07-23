@@ -13,6 +13,7 @@ google-genai = "*"
 mss = "*"
 Pillow = "*"
 numpy = "*"
+mem0ai = "^0.1.114"
 
 [build-system]
 requires = ["poetry-core"]

@@ -44,17 +44,29 @@ Press Ctrl+C to exit.
 
 import asyncio
 import base64
+from datetime import datetime
 import io
 import json
+import logging
+import os
 import sys
 import traceback
+import warnings
+from contextlib import redirect_stderr
 
 from google import genai
 from google.genai import types
+from mem0 import MemoryClient
 import mss
 import numpy as np
 import PIL.Image
 import pyaudio
+
+# Suppress ALL warnings - nuclear option but necessary
+warnings.filterwarnings("ignore")
+# Also suppress via logging
+logging.getLogger("google").setLevel(logging.ERROR)
+logging.getLogger("google.genai").setLevel(logging.ERROR)
 
 if sys.version_info < (3, 11, 0):
   import exceptiongroup
@@ -72,14 +84,12 @@ CHUNK_SIZE = 1024
 MODEL = "gemini-2.5-flash-preview-native-audio-dialog"
 CONFIG = {
     "response_modalities": ["AUDIO"],
-    "system_instruction": (
-        """You're a Wind Waker gaming companion.
+    "system_instruction": """You're a Wind Waker gaming companion.
 
     To answer questions about the game, use search_walkthrough.
     To see what's happening on screen, use see_game_screen.
 
-    Keep responses short for voice chat."""
-    ),
+    Keep responses short for voice chat.""",
     "tools": [{
         "function_declarations": [
             {
@@ -107,9 +117,10 @@ CONFIG = {
             {
                 "name": "search_walkthrough",
                 "description": (
-                    "Search Wind Waker walkthrough for accurate information about songs, "
-                    "quests, locations, items, and game mechanics. Recommended for specific "
-                    "game details to ensure accuracy."
+                    "Search Wind Waker walkthrough for accurate information"
+                    " about songs, quests, locations, items, and game"
+                    " mechanics. Recommended for specific game details to"
+                    " ensure accuracy."
                 ),
                 "parameters": {
                     "type": "object",
@@ -140,6 +151,43 @@ class WindWakerVoiceChat:
     self.audio_stream = None
     self.pya = None
     self.client = None
+    self.memory_client = self._init_memory_client()
+    self.conversation_context = []  # Track conversation flow
+
+  def _init_memory_client(self):
+    """Initialize mem0 client for episodic memory"""
+    api_key = os.getenv("MEM0_API_KEY")
+    if not api_key:
+      print("⚠️  MEM0_API_KEY not set, episodic memory disabled")
+      return None
+
+    try:
+      client = MemoryClient(
+          api_key=api_key,
+          org_id="org_lOJM2vCRxHhS7myVb0vvaaY1rUauhqkKbg7Dg7KZ",
+          project_id="proj_WWn2wvUn2BjtqIc1BHHZQ3w7fyAwSKaMv5dnlazF",
+      )
+      print("✓ Episodic memory initialized")
+      return client
+    except Exception as e:
+      print(f"⚠️  Failed to initialize memory: {e}")
+      return None
+
+  async def _store_memory_async(self, context):
+    """Store memory asynchronously to avoid blocking audio"""
+    try:
+      await asyncio.to_thread(
+          self.memory_client.add,
+          messages=[{"role": "user", "content": context["query"]}],
+          user_id="wind_waker_player",
+          metadata={
+              "game": "wind_waker",
+              "timestamp": str(context["timestamp"])
+          }
+      )
+      print(f"💾 Stored user query: {context['query'][:50]}...")
+    except Exception as e:
+      print(f"⚠️  Failed to store memory: {e}")
 
   def find_pulse_device(self):
     """Find a PulseAudio device that works with PipeWire"""
@@ -202,36 +250,101 @@ class WindWakerVoiceChat:
   async def receive_audio(self):
     """Receive responses from Gemini"""
     while True:
-      turn = self.session.receive()
-      async for response in turn:
-        if data := response.data:
-          self.audio_in_queue.put_nowait(data)
-          continue
-        if text := response.text:
-          print(f"🤖 Gemini: {text}", end="")
-          continue
+      # Suppress all stderr output from the receive loop
+      with redirect_stderr(io.StringIO()):
+        turn = self.session.receive()
+        async for response in turn:
+          # Only log responses with actual interesting content
+          has_interesting_content = False
+        
+          # Check if this has executable code or code results
+          if response.server_content is not None:
+            model_turn = response.server_content.model_turn
+            if model_turn and model_turn.parts:
+              for part in model_turn.parts:
+                if part.executable_code or part.code_execution_result:
+                  has_interesting_content = True
+                  break
+          
+          # Or if it has tool calls
+          if response.tool_call is not None:
+            has_interesting_content = True
+          
+          # Or if it has actual text (not just audio)
+          if hasattr(response, 'text') and response.text:
+            has_interesting_content = True
+          
+          if has_interesting_content:
+            print(
+                f"\n📊 [{datetime.now().strftime('%H:%M:%S')}] Response type:"
+                f" {type(response)}"
+            )
 
-        # Handle tool calls
-        tool_call = response.tool_call
-        if tool_call is not None:
-          await self.handle_tool_call(tool_call)
-          continue
+          # Suppress warnings when accessing response attributes
+          with redirect_stderr(io.StringIO()):
+            # Check for text (might exist even in audio mode?)
+            if hasattr(response, "text") and response.text:
+              print(f"📝 TEXT FOUND: {response.text}")
+              print(f"🤖 Gemini: {response.text}", end="")
+          
+          # Check for audio data
+          if data := response.data:
+            # Just queue the audio without logging
+            self.audio_in_queue.put_nowait(data)
+            continue
 
-        # Handle code execution parts
-        server_content = response.server_content
-        if server_content is not None:
-          model_turn = server_content.model_turn
-          if model_turn:
-            for part in model_turn.parts:
-              if part.executable_code:
-                print(f"🧠 Gemini thinking: {part.executable_code.code}")
-              if part.code_execution_result:
-                print(f"💭 Result: {part.code_execution_result.output}")
-          continue
+          # Handle tool calls
+          tool_call = response.tool_call
+          if tool_call is not None:
+            print(f"🔧 Tool call details: {tool_call}")
+            await self.handle_tool_call(tool_call)
+            continue
 
-      # Handle interruptions - clear audio queue
-      while not self.audio_in_queue.empty():
-        self.audio_in_queue.get_nowait()
+          # Handle code execution parts
+          server_content = response.server_content
+          if server_content is not None:
+            print(f"💻 Server content received")
+            model_turn = server_content.model_turn
+            if model_turn:
+              print(
+                  "   Model turn parts:"
+                  f" {len(model_turn.parts) if model_turn.parts else 0}"
+              )
+              for part in model_turn.parts:
+                if part.executable_code:
+                  code = part.executable_code.code
+                  print(f"🧠 Gemini thinking: {code}")
+                  # Extract user intent from the code
+                  if "query=" in code:
+                    query_start = code.find('query="') + 7
+                    query_end = code.find('"', query_start)
+                    if query_end > query_start:
+                      user_query = code[query_start:query_end]
+                      self.conversation_context.append({
+                          "type": "user_intent",
+                          "query": user_query,
+                          "timestamp": datetime.now(),
+                      })
+                if part.code_execution_result:
+                  print(f"💭 Result: {part.code_execution_result.output}")
+                  
+                  # Store user query in memory asynchronously
+                  if self.memory_client and self.conversation_context:
+                    latest_context = self.conversation_context[-1]
+                    if latest_context.get("query"):
+                      # Fire and forget - don't await
+                      asyncio.create_task(self._store_memory_async(latest_context))
+            # Don't continue here - let audio processing happen
+          
+          # When we have interesting content, log available attributes
+          elif has_interesting_content and not (response.data or response.tool_call or response.server_content):
+            attrs = [attr for attr in dir(response) if not attr.startswith('_') and attr not in ['data', 'text', 'tool_call', 'server_content']]
+            if attrs:
+              print(f"   Other attrs: {attrs}")
+
+        # Handle interruptions - clear audio queue
+        while not self.audio_in_queue.empty():
+          self.audio_in_queue.get_nowait()
 
   async def handle_tool_call(self, tool_call):
     """Handle tool calls from Gemini"""
@@ -239,6 +352,7 @@ class WindWakerVoiceChat:
 
     for fc in tool_call.function_calls:
       print(f"\n🔧 Tool call: {fc.name}")
+      print(f"   Args: {fc.args}")
 
       if fc.name == "see_game_screen":
         print("📸 Seeing game screen...")
@@ -254,6 +368,7 @@ class WindWakerVoiceChat:
               "vision_analysis": vision_analysis,
               "screenshot_captured": True,
           }
+
         else:
           result = {
               "user_query": fc.args.get("query", ""),
@@ -265,6 +380,7 @@ class WindWakerVoiceChat:
         print(f"📚 Searching walkthrough for: {query}")
         search_results = self.search_walkthrough(query)
         result = {"query": query, "results": search_results}
+
       else:
         result = {"error": f"Unknown function: {fc.name}"}
 
@@ -343,7 +459,28 @@ class WindWakerVoiceChat:
       }
 
   def search_walkthrough(self, query, top_k=3):
-    """Search walkthrough using embeddings"""
+    """Search walkthrough + episodic memory"""
+    results = []
+
+    # Search episodic memory first (most relevant/recent)
+    if self.memory_client:
+      try:
+        memories = self.memory_client.search(
+            query=query,
+            user_id="wind_waker_player"
+        )
+        if memories and isinstance(memories, list) and len(memories) > 0:
+          memory_texts = []
+          for m in memories:
+            if isinstance(m, dict) and m.get("memory"):
+              memory_texts.append(m["memory"])
+          if memory_texts:
+            results.append(f"[Your recent questions]\n" + "\n".join(memory_texts))
+            print(f"💭 Found {len(memory_texts)} memories")
+      except Exception as e:
+        print(f"⚠️  Memory search failed: {e}")
+
+    # Original walkthrough search
     try:
       print(f"🔍 Searching walkthrough for: '{query}'")
 
@@ -376,7 +513,13 @@ class WindWakerVoiceChat:
         print(f"🔍 Match {i+1}: chunk {chunk_id}, score {score:.3f}")
         results.append(text)
 
-      return "\n\n---\n\n".join(results)
+      # Combine memories and walkthrough results
+      walkthrough_text = "\n\n---\n\n".join(results)
+      if results:  # If we already have memory results
+        all_results = results + [f"[Game walkthrough]\n{walkthrough_text}"]
+        return "\n\n---\n\n".join(all_results)
+      else:
+        return walkthrough_text
 
     except Exception as e:
       print(f"🔍 Walkthrough search error: {e}")
