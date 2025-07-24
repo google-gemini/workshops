@@ -14,6 +14,8 @@ mss = "*"
 Pillow = "*"
 numpy = "*"
 mem0ai = "^0.1.114"
+evdev = "*"
+python-uinput = "*"
 
 [build-system]
 requires = ["poetry-core"]

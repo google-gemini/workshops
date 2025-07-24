@@ -95,6 +95,26 @@
 - **Limitation**: Can only capture what users asked via tool calls, not their actual spoken words
 **Status**: ✅ Working episodic memory with acceptable performance trade-offs
 
+### Controller Actuation Implementation (Late July 2025)
+**Date**: July 23, 2025
+**Obstacle**: Needed to enable LLM to control the game directly through controller inputs while sharing control with the user.
+**Solution**: Created a separate controller passthrough daemon with JSON-RPC interface.
+- **Architecture decision**: Separate daemon binary instead of thread in voice_chat.py for permission isolation and fault tolerance
+- **Permission fix**: `/dev/uinput` access via `sudo modprobe uinput && sudo chmod 666 /dev/uinput`
+- **Initial error**: "cannot unpack non-iterable int object" - discovered uinput.Device.emit() doesn't accept syn=False parameter
+- **Passthrough issues**: 
+  - evdev InputDevice.write_event() doesn't exist - had to use emit()
+  - Had to filter only EV_KEY and EV_ABS events, ignoring EV_SYN and others
+  - evdev and uinput use different event code constants - initially tried raw passthrough which failed
+- **Axis mapping nightmare**: 
+  - 8BitDo controller sent signed values (-32768 to 32767) but uinput expected 0-255
+  - Right analog stick axes were reversed: physical up/down sent ABS_RX, left/right sent ABS_RY
+  - First tried swapping axes in mapping but made it worse
+  - Eventually kept direct mapping after much debugging with absinfo logging
+- **Robust reconnection**: Added automatic controller reconnection on disconnect
+- **Created install script**: Permanent udev rules for /dev/uinput permissions
+**Status**: ✅ Controller passthrough working with Wind's Requiem actuation
+
 ## Current Challenges
 
 ### Repository Management

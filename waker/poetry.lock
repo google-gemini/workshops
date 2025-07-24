@@ -189,6 +189,16 @@ files = [
 ]
 
 [[package]]
+name = "evdev"
+version = "1.9.2"
+description = "Bindings to the Linux input handling subsystem"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "evdev-1.9.2.tar.gz", hash = "sha256:5d3278892ce1f92a74d6bf888cc8525d9f68af85dbe336c95d1c87fb8f423069"},
+]
+
+[[package]]
 name = "google-auth"
 version = "2.40.3"
 description = "Google Authentication Library"
@@ -1074,6 +1084,16 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-uinput"
+version = "1.0.1"
+description = "Pythonic API to Linux uinput kernel module."
+optional = false
+python-versions = ">=2.7"
+files = [
+    {file = "python-uinput-1.0.1.tar.gz", hash = "sha256:853697344b64df5537d4ae32ba6fbcf0515d51a9010910f5d5019959038b6eba"},
+]
+
+[[package]]
 name = "pytz"
 version = "2025.2"
 description = "World timezone definitions, modern and historical"
@@ -1451,4 +1471,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "8307f9cbac0764d0dfafe05d3ee1181def88e3c5273fa6a395295c1ffbbab400"
+content-hash = "774e7b3d7c0a76ff26aef74d9223ad64478a08654506126c97287773c91f7758"

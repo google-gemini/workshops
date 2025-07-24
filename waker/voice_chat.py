@@ -49,7 +49,9 @@ import io
 import json
 import logging
 import os
+import socket
 import sys
+import time
 import traceback
 import warnings
 from contextlib import redirect_stderr
@@ -87,6 +89,7 @@ CONFIG = {
     "system_instruction": """You're a Wind Waker gaming companion.
 
     To answer questions about the game, use search_walkthrough.
+    To recall what the user has done, use search_user_history.
     To see what's happening on screen, use see_game_screen.
 
     Keep responses short for voice chat.""",
@@ -137,9 +140,68 @@ CONFIG = {
                     "required": ["query"],
                 },
             },
+            {
+                "name": "search_user_history",
+                "description": (
+                    "Search the user's personal game history and past actions. "
+                    "Use this to recall what the user has already done, places "
+                    "they've visited, items they've collected, or questions "
+                    "they've previously asked. Leave query blank to get recent history."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": (
+                                "Optional: What to search for in user's history (e.g., "
+                                "'islands visited', 'songs learned', 'Dragon Roost'). "
+                                "Leave blank to get recent activity."
+                            ),
+                        }
+                    },
+                    "required": [],  # No required params - query is optional
+                },
+            },
+            {
+                "name": "play_winds_requiem",
+                "description": (
+                    "Play Wind's Requiem on the Wind Waker to change wind direction. "
+                    "The song sequence is: Up, Left, Right on the control stick."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": [],
+                },
+            },
         ]
     }],
 }
+
+
+def send_controller_command(cmd):
+    """Send a single controller command to the daemon"""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(('localhost', 9999))
+        sock.send(json.dumps(cmd).encode())
+        sock.close()
+        return True
+    except Exception as e:
+        print(f"⚠️  Controller command failed: {e}")
+        return False
+
+
+def send_controller_sequence(commands):
+    """Send a sequence of controller commands with timing"""
+    for cmd in commands:
+        if not send_controller_command(cmd):
+            return False
+        # Handle delay if specified
+        if 'delay' in cmd:
+            time.sleep(cmd['delay'])
+    return True
 
 
 class WindWakerVoiceChat:
@@ -381,6 +443,16 @@ class WindWakerVoiceChat:
         search_results = self.search_walkthrough(query)
         result = {"query": query, "results": search_results}
 
+      elif fc.name == "search_user_history":
+        query = fc.args.get("query", "").strip()
+        print(f"🔍 Searching user history: {'recent activity' if not query else query}")
+        history_results = self.search_user_history(query)
+        result = {"query": query or "recent_activity", "results": history_results}
+
+      elif fc.name == "play_winds_requiem":
+        print("🎵 Playing Wind's Requiem...")
+        result = self.play_winds_requiem()
+
       else:
         result = {"error": f"Unknown function: {fc.name}"}
 
@@ -459,28 +531,7 @@ class WindWakerVoiceChat:
       }
 
   def search_walkthrough(self, query, top_k=3):
-    """Search walkthrough + episodic memory"""
-    results = []
-
-    # Search episodic memory first (most relevant/recent)
-    if self.memory_client:
-      try:
-        memories = self.memory_client.search(
-            query=query,
-            user_id="wind_waker_player"
-        )
-        if memories and isinstance(memories, list) and len(memories) > 0:
-          memory_texts = []
-          for m in memories:
-            if isinstance(m, dict) and m.get("memory"):
-              memory_texts.append(m["memory"])
-          if memory_texts:
-            results.append(f"[Your recent questions]\n" + "\n".join(memory_texts))
-            print(f"💭 Found {len(memory_texts)} memories")
-      except Exception as e:
-        print(f"⚠️  Memory search failed: {e}")
-
-    # Original walkthrough search
+    """Search walkthrough using embeddings"""
     try:
       print(f"🔍 Searching walkthrough for: '{query}'")
 
@@ -513,18 +564,93 @@ class WindWakerVoiceChat:
         print(f"🔍 Match {i+1}: chunk {chunk_id}, score {score:.3f}")
         results.append(text)
 
-      # Combine memories and walkthrough results
-      walkthrough_text = "\n\n---\n\n".join(results)
-      if results:  # If we already have memory results
-        all_results = results + [f"[Game walkthrough]\n{walkthrough_text}"]
-        return "\n\n---\n\n".join(all_results)
-      else:
-        return walkthrough_text
+      return "\n\n---\n\n".join(results)
 
     except Exception as e:
       print(f"🔍 Walkthrough search error: {e}")
       traceback.print_exc()
       return f"Search failed: {e}"
+
+  def search_user_history(self, query="", max_recent=10):
+    """Search user's gameplay history or get recent memories"""
+    if not self.memory_client:
+      return "Memory system not available"
+    
+    try:
+      if query:
+        # Use semantic search for specific queries
+        memories = self.memory_client.search(
+            query=query,
+            user_id="wind_waker_player",
+            limit=5
+        )
+        print(f"💭 Found {len(memories) if memories else 0} relevant memories")
+      else:
+        # Get recent memories when no query
+        memories = self.memory_client.get_all(
+            filters={
+                "user_id": "wind_waker_player"
+            },
+            page_size=max_recent,
+            version="v2"
+        )
+        print(f"💭 Retrieved {len(memories) if memories else 0} recent memories")
+      
+      # Format memories chronologically
+      if memories and isinstance(memories, list):
+        history_items = []
+        for m in memories:
+          if isinstance(m, dict) and m.get("memory"):
+            timestamp = "unknown"
+            if m.get("metadata"):
+              timestamp = m["metadata"].get("timestamp", "unknown")
+            elif m.get("created_at"):
+              timestamp = m["created_at"]
+            
+            history_items.append(f"[{timestamp}] {m['memory']}")
+        
+        # Sort by timestamp if we have them
+        if history_items:
+          history_items.sort()  # Assuming ISO format timestamps
+          return "\n".join(history_items)
+      
+      return "No user history found"
+      
+    except Exception as e:
+      print(f"⚠️  User history search failed: {e}")
+      return f"Failed to retrieve history: {str(e)}"
+
+  def play_winds_requiem(self):
+    """Play Wind's Requiem: Up, Left, Right"""
+    # Wind Waker song input sequence
+    commands = [
+        # Press Up
+        {'type': 'axis', 'axis': 'STICK_Y', 'value': 0},  # Up is 0
+        {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},  # Return to center
+        
+        # Press Left
+        {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left is 0
+        {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Return to center
+        
+        # Press Right
+        {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right is 255
+        {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Return to center
+    ]
+    
+    success = send_controller_sequence(commands)
+    
+    if success:
+        return {
+            "success": True,
+            "message": "Playing Wind's Requiem! The wind direction should change.",
+            "sequence": "Up → Left → Right"
+        }
+    else:
+        return {
+            "success": False,
+            "message": "Failed to send controller commands. Is the controller daemon running?",
+            "hint": "Run: sudo python controller_daemon.py"
+        }
 
   def take_screenshot(self):
     """Take screenshot using mss, similar to Get_started_LiveAPI.py"""

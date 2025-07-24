@@ -2,29 +2,40 @@
 
 *Updated: July 22, 2025*
 
+## Email Demo - Key Capabilities to Showcase
+
+When sending out the demo email, make sure to highlight these five core innovations:
+
+1. **Gemini Live (Native Audio)**: Real-time voice conversation with near-zero latency using the native audio dialog model
+2. **Personalization (Episodic Memory)**: mem0 integration that remembers user's specific gameplay history and past conversations
+3. **In-game Actuation**: Direct game control capabilities (playing Wind Waker songs, future sailing controls)
+4. **RAG-based Walkthrough**: Semantic search over game guides for accurate, spoiler-free assistance
+5. **Multimodal State-parsing**: Real-time vision analysis to understand what's happening on screen
+
+These capabilities combine to create an AI gaming companion that can see what you see, remember what you've done, and actively help you play.
+
+**Personal Note**: My daughter and I spent about 4 hours debugging this system yesterday - her gaming expertise was invaluable in identifying tool selection issues and testing the conversational flow!
+
 ## Demo Scenario - Showcasing Key Capabilities
 
 **Goal**: Demonstrate visual parsing, actuation, episodic memory, and walkthrough recall in a natural conversation.
 
 ### Demo Script:
 
-**User**: "I just helped the dragon; any idea where I'm supposed to go next?"  
-**Gemini**: *[Uses search_walkthrough]* "After helping Valoo the dragon at Dragon Roost Island, you need to head to Forest Haven to meet the Great Deku Tree. You'll need the Wind Waker to change wind direction for sailing."
+**User**: "It's been awhile, Gemini; what's the last major thing we did?"  
+**Gemini**: *[Uses search_user_history]* "Looking at your recent activity... You were at Dragon Roost Island helping Valoo the dragon. You asked about getting the dragon's scale and were working on calming Valoo by dealing with the monster in the volcano."
 
-**User**: "Have I been there before?"  
-**Gemini**: *[Uses search_user_history/memory]* "Yes, actually! You visited Forest Haven yesterday around 3 PM. You were asking about the Korok ceremony and collecting the forest water."
+**User**: "Ok, what should we do next?"  
+**Gemini**: *[Uses search_walkthrough]* "After obtaining Din's Pearl from the dragon, you need to sail to Forest Haven to get Farore's Pearl. The Great Deku Tree there will give you the next pearl after you complete the Forbidden Woods dungeon."
 
-**User**: "What direction do I need to go?"  
-**Gemini**: *[Uses see_game_screen + search_walkthrough]* "Looking at your map position near Dragon Roost, you'll need to sail southeast to reach Forest Haven. It's roughly in that direction from where you are now."
+**User**: "Ok, can you play Wind's Requiem?"  
+**Gemini**: *[Uses actuation]* "Playing Wind's Requiem now to change the wind direction..." *[Actuates: Up, Left, Right on Wind Waker]* "There you go! The wind is now blowing southeast toward Forest Haven."
 
-**User**: "Can you play the Wind's Requiem to change the wind?"  
-**Gemini**: *[Uses actuation]* "Sure! Playing Wind's Requiem now..." *[Actuates: Up, Left, Right on Wind Waker]*
+**User**: "Ok, sailing now. Can you stop the boat when you see something interesting?"  
+**Gemini**: *[Uses periodic see_game_screen]* "I'll keep watch and let you know when I spot anything important like islands, enemies, or treasure!"
 
-**User**: "I'm going to sail and check my phone; let me know if anything comes up!"  
-**Gemini**: *[Uses periodic see_game_screen]* "Got it! I'll keep an eye on the screen and alert you if enemies appear or when we reach Forest Haven."
-
-*[After periodic checks...]*  
-**Gemini**: "Heads up! There's a group of seahats approaching from the left, and I can see Forest Haven in the distance!"
+*[After periodic vision checks...]*  
+**Gemini**: "I see a submarine periscope to your right! And there's a platform with a treasure chest ahead. Want to check either of those out?"
 
 ### Capabilities Demonstrated:
 - **Visual Parsing**: Checking game screen for navigation and threats
@@ -44,6 +55,14 @@ Successfully integrated mem0 for conversational memory, though with limitations:
 - Only captures user queries extracted from tool calls (no audio transcription)
 - Had to make storage async to avoid 2-3 second blocking delays
 - Memory search integrated into walkthrough tool for context-aware responses
+
+## ✅ Basic controller actuation working
+
+Successfully implemented controller passthrough daemon that allows LLM to play Wind's Requiem and other songs. The daemon forwards user controller inputs while accepting JSON commands from the voice chat for LLM actuation.
+
+## Fix Z button mapping issue
+
+Currently the Z button (mapped to RB) sends the same code as R button (RT). The L and R shoulder buttons work correctly, but we need to figure out proper Z button mapping. This might require checking what specific button codes the 8BitDo controller sends for the Z button vs other buttons.
 
 ## Re-add sail_to tool with actual game actuation
 
@@ -92,6 +111,22 @@ Need to actually test this systematically with real gameplay questions and see i
 ## Add separate memory search tool
 
 Currently mixing episodic memory with walkthrough search, which prevents the model from distinguishing between "what the guide says" vs "what the user did". Need a dedicated `search_user_history` tool that specifically queries the user's personal game history, visited locations, collected items, and past questions. This would enable truly personalized responses based on actual gameplay progress.
+
+## Controller Actuation Notes (Reference)
+
+The controller daemon implementation revealed several quirks:
+- 8BitDo controllers send signed axis values (-32768 to 32767) that need normalization to 0-255
+- Right analog stick axes may be swapped on some controllers (up/down = RX, left/right = RY)
+- evdev and uinput use different event code constants - can't pass raw codes between them
+- D-pad might send HAT axes (ABS_HAT0X/Y) instead of button events on some controllers
+- Always initialize virtual controller to neutral state to prevent phantom inputs at startup
+
+## Save File Locations (Reference)
+
+Wind Waker save files are stored in locations like:
+- `~/.var/app/org.libretro.RetroArch/config/retroarch/saves/dolphin-emu/User/GC/USA/Card A/01-GZLE-gczelda.gci`
+
+These `.gci` files are useful for transporting saves between machines and are more robust than state saves. The exact path depends on your RetroArch installation and region settings.
 
 ## Ideas for later
 
