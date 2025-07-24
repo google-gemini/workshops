@@ -104,6 +104,34 @@ Watching my daughter use it tonight, the system is way over-indexing on walkthro
 
 The vision commit is sitting ahead of origin/main and needs to be rebased on top of the sail_to tool. Have 2 unmerged commits that need to get sorted out. Should probably just rebase the vision stuff on top.
 
+## Investigate multimodal/audio interference root cause
+
+Even with sailing vision analysis running in a background task, multimodal `generate_content()` calls still pause the live audio stream. This suggests some kind of API-level resource contention. Potential investigations:
+- Try using a completely separate `genai.Client()` instance for vision
+- Test running vision analysis in a subprocess to isolate it from the main process
+- Check if using a different model endpoint helps
+- Investigate whether this is a known limitation of the Live API
+- Consider using a different vision API (e.g., direct Vertex AI calls)
+
+Current workaround is the 6-second initial delay, but this is not ideal for responsiveness.
+
+## Document sailing mode design decisions
+
+The sailing observation mode went through many iterations before settling on the current approach. Should document:
+- Why async tools don't work with native audio (API limitation)
+- Why long-running functions timeout (WebSocket keepalive)
+- Why we use background tasks instead of built-in async
+- Why we inject observations as user turns instead of tool responses
+- The careful balance needed for vision prompts (interesting vs urgent vs noteworthy)
+
+## Optimize audio processing pipeline
+
+The receive_audio method was heavily simplified to fix audio cutoffs, but there might be better approaches:
+- Investigate using a separate thread for audio playback
+- Consider buffering strategies to handle processing delays
+- Test whether we can do some minimal logging without affecting audio
+- Look into priority queues for audio data
+
 ## Clean up 49 untracked files
 
 The repo is getting pretty messy with all these random files everywhere. Need to go through and figure out what should be gitignored vs actually committed. Probably a bunch of screenshots and logs and temp files.
@@ -190,6 +218,20 @@ Current beat reset hack works but is inelegant. Better solutions:
 - Implement proper beat synchronization algorithm
 - Detect if Wind Waker is already equipped before playing songs
 
+## Test sailing mode with different vision models
+
+Current implementation uses `gemini-2.0-flash-lite` for sailing observations. Should test:
+- Whether `gemini-2.0-flash` provides better detection despite higher latency
+- If batch processing multiple screenshots helps
+- Whether different prompt strategies improve detection accuracy
+
+## Add sailing mode memory
+
+Currently sailing observations aren't stored in episodic memory. Could:
+- Store noteworthy observations with timestamps
+- Build a "sailing log" of interesting discoveries
+- Use this to avoid re-reporting the same landmarks
+
 ## Ideas for later
 
 Multiple tools per query would be cool - vision + walkthrough + game state all at once. Async vision with background screenshots for faster responses. More game-specific tools like inventory management, quest tracking, map stuff. Game actuation for sail_to and other movement commands. Maybe expand beyond Wind Waker to other games eventually.
@@ -201,3 +243,10 @@ Multiple tools per query would be cool - vision + walkthrough + game state all a
 - `175037a` - Vision analysis integration
 - `16ffca3` - Sail_to navigation tool
 - `9752287` - Initial voice chat with Gemini Live API
+
+**Sailing Mode Timeline**:
+- Initial attempt: Async tools with `NON_BLOCKING` - discovered native audio limitation
+- Second attempt: Long-running function loop - hit WebSocket timeout
+- Third attempt: Quick returns with `scheduling` hints - interrupted audio
+- Fourth attempt: Background task with observation injection - mostly working
+- Audio fixes: Moved audio processing first, removed aggressive logging

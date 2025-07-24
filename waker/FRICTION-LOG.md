@@ -156,6 +156,81 @@ Only 0.0003 seconds! Games need buttons HELD to register. Fixed by adding delay 
 **Result**: Wind's Requiem now plays reliably every time, with the wind changing direction as expected!
 **Status**: ✅ Full Wind Waker song actuation working
 
+### Sailing Observation Mode Implementation (Late July 2025)
+**Date**: July 24, 2025
+**Obstacle**: Wanted an autonomous sailing mode where Gemini monitors the ocean and alerts the user when something interesting appears.
+**Solution**: A painful journey through async function limitations, WebSocket timeouts, and audio interruption issues.
+
+**Discovery #1 - Async Tools Don't Work with Native Audio**:
+- Initially tried `behavior: "NON_BLOCKING"` for async function calling
+- Documentation reveals: "Asynchronous function calling is only supported in half-cascade audio generation"
+- We're using native audio, so async tools are completely unsupported
+- Had to abandon the built-in async approach entirely
+
+**Discovery #2 - Long-Running Functions Timeout**:
+- Tried implementing a loop inside the tool handler that would run for ~5 minutes
+- WebSocket connection timed out after ~20-30 seconds with "keepalive ping timeout"
+- The Live API expects functions to return within a reasonable timeframe
+- Can't have long-running tool executions even with NON_BLOCKING
+
+**Discovery #3 - Tool Responses Interrupt Audio**:
+- Every tool response creates a new conversation turn
+- This immediately cuts off any in-progress audio generation
+- Even returning empty results or using `scheduling: "SILENT"` didn't help
+- Had to completely avoid returning FunctionResponses during monitoring
+
+**Discovery #4 - Multimodal Calls Pause Audio Stream**:
+- Even when running vision analysis in a separate asyncio task, audio would pause
+- Tried using the same client instance - still caused pauses
+- Added initial delay (5-7 seconds) to let model finish speaking before first vision call
+- Still investigating root cause - may need separate client or subprocess
+
+**Discovery #5 - Vision Prompt Engineering is Critical**:
+- "interesting" was too broad - sunny days were flagged
+- "urgent" was too narrow - volcanoes and sea monsters ignored
+- "noteworthy" struck the right balance
+- Had to explicitly list what to look for AND what to ignore
+- Model kept returning lists instead of single JSON objects
+
+**Final Architecture**:
+1. `observe_sailing` starts a background asyncio task and returns immediately
+2. Background task waits 6 seconds before first vision check
+3. Rapid checks every 0.5 seconds using multimodal vision
+4. When something noteworthy found, uses `send_client_content` to push new user turn
+5. 10-second pause after observations to let user respond
+6. `stop_sailing` cancels the background task
+
+**Technical Details**:
+- Used `asyncio.create_task()` for fire-and-forget execution
+- `send_client_content` with `role='user'` to inject observations
+- Tracking last observation to avoid duplicate reports
+- 200 max checks (~100 seconds) as safety limit
+
+**Status**: ✅ Working sailing observation mode with acceptable audio interruptions
+
+### Audio Processing and Logging Conflicts (Late July 2025)
+**Date**: July 24, 2025
+**Obstacle**: Audio kept getting cut off at critical moments, especially when logging "Server content received" messages.
+**Solution**: Complete refactoring of the receive_audio method to prioritize audio data.
+
+**Problem #1 - Logging Before Audio**:
+- Original code did extensive logging and processing before handling audio chunks
+- Every "interesting content" check added latency
+- Audio queue was processed last, causing gaps in playback
+
+**Problem #2 - Aggressive Queue Clearing**:
+- Code was clearing the audio queue at the end of each turn
+- This cut off any remaining audio that hadn't been played yet
+- Was originally intended for interruption handling but was too aggressive
+
+**Resolution**:
+- Moved audio data handling to the very top of the response loop
+- Added `continue` after audio queuing to skip all other processing
+- Removed automatic queue clearing
+- Eventually removed most logging entirely for cleaner audio flow
+
+**Status**: ✅ Smooth audio playback without interruptions
+
 ## Current Challenges
 
 ### Repository Management

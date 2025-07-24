@@ -44,6 +44,7 @@ Press Ctrl+C to exit.
 
 import asyncio
 import base64
+from contextlib import redirect_stderr
 from datetime import datetime
 import io
 import json
@@ -54,7 +55,6 @@ import sys
 import time
 import traceback
 import warnings
-from contextlib import redirect_stderr
 
 from google import genai
 from google.genai import types
@@ -91,6 +91,10 @@ CONFIG = {
     To answer questions about the game, use search_walkthrough.
     To recall what the user has done, use search_user_history.
     To see what's happening on screen, use see_game_screen.
+
+    When you receive a [Sailing observation], describe what you see and ask the user 
+    if they want to stop sailing to investigate. Only call stop_sailing if the user 
+    explicitly says they want to stop.
 
     Keep responses short for voice chat.""",
     "tools": [{
@@ -143,10 +147,11 @@ CONFIG = {
             {
                 "name": "search_user_history",
                 "description": (
-                    "Search the user's personal game history and past actions. "
-                    "Use this to recall what the user has already done, places "
-                    "they've visited, items they've collected, or questions "
-                    "they've previously asked. Leave query blank to get recent history."
+                    "Search the user's personal game history and past actions."
+                    " Use this to recall what the user has already done, places"
+                    " they've visited, items they've collected, or questions"
+                    " they've previously asked. Leave query blank to get recent"
+                    " history."
                 ),
                 "parameters": {
                     "type": "object",
@@ -154,9 +159,10 @@ CONFIG = {
                         "query": {
                             "type": "string",
                             "description": (
-                                "Optional: What to search for in user's history (e.g., "
-                                "'islands visited', 'songs learned', 'Dragon Roost'). "
-                                "Leave blank to get recent activity."
+                                "Optional: What to search for in user's history"
+                                " (e.g., 'islands visited', 'songs learned',"
+                                " 'Dragon Roost'). Leave blank to get recent"
+                                " activity."
                             ),
                         }
                     },
@@ -166,25 +172,66 @@ CONFIG = {
             {
                 "name": "play_song",
                 "description": (
-                    "Play a Wind Waker song. Available songs:\n"
-                    "- winds_requiem: Changes wind direction (Up, Left, Right)\n"
-                    "- ballad_of_gales: Warps to cyclone locations (Down, Right, Left, Up)\n"
-                    "- command_melody: Controls statues/companions (Left, Center, Right, Center)\n"
-                    "- earth_gods_lyric: Awakens Earth Sage (Down, Down, Center, Right, Left, Center)\n"
-                    "- wind_gods_aria: Awakens Wind Sage (Up, Up, Down, Right, Left, Right)\n"
-                    "- song_of_passing: Changes day to night (Right, Left, Down)"
+                    "Play a Wind Waker song. Available songs:\n- winds_requiem:"
+                    " Changes wind direction (Up, Left, Right)\n-"
+                    " ballad_of_gales: Warps to cyclone locations (Down, Right,"
+                    " Left, Up)\n- command_melody: Controls statues/companions"
+                    " (Left, Center, Right, Center)\n- earth_gods_lyric:"
+                    " Awakens Earth Sage (Down, Down, Center, Right, Left,"
+                    " Center)\n- wind_gods_aria: Awakens Wind Sage (Up, Up,"
+                    " Down, Right, Left, Right)\n- song_of_passing: Changes day"
+                    " to night (Right, Left, Down)"
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "song_name": {
                             "type": "string",
-                            "enum": ["winds_requiem", "ballad_of_gales", "command_melody", 
-                                     "earth_gods_lyric", "wind_gods_aria", "song_of_passing"],
-                            "description": "The song to play"
+                            "enum": [
+                                "winds_requiem",
+                                "ballad_of_gales",
+                                "command_melody",
+                                "earth_gods_lyric",
+                                "wind_gods_aria",
+                                "song_of_passing",
+                            ],
+                            "description": "The song to play",
                         }
                     },
                     "required": ["song_name"],
+                },
+            },
+            {
+                "name": "observe_sailing",
+                "description": (
+                    "Monitor the sailing journey and report when something"
+                    " relevant to the user's interest appears"
+                ),
+                "behavior": (
+                    "NON_BLOCKING"
+                ),  # Make it async - Live API will keep calling
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": (
+                                "What the user wants to watch for while sailing"
+                                " (e.g., 'any islands', 'treasure', 'until we"
+                                " reach Dragon Roost')"
+                            ),
+                        }
+                    },
+                    "required": ["query"],
+                },
+            },
+            {
+                "name": "stop_sailing",
+                "description": "Stop sailing by putting away the sail",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": [],
                 },
             },
         ]
@@ -193,27 +240,27 @@ CONFIG = {
 
 
 def send_controller_command(cmd):
-    """Send a single controller command to the daemon"""
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(('localhost', 9999))
-        sock.send(json.dumps(cmd).encode())
-        sock.close()
-        return True
-    except Exception as e:
-        print(f"⚠️  Controller command failed: {e}")
-        return False
+  """Send a single controller command to the daemon"""
+  try:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(("localhost", 9999))
+    sock.send(json.dumps(cmd).encode())
+    sock.close()
+    return True
+  except Exception as e:
+    print(f"⚠️  Controller command failed: {e}")
+    return False
 
 
 def send_controller_sequence(commands):
-    """Send a sequence of controller commands with timing"""
-    for cmd in commands:
-        if not send_controller_command(cmd):
-            return False
-        # Handle delay if specified
-        if 'delay' in cmd:
-            time.sleep(cmd['delay'])
-    return True
+  """Send a sequence of controller commands with timing"""
+  for cmd in commands:
+    if not send_controller_command(cmd):
+      return False
+    # Handle delay if specified
+    if "delay" in cmd:
+      time.sleep(cmd["delay"])
+  return True
 
 
 class WindWakerVoiceChat:
@@ -227,6 +274,7 @@ class WindWakerVoiceChat:
     self.client = None
     self.memory_client = self._init_memory_client()
     self.conversation_context = []  # Track conversation flow
+    self.sailing_task = None
 
   def _init_memory_client(self):
     """Initialize mem0 client for episodic memory"""
@@ -256,8 +304,8 @@ class WindWakerVoiceChat:
           user_id="wind_waker_player",
           metadata={
               "game": "wind_waker",
-              "timestamp": str(context["timestamp"])
-          }
+              "timestamp": str(context["timestamp"]),
+          },
       )
       print(f"💾 Stored user query: {context['query'][:50]}...")
     except Exception as e:
@@ -324,101 +372,40 @@ class WindWakerVoiceChat:
   async def receive_audio(self):
     """Receive responses from Gemini"""
     while True:
-      # Suppress all stderr output from the receive loop
-      with redirect_stderr(io.StringIO()):
-        turn = self.session.receive()
-        async for response in turn:
-          # Only log responses with actual interesting content
-          has_interesting_content = False
-        
-          # Check if this has executable code or code results
-          if response.server_content is not None:
-            model_turn = response.server_content.model_turn
-            if model_turn and model_turn.parts:
-              for part in model_turn.parts:
-                if part.executable_code or part.code_execution_result:
-                  has_interesting_content = True
-                  break
-          
-          # Or if it has tool calls
-          if response.tool_call is not None:
-            has_interesting_content = True
-          
-          # Or if it has actual text (not just audio)
-          if hasattr(response, 'text') and response.text:
-            has_interesting_content = True
-          
-          if has_interesting_content:
-            print(
-                f"\n📊 [{datetime.now().strftime('%H:%M:%S')}] Response type:"
-                f" {type(response)}"
-            )
+      turn = self.session.receive()
+      async for response in turn:
+        # Audio data - queue immediately
+        if response.data:
+          self.audio_in_queue.put_nowait(response.data)
+          continue
 
-          # Suppress warnings when accessing response attributes
-          with redirect_stderr(io.StringIO()):
-            # Check for text (might exist even in audio mode?)
-            if hasattr(response, "text") and response.text:
-              print(f"📝 TEXT FOUND: {response.text}")
-              print(f"🤖 Gemini: {response.text}", end="")
-          
-          # Check for audio data
-          if data := response.data:
-            # Just queue the audio without logging
-            self.audio_in_queue.put_nowait(data)
-            continue
+        # Tool calls
+        if response.tool_call:
+          await self.handle_tool_call(response.tool_call)
+          continue
 
-          # Handle tool calls
-          tool_call = response.tool_call
-          if tool_call is not None:
-            print(f"🔧 Tool call details: {tool_call}")
-            await self.handle_tool_call(tool_call)
-            continue
-
-          # Handle code execution parts
-          server_content = response.server_content
-          if server_content is not None:
-            print(f"💻 Server content received")
-            model_turn = server_content.model_turn
-            if model_turn:
-              print(
-                  "   Model turn parts:"
-                  f" {len(model_turn.parts) if model_turn.parts else 0}"
-              )
-              for part in model_turn.parts:
-                if part.executable_code:
-                  code = part.executable_code.code
-                  print(f"🧠 Gemini thinking: {code}")
-                  # Extract user intent from the code
-                  if "query=" in code:
-                    query_start = code.find('query="') + 7
-                    query_end = code.find('"', query_start)
-                    if query_end > query_start:
-                      user_query = code[query_start:query_end]
-                      self.conversation_context.append({
-                          "type": "user_intent",
-                          "query": user_query,
-                          "timestamp": datetime.now(),
-                      })
-                if part.code_execution_result:
-                  print(f"💭 Result: {part.code_execution_result.output}")
+        # Server content (code execution, etc)
+        if response.server_content:
+          model_turn = response.server_content.model_turn
+          if model_turn and model_turn.parts:
+            for part in model_turn.parts:
+              # Extract user query for memory storage
+              if part.executable_code and "query=" in part.executable_code.code:
+                code = part.executable_code.code
+                query_start = code.find('query="') + 7
+                query_end = code.find('"', query_start)
+                if query_end > query_start:
+                  user_query = code[query_start:query_end]
+                  context = {
+                      "type": "user_intent",
+                      "query": user_query,
+                      "timestamp": datetime.now(),
+                  }
+                  self.conversation_context.append(context)
                   
-                  # Store user query in memory asynchronously
-                  if self.memory_client and self.conversation_context:
-                    latest_context = self.conversation_context[-1]
-                    if latest_context.get("query"):
-                      # Fire and forget - don't await
-                      asyncio.create_task(self._store_memory_async(latest_context))
-            # Don't continue here - let audio processing happen
-          
-          # When we have interesting content, log available attributes
-          elif has_interesting_content and not (response.data or response.tool_call or response.server_content):
-            attrs = [attr for attr in dir(response) if not attr.startswith('_') and attr not in ['data', 'text', 'tool_call', 'server_content']]
-            if attrs:
-              print(f"   Other attrs: {attrs}")
-
-        # Handle interruptions - clear audio queue
-        while not self.audio_in_queue.empty():
-          self.audio_in_queue.get_nowait()
+                  # Store memory asynchronously
+                  if self.memory_client:
+                    asyncio.create_task(self._store_memory_async(context))
 
   async def handle_tool_call(self, tool_call):
     """Handle tool calls from Gemini"""
@@ -457,21 +444,92 @@ class WindWakerVoiceChat:
 
       elif fc.name == "search_user_history":
         query = fc.args.get("query", "").strip()
-        print(f"🔍 Searching user history: {'recent activity' if not query else query}")
+        print(
+            "🔍 Searching user history:"
+            f" {'recent activity' if not query else query}"
+        )
         history_results = self.search_user_history(query)
-        result = {"query": query or "recent_activity", "results": history_results}
+        result = {
+            "query": query or "recent_activity",
+            "results": history_results,
+        }
 
       elif fc.name == "play_song":
         song_name = fc.args.get("song_name", "")
         print(f"🎵 Playing {song_name.replace('_', ' ').title()}...")
         result = self.play_song(song_name)
 
+      elif fc.name == "observe_sailing":
+        query = fc.args.get("query", "anything interesting")
+        print(f"⛵ Starting sailing observation for: '{query}'")
+
+        # Cancel any existing sailing task
+        if (
+            hasattr(self, "sailing_task")
+            and self.sailing_task
+            and not self.sailing_task.done()
+        ):
+          self.sailing_task.cancel()
+          try:
+            await self.sailing_task
+          except asyncio.CancelledError:
+            pass
+
+        # Start background monitoring task
+        self.sailing_task = asyncio.create_task(
+            self.sailing_background_monitor(query)
+        )
+
+        # Return immediately!
+        result = {
+            "status": "monitoring_started",
+            "message": f"I'll keep an eye out for {query} while you sail.",
+        }
+
+      elif fc.name == "stop_sailing":
+        print("⛵ Stopping sailing...")
+
+        # Cancel the background sailing monitor if running
+        if (
+            hasattr(self, "sailing_task")
+            and self.sailing_task
+            and not self.sailing_task.done()
+        ):
+          self.sailing_task.cancel()
+          try:
+            await self.sailing_task
+          except asyncio.CancelledError:
+            pass
+          print("⛵ Sailing monitor cancelled")
+
+        # Put away sail (A button twice)
+        commands = [
+            {"type": "button", "button": "A", "action": "press", "value": 1},
+            {
+                "type": "button",
+                "button": "A",
+                "action": "release",
+                "value": 0,
+                "delay": 0.1,
+            },
+            {"type": "button", "button": "A", "action": "press", "value": 1, "delay": 0.5},
+            {"type": "button", "button": "A", "action": "release", "value": 0},
+        ]
+        success = send_controller_sequence(commands)
+
+        result = {
+            "success": success,
+            "message": "Sail put away" if success else "Failed to stop sailing",
+        }
+
       else:
         result = {"error": f"Unknown function: {fc.name}"}
 
-      function_responses.append(
-          types.FunctionResponse(id=fc.id, name=fc.name, response=result)
-      )
+      # Only add FunctionResponse if we have a result
+      if result is not None:
+        function_responses.append(
+            types.FunctionResponse(id=fc.id, name=fc.name, response=result)
+        )
 
     # Send tool responses for synchronous tools immediately
     if function_responses:
@@ -588,27 +646,25 @@ class WindWakerVoiceChat:
     """Search user's gameplay history or get recent memories"""
     if not self.memory_client:
       return "Memory system not available"
-    
+
     try:
       if query:
         # Use semantic search for specific queries
         memories = self.memory_client.search(
-            query=query,
-            user_id="wind_waker_player",
-            limit=5
+            query=query, user_id="wind_waker_player", limit=5
         )
         print(f"💭 Found {len(memories) if memories else 0} relevant memories")
       else:
         # Get recent memories when no query
         memories = self.memory_client.get_all(
-            filters={
-                "user_id": "wind_waker_player"
-            },
+            filters={"user_id": "wind_waker_player"},
             page_size=max_recent,
-            version="v2"
+            version="v2",
         )
-        print(f"💭 Retrieved {len(memories) if memories else 0} recent memories")
-      
+        print(
+            f"💭 Retrieved {len(memories) if memories else 0} recent memories"
+        )
+
       # Format memories chronologically
       if memories and isinstance(memories, list):
         history_items = []
@@ -619,23 +675,23 @@ class WindWakerVoiceChat:
               timestamp = m["metadata"].get("timestamp", "unknown")
             elif m.get("created_at"):
               timestamp = m["created_at"]
-            
+
             history_items.append(f"[{timestamp}] {m['memory']}")
-        
+
         # Sort by timestamp if we have them
         if history_items:
           history_items.sort()  # Assuming ISO format timestamps
           return "\n".join(history_items)
-      
+
       return "No user history found"
-      
+
     except Exception as e:
       print(f"⚠️  User history search failed: {e}")
       return f"Failed to retrieve history: {str(e)}"
 
   def play_song(self, song_name):
     """Play a Wind Waker song by name"""
-    
+
     # Define all Wind Waker songs with their controller sequences
     songs = {
         "winds_requiem": {
@@ -643,22 +699,56 @@ class WindWakerVoiceChat:
             "description": "Changes wind direction",
             "commands": [
                 # Beat reset: Quick 4/4 → 3/4 transition
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 0, 'delay': 0.1},    # Left (4/4)
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.2},  # Back to center
-                
+                {
+                    "type": "axis",
+                    "axis": "STICK_X",
+                    "value": 0,
+                    "delay": 0.1,
+                },  # Left (4/4)
+                {
+                    "type": "axis",
+                    "axis": "STICK_X",
+                    "value": 128,
+                    "delay": 0.2,
+                },  # Back to center
                 # Wind's Requiem: Up → Left → Right (60 BPM = 1 second per beat)
                 # Up - hold for 1 beat
-                {'type': 'axis', 'axis': 'C_Y', 'value': 0, 'delay': 1.0},    # Push Up and hold for 1 second
-                {'type': 'axis', 'axis': 'C_Y', 'value': 128},                # Return to center instantly
-                
+                {
+                    "type": "axis",
+                    "axis": "C_Y",
+                    "value": 0,
+                    "delay": 1.0,
+                },  # Push Up and hold for 1 second
+                {
+                    "type": "axis",
+                    "axis": "C_Y",
+                    "value": 128,
+                },  # Return to center instantly
                 # Left - hold for 1 beat
-                {'type': 'axis', 'axis': 'C_X', 'value': 0, 'delay': 1.0},    # Push Left and hold for 1 second
-                {'type': 'axis', 'axis': 'C_X', 'value': 128},                # Return to center instantly
-                
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 0,
+                    "delay": 1.0,
+                },  # Push Left and hold for 1 second
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 128,
+                },  # Return to center instantly
                 # Right - hold for 1 beat
-                {'type': 'axis', 'axis': 'C_X', 'value': 255, 'delay': 1.0},  # Push Right and hold for 1 second
-                {'type': 'axis', 'axis': 'C_X', 'value': 128},                # Return to center instantly
-            ]
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 255,
+                    "delay": 1.0,
+                },  # Push Right and hold for 1 second
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 128,
+                },  # Return to center instantly
+            ],
         },
         "ballad_of_gales": {
             "sequence": "Down → Right → Left → Up",
@@ -666,26 +756,62 @@ class WindWakerVoiceChat:
             "commands": [
                 # No reset needed - already 4/4 time
                 # Small initial pause
-                {'type': 'axis', 'axis': 'C_X', 'value': 128},
-                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 0.3},
-                
+                {"type": "axis", "axis": "C_X", "value": 128},
+                {"type": "axis", "axis": "C_Y", "value": 128, "delay": 0.3},
                 # Ballad of Gales: Down → Right → Left → Up
                 # Down
-                {'type': 'axis', 'axis': 'C_Y', 'value': 255, 'delay': 0.4},  # Push Down
-                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 0.6},  # Return to center
-                
+                {
+                    "type": "axis",
+                    "axis": "C_Y",
+                    "value": 255,
+                    "delay": 0.4,
+                },  # Push Down
+                {
+                    "type": "axis",
+                    "axis": "C_Y",
+                    "value": 128,
+                    "delay": 0.6,
+                },  # Return to center
                 # Right
-                {'type': 'axis', 'axis': 'C_X', 'value': 255, 'delay': 0.4},  # Push Right
-                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 0.6},  # Return to center
-                
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 255,
+                    "delay": 0.4,
+                },  # Push Right
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 128,
+                    "delay": 0.6,
+                },  # Return to center
                 # Left
-                {'type': 'axis', 'axis': 'C_X', 'value': 0, 'delay': 0.4},    # Push Left
-                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 0.6},  # Return to center
-                
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 0,
+                    "delay": 0.4,
+                },  # Push Left
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 128,
+                    "delay": 0.6,
+                },  # Return to center
                 # Up
-                {'type': 'axis', 'axis': 'C_Y', 'value': 0, 'delay': 0.4},    # Push Up
-                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 0.6},  # Return to center
-            ]
+                {
+                    "type": "axis",
+                    "axis": "C_Y",
+                    "value": 0,
+                    "delay": 0.4,
+                },  # Push Up
+                {
+                    "type": "axis",
+                    "axis": "C_Y",
+                    "value": 128,
+                    "delay": 0.6,
+                },  # Return to center
+            ],
         },
         "command_melody": {
             "sequence": "Left → Center → Right → Center",
@@ -693,87 +819,246 @@ class WindWakerVoiceChat:
             "commands": [
                 # No reset needed - already 4/4 time
                 # Small initial pause
-                {'type': 'axis', 'axis': 'C_X', 'value': 128},
-                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 0.3},
-                
+                {"type": "axis", "axis": "C_X", "value": 128},
+                {"type": "axis", "axis": "C_Y", "value": 128, "delay": 0.3},
                 # Command Melody: Left → Center → Right → Center
                 # Left
-                {'type': 'axis', 'axis': 'C_X', 'value': 0, 'delay': 0.4},    # Push Left
-                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 0.6},  # Return to center
-                
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 0,
+                    "delay": 0.4,
+                },  # Push Left
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 128,
+                    "delay": 0.6,
+                },  # Return to center
                 # Right (Center is implicit in the return)
-                {'type': 'axis', 'axis': 'C_X', 'value': 255, 'delay': 0.4},  # Push Right
-                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 0.6},  # Return to center (final center)
-            ]
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 255,
+                    "delay": 0.4,
+                },  # Push Right
+                {
+                    "type": "axis",
+                    "axis": "C_X",
+                    "value": 128,
+                    "delay": 0.6,
+                },  # Return to center (final center)
+            ],
         },
         "earth_gods_lyric": {
             "sequence": "Down → Down → Center → Right → Left → Center",
             "description": "Awakens the Earth Sage",
             "commands": [
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},  # Center
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Center
-            ]
+                {"type": "axis", "axis": "STICK_Y", "value": 255},  # Down
+                {"type": "axis", "axis": "STICK_Y", "value": 128, "delay": 0.3},
+                {"type": "axis", "axis": "STICK_Y", "value": 255},  # Down
+                {
+                    "type": "axis",
+                    "axis": "STICK_Y",
+                    "value": 128,
+                    "delay": 0.3,
+                },  # Center
+                {"type": "axis", "axis": "STICK_X", "value": 255},  # Right
+                {"type": "axis", "axis": "STICK_X", "value": 128, "delay": 0.3},
+                {"type": "axis", "axis": "STICK_X", "value": 0},  # Left
+                {
+                    "type": "axis",
+                    "axis": "STICK_X",
+                    "value": 128,
+                    "delay": 0.3,
+                },  # Center
+            ],
         },
         "wind_gods_aria": {
             "sequence": "Up → Up → Down → Right → Left → Right",
             "description": "Awakens the Wind Sage",
             "commands": [
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 0},  # Up
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 0},  # Up
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
-            ]
+                {"type": "axis", "axis": "STICK_Y", "value": 0},  # Up
+                {"type": "axis", "axis": "STICK_Y", "value": 128, "delay": 0.3},
+                {"type": "axis", "axis": "STICK_Y", "value": 0},  # Up
+                {"type": "axis", "axis": "STICK_Y", "value": 128, "delay": 0.3},
+                {"type": "axis", "axis": "STICK_Y", "value": 255},  # Down
+                {"type": "axis", "axis": "STICK_Y", "value": 128, "delay": 0.3},
+                {"type": "axis", "axis": "STICK_X", "value": 255},  # Right
+                {"type": "axis", "axis": "STICK_X", "value": 128, "delay": 0.3},
+                {"type": "axis", "axis": "STICK_X", "value": 0},  # Left
+                {"type": "axis", "axis": "STICK_X", "value": 128, "delay": 0.3},
+                {"type": "axis", "axis": "STICK_X", "value": 255},  # Right
+                {"type": "axis", "axis": "STICK_X", "value": 128, "delay": 0.3},
+            ],
         },
         "song_of_passing": {
             "sequence": "Right → Left → Down",
             "description": "Changes day to night and vice versa",
             "commands": [
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
-            ]
-        }
+                {"type": "axis", "axis": "STICK_X", "value": 255},  # Right
+                {"type": "axis", "axis": "STICK_X", "value": 128, "delay": 0.3},
+                {"type": "axis", "axis": "STICK_X", "value": 0},  # Left
+                {"type": "axis", "axis": "STICK_X", "value": 128, "delay": 0.3},
+                {"type": "axis", "axis": "STICK_Y", "value": 255},  # Down
+                {"type": "axis", "axis": "STICK_Y", "value": 128, "delay": 0.3},
+            ],
+        },
     }
-    
+
     if song_name not in songs:
-        return {
-            "success": False,
-            "message": f"Unknown song: {song_name}",
-            "available_songs": list(songs.keys())
-        }
-    
+      return {
+          "success": False,
+          "message": f"Unknown song: {song_name}",
+          "available_songs": list(songs.keys()),
+      }
+
     song_info = songs[song_name]
     success = send_controller_sequence(song_info["commands"])
-    
+
     if success:
-        return {
-            "success": True,
-            "message": f"Playing {song_name.replace('_', ' ').title()}! {song_info['description']}.",
-            "sequence": song_info["sequence"]
-        }
+      return {
+          "success": True,
+          "message": (
+              f"Playing {song_name.replace('_', ' ').title()}!"
+              f" {song_info['description']}."
+          ),
+          "sequence": song_info["sequence"],
+      }
     else:
-        return {
-            "success": False,
-            "message": "Failed to send controller commands. Is the controller daemon running?",
-            "hint": "Run: sudo python controller_daemon.py"
-        }
+      return {
+          "success": False,
+          "message": (
+              "Failed to send controller commands. Is the controller daemon"
+              " running?"
+          ),
+          "hint": "Run: sudo python controller_daemon.py",
+      }
+
+  async def sailing_background_monitor(self, query):
+    """Background task that monitors sailing and pushes new turns"""
+    try:
+      # TODO: Investigate why multimodal calls interfere with live audio stream
+      # Even in a background task, generate_content() calls seem to pause the audio.
+      # Possible solutions:
+      # 1. Use a separate client instance
+      # 2. Run in a subprocess
+      # 3. Use a different model endpoint
+      # For now, adding a delay helps avoid cutting off the initial response
+      
+      # Initial delay to let the model speak
+      initial_delay = 6.0  # 5-7 seconds
+      await asyncio.sleep(initial_delay)
+      print(f"⛵ Starting rapid sailing observation after {initial_delay}s delay")
+
+      # After initial delay, check as fast as possible
+      check_interval = 0.5  # Minimal delay between checks
+      max_checks = 200  # More checks since they're faster
+      last_observation = ""  # Track what we last reported
+
+      for check_num in range(max_checks):
+        screenshot = self.take_screenshot()
+        if screenshot:
+          analysis_text = await self.analyze_sailing_scene(screenshot, query)
+
+          if analysis_text:
+            try:
+              parsed = json.loads(analysis_text)
+              if isinstance(parsed, list):
+                parsed = parsed[0] if parsed else {}
+
+              if parsed.get("noteworthy"):
+                observation = parsed.get(
+                    "description", "Something noteworthy detected"
+                )
+                
+                # Only report if it's different from last observation
+                if observation != last_observation:
+                  message = f"[Sailing observation] I see: {observation}"
+                  
+                  await self.session.send_client_content(
+                      turns=types.Content(
+                          role='user',
+                          parts=[types.Part(text=message)]
+                      )
+                  )
+                  print(f"⛵ Pushed sailing observation to conversation")
+                  last_observation = observation
+                  
+                  # Give user 10 seconds to respond before next check
+                  print(f"⛵ Waiting 10 seconds for user response...")
+                  await asyncio.sleep(10.0)
+                  continue  # Skip the normal check_interval sleep
+                  
+                # DON'T BREAK - continue monitoring!
+            except Exception as e:
+              print(f"⛵ Parse error: {e}")
+        else:
+          print(f"⛵ Screenshot failed, continuing...")
+
+        await asyncio.sleep(check_interval)
+
+      print(f"⛵ Sailing monitor completed after {check_num + 1} checks")
+
+    except asyncio.CancelledError:
+      print("⛵ Sailing monitor cancelled")
+    except Exception as e:
+      print(f"⛵ Sailing monitor error: {e}")
+
+  async def analyze_sailing_scene(self, screenshot, user_query):
+    """Analyze sailing screenshot with context from user query"""
+    try:
+      print(f"⛵ Analyzing sailing scene for: '{user_query}'")
+
+      # Convert base64 back to bytes
+      image_bytes = base64.b64decode(screenshot["data"])
+
+      prompt = f"""
+      Analyze this Wind Waker sailing screenshot.
+      User is sailing and wants to know about: {user_query}
+      
+      Look for these specific noteworthy things:
+      - Islands or landmasses you can sail to
+      - Enemies attacking or approaching (sharks, octoroks, pirates)
+      - Structures on fire or in distress
+      - Treasure chests or pillars of light
+      - Submarines, platforms, or salvage points
+      - Storms, tornadoes, or dangerous weather
+      - Other ships or boats (merchant, pirate, etc)
+      - Collectible items in the water
+      - Seagulls circling a specific spot
+      - Anything unusual or dangerous
+      - Anything specifically matching: {user_query}
+      
+      Return a SINGLE JSON object (not a list) with:
+      - "description": Describe the MOST important thing you see
+      - "noteworthy": true only if you see something from the list above
+      
+      Focus on the most important/urgent observation. The boat's sail design, 
+      normal UI elements, and calm sailing conditions are NOT noteworthy.
+      """
+
+      response = self.client.models.generate_content(
+          model="gemini-2.0-flash-lite",
+          contents=[
+              types.Part.from_bytes(
+                  data=image_bytes, mime_type=screenshot["mime_type"]
+              ),
+              prompt,
+          ],
+          config=types.GenerateContentConfig(
+              response_mime_type="application/json"
+          ),
+      )
+
+      # LOG THE ACTUAL RESPONSE
+      print(f"⛵ Model response: {response.text}")
+
+      return response.text
+
+    except Exception as e:
+      print(f"⛵ Sailing analysis error: {e}")
+      return None
 
   def take_screenshot(self):
     """Take screenshot using mss, similar to Get_started_LiveAPI.py"""
