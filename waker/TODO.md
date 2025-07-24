@@ -233,6 +233,53 @@ Currently sailing observations aren't stored in episodic memory. Could:
 - Build a "sailing log" of interesting discoveries
 - Use this to avoid re-reporting the same landmarks
 
+## Investigate NON_BLOCKING behavior for long-running tools
+
+The current `observe_sailing` implementation uses background tasks and manual async loops, but the Live API supports `behaviour = NON_BLOCKING` which might be cleaner. This would let the model call the function repeatedly until resolution, handling the async loop automatically.
+
+**Potential benefits**:
+- Eliminate custom background task management
+- Let the API handle the polling/retry logic
+- More natural for the model's calling patterns
+- Simpler error handling and cancellation
+
+**Implementation approach**:
+```python
+{
+    "name": "observe_sailing",
+    "description": "Monitor sailing and report noteworthy observations",
+    "parameters": {...},
+    "behavior": "NON_BLOCKING"  # Let model handle the polling
+}
+```
+
+## Replace vision model indirection with native Live API vision
+
+Currently we're doing screenshot → separate vision model → text → Live API, which defeats the purpose of multimodal live. Should investigate using `session.send_realtime_input(media=...)` or `session.send_client_content()` to send images directly to the live session.
+
+**Core idea**: 
+```python
+# Instead of this:
+screenshot = take_screenshot()
+analysis = await analyze_with_separate_model(screenshot)
+await session.send_client_content(turns=[{"role": "user", "parts": [{"text": analysis}]}])
+
+# Do this:
+screenshot = take_screenshot() 
+await session.send_realtime_input(media=screenshot)  # Let live model see directly
+```
+
+**Challenges to solve**:
+- **Filtering uninteresting frames**: Need prompting/config to avoid responding to every frame
+- **User intentionality**: Distinguish between automatic monitoring vs explicit "take a look"
+- **Response throttling**: Prevent overwhelming the conversation with constant observations
+
+**API methods to explore**:
+- `send_realtime_input(media=...)` - Optimized for responsiveness, no ordering guarantees
+- `send_client_content(turns=...)` - Ordered context, better for deliberate analysis
+
+This seems like exactly what the Live API multimodal capabilities were designed for - real-time visual understanding without the latency/complexity of separate model calls.
+
 ## Ideas for later
 
 Multiple tools per query would be cool - vision + walkthrough + game state all at once. Async vision with background screenshots for faster responses. More game-specific tools like inventory management, quest tracking, map stuff. Game actuation for sail_to and other movement commands. Maybe expand beyond Wind Waker to other games eventually.

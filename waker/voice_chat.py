@@ -92,6 +92,10 @@ CONFIG = {
     To recall what the user has done, use search_user_history.
     To see what's happening on screen, use see_game_screen.
 
+    When observe_sailing is active, avoid calling see_game_screen unless the user 
+    asks for something specific (inventory, health, UI). The sailing observer 
+    already monitors the screen continuously.
+
     When you receive a [Sailing observation], describe what you see and ask the user 
     if they want to stop sailing to investigate. Only call stop_sailing if the user 
     explicitly says they want to stop.
@@ -207,9 +211,6 @@ CONFIG = {
                     "Monitor the sailing journey and report when something"
                     " relevant to the user's interest appears"
                 ),
-                "behavior": (
-                    "NON_BLOCKING"
-                ),  # Make it async - Live API will keep calling
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -421,7 +422,7 @@ class WindWakerVoiceChat:
 
         if screenshot_data:
           user_query = fc.args.get("query", "")
-          vision_analysis = self.analyze_screenshot_with_gemini(
+          vision_analysis = await self.analyze_screenshot_with_gemini(
               screenshot_data, user_query
           )
           result = {
@@ -565,7 +566,9 @@ class WindWakerVoiceChat:
           function_responses=function_responses
       )
 
-  def analyze_screenshot_with_gemini(self, screenshot_data, user_query=""):
+  async def analyze_screenshot_with_gemini(
+      self, screenshot_data, user_query=""
+  ):
     """Analyze screenshot using Gemini 2.5 Flash"""
     try:
       print(f"🔍 Analyzing screenshot with Gemini 2.5 Flash...")
@@ -598,7 +601,8 @@ class WindWakerVoiceChat:
             """
 
       print(f"🔍 Sending request to Gemini...")
-      response = client.models.generate_content(
+      response = await asyncio.to_thread(
+          client.models.generate_content,
           model="gemini-2.0-flash-lite",
           contents=[
               types.Part.from_bytes(
@@ -1059,7 +1063,8 @@ class WindWakerVoiceChat:
       normal UI elements, and calm sailing conditions are NOT noteworthy.
       """
 
-      response = self.client.models.generate_content(
+      response = await asyncio.to_thread(
+          self.client.models.generate_content,
           model="gemini-2.0-flash-lite",
           contents=[
               types.Part.from_bytes(
