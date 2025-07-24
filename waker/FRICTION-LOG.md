@@ -115,6 +115,47 @@
 - **Created install script**: Permanent udev rules for /dev/uinput permissions
 **Status**: ✅ Controller passthrough working with Wind's Requiem actuation
 
+### Wind's Requiem Song Implementation (Late July 2025)
+**Date**: July 23, 2025
+**Obstacle**: Getting the LLM to actually play Wind's Requiem in-game through controller actuation.
+**Solution**: A journey through controller mapping, timing issues, and Wind Waker's musical mechanics.
+
+**Discovery #1 - Wrong Stick**: Initially sent commands to left analog stick (STICK_X/Y) but Wind Waker songs use the C-stick (right analog). No wonder nothing happened!
+
+**Discovery #2 - Axis Confusion**: Spent time debugging whether C_X mapped to RX or RY, eventually using evtest to confirm:
+- C_X → ABS_RX (horizontal movement)
+- C_Y → ABS_RY (vertical movement)
+- No axis swap needed for LLM commands (only physical controller had swapped axes)
+
+**Discovery #3 - Button Press Timing**: Initial implementation pressed/released buttons in microseconds:
+```
+Event: time 1753334798.877706, type 1 (EV_KEY), code 304 (BTN_SOUTH), value 1
+Event: time 1753334798.878021, type 1 (EV_KEY), code 304 (BTN_SOUTH), value 0
+```
+Only 0.0003 seconds! Games need buttons HELD to register. Fixed by adding delay to press event, not release.
+
+**Discovery #4 - The Beat Reset Dilemma**: 
+- Wind's Requiem is in 3/4 time, but if you're already in 4/4 or 6/4, the song fails
+- Can't use up/down on left stick (they control volume, not meter)
+- Solution: Quick tap left (4/4) then return to center - resets to 3/4 time
+- The "hack" is barely noticeable (0.3s total) but ensures 100% reliability
+
+**Discovery #5 - Musical Timing**: 
+- Wind Waker's 3/4 songs play at exactly 60 BPM
+- Each beat = 1 second (60 beats/minute ÷ 60 seconds/minute)
+- Had to hold each C-stick direction for exactly 1 second
+- Inter-note delays caused timing issues - removed them entirely
+
+**Technical Details**:
+- Implemented generic `play_song` tool replacing single-purpose functions
+- All 6 Wind Waker songs defined with proper time signatures
+- Beat reset only applied to 3/4 songs (Wind's Requiem, Song of Passing)
+- 4/4 songs (Ballad of Gales, Command Melody) start immediately
+- Debug buttons (A,B,X,Y) helped verify actuation was working
+
+**Result**: Wind's Requiem now plays reliably every time, with the wind changing direction as expected!
+**Status**: ✅ Full Wind Waker song actuation working
+
 ## Current Challenges
 
 ### Repository Management

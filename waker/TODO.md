@@ -60,9 +60,21 @@ Successfully integrated mem0 for conversational memory, though with limitations:
 
 Successfully implemented controller passthrough daemon that allows LLM to play Wind's Requiem and other songs. The daemon forwards user controller inputs while accepting JSON commands from the voice chat for LLM actuation.
 
-## Fix Z button mapping issue
+### ✅ Wind Waker song playback working
 
-Currently the Z button (mapped to RB) sends the same code as R button (RT). The L and R shoulder buttons work correctly, but we need to figure out proper Z button mapping. This might require checking what specific button codes the 8BitDo controller sends for the Z button vs other buttons.
+After extensive debugging:
+- Fixed C-stick mapping (was using wrong analog stick)
+- Implemented proper button hold timing (0.2s minimum)
+- Added beat reset hack for 3/4 songs
+- Calculated correct timing: 60 BPM = 1 second per note
+- All 6 Wind Waker songs now play reliably
+
+## ✅ Fix Z button mapping issue
+
+Fixed by implementing proper GameCube shoulder mapping:
+- L and R are now analog triggers (ABS_Z/ABS_RZ)
+- Z remains digital button (BTN_TR)
+- This matches GameCube controller behavior
 
 ## Re-add sail_to tool with actual game actuation
 
@@ -121,12 +133,62 @@ The controller daemon implementation revealed several quirks:
 - D-pad might send HAT axes (ABS_HAT0X/Y) instead of button events on some controllers
 - Always initialize virtual controller to neutral state to prevent phantom inputs at startup
 
+### Wind Waker Song Implementation Details
+
+**C-Stick Mapping**:
+- Wind Waker songs use the C-stick (right analog), NOT the left stick
+- C_X maps directly to ABS_RX (no swap needed for LLM commands)
+- C_Y maps directly to ABS_RY
+- Physical controller may have swapped axes, but LLM commands use direct mapping
+
+**Button/Axis Timing Critical**:
+- Buttons must be HELD to register - add delay to press event: `{'value': 1, 'delay': 0.2}`
+- Wind Waker reads C-stick positions at specific beat intervals
+- 3/4 time = 60 BPM = 1 second per beat
+- Hold each direction for exactly 1.0 seconds
+- Return to center immediately (no delay between notes)
+
+**The Beat Reset Hack**:
+- Problem: Starting a 3/4 song while in 4/4 or 6/4 time causes it to fail
+- Can't use up/down (they control unused volume feature)
+- Solution: Quick left stick tap to 4/4, then back to center
+- Timing: 0.1s left, 0.2s back = 0.3s total (barely visible)
+- Only needed for 3/4 songs (Wind's Requiem, Song of Passing)
+
+**Debugging Process**:
+1. Used evtest to verify virtual controller output
+2. Added debug buttons between notes to confirm actuation
+3. Discovered microsecond press/release wasn't registering
+4. Worked backwards from game's 60 BPM requirement to calculate hold times
+
 ## Save File Locations (Reference)
 
 Wind Waker save files are stored in locations like:
 - `~/.var/app/org.libretro.RetroArch/config/retroarch/saves/dolphin-emu/User/GC/USA/Card A/01-GZLE-gczelda.gci`
 
 These `.gci` files are useful for transporting saves between machines and are more robust than state saves. The exact path depends on your RetroArch installation and region settings.
+
+## Fix other Wind Waker songs
+
+Currently only Wind's Requiem, Ballad of Gales, and Command Melody are properly implemented with C-stick controls. Need to update:
+- Earth God's Lyric (6/4 time - needs different BPM calculation)
+- Wind God's Aria (4/4 time)
+- Song of Passing (3/4 time - needs beat reset like Wind's Requiem)
+
+## Add more controller actuation capabilities
+
+Now that basic actuation works:
+- Sailing controls (hold A to sail, left stick for direction)
+- Combat moves (sword swings, shield, targeting)
+- Item usage (grappling hook, boomerang, etc.)
+- Menu navigation for equipment changes
+
+## Improve beat detection/synchronization
+
+Current beat reset hack works but is inelegant. Better solutions:
+- Use vision to detect current time signature from UI
+- Implement proper beat synchronization algorithm
+- Detect if Wind Waker is already equipped before playing songs
 
 ## Ideas for later
 

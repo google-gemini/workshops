@@ -642,59 +642,68 @@ class WindWakerVoiceChat:
             "sequence": "Up → Left → Right",
             "description": "Changes wind direction",
             "commands": [
-                # Initial delay and test button press
-                {'type': 'button', 'button': 'A', 'value': 1},
-                {'type': 'button', 'button': 'A', 'value': 0, 'delay': 0.5},
-                {'type': 'axis', 'axis': 'C_X', 'value': 128},
-                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 1.0},
+                # Beat reset: Quick 4/4 → 3/4 transition
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 0, 'delay': 0.1},    # Left (4/4)
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.2},  # Back to center
                 
-                # Up - try with C_X instead of C_Y (swapped)
-                {'type': 'axis', 'axis': 'C_X', 'value': 0},  # Up (swapped axis)
-                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 1.5},
+                # Wind's Requiem: Up → Left → Right (60 BPM = 1 second per beat)
+                # Up - hold for 1 beat
+                {'type': 'axis', 'axis': 'C_Y', 'value': 0, 'delay': 1.0},    # Push Up and hold for 1 second
+                {'type': 'axis', 'axis': 'C_Y', 'value': 128},                # Return to center instantly
                 
-                # Test button between notes
-                {'type': 'button', 'button': 'B', 'value': 1},
-                {'type': 'button', 'button': 'B', 'value': 0, 'delay': 0.5},
+                # Left - hold for 1 beat
+                {'type': 'axis', 'axis': 'C_X', 'value': 0, 'delay': 1.0},    # Push Left and hold for 1 second
+                {'type': 'axis', 'axis': 'C_X', 'value': 128},                # Return to center instantly
                 
-                # Left - try with C_Y instead of C_X (swapped)
-                {'type': 'axis', 'axis': 'C_Y', 'value': 0},  # Left (swapped axis)
-                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 1.5},
-                
-                # Another test button
-                {'type': 'button', 'button': 'X', 'value': 1},
-                {'type': 'button', 'button': 'X', 'value': 0, 'delay': 0.5},
-                
-                # Right - back to C_Y (swapped)
-                {'type': 'axis', 'axis': 'C_Y', 'value': 255},  # Right (swapped axis)
-                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 1.5},
-                
-                # Final test button
-                {'type': 'button', 'button': 'Y', 'value': 1},
-                {'type': 'button', 'button': 'Y', 'value': 0, 'delay': 0.5},
+                # Right - hold for 1 beat
+                {'type': 'axis', 'axis': 'C_X', 'value': 255, 'delay': 1.0},  # Push Right and hold for 1 second
+                {'type': 'axis', 'axis': 'C_X', 'value': 128},                # Return to center instantly
             ]
         },
         "ballad_of_gales": {
             "sequence": "Down → Right → Left → Up",
             "description": "Warps to cyclone locations",
             "commands": [
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 0},  # Up
-                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
+                # No reset needed - already 4/4 time
+                # Small initial pause
+                {'type': 'axis', 'axis': 'C_X', 'value': 128},
+                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 0.3},
+                
+                # Ballad of Gales: Down → Right → Left → Up
+                # Down
+                {'type': 'axis', 'axis': 'C_Y', 'value': 255, 'delay': 0.4},  # Push Down
+                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 0.6},  # Return to center
+                
+                # Right
+                {'type': 'axis', 'axis': 'C_X', 'value': 255, 'delay': 0.4},  # Push Right
+                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 0.6},  # Return to center
+                
+                # Left
+                {'type': 'axis', 'axis': 'C_X', 'value': 0, 'delay': 0.4},    # Push Left
+                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 0.6},  # Return to center
+                
+                # Up
+                {'type': 'axis', 'axis': 'C_Y', 'value': 0, 'delay': 0.4},    # Push Up
+                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 0.6},  # Return to center
             ]
         },
         "command_melody": {
             "sequence": "Left → Center → Right → Center",
             "description": "Controls statues and companions",
             "commands": [
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Center
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
-                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Center
+                # No reset needed - already 4/4 time
+                # Small initial pause
+                {'type': 'axis', 'axis': 'C_X', 'value': 128},
+                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 0.3},
+                
+                # Command Melody: Left → Center → Right → Center
+                # Left
+                {'type': 'axis', 'axis': 'C_X', 'value': 0, 'delay': 0.4},    # Push Left
+                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 0.6},  # Return to center
+                
+                # Right (Center is implicit in the return)
+                {'type': 'axis', 'axis': 'C_X', 'value': 255, 'delay': 0.4},  # Push Right
+                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 0.6},  # Return to center (final center)
             ]
         },
         "earth_gods_lyric": {
