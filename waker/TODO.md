@@ -104,16 +104,17 @@ Watching my daughter use it tonight, the system is way over-indexing on walkthro
 
 The vision commit is sitting ahead of origin/main and needs to be rebased on top of the sail_to tool. Have 2 unmerged commits that need to get sorted out. Should probably just rebase the vision stuff on top.
 
-## Investigate multimodal/audio interference root cause
+## Fix audio interruption from concurrent LLM requests
 
-Even with sailing vision analysis running in a background task, multimodal `generate_content()` calls still pause the live audio stream. This suggests some kind of API-level resource contention. Potential investigations:
-- Try using a completely separate `genai.Client()` instance for vision
-- Test running vision analysis in a subprocess to isolate it from the main process
-- Check if using a different model endpoint helps
-- Investigate whether this is a known limitation of the Live API
-- Consider using a different vision API (e.g., direct Vertex AI calls)
+The live audio stream gets paused whenever other LLM requests are made (vision analysis, walkthrough search, etc.), even when running in background tasks. This suggests API-level resource contention between different model calls.
 
-Current workaround is the 6-second initial delay, but this is not ideal for responsiveness.
+**Solutions to investigate**:
+- Create separate `genai.Client()` instances for each concurrent request type
+- Use different API endpoints/models to avoid resource conflicts
+- As extreme fallback, isolate vision/search requests in separate processes
+- Test if using Vertex AI directly instead of genai client helps
+
+Currently working around this with initial delays, but proper concurrency would greatly improve responsiveness.
 
 ## Document sailing mode design decisions
 

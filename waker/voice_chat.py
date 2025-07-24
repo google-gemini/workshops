@@ -402,7 +402,7 @@ class WindWakerVoiceChat:
                       "timestamp": datetime.now(),
                   }
                   self.conversation_context.append(context)
-                  
+
                   # Store memory asynchronously
                   if self.memory_client:
                     asyncio.create_task(self._store_memory_async(context))
@@ -457,7 +457,29 @@ class WindWakerVoiceChat:
       elif fc.name == "play_song":
         song_name = fc.args.get("song_name", "")
         print(f"🎵 Playing {song_name.replace('_', ' ').title()}...")
-        result = self.play_song(song_name)
+
+        # Validate song exists
+        songs = self.get_song_info()
+        if song_name not in songs:
+          result = {
+              "success": False,
+              "message": f"Unknown song: {song_name}",
+              "available_songs": list(songs.keys()),
+          }
+        else:
+          # Start playing song in background
+          asyncio.create_task(self.play_song_async(song_name))
+
+          # Return immediately
+          song_info = songs[song_name]
+          result = {
+              "success": True,
+              "message": (
+                  f"Playing {song_name.replace('_', ' ').title()}!"
+                  f" {song_info['description']}."
+              ),
+              "status": "song_started",
+          }
 
       elif fc.name == "observe_sailing":
         query = fc.args.get("query", "anything interesting")
@@ -512,7 +534,13 @@ class WindWakerVoiceChat:
                 "value": 0,
                 "delay": 0.1,
             },
-            {"type": "button", "button": "A", "action": "press", "value": 1, "delay": 0.5},
+            {
+                "type": "button",
+                "button": "A",
+                "action": "press",
+                "value": 1,
+                "delay": 0.5,
+            },
             {"type": "button", "button": "A", "action": "release", "value": 0},
         ]
         success = send_controller_sequence(commands)
@@ -689,11 +717,9 @@ class WindWakerVoiceChat:
       print(f"⚠️  User history search failed: {e}")
       return f"Failed to retrieve history: {str(e)}"
 
-  def play_song(self, song_name):
-    """Play a Wind Waker song by name"""
-
-    # Define all Wind Waker songs with their controller sequences
-    songs = {
+  def get_song_info(self):
+    """Get all Wind Waker song definitions"""
+    return {
         "winds_requiem": {
             "sequence": "Up → Left → Right",
             "description": "Changes wind direction",
@@ -906,34 +932,28 @@ class WindWakerVoiceChat:
         },
     }
 
-    if song_name not in songs:
-      return {
-          "success": False,
-          "message": f"Unknown song: {song_name}",
-          "available_songs": list(songs.keys()),
-      }
+  async def play_song_async(self, song_name):
+    """Play song asynchronously in background"""
+    try:
+      songs = self.get_song_info()
+      song_info = songs[song_name]
 
-    song_info = songs[song_name]
-    success = send_controller_sequence(song_info["commands"])
+      print(f"🎵 Starting {song_name} playback...")
 
-    if success:
-      return {
-          "success": True,
-          "message": (
-              f"Playing {song_name.replace('_', ' ').title()}!"
-              f" {song_info['description']}."
-          ),
-          "sequence": song_info["sequence"],
-      }
-    else:
-      return {
-          "success": False,
-          "message": (
-              "Failed to send controller commands. Is the controller daemon"
-              " running?"
-          ),
-          "hint": "Run: sudo python controller_daemon.py",
-      }
+      # Convert blocking send_controller_sequence to async
+      for cmd in song_info["commands"]:
+        if not send_controller_command(cmd):
+          print(f"⚠️ Failed to send command during {song_name}")
+          return
+
+        # Use async sleep instead of time.sleep
+        if "delay" in cmd:
+          await asyncio.sleep(cmd["delay"])
+
+      print(f"✅ Finished playing {song_name.replace('_', ' ').title()}")
+
+    except Exception as e:
+      print(f"⚠️ Error playing {song_name}: {e}")
 
   async def sailing_background_monitor(self, query):
     """Background task that monitors sailing and pushes new turns"""
@@ -945,11 +965,13 @@ class WindWakerVoiceChat:
       # 2. Run in a subprocess
       # 3. Use a different model endpoint
       # For now, adding a delay helps avoid cutting off the initial response
-      
+
       # Initial delay to let the model speak
-      initial_delay = 6.0  # 5-7 seconds
+      initial_delay = 15  # 5-7 seconds
       await asyncio.sleep(initial_delay)
-      print(f"⛵ Starting rapid sailing observation after {initial_delay}s delay")
+      print(
+          f"⛵ Starting rapid sailing observation after {initial_delay}s delay"
+      )
 
       # After initial delay, check as fast as possible
       check_interval = 0.5  # Minimal delay between checks
@@ -967,29 +989,28 @@ class WindWakerVoiceChat:
               if isinstance(parsed, list):
                 parsed = parsed[0] if parsed else {}
 
-              if parsed.get("noteworthy"):
+              if parsed.get("noteworthy") is True:
                 observation = parsed.get(
                     "description", "Something noteworthy detected"
                 )
-                
+
                 # Only report if it's different from last observation
                 if observation != last_observation:
                   message = f"[Sailing observation] I see: {observation}"
-                  
+
                   await self.session.send_client_content(
                       turns=types.Content(
-                          role='user',
-                          parts=[types.Part(text=message)]
+                          role="user", parts=[types.Part(text=message)]
                       )
                   )
                   print(f"⛵ Pushed sailing observation to conversation")
                   last_observation = observation
-                  
+
                   # Give user 10 seconds to respond before next check
                   print(f"⛵ Waiting 10 seconds for user response...")
                   await asyncio.sleep(10.0)
                   continue  # Skip the normal check_interval sleep
-                  
+
                 # DON'T BREAK - continue monitoring!
             except Exception as e:
               print(f"⛵ Parse error: {e}")

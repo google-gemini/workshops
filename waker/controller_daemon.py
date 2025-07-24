@@ -172,7 +172,6 @@ class DumbControllerProxy:
   def passthrough_thread(self):
     """Forward all events from physical to virtual controller"""
     print('Starting controller passthrough...')
-    print('DIAGNOSTIC MODE: Logging all events to identify mappings')
 
     # Create mapping for axes we care about
     axis_map = {
@@ -245,23 +244,6 @@ class DumbControllerProxy:
                   break
               print(f'NEW AXIS DISCOVERED: {axis_name} (code={event.code})')
 
-            # Always log right stick related axes for debugging
-            if event.code in [
-                ecodes.ABS_RX,
-                ecodes.ABS_RY,
-                ecodes.ABS_Z,
-                ecodes.ABS_RZ,
-            ]:
-              axis_name = 'UNKNOWN'
-              for name in dir(ecodes):
-                if (
-                    name.startswith('ABS_')
-                    and getattr(ecodes, name) == event.code
-                ):
-                  axis_name = name
-                  break
-              if event.code not in axis_map:
-                print(f'UNMAPPED RIGHT STICK AXIS: {axis_name} = {event.value}')
 
             if event.code in axis_map:
               # Convert from signed range to 0-255
@@ -283,20 +265,6 @@ class DumbControllerProxy:
                 uinput_value = int(normalized * 255)
                 uinput_value = max(0, min(255, uinput_value))
 
-                # Debug logging for specific axes
-                if event.code in [ecodes.ABS_X, ecodes.ABS_Y]:
-                  print(
-                      f'Left stick axis {event.code}: {event.value} ->'
-                      f' {uinput_value}'
-                  )
-                elif event.code in [ecodes.ABS_RX, ecodes.ABS_RY]:
-                  axis_name = 'RX' if event.code == ecodes.ABS_RX else 'RY'
-                  mapped_axis = 'RY' if event.code == ecodes.ABS_RX else 'RX'
-                  print(
-                      f'Right stick {axis_name}→{mapped_axis}:'
-                      f' raw={event.value} range=[{min_val},{max_val}] ->'
-                      f' {uinput_value}'
-                  )
 
                 self.virtual.emit(axis_map[event.code], uinput_value)
 
