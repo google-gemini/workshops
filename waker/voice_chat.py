@@ -164,15 +164,27 @@ CONFIG = {
                 },
             },
             {
-                "name": "play_winds_requiem",
+                "name": "play_song",
                 "description": (
-                    "Play Wind's Requiem on the Wind Waker to change wind direction. "
-                    "The song sequence is: Up, Left, Right on the control stick."
+                    "Play a Wind Waker song. Available songs:\n"
+                    "- winds_requiem: Changes wind direction (Up, Left, Right)\n"
+                    "- ballad_of_gales: Warps to cyclone locations (Down, Right, Left, Up)\n"
+                    "- command_melody: Controls statues/companions (Left, Center, Right, Center)\n"
+                    "- earth_gods_lyric: Awakens Earth Sage (Down, Down, Center, Right, Left, Center)\n"
+                    "- wind_gods_aria: Awakens Wind Sage (Up, Up, Down, Right, Left, Right)\n"
+                    "- song_of_passing: Changes day to night (Right, Left, Down)"
                 ),
                 "parameters": {
                     "type": "object",
-                    "properties": {},
-                    "required": [],
+                    "properties": {
+                        "song_name": {
+                            "type": "string",
+                            "enum": ["winds_requiem", "ballad_of_gales", "command_melody", 
+                                     "earth_gods_lyric", "wind_gods_aria", "song_of_passing"],
+                            "description": "The song to play"
+                        }
+                    },
+                    "required": ["song_name"],
                 },
             },
         ]
@@ -449,9 +461,10 @@ class WindWakerVoiceChat:
         history_results = self.search_user_history(query)
         result = {"query": query or "recent_activity", "results": history_results}
 
-      elif fc.name == "play_winds_requiem":
-        print("🎵 Playing Wind's Requiem...")
-        result = self.play_winds_requiem()
+      elif fc.name == "play_song":
+        song_name = fc.args.get("song_name", "")
+        print(f"🎵 Playing {song_name.replace('_', ' ').title()}...")
+        result = self.play_song(song_name)
 
       else:
         result = {"error": f"Unknown function: {fc.name}"}
@@ -620,30 +633,131 @@ class WindWakerVoiceChat:
       print(f"⚠️  User history search failed: {e}")
       return f"Failed to retrieve history: {str(e)}"
 
-  def play_winds_requiem(self):
-    """Play Wind's Requiem: Up, Left, Right"""
-    # Wind Waker song input sequence
-    commands = [
-        # Press Up
-        {'type': 'axis', 'axis': 'STICK_Y', 'value': 0},  # Up is 0
-        {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},  # Return to center
-        
-        # Press Left
-        {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left is 0
-        {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Return to center
-        
-        # Press Right
-        {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right is 255
-        {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Return to center
-    ]
+  def play_song(self, song_name):
+    """Play a Wind Waker song by name"""
     
-    success = send_controller_sequence(commands)
+    # Define all Wind Waker songs with their controller sequences
+    songs = {
+        "winds_requiem": {
+            "sequence": "Up → Left → Right",
+            "description": "Changes wind direction",
+            "commands": [
+                # Initial delay and test button press
+                {'type': 'button', 'button': 'A', 'value': 1},
+                {'type': 'button', 'button': 'A', 'value': 0, 'delay': 0.5},
+                {'type': 'axis', 'axis': 'C_X', 'value': 128},
+                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 1.0},
+                
+                # Up - try with C_X instead of C_Y (swapped)
+                {'type': 'axis', 'axis': 'C_X', 'value': 0},  # Up (swapped axis)
+                {'type': 'axis', 'axis': 'C_X', 'value': 128, 'delay': 1.5},
+                
+                # Test button between notes
+                {'type': 'button', 'button': 'B', 'value': 1},
+                {'type': 'button', 'button': 'B', 'value': 0, 'delay': 0.5},
+                
+                # Left - try with C_Y instead of C_X (swapped)
+                {'type': 'axis', 'axis': 'C_Y', 'value': 0},  # Left (swapped axis)
+                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 1.5},
+                
+                # Another test button
+                {'type': 'button', 'button': 'X', 'value': 1},
+                {'type': 'button', 'button': 'X', 'value': 0, 'delay': 0.5},
+                
+                # Right - back to C_Y (swapped)
+                {'type': 'axis', 'axis': 'C_Y', 'value': 255},  # Right (swapped axis)
+                {'type': 'axis', 'axis': 'C_Y', 'value': 128, 'delay': 1.5},
+                
+                # Final test button
+                {'type': 'button', 'button': 'Y', 'value': 1},
+                {'type': 'button', 'button': 'Y', 'value': 0, 'delay': 0.5},
+            ]
+        },
+        "ballad_of_gales": {
+            "sequence": "Down → Right → Left → Up",
+            "description": "Warps to cyclone locations",
+            "commands": [
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 0},  # Up
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
+            ]
+        },
+        "command_melody": {
+            "sequence": "Left → Center → Right → Center",
+            "description": "Controls statues and companions",
+            "commands": [
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Center
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Center
+            ]
+        },
+        "earth_gods_lyric": {
+            "sequence": "Down → Down → Center → Right → Left → Center",
+            "description": "Awakens the Earth Sage",
+            "commands": [
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},  # Center
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},  # Center
+            ]
+        },
+        "wind_gods_aria": {
+            "sequence": "Up → Up → Down → Right → Left → Right",
+            "description": "Awakens the Wind Sage",
+            "commands": [
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 0},  # Up
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 0},  # Up
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
+            ]
+        },
+        "song_of_passing": {
+            "sequence": "Right → Left → Down",
+            "description": "Changes day to night and vice versa",
+            "commands": [
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 255},  # Right
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 0},  # Left
+                {'type': 'axis', 'axis': 'STICK_X', 'value': 128, 'delay': 0.3},
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 255},  # Down
+                {'type': 'axis', 'axis': 'STICK_Y', 'value': 128, 'delay': 0.3},
+            ]
+        }
+    }
+    
+    if song_name not in songs:
+        return {
+            "success": False,
+            "message": f"Unknown song: {song_name}",
+            "available_songs": list(songs.keys())
+        }
+    
+    song_info = songs[song_name]
+    success = send_controller_sequence(song_info["commands"])
     
     if success:
         return {
             "success": True,
-            "message": "Playing Wind's Requiem! The wind direction should change.",
-            "sequence": "Up → Left → Right"
+            "message": f"Playing {song_name.replace('_', ' ').title()}! {song_info['description']}.",
+            "sequence": song_info["sequence"]
         }
     else:
         return {

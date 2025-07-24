@@ -27,12 +27,13 @@ GC_MAPPING = {
     'DOWN': uinput.BTN_DPAD_DOWN,
     'LEFT': uinput.BTN_DPAD_LEFT,
     'RIGHT': uinput.BTN_DPAD_RIGHT,
-    # Shoulders - Xbox style
-    'L': uinput.BTN_TL,  # Left bumper (LB)
-    'R': uinput.BTN_TR,  # Right bumper (RB)
-    'Z': uinput.BTN_TR,  # Map Z to RB as requested
-    'LT': uinput.BTN_TL2,  # Left trigger
-    'RT': uinput.BTN_TR2,  # Right trigger
+    # Shoulders - GameCube style
+    'L': uinput.ABS_Z,  # Analog left trigger
+    'R': uinput.ABS_RZ,  # Analog right trigger
+    'Z': uinput.BTN_TR,  # Digital Z button
+    # Keep these for compatibility
+    'LT': uinput.ABS_Z,  # Left trigger (same as L)
+    'RT': uinput.ABS_RZ,  # Right trigger (same as R)
     # Control stick
     'STICK_X': uinput.ABS_X,
     'STICK_Y': uinput.ABS_Y,
@@ -48,6 +49,11 @@ GC_MAPPING = {
 class DumbControllerProxy:
 
   def __init__(self, physical_device_path=None):
+    # Threading and connection state
+    self.physical = None
+    self.physical_lock = threading.Lock()
+    self.should_stop = threading.Event()
+
     # Create virtual controller with all possible inputs
     events = [
         # Buttons
@@ -63,11 +69,18 @@ class DumbControllerProxy:
         uinput.BTN_TR,
         uinput.BTN_TR2,
         uinput.BTN_START,
+        uinput.BTN_SELECT,
         # Analog sticks (0-255 range)
         uinput.ABS_X + (0, 255, 0, 0),
         uinput.ABS_Y + (0, 255, 0, 0),
         uinput.ABS_RX + (0, 255, 0, 0),
         uinput.ABS_RY + (0, 255, 0, 0),
+        # Analog triggers (0-255 range)
+        uinput.ABS_Z + (0, 255, 0, 0),  # L trigger
+        uinput.ABS_RZ + (0, 255, 0, 0),  # R trigger
+        # HAT axes for D-pad (-1 to 1 range)
+        uinput.ABS_HAT0X + (-1, 1, 0, 0),
+        uinput.ABS_HAT0Y + (-1, 1, 0, 0),
     ]
 
     print('Creating virtual controller...')
@@ -89,46 +102,75 @@ class DumbControllerProxy:
     self.virtual.emit(uinput.ABS_Y, 128)
     self.virtual.emit(uinput.ABS_RX, 128)
     self.virtual.emit(uinput.ABS_RY, 128)
+    # Reset triggers to unpressed (0)
+    self.virtual.emit(uinput.ABS_Z, 0)
+    self.virtual.emit(uinput.ABS_RZ, 0)
     self.virtual.syn()  # Sync all changes
 
     # Small delay to ensure RetroArch samples the neutral state
     time.sleep(0.1)
     print('Controller initialized to neutral state')
 
-    # Find physical controller
-    if physical_device_path:
-      self.physical = InputDevice(physical_device_path)
-    else:
-      self.physical = self.find_controller()
-
-    if self.physical:
-      print(f'Found controller: {self.physical.name}')
-    else:
-      print('Warning: No physical controller found, LLM-only mode')
+    # Start connection manager thread
+    self.connection_thread = threading.Thread(
+        target=self.connection_manager, daemon=True
+    )
+    self.connection_thread.start()
+    print('Connection manager started')
 
   def find_controller(self):
     """Find a game controller device"""
-    devices = [InputDevice(path) for path in list_devices()]
-    for device in devices:
-      # Look for common controller names
-      if any(
-          name in device.name.lower()
-          for name in [
-              'controller',
-              'gamepad',
-              'joystick',
-              'nintendo',
-              'gamecube',
-          ]
-      ):
-        return device
+    try:
+      devices = [InputDevice(path) for path in list_devices()]
+      for device in devices:
+        # Look for common controller names
+        if any(
+            name in device.name.lower()
+            for name in [
+                'controller',
+                'gamepad',
+                'joystick',
+                'nintendo',
+                'gamecube',
+            ]
+        ):
+          return device
+    except Exception as e:
+      print(f'Error finding controller: {e}')
     return None
+
+  def connection_manager(self):
+    """Continuously manage controller connection state"""
+    while not self.should_stop.is_set():
+      with self.physical_lock:
+        if self.physical is None:
+          # Try to connect
+          print('Searching for controller...')
+          controller = self.find_controller()
+          if controller:
+            self.physical = controller
+            print(f'✓ Connected to: {controller.name}')
+          else:
+            # Don't spam the console too much
+            pass
+        else:
+          # Check if still connected
+          try:
+            # Try to read device info to check connection
+            _ = self.physical.name
+          except (OSError, AttributeError):
+            print('✗ Controller disconnected!')
+            self.physical = None
+            continue
+
+      # Sleep longer when no controller to reduce CPU usage
+      if self.physical is None:
+        time.sleep(3)
+      else:
+        time.sleep(0.5)
 
   def passthrough_thread(self):
     """Forward all events from physical to virtual controller"""
-    if not self.physical:
-      return
-
     print('Starting controller passthrough...')
     print('DIAGNOSTIC MODE: Logging all events to identify mappings')
 
@@ -137,8 +179,11 @@ class DumbControllerProxy:
         ecodes.ABS_X: uinput.ABS_X,
         ecodes.ABS_Y: uinput.ABS_Y,
         # Right stick - no swap, direct mapping
-        ecodes.ABS_RX: uinput.ABS_RY,
-        ecodes.ABS_RY: uinput.ABS_RX,
+        ecodes.ABS_RX: uinput.ABS_RX,
+        ecodes.ABS_RY: uinput.ABS_RY,
+        # Analog triggers
+        ecodes.ABS_Z: uinput.ABS_Z,  # L trigger
+        ecodes.ABS_RZ: uinput.ABS_RZ,  # R trigger
         # Add HAT axes for D-pad
         ecodes.ABS_HAT0X: uinput.ABS_HAT0X,
         ecodes.ABS_HAT0Y: uinput.ABS_HAT0Y,
@@ -166,11 +211,21 @@ class DumbControllerProxy:
     seen_axes = set()
     seen_buttons = set()
 
-    while True:  # Keep trying to reconnect
-      try:
-        print(f'Connected to {self.physical.name}')
+    while not self.should_stop.is_set():
+      # Get current controller with lock
+      with self.physical_lock:
+        device = self.physical
 
-        for event in self.physical.read_loop():
+      if not device:
+        time.sleep(0.1)  # Wait for connection
+        continue
+
+      try:
+        # Read events from the controller
+        for event in device.read_loop():
+          # Check if we should stop
+          if self.should_stop.is_set():
+            break
           # Skip sync events
           if event.type == ecodes.EV_SYN:
             continue
@@ -190,17 +245,23 @@ class DumbControllerProxy:
                   break
               print(f'NEW AXIS DISCOVERED: {axis_name} (code={event.code})')
 
-            # Always log for now to debug right stick
+            # Always log right stick related axes for debugging
             if event.code in [
                 ecodes.ABS_RX,
                 ecodes.ABS_RY,
                 ecodes.ABS_Z,
                 ecodes.ABS_RZ,
             ]:
-              print(
-                  f'Right stick/trigger axis: code={event.code},'
-                  f' value={event.value}'
-              )
+              axis_name = 'UNKNOWN'
+              for name in dir(ecodes):
+                if (
+                    name.startswith('ABS_')
+                    and getattr(ecodes, name) == event.code
+                ):
+                  axis_name = name
+                  break
+              if event.code not in axis_map:
+                print(f'UNMAPPED RIGHT STICK AXIS: {axis_name} = {event.value}')
 
             if event.code in axis_map:
               # Convert from signed range to 0-255
@@ -210,20 +271,34 @@ class DumbControllerProxy:
 
               # Special handling for HAT (D-pad) - it's usually -1, 0, 1
               if event.code in [ecodes.ABS_HAT0X, ecodes.ABS_HAT0Y]:
-                # Map -1 to 0, 0 to 128, 1 to 255
-                if event.value < 0:
-                  uinput_value = 0
-                elif event.value > 0:
-                  uinput_value = 255
-                else:
-                  uinput_value = 128
+                # HAT axes should pass through directly as -1, 0, 1
+                hat_axis_name = (
+                    'HAT0X' if event.code == ecodes.ABS_HAT0X else 'HAT0Y'
+                )
+                print(f'HAT {hat_axis_name}: {event.value} (raw)')
+                self.virtual.emit(axis_map[event.code], event.value)
               else:
                 # Normal axis mapping
                 normalized = (event.value - min_val) / (max_val - min_val)
                 uinput_value = int(normalized * 255)
                 uinput_value = max(0, min(255, uinput_value))
 
-              self.virtual.emit(axis_map[event.code], uinput_value)
+                # Debug logging for specific axes
+                if event.code in [ecodes.ABS_X, ecodes.ABS_Y]:
+                  print(
+                      f'Left stick axis {event.code}: {event.value} ->'
+                      f' {uinput_value}'
+                  )
+                elif event.code in [ecodes.ABS_RX, ecodes.ABS_RY]:
+                  axis_name = 'RX' if event.code == ecodes.ABS_RX else 'RY'
+                  mapped_axis = 'RY' if event.code == ecodes.ABS_RX else 'RX'
+                  print(
+                      f'Right stick {axis_name}→{mapped_axis}:'
+                      f' raw={event.value} range=[{min_val},{max_val}] ->'
+                      f' {uinput_value}'
+                  )
+
+                self.virtual.emit(axis_map[event.code], uinput_value)
 
           # Log ALL button events for diagnostics
           elif event.type == ecodes.EV_KEY:
@@ -242,32 +317,31 @@ class DumbControllerProxy:
 
             if event.code in button_map:
               self.virtual.emit(button_map[event.code], event.value)
-            print(f'Button: code={event.code}, value={event.value}')
+              # Find button name for clearer logging
+              button_name = 'UNKNOWN'
+              for name, code in button_map.items():
+                if code == button_map[event.code]:
+                  for btn_name in dir(ecodes):
+                    if getattr(ecodes, btn_name, None) == event.code:
+                      button_name = btn_name
+                      break
+                  break
+              print(f'Button {button_name}: {event.value}')
+            else:
+              print(f'Unmapped button: code={event.code}, value={event.value}')
 
       except OSError as e:
-        if e.errno == 19:  # No such device
-          print(f'Controller disconnected: {e}')
-          print('Waiting for reconnection...')
-          time.sleep(2)
-
-          # Try to find and reconnect to controller
-          self.physical = self.find_controller()
-          if not self.physical:
-            print('No controller found, retrying...')
-            time.sleep(3)
-            continue
-        else:
-          print(f'Unexpected error: {e}')
-          import traceback
-
-          traceback.print_exc()
-          time.sleep(5)
+        # Device disconnected, connection manager will handle reconnection
+        with self.physical_lock:
+          self.physical = None
+        print(f'Controller read error: {e}')
+        time.sleep(0.5)
       except Exception as e:
         print(f'Passthrough error: {e}')
         import traceback
 
         traceback.print_exc()
-        time.sleep(5)
+        time.sleep(1)
 
   def command_server(self, port=9999):
     """Accept JSON commands and execute immediately"""
@@ -310,17 +384,16 @@ class DumbControllerProxy:
   def run(self):
     """Run both passthrough and command server"""
     # Start passthrough in background thread
-    if self.physical:
-      passthrough = threading.Thread(
-          target=self.passthrough_thread, daemon=True
-      )
-      passthrough.start()
+    passthrough = threading.Thread(target=self.passthrough_thread, daemon=True)
+    passthrough.start()
 
     # Run command server in main thread
     try:
       self.command_server()
     except KeyboardInterrupt:
       print('\nShutting down controller daemon...')
+      self.should_stop.set()
+      time.sleep(0.5)  # Give threads time to clean up
 
 
 if __name__ == '__main__':
