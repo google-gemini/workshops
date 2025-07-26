@@ -87,7 +87,7 @@
 **Solution**: Implemented async one-sided memory storage using tool interactions.
 - **Discovery**: Gemini Live API in audio mode provides no text transcripts - only audio streams
 - **Latency issue**: mem0.add() calls added 2-3 seconds of blocking time, interrupting audio playback
-- **Resolution**: 
+- **Resolution**:
   - Extract user intent from Gemini's executable_code (e.g., "query='What's on screen?'")
   - Store only user queries, not full conversations
   - Use asyncio.create_task() for fire-and-forget memory storage
@@ -102,11 +102,11 @@
 - **Architecture decision**: Separate daemon binary instead of thread in voice_chat.py for permission isolation and fault tolerance
 - **Permission fix**: `/dev/uinput` access via `sudo modprobe uinput && sudo chmod 666 /dev/uinput`
 - **Initial error**: "cannot unpack non-iterable int object" - discovered uinput.Device.emit() doesn't accept syn=False parameter
-- **Passthrough issues**: 
+- **Passthrough issues**:
   - evdev InputDevice.write_event() doesn't exist - had to use emit()
   - Had to filter only EV_KEY and EV_ABS events, ignoring EV_SYN and others
   - evdev and uinput use different event code constants - initially tried raw passthrough which failed
-- **Axis mapping nightmare**: 
+- **Axis mapping nightmare**:
   - 8BitDo controller sent signed values (-32768 to 32767) but uinput expected 0-255
   - Right analog stick axes were reversed: physical up/down sent ABS_RX, left/right sent ABS_RY
   - First tried swapping axes in mapping but made it worse
@@ -134,13 +134,13 @@ Event: time 1753334798.878021, type 1 (EV_KEY), code 304 (BTN_SOUTH), value 0
 ```
 Only 0.0003 seconds! Games need buttons HELD to register. Fixed by adding delay to press event, not release.
 
-**Discovery #4 - The Beat Reset Dilemma**: 
+**Discovery #4 - The Beat Reset Dilemma**:
 - Wind's Requiem is in 3/4 time, but if you're already in 4/4 or 6/4, the song fails
 - Can't use up/down on left stick (they control volume, not meter)
 - Solution: Quick tap left (4/4) then return to center - resets to 3/4 time
 - The "hack" is barely noticeable (0.3s total) but ensures 100% reliability
 
-**Discovery #5 - Musical Timing**: 
+**Discovery #5 - Musical Timing**:
 - Wind Waker's 3/4 songs play at exactly 60 BPM
 - Each beat = 1 second (60 beats/minute ÷ 60 seconds/minute)
 - Had to hold each C-stick direction for exactly 1 second
@@ -207,6 +207,27 @@ Only 0.0003 seconds! Games need buttons HELD to register. Fixed by adding delay 
 - 200 max checks (~100 seconds) as safety limit
 
 **Status**: ✅ Working sailing observation mode with acceptable audio interruptions
+
+### Live API Native Vision vs Separate Vision Models (July 24, 2025)
+**Date**: July 24, 2025
+**Obstacle**: Investigating whether to use Live API's native video streaming vs separate vision model pipeline for game state analysis.
+**Solution**: After testing, concluded that separate vision models provide superior results for this use case.
+
+**Testing Results**:
+- **Native Live API streaming**: Continuous `send_realtime_input(media=...)` calls caused the model to respond to every frame as a conversational turn, creating overwhelming chatter
+- **Vision fidelity issues**: Live model conflated similar game locations (volcanic island vs Dragon Roost Island), showing lower precision than dedicated vision models
+- **No filtering control**: Couldn't distinguish between noteworthy observations and routine game state
+
+**Architecture Decision - Separate Vision Models**:
+- **Higher precision**: `gemini-2.0-flash-lite` provides more accurate game-specific analysis
+- **Smart filtering**: Can analyze frames and selectively report only noteworthy events
+- **Specialized prompting**: Different contexts (sailing, combat, inventory) use optimized prompts
+- **Conversational control**: Maintains natural voice conversation flow without visual spam
+- **Async solved**: `asyncio.to_thread()` eliminates audio interruption issues
+
+**Key Insight**: Live API's continuous video streaming is better suited for general visual conversation, not the precise, filtered game state parsing needed for Wind Waker assistance. The hybrid approach (separate vision → Live API) provides the "smart filtering" and high fidelity that makes the system actually useful rather than just chatty.
+
+**Status**: ✅ Confirmed separate vision model architecture is optimal for this use case
 
 ### Audio Processing and Logging Conflicts (Late July 2025)
 **Date**: July 24, 2025

@@ -22,19 +22,19 @@ These capabilities combine to create an AI gaming companion that can see what yo
 
 ### Demo Script:
 
-**User**: "It's been awhile, Gemini; what's the last major thing we did?"  
+**User**: "It's been awhile, Gemini; what's the last major thing we did?"
 **Gemini**: *[Uses search_user_history]* "Looking at your recent activity... You were at Dragon Roost Island helping Valoo the dragon. You asked about getting the dragon's scale and were working on calming Valoo by dealing with the monster in the volcano."
 
-**User**: "Ok, what should we do next?"  
+**User**: "Ok, what should we do next?"
 **Gemini**: *[Uses search_walkthrough]* "After obtaining Din's Pearl from the dragon, you need to sail to Forest Haven to get Farore's Pearl. The Great Deku Tree there will give you the next pearl after you complete the Forbidden Woods dungeon."
 
-**User**: "Ok, can you play Wind's Requiem?"  
+**User**: "Ok, can you play Wind's Requiem?"
 **Gemini**: *[Uses actuation]* "Playing Wind's Requiem now to change the wind direction..." *[Actuates: Up, Left, Right on Wind Waker]* "There you go! The wind is now blowing southeast toward Forest Haven."
 
-**User**: "Ok, sailing now. Can you stop the boat when you see something interesting?"  
+**User**: "Ok, sailing now. Can you stop the boat when you see something interesting?"
 **Gemini**: *[Uses periodic see_game_screen]* "I'll keep watch and let you know when I spot anything important like islands, enemies, or treasure!"
 
-*[After periodic vision checks...]*  
+*[After periodic vision checks...]*
 **Gemini**: "I see a submarine periscope to your right! And there's a platform with a treasure chest ahead. Want to check either of those out?"
 
 ### Capabilities Demonstrated:
@@ -257,7 +257,7 @@ The current `observe_sailing` implementation uses background tasks and manual as
 
 Currently we're doing screenshot → separate vision model → text → Live API, which defeats the purpose of multimodal live. Should investigate using `session.send_realtime_input(media=...)` or `session.send_client_content()` to send images directly to the live session.
 
-**Core idea**: 
+**Core idea**:
 ```python
 # Instead of this:
 screenshot = take_screenshot()
@@ -265,20 +265,31 @@ analysis = await analyze_with_separate_model(screenshot)
 await session.send_client_content(turns=[{"role": "user", "parts": [{"text": analysis}]}])
 
 # Do this:
-screenshot = take_screenshot() 
+screenshot = take_screenshot()
 await session.send_realtime_input(media=screenshot)  # Let live model see directly
 ```
 
-**Challenges to solve**:
-- **Filtering uninteresting frames**: Need prompting/config to avoid responding to every frame
-- **User intentionality**: Distinguish between automatic monitoring vs explicit "take a look"
-- **Response throttling**: Prevent overwhelming the conversation with constant observations
+**UPDATE - Testing Results & Architecture Decision**:
+- ❌ **Responds to every frame**: The model treats each `send_realtime_input(media=...)` as a conversational turn requiring a response, making continuous streaming overwhelming
+- ❌ **Lower visual fidelity**: Model conflates similar-looking game locations (e.g., volcanic island vs Dragon Roost Island), suggesting the live model's vision capabilities may be less precise than dedicated vision models
+- **Conclusion**: The separate vision model approach is superior for this use case
 
-**API methods to explore**:
-- `send_realtime_input(media=...)` - Optimized for responsiveness, no ordering guarantees
-- `send_client_content(turns=...)` - Ordered context, better for deliberate analysis
+**Pros of Separate Vision Models → Live API**:
+- **Higher fidelity & accuracy**: Dedicated vision models like `gemini-2.0-flash-lite` are more precise for detailed game state analysis and can distinguish between similar Wind Waker locations
+- **Better filtering & control**: Can analyze frames and decide what's actually worth mentioning, preventing conversational overwhelm
+- **Specialized prompting**: Different prompts for different contexts (sailing observation vs inventory check vs combat analysis)
+- **Async compatibility**: With `asyncio.to_thread()`, audio interruption issues are solved
 
-This seems like exactly what the Live API multimodal capabilities were designed for - real-time visual understanding without the latency/complexity of separate model calls.
+**Cons of Native Live API Streaming**:
+- **Conversational overwhelm**: Every frame becomes a turn, making normal conversation impossible
+- **Lower precision**: Live model's vision seems less accurate for game-specific details
+- **No filtering mechanism**: Can't easily distinguish "noteworthy" from "routine" observations
+
+**Final Decision**: Stick with the hybrid approach using separate vision models for detailed, filtered analysis while keeping the Live API for natural voice conversation. The complexity is worth it for the control and accuracy gained.
+
+This approach may not be as straightforward as initially hoped - the separate vision model pipeline provides better control and accuracy than native Live API streaming for precise game state analysis.
+
+**Note for demo slides**: This architectural decision (separate vision models vs native Live API streaming) would be worth discussing in the presentation as it reveals important limitations of current multimodal live APIs and shows our pragmatic engineering approach.
 
 ## Ideas for later
 
