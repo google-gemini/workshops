@@ -16,7 +16,7 @@ transition: slide-left
 <v-clicks>
 
 - 🗣️ **Live Conversation** - Gemini 2.5 native audio dialog
-- 👁️ **Live Vision** - Real-time game state analysis
+- 👁️ **Live Vision** - Real-time game state analysis  
 - 📚 **RAG Walkthrough** - Semantic search over guides
 - 🧠 **Episodic Memory** - Remembers your gameplay
 - 🎮 **Game Actuation** - Plays songs, controls character
@@ -25,88 +25,27 @@ transition: slide-left
 
 ---
 
-# Live Audio Conversation
+# Architecture
 
 <v-clicks>
 
-- Near-zero latency voice interaction
-- Gemini 2.5 native audio dialog model
-- Real-time bidirectional streaming
-- PyAudio integration with buffering
+- **Audio Pipeline** - PyAudio ↔ Gemini Live API with pre-buffering
+- **Vision System** - mss screenshots → gemini-2.0-flash-lite → JSON
+- **Knowledge Base** - Official walkthrough → embeddings → numpy search
+- **Controller Daemon** - Separate process for shared game control
 
 </v-clicks>
 
 ---
 
-# Computer Vision Analysis
+# Key Friction Points
 
 <v-clicks>
 
-- Screenshots using mss library
-- Analyzed with gemini-2.0-flash-lite
-- Understands Link's health, location, enemies
-- Structured JSON responses for game state
-
-</v-clicks>
-
----
-
-# RAG-Based Walkthrough Search
-
-<v-clicks>
-
-- Semantic search over official Wind Waker guide
-- Text chunked into 1000-character pieces
-- Gemini embeddings with numpy similarity
-- More accurate than model training data
-
-</v-clicks>
-
----
-
-# Episodic Memory
-
-<v-clicks>
-
-- mem0 integration for conversation history
-- Remembers user's gameplay progress
-- Searches past actions and locations
-- Async storage to avoid audio blocking
-
-</v-clicks>
-
----
-
-# Game Actuation
-
-<v-clicks>
-
-- Controller daemon for shared control
-- Plays all 6 Wind Waker songs
-- Frame-perfect timing (60 BPM)
-- Beat reset hack for 3/4 time signatures
-
-</v-clicks>
-
----
-
-# The Challenges We Faced
-
-<v-clicks>
-
-**Audio Interruption Crisis**
-- Vision calls blocked the event loop
-- Fixed with asyncio.to_thread()
-
-**Controller Timing Nightmares**
-- Microsecond button presses didn't register
-- C-stick vs analog stick confusion
-- Musical timing requirements (60 BPM)
-
-**Native Live API Vision**
-- Responds to every frame sent
-- Lower fidelity than separate models
-- Separate vision pipeline proved better
+- **Audio Interruption** - Vision calls blocked event loop (fixed with asyncio.to_thread)
+- **Controller Timing** - Microsecond button presses don't register in games
+- **Musical Precision** - Wind Waker songs need exact 60 BPM timing + beat resets
+- **Native Live API Vision** - Responds to every frame; separate models work better
 
 </v-clicks>
 
