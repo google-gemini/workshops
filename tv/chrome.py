@@ -1,5 +1,5 @@
 """
-HDMI capture card audio/video test using pipewire_python
+Simple test to capture Chrome audio using pipewire_python
 """
 
 import os
@@ -11,44 +11,45 @@ import time
 from pipewire_python.controller import Controller
 
 
-def get_hdmi_audio_target():
-    """Get HDMI capture card audio target"""
+def get_chrome_target():
+    """Get Chrome target - just use the node name directly"""
 
-    print("🎯 Using HDMI capture card audio target...")
+    print("🎯 Using Chrome node name as target...")
 
-    # HDMI capture card audio source from pactl list sources
-    hdmi_target = "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo"
+    # pw-record accepts node names directly as targets
+    # From your pw-cli output: node.name = "Google Chrome"
+    chrome_target = "Google Chrome"
 
-    print(f"✓ HDMI audio target: {hdmi_target}")
-    return hdmi_target
+    print(f"✓ Chrome target: {chrome_target}")
+    return chrome_target
 
 
-def test_hdmi_capture():
-    """Test capturing HDMI audio stream directly"""
+def test_chrome_capture():
+    """Test capturing Chrome audio stream directly"""
 
-    print("🎬 Setting up HDMI audio capture...")
+    print("🎬 Setting up Chrome audio capture...")
 
-    # Get HDMI target - use device name
-    hdmi_target = get_hdmi_audio_target()
+    # Get Chrome target - just use node name
+    chrome_target = get_chrome_target()
 
     try:
         # Create controller
         audio_controller = Controller()
 
-        # Configure for HDMI audio stream (Gemini-compatible)
+        # Configure for Chrome's audio stream
         audio_controller.set_config(
-            rate=16000,  # Gemini sample rate
-            channels=1,  # Gemini mono requirement
-            _format="s16",  # Fixed format for pw-cat
-            target=hdmi_target,  # Use HDMI target
+            rate=48000,  # Match Chrome's rate from your output
+            channels=2,  # Stereo
+            _format="f32",  # Float32 format
+            target=chrome_target,  # Use discovered target
             verbose=True,  # See what's happening
         )
 
-        print(f"✓ Configured to capture from HDMI stream {hdmi_target}")
+        print(f"✓ Configured to capture from Chrome stream {chrome_target}")
 
         # Test 1: Record to regular file
         print("\n📼 Test 1: Recording to file for 5 seconds...")
-        test_file = "/tmp/hdmi_test.wav"
+        test_file = "/tmp/chrome_test.wav"
 
         audio_controller.record(audio_filename=test_file, timeout_seconds=5, verbose=True)
 
@@ -68,11 +69,11 @@ def test_hdmi_capture():
 def test_fifo_capture():
     """Better FIFO streaming test with continuous reading"""
 
-    fifo_path = "/tmp/hdmi_audio_fifo"
+    fifo_path = "/tmp/chrome_audio_fifo"
 
     print("\n🔄 Test 2: Continuous FIFO streaming test...")
 
-    hdmi_target = get_hdmi_audio_target()
+    chrome_target = get_chrome_target()
 
     try:
         # Remove existing FIFO if present
@@ -85,7 +86,7 @@ def test_fifo_capture():
 
         # Set up controller
         audio_controller = Controller()
-        audio_controller.set_config(rate=16000, channels=1, _format="s16", target=hdmi_target)
+        audio_controller.set_config(rate=48000, channels=2, _format="f32", target=chrome_target)
 
         def record_worker():
             """Record to FIFO in background"""
@@ -153,7 +154,7 @@ def test_fifo_capture():
 def test_direct_pwcat():
     """Test calling pw-cat directly without the library"""
 
-    fifo_path = "/tmp/hdmi_direct_fifo"
+    fifo_path = "/tmp/chrome_direct_fifo"
 
     print("\n🔧 Test 3: Direct pw-cat FIFO test...")
 
@@ -173,13 +174,13 @@ def test_direct_pwcat():
                 "--record",
                 fifo_path,
                 "--target",
-                "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo",
+                "Google Chrome",
                 "--rate",
-                "16000",
+                "48000",
                 "--channels",
-                "1",
+                "2",
                 "--format",
-                "s16",
+                "f32",
                 "--verbose",
             ]
             print(f"🎤 Running: {' '.join(cmd)}")
@@ -251,13 +252,13 @@ def test_stdout_streaming():
             "--record",
             "-",  # Write to stdout!
             "--target",
-            "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo",
+            "Google Chrome",
             "--rate",
-            "16000",
+            "48000",
             "--channels",
-            "1",
+            "2",
             "--format",
-            "s16",
+            "f32",
             "--raw",  # Output raw PCM data, not WAV
         ]
 
@@ -271,7 +272,7 @@ def test_stdout_streaming():
         total_bytes = 0
         for i in range(10):
             # Read chunks directly from pw-cat stdout
-            data = process.stdout.read(1600)  # ~0.1 sec at 16kHz mono s16
+            data = process.stdout.read(4800)  # ~0.1 sec at 48kHz stereo f32
 
             if not data:
                 print("   No more data from pw-cat")
@@ -296,12 +297,12 @@ def test_stdout_streaming():
 
 
 if __name__ == "__main__":
-    print("🧪 Testing HDMI capture card audio with pipewire_python")
-    print("📺 Make sure HDMI source is playing audio!")
+    print("🧪 Testing Chrome audio capture with pipewire_python")
+    print("📺 Make sure Chrome is playing audio before running this!")
     print()
 
     # Basic file recording test
-    # test_hdmi_capture()
+    # test_chrome_capture()
 
     # FIFO streaming test with library
     test_fifo_capture()

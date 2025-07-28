@@ -72,6 +72,101 @@ HDMI capture hardware solves these issues completely:
 - **HDMI demos**: Professional quality, works with any content
 - **Fallback plan**: Always have both options ready
 
+### HDMI Capture Success! 🎉
+
+**BREAKTHROUGH**: HDMI capture card successfully bypasses HDCP protection!
+
+![HDMI Capture Working](capture.png)
+
+**What's working:**
+- **Protected content streaming**: Netflix, Disney+, and other HDCP-protected content displays perfectly
+- **No HDCP strippers needed**: The MACROSILICON USB3.0 Video capture card handles this automatically
+- **High quality capture**: 1920x1080 at 60fps with excellent image quality
+
+**Successful Implementation:**
+
+**Video Capture:**
+```bash
+# View HDMI capture stream with ffplay
+ffplay /dev/video4
+
+# With specific resolution
+ffplay -f v4l2 -video_size 1920x1080 -framerate 30 /dev/video4
+```
+
+**Audio Capture:**
+```bash
+# HDMI audio source identified
+pactl list sources short
+# Result: alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo
+
+# Capture HDMI audio with pw-cat
+pw-cat --record - --target "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo" \
+       --rate 48000 --channels 2 --format s16le --raw
+```
+
+**Hardware Setup:**
+1. Chromecast → HDMI cable → HDMI capture card → USB 3.0 → Laptop
+2. **Device Detection:**
+   - Video: `/dev/video4` (USB3.0 Video capture)
+   - Audio: Source ID `6655` (MACROSILICON_USB3.0_Video analog-stereo)
+3. **Format Support:** YUYV and MJPG formats, up to 2560x1600 resolution
+
+**Key Success Factors:**
+- ✅ **Hardware-level HDCP bypass**: No software workarounds needed
+- ✅ **USB 3.0 bandwidth**: Sufficient for high-quality video streaming
+- ✅ **PipeWire compatibility**: Audio capture works seamlessly
+- ✅ **Multiple formats**: Both compressed (MJPG) and uncompressed (YUYV) available
+
+This makes the HDMI approach the clear winner for professional demos with any streaming content!
+
+## Audio Configuration for Gemini Live API
+
+### Gemini Requirements vs HDMI Native Format
+**Gemini Live API specs** (from `Get_started_LiveAPI.py`):
+```python
+FORMAT = pyaudio.paInt16  # s16 format
+CHANNELS = 1              # Mono
+SEND_SAMPLE_RATE = 16000  # 16kHz
+```
+
+**HDMI Capture native format**:
+- **48kHz stereo s16** → needs conversion to **16kHz mono s16**
+
+### Downmixing Test Results 🎵
+**BREAKTHROUGH**: Confirmed pw-cat properly downmixes stereo to mono!
+
+**Test method**: Simultaneous capture of stereo vs mono from same HDMI source
+- **File size ratio**: 1.99:1 (stereo ~2x mono size) ✅
+- **Audio quality test**: Aggressive stereo panning → static in mono output
+- **Conclusion**: pw-cat uses proper downmixing `(left + right) / 2`, not channel dropping
+
+This means pw-cat safely converts stereo TV audio to mono without losing content from either channel.
+
+### Final Working Configuration
+**Perfect stdout streaming** with Gemini-compatible format:
+
+```bash
+pw-cat --record - \
+       --target "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo" \
+       --rate 16000 --channels 1 --format s16 --raw
+```
+
+**Performance results**:
+- ✅ **Consistent streaming**: 1600 bytes per 0.1-second chunk
+- ✅ **Total throughput**: 16,000 bytes/second (matches 16kHz mono s16)
+- ✅ **Format compatibility**: Direct feed to Gemini Live API
+- ✅ **Audio quality**: Proper stereo→mono downmixing preserves all content
+
+**Key technical specs**:
+- **Resampling**: 48kHz → 16kHz (3:1 downsampling)
+- **Channel mixing**: Stereo → Mono (proper downmix)
+- **Format**: s16 (16-bit signed integer, matches pyaudio.paInt16)
+- **Streaming**: Raw PCM via stdout (no file headers)
+- **Latency**: Real-time processing, ~100ms total pipeline delay
+
+This configuration provides broadcast-quality audio capture perfectly formatted for Gemini Live API consumption!
+
 ## Content Source Strategies
 
 ### Chrome/Local Capture
@@ -165,6 +260,62 @@ class TVController:
 1. **Chrome**: Screen capture via `mss` or browser APIs
 2. **HDMI**: Hardware capture device
 3. **Processing**: Screenshots → base64 → Gemini Live API
+
+## Multimodal Streaming Architecture
+
+### The Four Streams Problem
+We have four distinct streams to manage:
+- **TV's audio stream**: Movie/show audio content
+- **TV's video stream**: Visual content frames
+- **User's audio stream**: User speaking to Gemini
+- **Gemini's audio stream**: AI responses (output only)
+
+### Streaming Strategy Options
+
+**Option 1: Dual Audio Streams to Gemini Live**
+Push both TV audio + User audio directly
+- ✅ Gemini gets full audio context (music, sound effects, tone)
+- ✅ No transcription latency
+- ❌ Complex audio mixing/synchronization
+- ❌ Gemini Live API may not handle dual audio streams well
+- ❌ High bandwidth
+
+**Option 2: User Audio + TV Transcription + Video (Recommended)**
+User audio live + TV audio → Whisper → text + video frames
+- ✅ Clean separation of concerns
+- ✅ Reduced bandwidth
+- ✅ Text easier for Gemini to process contextually
+- ✅ No audio mixing complexity
+- ❌ Loses audio nuance (music, sound effects)
+- ❌ Transcription latency (~100-500ms)
+
+**Option 3: Triple Stream**
+All three: TV audio + User audio + TV transcription
+- ✅ Maximum information, redundancy
+- ❌ Most complex architecture
+- ❌ Highest bandwidth
+- ❌ Potential confusion from redundant info
+
+### Recommended Implementation
+
+**Core streaming pipeline:**
+```python
+# Primary streams to Gemini Live API
+user_audio → Gemini Live API (real-time)
+tv_audio → local Whisper → text → Gemini Live API
+video_frames → Gemini Live API (every 1-2 seconds)
+
+# Output
+gemini_audio → headphones (avoid feedback)
+```
+
+**Enhancements:**
+- **Audio event detection**: Sample TV audio for important moments (applause, music swells, explosions)
+- **Smart transcription**: Include speaker detection, emotional tone markers in Whisper output
+- **Context windows**: Send TV transcription in rolling 30-second windows
+- **Selective processing**: Only transcribe when TV audio changes significantly
+
+This approach provides conversational fluidity with the user while giving Gemini rich TV context without the complexity of dual audio streams.
 
 ## Next Steps
 
