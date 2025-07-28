@@ -7,9 +7,131 @@ import subprocess
 import sys
 import threading
 import time
+import pyaudio
 
 from pipewire_python.controller import Controller
 
+
+def enumerate_audio_devices():
+    """Enumerate all PyAudio input devices"""
+    
+    print("📋 Enumerating PyAudio input devices...")
+    
+    pya = pyaudio.PyAudio()
+    
+    print("📋 Available PyAudio input devices:")
+    for i in range(pya.get_device_count()):
+        info = pya.get_device_info_by_index(i)
+        if info["maxInputChannels"] > 0:  # Only input devices
+            print(f"  {i}: {info['name']}")
+            print(f"     Channels: {info['maxInputChannels']}")
+            print(f"     Sample Rate: {info['defaultSampleRate']}")
+            print()
+    
+    pya.terminate()
+
+def test_direct_pyaudio():
+    """Test direct PyAudio capture with Gemini-compatible settings"""
+    
+    print("🎤 Testing direct PyAudio capture...")
+    
+    pya = pyaudio.PyAudio()
+    
+    # Find HDMI device
+    hdmi_device = None
+    for i in range(pya.get_device_count()):
+        info = pya.get_device_info_by_index(i)
+        if "USB3.0 Video" in info["name"]:
+            hdmi_device = i
+            print(f"✓ Found HDMI device: {info['name']}")
+            break
+    
+    if hdmi_device is None:
+        print("❌ HDMI device not found")
+        pya.terminate()
+        return
+    
+    try:
+        # Try Gemini-compatible settings directly
+        stream = pya.open(
+            format=pyaudio.paInt16,  # s16 (Gemini format)
+            channels=1,              # Mono (Gemini requirement)
+            rate=16000,              # 16kHz (Gemini rate)
+            input=True,
+            input_device_index=hdmi_device,
+            frames_per_buffer=1024
+        )
+        
+        print("🎉 PyAudio opened HDMI device with Gemini settings!")
+        
+        # Test reading some data
+        total_bytes = 0
+        for i in range(10):
+            data = stream.read(1600)  # 0.1 second of 16kHz mono s16
+            chunk_size = len(data)
+            total_bytes += chunk_size
+            print(f"   Read chunk {i+1}: {chunk_size} bytes (total: {total_bytes})")
+            
+        stream.stop_stream()
+        stream.close()
+        
+        print(f"✓ Total PyAudio capture: {total_bytes} bytes")
+        
+    except Exception as e:
+        print(f"❌ PyAudio error: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    pya.terminate()
+
+def test_audio_quality():
+    """Test pw-cat audio quality by recording to file and playing back"""
+    
+    print("🎵 Testing pw-cat audio quality (Gemini format)...")
+    
+    test_file = "/tmp/hdmi_gemini_test.wav"
+    
+    # Remove existing file
+    if os.path.exists(test_file):
+        os.unlink(test_file)
+    
+    try:
+        # Record 5 seconds with Gemini settings
+        cmd = [
+            "pw-cat",
+            "--record",
+            test_file,
+            "--target",
+            "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo",
+            "--rate", "16000",
+            "--channels", "1", 
+            "--format", "s16"
+        ]
+        
+        print(f"🎤 Recording 5 seconds with Gemini settings...")
+        print(f"   Command: {' '.join(cmd)}")
+        
+        result = subprocess.run(cmd, timeout=5, capture_output=True, text=True)
+        
+        if os.path.exists(test_file):
+            file_size = os.path.getsize(test_file)
+            print(f"✓ Recorded {file_size} bytes to {test_file}")
+            print(f"🎧 Play back with: pw-cat --playback {test_file}")
+            print(f"🔊 Or with: ffplay {test_file}")
+        else:
+            print("❌ No file created")
+            if result.stderr:
+                print(f"Error: {result.stderr}")
+                
+    except subprocess.TimeoutExpired:
+        print("✓ Recording completed (5 second timeout)")
+        if os.path.exists(test_file):
+            file_size = os.path.getsize(test_file)
+            print(f"✓ Recorded {file_size} bytes to {test_file}")
+            print(f"🎧 Play back with: pw-cat --playback {test_file}")
+            print(f"🔊 Or with: ffplay {test_file}")
+    except Exception as e:
+        print(f"❌ Recording error: {e}")
 
 def get_hdmi_audio_target():
     """Get HDMI capture card audio target"""
@@ -296,20 +418,29 @@ def test_stdout_streaming():
 
 
 if __name__ == "__main__":
-    print("🧪 Testing HDMI capture card audio with pipewire_python")
+    print("🧪 Testing HDMI capture card audio with pipewire_python + PyAudio")
     print("📺 Make sure HDMI source is playing audio!")
     print()
+
+    # Enumerate PyAudio devices
+    enumerate_audio_devices()
+
+    # Test direct PyAudio capture
+    test_direct_pyaudio()
+
+    # Test audio quality by recording to file
+    test_audio_quality()
 
     # Basic file recording test
     # test_hdmi_capture()
 
     # FIFO streaming test with library
-    test_fifo_capture()
+    # test_fifo_capture()
 
     # Direct pw-cat test
-    test_direct_pwcat()
+    # test_direct_pwcat()
 
     # Stdout streaming test
-    test_stdout_streaming()
+    # test_stdout_streaming()
 
     print("\n🎉 Tests completed!")
