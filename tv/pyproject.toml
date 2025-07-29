@@ -14,6 +14,7 @@ opencv-python = "*"
 pillow = "*"
 google-genai = "*"
 google-cloud-speech = "*"
+scenedetect = "*"
 
 [build-system]
 requires = ["poetry-core"]
