@@ -8,6 +8,11 @@ import sys
 import threading
 import time
 import pyaudio
+import cv2
+import base64
+import io
+import tempfile
+from PIL import Image
 
 from pipewire_python.controller import Controller
 
@@ -132,6 +137,85 @@ def test_audio_quality():
             print(f"🔊 Or with: ffplay {test_file}")
     except Exception as e:
         print(f"❌ Recording error: {e}")
+
+def test_hdmi_video_capture():
+    """Test HDMI video capture and frame processing"""
+    
+    print("🎥 Testing HDMI video capture...")
+    
+    # Open HDMI capture device  
+    cap = cv2.VideoCapture('/dev/video4')
+    
+    if not cap.isOpened():
+        print("❌ Cannot open HDMI video capture device /dev/video4")
+        return
+    
+    # Set resolution (optional - device will use native if possible)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    
+    print("✓ HDMI video capture device opened")
+    
+    # Let device fully initialize
+    print("⏱️  Letting capture device stabilize...")
+    time.sleep(1.0)
+    
+    try:
+        frame_count = 0
+        for i in range(5):  # Capture 5 test frames
+            ret, frame = cap.read()
+            if not ret:
+                print(f"❌ Failed to read frame {i+1}")
+                break
+                
+            frame_count += 1
+            
+            # Convert BGR → RGB (OpenCV uses BGR, PIL expects RGB)  
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            
+            # Convert to PIL Image
+            img = Image.fromarray(frame_rgb)
+            original_size = img.size
+            
+            # Scale down for Gemini (like Get_started_LiveAPI.py)
+            img.thumbnail([1024, 1024])
+            thumbnail_size = img.size
+            
+            # Save frame to temp file for inspection
+            temp_file = tempfile.NamedTemporaryFile(
+                suffix=f"_frame_{frame_count}.jpg", 
+                delete=False,
+                dir="/tmp"
+            )
+            img.save(temp_file.name, format="jpeg")
+            temp_file.close()
+            
+            # Convert to base64 for Gemini Live API
+            image_io = io.BytesIO()
+            img.save(image_io, format="jpeg")
+            image_io.seek(0)
+            
+            image_bytes = image_io.read()
+            image_b64 = base64.b64encode(image_bytes).decode()
+            
+            print(f"   Frame {frame_count}:")
+            print(f"     Original: {original_size}")
+            print(f"     Thumbnail: {thumbnail_size}")
+            print(f"     Base64 length: {len(image_b64)} chars")
+            print(f"     Saved to: {temp_file.name}")
+            
+            # Small delay between frames
+            time.sleep(0.5)
+            
+        print(f"✓ Successfully captured {frame_count} video frames")
+        print("📤 Ready for Gemini Live API: {'mime_type': 'image/jpeg', 'data': base64_string}")
+        
+    except Exception as e:
+        print(f"❌ Video capture error: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        cap.release()
 
 def get_hdmi_audio_target():
     """Get HDMI capture card audio target"""
@@ -430,6 +514,9 @@ if __name__ == "__main__":
 
     # Test audio quality by recording to file
     test_audio_quality()
+
+    # Test HDMI video capture
+    test_hdmi_video_capture()
 
     # Basic file recording test
     # test_hdmi_capture()

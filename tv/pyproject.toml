@@ -10,6 +10,8 @@ package-mode = false
 python = ">=3.11,<3.13"
 pipewire_python = "*"
 pyaudio = "*"
+opencv-python = "*"
+pillow = "*"
 
 [build-system]
 requires = ["poetry-core"]
