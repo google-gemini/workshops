@@ -369,6 +369,92 @@ This approach provides conversational fluidity with the user while giving Gemini
 - [ ] Test CEC commands if available
 - [ ] IR blaster research for universal control
 
+## TV Companion Implementation Success! 🎬
+
+### Working Solution Architecture
+**BREAKTHROUGH**: Successfully combined HDMI audio/video capture with Gemini Live API!
+
+**Final working pipeline:**
+```python
+# Audio: pw-cat stdout streaming (16kHz mono s16 for Gemini)
+pw-cat --record - --target "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo" \
+       --rate 16000 --channels 1 --format s16 --raw
+
+# Video: OpenCV capture with PIL processing
+cv2.VideoCapture('/dev/video4') → PIL.Image.thumbnail([1024, 1024]) → base64
+
+# Streaming: Gemini Live API
+session.send_realtime_input(audio=audio_data)  # Continuous audio
+session.send_realtime_input(media=image_data)  # Periodic frames
+```
+
+**Key technical wins:**
+- ✅ **pw-cat audio conversion**: Perfect 48kHz stereo → 16kHz mono downsampling
+- ✅ **Real-time video processing**: OpenCV → PIL → base64 pipeline
+- ✅ **Gemini Live API integration**: Proper use of `send_realtime_input()`
+- ✅ **HDMI capture success**: Bypasses HDCP, works with protected content
+- ✅ **No PyAudio complexity**: pw-cat handles all audio format conversion
+
+### Gemini Live API Streaming Challenges
+
+**The "Restart Phenomenon"** 🔄
+
+**Observed behavior**: Gemini Live model starts commentary, then cuts itself off mid-sentence and restarts when receiving new information.
+
+**Root cause analysis:**
+- **Information overload**: 1fps video + continuous audio overwhelms the model
+- **Context switching**: New frames interrupt ongoing speech generation
+- **Competing priorities**: Model can't decide between completing thoughts vs. reacting to new input
+- **Response latency**: By the time model processes frame N, frames N+1, N+2 have already arrived
+
+**Mitigation attempts:**
+1. **1 second frames** → Model commented on everything, frequent restarts
+2. **5 second frames** → Some improvement, still fragmented responses  
+3. **10 second frames** → ✅ Significantly better coherence, more selective commentary
+
+**Current status**: 10-second frame intervals provide reasonable balance, but fundamental challenge remains.
+
+### Future Architecture Solutions
+
+**Hypothesis 1: Content-Aware Frame Sampling**
+Instead of time-based frames, send frames on content changes:
+```python
+# Detect scene changes using computer vision
+if scene_change_detected(current_frame, previous_frame):
+    await session.send_realtime_input(media=current_frame)
+```
+
+**Hypothesis 2: Transcription-First Approach**
+Audio → local transcription → text events → selective frame triggers:
+```python
+# TV audio pipeline
+tv_audio → Whisper → scene_transcript → important_moment_detection → frame_capture
+```
+
+**Hypothesis 3: Separate Vision Processing**
+Use dedicated vision model for scene analysis, report via tools:
+```python
+# Similar to Wind Waker approach
+def analyze_scene():
+    """Tool function for detailed scene analysis when requested"""
+    return vision_model.describe(current_frame)
+```
+
+**Hypothesis 4: Context Buffering**
+Maintain rolling window of recent context, pause input during responses:
+```python
+# Buffer recent frames/audio, pause streaming during Gemini speech
+context_buffer = CircularBuffer(last_30_seconds)
+if gemini.is_speaking():
+    pause_input_stream()
+```
+
+**Recommended next steps:**
+1. Implement scene change detection for smarter frame sampling
+2. Add transcription pipeline for audio context
+3. Test separate vision model approach for detailed analysis
+4. Experiment with input pausing during model responses
+
 ## Lessons Learned
 
 1. **Library Dependencies**: Don't trust outdated wrapper libraries - test direct tools first
@@ -376,6 +462,8 @@ This approach provides conversational fluidity with the user while giving Gemini
 3. **stdout Streaming**: Simplest approach often works best
 4. **Node Targeting**: Using node names ("Google Chrome") is simpler than parsing IDs
 5. **Development vs Demo**: Need both Chrome (dev) and HDMI (demo) approaches
+6. **Live API Challenges**: Multimodal streaming requires careful information flow management
+7. **pw-cat Excellence**: Professional audio tool beats Python audio processing every time
 
 ## HDCP Considerations
 

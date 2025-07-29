@@ -12,6 +12,7 @@ pipewire_python = "*"
 pyaudio = "*"
 opencv-python = "*"
 pillow = "*"
+google-genai = "*"
 
 [build-system]
 requires = ["poetry-core"]
