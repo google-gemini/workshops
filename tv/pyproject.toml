@@ -17,6 +17,7 @@ google-cloud-speech = "*"
 scenedetect = "*"
 themoviedb = "^1.0.2"
 aiohttp = "^3.12.15"
+pdfplumber = "^0.11.7"
 
 [build-system]
 requires = ["poetry-core"]

@@ -911,6 +911,204 @@ def create_scene_package(self) -> dict:
 
 The film context architecture positions the TV companion to evolve from basic scene commentary to knowledgeable film analysis, grounded in factual information rather than generic observations.
 
+## Film Knowledge Enhancement Implementation 🎭
+
+### Comprehensive Data Gathering Success
+**BREAKTHROUGH**: Moved from selective filtering to complete cast/crew data gathering.
+
+**Original Approach - Missed Key Contributors**:
+```python
+# Old: Limited to "key roles" 
+key_roles = ["Director", "Writer", "Producer", "Cinematographer", "Music", "Editor"]
+```
+**Result**: Missed William Faulkner (Nobel Prize winner, screenplay), Leigh Brackett (legendary sci-fi writer), Max Steiner (iconic composer), and other major contributors.
+
+**New Approach - Comprehensive Collection**:
+```python
+# New: Take everyone, let embeddings sort relevance
+cast_articles = await gather_cast_articles(tmdb_data.credits.cast)  # All 48 actors
+crew_articles = await gather_crew_articles(tmdb_data.credits.crew)  # All 20 crew (deduplicated)
+```
+
+**Results for The Big Sleep**:
+- ✅ **462,665 characters** comprehensive document  
+- ✅ **33 of 48 cast articles** retrieved from Wikipedia
+- ✅ **17 of 20 crew articles** retrieved from Wikipedia
+- ✅ **Zero missed legends** - captured Faulkner, Brackett, Steiner, etc.
+
+### Vector Database Creation Pipeline
+**Complete Embeddings Workflow**:
+```bash
+# 1. Generate comprehensive film document
+poetry run python -m film_context.data_gatherer "The Big Sleep" 1946
+
+# 2. Create embeddings from document  
+poetry run python -m film_context.create_embeddings "The_Big_Sleep_1946_context.txt"
+```
+
+**Performance Metrics**:
+- 📊 **579 embedding chunks** from comprehensive document
+- 📊 **100% coverage** - no failed embeddings
+- 📊 **1000-character chunks** with 200-character overlap for context preservation
+
+### Screenplay Integration Architecture
+**Created `add_screenplay.py`** for extending existing film documents:
+
+**PDF Text Extraction**:
+```python
+# Using pdfplumber for reliable text extraction
+with pdfplumber.open(pdf_path) as pdf:
+    text_parts = [page.extract_text().strip() for page in pdf.pages if page.extract_text()]
+```
+
+**Document Enhancement Workflow**:
+```bash
+# 1. Add screenplay to existing context document
+poetry run python -m film_context.add_screenplay Big_Sleep.pdf The_Big_Sleep_1946_context.txt
+
+# 2. Recreate embeddings with screenplay included
+poetry run python -m film_context.create_embeddings "The_Big_Sleep_1946_context_with_screenplay.txt"
+```
+
+**Enhanced Results**:
+- 📊 **829 embedding chunks** (vs 579 without screenplay)
+- 📊 **Scene-specific context**: Screenplay chunks provide exact dialogue and action descriptions
+- 📊 **Multi-source knowledge**: TMDB + Wikipedia + Screenplay creates comprehensive understanding
+
+### TV Companion Integration Success
+
+#### Automatic Context Injection
+**Problem**: Gemini making generic observations without film-specific knowledge.
+
+**Solution**: Auto-inject relevant context with every scene package:
+```python
+async def send_realtime(self):
+    # Auto-search for relevant context based on dialogue
+    auto_context = await self.get_scene_context(msg["transcript"])
+    
+    if auto_context:
+        scene_text += f"\n\n[Context from film knowledge]:\n{auto_context}"
+```
+
+**Benefits**:
+- ✅ **No tool dependency**: Context provided even if Gemini doesn't call search_film_context
+- ✅ **Relevant matching**: Semantic search finds pertinent information for each scene  
+- ✅ **Controlled size**: Limited to 800 characters to avoid overwhelming
+
+#### Enhanced Manual Search Tool
+**Added `search_film_context` tool** for deeper analysis:
+```python
+{
+    "name": "search_film_context",
+    "description": "Search comprehensive film knowledge including cast bios, crew info, plot analysis, themes, and production details.",
+    "parameters": {
+        "properties": {
+            "query": {"type": "string", "description": "What to search for (e.g., 'Humphrey Bogart career', 'Howard Hawks directing style')"}
+        }
+    }
+}
+```
+
+#### Embeddings Performance Optimization
+**Startup Loading**:
+```python
+def __init__(self):
+    # Load film context embeddings once at startup (not per search)
+    self.embeddings_data = self._load_embeddings()
+```
+
+**Search Performance**:
+- ✅ **829 cached chunks** loaded once at startup
+- ✅ **No disk I/O** during searches  
+- ✅ **Semantic similarity** using Gemini embeddings + numpy dot product
+- ✅ **Detailed logging** shows chunk types (Screenplay, Cast Bio, Crew Bio, etc.)
+
+### System Prompt Evolution Journey
+
+#### Phase 1: Over-Specification (Failed)
+```python
+# Too many specific examples - Gemini took them literally
+"When you see Humphrey Bogart → search for 'Humphrey Bogart detective roles'"
+"Notice dramatic lighting → search for 'film noir cinematography'"
+```
+**Result**: Gemini parroted examples ("noticing dramatic lighting") every scene, zero tool calls.
+
+#### Phase 2: Minimal Directive (Better)
+```python 
+# Stripped to essentials
+"Use search_film_context to find relevant information about what you see and hear, then share interesting insights."
+```
+**Result**: Some tool calls, but responses still generic without film context.
+
+#### Phase 3: Film-Specific Context (Success)
+```python
+# TODO: For demo, hardcoding The Big Sleep info. In production, should dynamically
+# pull film title, year, cast, director from TMDB/Wikipedia for whatever is being watched
+"You are a TV companion watching The Big Sleep (1946), the classic film noir starring Humphrey Bogart and Lauren Bacall, directed by Howard Hawks."
+```
+**Result**: ✅ Specific observations, ✅ Targeted searches, ✅ Contextual commentary.
+
+### Detailed Search Results Logging
+**Added comprehensive logging** to understand embedding performance:
+```python
+print(f"🔍 Top {min(top_k, len(similarities))} matches:")
+for i in range(min(top_k, len(similarities))):
+    # Identify section type
+    section_type = "Screenplay" if "MARLOWE" in text.upper() else "Cast Bio" if "was an American" in text else ...
+    
+    print(f"🔍 Match {i+1}: chunk {chunk_id}, score {score:.3f} ({section_type})")
+    print(f"    Preview: {text[:150].replace(chr(10), ' ')}...")
+```
+
+**Logging Reveals**:
+- 📊 **Search quality**: Similarity scores show relevance (0.7+ excellent, 0.4-0.6 decent)
+- 📊 **Content types**: Can see if finding screenplay vs cast bio vs production info
+- 📊 **Preview accuracy**: First 150 characters confirm search is finding relevant content
+
+### Performance Metrics and Success Indicators
+
+**Data Collection Success**:
+- 🎬 **The Big Sleep comprehensive document**: 462K→830K characters with screenplay
+- 🎬 **Zero missing legends**: Captured all major contributors  
+- 🎬 **Multi-source integration**: TMDB + Wikipedia + Screenplay
+
+**Vector Database Performance**:
+- 🔍 **829 searchable chunks** with 100% embedding success
+- 🔍 **Semantic search quality**: High relevance scores for scene-dialogue matching
+- 🔍 **Startup efficiency**: One-time loading vs per-search file I/O
+
+**Commentary Enhancement**:
+- 🎭 **From generic to specific**: "Tense conversation" → "Classic Bogart-Bacall dialogue showcasing Hawks' style"
+- 🎭 **Tool usage**: Gemini now calls search_film_context when encountering interesting moments
+- 🎭 **Contextual grounding**: Responses backed by factual film knowledge rather than hallucination
+
+### Next Steps: Dynamic Film Detection
+
+**Current Limitation**: Hardcoded for The Big Sleep demo.
+
+**Production Architecture**:
+1. **Auto-detect current film** from opening credits, dialogue, or manual selection
+2. **Dynamic embeddings loading** based on detected/selected film
+3. **Multi-film support** with film switching detection
+4. **Popular films pre-processing** for instant availability
+5. **Unknown film graceful degradation** to generic commentary mode
+
+**Implementation Plan**:
+```python
+# Future: Dynamic film context loading
+class FilmContextManager:
+    def detect_film(self, dialogue: str, visual_frame) -> Optional[str]:
+        # Use opening credits, character names, distinctive dialogue
+        
+    def load_film_context(self, film_id: str):
+        # Load appropriate embeddings for detected film
+        
+    def get_available_films(self) -> List[str]:
+        # List pre-processed films with embeddings ready
+```
+
+This evolution from generic scene commentary to informed film analysis demonstrates the power of comprehensive knowledge bases combined with semantic search for grounding LLM responses in factual context.
+
 ## Lessons Learned
 
 1. **Library Dependencies**: Don't trust outdated wrapper libraries - test direct tools first
@@ -920,6 +1118,12 @@ The film context architecture positions the TV companion to evolve from basic sc
 5. **Development vs Demo**: Need both Chrome (dev) and HDMI (demo) approaches
 6. **Live API Challenges**: Multimodal streaming requires careful information flow management
 7. **pw-cat Excellence**: Professional audio tool beats Python audio processing every time
+8. **Comprehensive Data > Filtering**: Better to have too much context than miss key contributors
+9. **Semantic Search Quality**: High-quality embeddings eliminate need for complex filtering logic
+10. **System Prompt Simplicity**: Specific examples often backfire; clear directives work better
+11. **Film-Specific Context**: Generic prompts produce generic responses; specific film knowledge enables rich commentary
+12. **Performance Optimization**: Load heavy resources (embeddings) once at startup, not per-request
+13. **Logging Visibility**: Detailed search result logging crucial for debugging and optimization
 
 ## HDCP Considerations
 

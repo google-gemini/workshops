@@ -7,6 +7,7 @@ import asyncio
 import base64
 from datetime import datetime
 import io
+import json
 import queue
 import subprocess
 import sys
@@ -17,6 +18,7 @@ import cv2
 from google import genai
 from google.cloud import speech
 from google.genai import types
+import numpy as np
 from PIL import Image
 from scenedetect import AdaptiveDetector, ContentDetector, HistogramDetector, SceneManager
 from scenedetect.backends import VideoCaptureAdapter
@@ -45,21 +47,45 @@ client = genai.Client()
 # TV Companion configuration
 CONFIG = {
     "response_modalities": ["AUDIO"],
+    # TODO: For demo, hardcoding The Big Sleep info. In production, should dynamically
+    # pull film title, year, cast, director from TMDB/Wikipedia for whatever is being watched
     "system_instruction": (
-        """You are an intelligent TV companion. You receive complete scene packages containing:
-- A screenshot of what's on screen when the scene started
-- All dialogue/audio that occurred during that scene
-- Scene duration and number
+        """You are a TV companion watching The Big Sleep (1946), the classic film noir starring Humphrey Bogart and Lauren Bacall, directed by Howard Hawks.
 
-Your role:
-- Analyze each complete scene context (visual + audio together)
-- Only speak when you have something genuinely interesting to say
-- Don't comment on every scene - be selective and thoughtful
-- You might comment on plot developments, visual storytelling, acting, cinematography, or interesting moments
-- Consider both what you see and what you hear together
+You receive scene packages with screenshots and dialogue from the film.
 
-Stay natural and conversational. You're watching TV with a friend."""
+Your job: Use search_film_context to find relevant information about what you see and hear, then share interesting insights about this specific film with the viewer.
+
+Search for information about the actors, characters, plot points, production details, or anything else that might enhance understanding of The Big Sleep.
+
+Be conversational and informative."""
     ),
+    "tools": [{
+        "function_declarations": [{
+            "name": "search_film_context",
+            "description": (
+                "Search comprehensive film knowledge including cast bios, crew"
+                " info, plot analysis, themes, and production details. Use this"
+                " when you encounter something interesting that deserves deeper"
+                " commentary."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": (
+                            "What to search for (e.g., 'Humphrey Bogart"
+                            " career', 'film noir lighting techniques', 'Howard"
+                            " Hawks directing style', 'Raymond Chandler vs"
+                            " William Faulkner writing differences')"
+                        ),
+                    }
+                },
+                "required": ["query"],
+            },
+        }]
+    }],
 }
 
 
@@ -176,11 +202,9 @@ class TVAudioStream:
         self._buff.put(data)
         chunks_sent += 1
 
-        if chunks_sent % 50 == 0:  # Log every 5 seconds
-          print(
-              f"📡 Audio buffer: {chunks_sent} chunks sent ({len(data)} bytes"
-              " in last chunk)"
-          )
+        # Remove noisy logging - only log major milestones
+        if chunks_sent % 500 == 0:  # Log every 50 seconds instead
+          print(f"📡 Audio buffer: {chunks_sent} chunks processed")
 
       except Exception as e:
         print(f"❌ Audio feed error: {e}")
@@ -197,11 +221,9 @@ class TVAudioStream:
           return
 
         chunks_yielded += 1
-        if chunks_yielded % 50 == 0:  # Log every 5 seconds
-          print(
-              f"📡 Audio generator: yielded {chunks_yielded} chunks"
-              f" ({len(chunk)} bytes in last)"
-          )
+        # Remove noisy logging - only log major milestones
+        if chunks_yielded % 500 == 0:  # Log every 50 seconds instead
+          print(f"📡 Audio generator: {chunks_yielded} chunks yielded")
 
         yield chunk
       except queue.Empty:
@@ -220,6 +242,9 @@ class HDMITVCompanionWithTranscription:
 
     # Shared video capture for both scene detection and periodic screenshots
     self.shared_cap = None
+
+    # Load film context embeddings once at startup
+    self.embeddings_data = self._load_embeddings()
 
     # Speech recognition config
     self.speech_config = speech.RecognitionConfig(
@@ -242,7 +267,7 @@ class HDMITVCompanionWithTranscription:
     # Scene buffering
     self.current_scene = None
     self.scene_counter = 0
-    self.max_scene_duration = 180  # 3 minutes max per scene
+    self.max_scene_duration = 60  # 1 minutes max per scene
     self.periodic_screenshot_interval = (
         30  # Take screenshot every 30 seconds within scene
     )
@@ -365,7 +390,7 @@ class HDMITVCompanionWithTranscription:
     video_adapter = VideoCaptureAdapter(self.shared_cap)
 
     print(f"✓ HDMI video capture ready for scene detection")
-    print(f"🎬 Using AdaptiveDetector for scene changes")
+    print(f"🎬 Using HistogramDetector for scene changes")
 
     # Run scene detection in a separate thread (it's blocking)
     await asyncio.to_thread(self._run_scene_detection_sync, video_adapter)
@@ -413,14 +438,17 @@ class HDMITVCompanionWithTranscription:
 
   async def capture_periodic_screenshots(self):
     """Capture periodic screenshots within the current scene using shared capture"""
-    print(f"📸 Starting periodic screenshot capture every {self.periodic_screenshot_interval}s...")
-    
+    print(
+        "📸 Starting periodic screenshot capture every"
+        f" {self.periodic_screenshot_interval}s..."
+    )
+
     # Wait for shared capture to be initialized
     while self.shared_cap is None:
       await asyncio.sleep(1)
-    
+
     print(f"📸 Shared video capture ready for periodic screenshots")
-    
+
     while True:
       # Capture immediately if there's a current scene
       if self.current_scene is not None:
@@ -429,14 +457,100 @@ class HDMITVCompanionWithTranscription:
           try:
             frame_data = self._convert_frame_to_base64(frame)
             self.current_scene.add_frame(frame_data, is_initial=False)
-            print(f"✓ Added periodic frame to Scene {self.current_scene.scene_number}")
+            print(
+                "✓ Added periodic frame to Scene"
+                f" {self.current_scene.scene_number}"
+            )
           except Exception as e:
             print(f"❌ Error adding periodic frame: {e}")
         else:
           print("⚠️ Failed to capture periodic screenshot")
-      
+
       # Then sleep
       await asyncio.sleep(self.periodic_screenshot_interval)
+
+  def _load_embeddings(self):
+    """Load film embeddings once at startup"""
+    try:
+      embeddings_file = (
+          "The_Big_Sleep_1946_context_with_screenplay_embeddings.json"
+      )
+      print(f"📚 Loading film embeddings from: {embeddings_file}")
+
+      with open(embeddings_file, "r") as f:
+        embeddings_data = json.load(f)
+
+      print(f"✅ Loaded {len(embeddings_data)} embedding chunks")
+      return embeddings_data
+
+    except FileNotFoundError:
+      print(f"⚠️ Embeddings file not found: {embeddings_file}")
+      print(
+          f"   Run: poetry run python -m film_context.create_embeddings"
+          f" 'The_Big_Sleep_1946_context_with_screenplay.txt'"
+      )
+      return []
+    except Exception as e:
+      print(f"❌ Error loading embeddings: {e}")
+      return []
+
+  def search_film_context(self, query, top_k=3):
+    """Search film embeddings using semantic similarity"""
+    try:
+      print(f"🔍 Searching film context for: '{query}'")
+
+      if not self.embeddings_data:
+        return "No embeddings available - please create embeddings first"
+
+      print(f"🔍 Using cached {len(self.embeddings_data)} chunks")
+
+      # Get query embedding
+      query_response = client.models.embed_content(
+          model="gemini-embedding-001",
+          contents=query,
+          config=types.EmbedContentConfig(task_type="retrieval_query"),
+      )
+      query_embedding = query_response.embeddings[0].values
+
+      # Calculate similarities
+      similarities = []
+      for item in self.embeddings_data:
+        similarity = np.dot(query_embedding, item["embedding"])
+        similarities.append((similarity, item["text"], item["chunk_id"]))
+
+      # Get top results
+      similarities.sort(reverse=True)
+      results = []
+      
+      print(f"🔍 Top {min(top_k, len(similarities))} matches:")
+      for i in range(min(top_k, len(similarities))):
+        score, text, chunk_id = similarities[i]
+        
+        # Try to identify what section this chunk comes from
+        section_type = "Unknown"
+        if "=== SCREENPLAY ===" in text or any(keyword in text.upper() for keyword in ["FADE IN", "INT.", "EXT.", "CLOSE SHOT", "MARLOWE"]):
+          section_type = "Screenplay"
+        elif "=== CAST BIOGRAPHIES ===" in text or "was an American" in text or "born" in text.lower():
+          section_type = "Cast Bio"
+        elif "=== CREW BIOGRAPHIES ===" in text or "director" in text.lower() or "cinematographer" in text.lower():
+          section_type = "Crew Bio"
+        elif "=== FILM ANALYSIS ===" in text or "film" in text.lower():
+          section_type = "Film Analysis"
+        elif "=== FILM OVERVIEW ===" in text or "TMDB" in text:
+          section_type = "TMDB Data"
+        
+        print(f"🔍 Match {i+1}: chunk {chunk_id}, score {score:.3f} ({section_type})")
+        print(f"    Preview: {text[:150].replace(chr(10), ' ')}...")
+        print()
+        
+        results.append(text)
+
+      return "\n\n---\n\n".join(results)
+
+    except Exception as e:
+      print(f"🔍 Film context search error: {e}")
+      traceback.print_exc()
+      return f"Search failed: {e}"
 
   async def transcribe_tv_audio(self):
     """Continuously transcribe TV audio and send to Gemini"""
@@ -527,11 +641,19 @@ class HDMITVCompanionWithTranscription:
         # Build Content parts list
         parts = []
 
-        # Add scene text if there's actual dialogue
+        # Add scene text with automatic context injection
         if msg["transcript"].strip():
+          # Auto-search for relevant context based on dialogue
+          auto_context = await self.get_scene_context(msg["transcript"])
+
           scene_text = f"""Scene {scene_num} ({duration}):
 
 {msg['transcript']}"""
+
+          if auto_context:
+            scene_text += f"\n\n[Context from film knowledge]:\n{auto_context}"
+            print(f"🔍 Auto-injected context for Scene {scene_num}")
+
           parts.append({"text": scene_text})
           print(f"📝 Added dialogue for Scene {scene_num}")
         else:
@@ -567,19 +689,84 @@ class HDMITVCompanionWithTranscription:
           print(f"⚠️ No content to send for Scene {scene_num}")
 
   async def receive_audio(self):
-    """Receive Gemini's audio responses"""
+    """Receive Gemini's audio responses and handle tool calls"""
     while True:
       turn = self.session.receive()
       async for response in turn:
+        # Audio data - queue immediately
         if data := response.data:
           self.audio_in_queue.put_nowait(data)
           continue
+
+        # Text response
         if text := response.text:
           print(f"🎬 TV Companion: {text}")
+          continue
+
+        # Tool calls
+        if response.tool_call:
+          await self.handle_tool_call(response.tool_call)
+          continue
 
       # Handle interruptions by clearing audio queue
       while not self.audio_in_queue.empty():
         self.audio_in_queue.get_nowait()
+
+  async def handle_tool_call(self, tool_call):
+    """Handle tool calls from Gemini"""
+    function_responses = []
+
+    for fc in tool_call.function_calls:
+      print(f"\n🔧 Tool call: {fc.name}")
+      print(f"   Args: {fc.args}")
+
+      if fc.name == "search_film_context":
+        query = fc.args.get("query", "")
+        print(f"📚 Searching film context for: {query}")
+        search_results = self.search_film_context(query)
+
+        # Show what we're actually returning to Gemini
+        print(f"📊 Search results preview (first 200 chars):")
+        print(f"   {search_results[:200]}...")
+        print(f"📊 Total result length: {len(search_results)} characters")
+
+        result = {"query": query, "results": search_results}
+      else:
+        result = {"error": f"Unknown function: {fc.name}"}
+
+      # Add function response
+      if result is not None:
+        function_responses.append(
+            types.FunctionResponse(id=fc.id, name=fc.name, response=result)
+        )
+
+    # Send tool responses
+    if function_responses:
+      await self.session.send_tool_response(
+          function_responses=function_responses
+      )
+
+  async def get_scene_context(self, transcript, similarity_threshold=0.7):
+    """Automatically get relevant context for scene dialogue"""
+    if not transcript.strip():
+      return None
+
+    try:
+      # Search for context with a reasonable threshold
+      context = await asyncio.to_thread(
+          self.search_film_context, transcript, top_k=2
+      )
+
+      # Only return if we got useful results (basic length check)
+      if context and len(context) > 100:
+        print(f"🔍 Auto-context found for dialogue: '{transcript[:50]}...'")
+        return context[:800]  # Limit context size to avoid overwhelming
+
+      return None
+
+    except Exception as e:
+      print(f"🔍 Auto-context failed: {e}")
+      return None
 
   async def play_audio(self):
     """Play Gemini's audio responses using pw-cat"""
