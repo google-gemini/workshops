@@ -15,6 +15,8 @@ pillow = "*"
 google-genai = "*"
 google-cloud-speech = "*"
 scenedetect = "*"
+themoviedb = "^1.0.2"
+aiohttp = "^3.12.15"
 
 [build-system]
 requires = ["poetry-core"]

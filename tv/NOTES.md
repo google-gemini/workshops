@@ -667,6 +667,250 @@ await session.send_client_content(turns=content, turn_complete=True)
 
 The scene-based architecture now provides Gemini with rich, coherent context enabling intelligent TV commentary that connects visual and audio elements naturally!
 
+## Film Context Knowledge Base Development 🎭
+
+### The Generic Commentary Problem
+**Challenge**: Despite successful scene buffering, Gemini's commentary remained generic:
+- *"Oh wow, the atmosphere is so dark"*
+- *"This looks like an intense conversation"*  
+- *"The lighting creates great mood"*
+
+**Root Cause**: Lack of film-specific knowledge. Gemini sees visuals and dialogue but has no context about:
+- Plot significance of scenes
+- Actor backgrounds and career highlights  
+- Director's filmmaking style and techniques
+- Production trivia and behind-the-scenes stories
+- Cultural impact and critical reception
+
+### Wind Waker Success Pattern
+**Inspiration**: The Wind Waker companion's `search_walkthrough()` function provided rich, factual context:
+- Complete game walkthrough embedded in vector database
+- Real-time search during gameplay for relevant hints/context
+- Eliminated hallucination by grounding responses in factual game knowledge
+
+**Goal**: Replicate this approach for films using movie databases and Wikipedia.
+
+### Film Data Source Research
+
+#### IMDB API Investigation
+**The $150,000 Barrier**:
+```
+IMDb Essential Metadata for Movies/TV/OTT (API)
+Price: $150,000 + metered costs | 12 month subscription
+```
+
+**Scraping Concerns**: IMDB Terms of Service likely prohibit large-scale scraping.
+
+**Verdict**: ❌ Completely unsuitable for indie/research projects.
+
+#### TMDB (The Movie Database) Success! ✅
+**Free Alternative with Excellent Coverage**:
+- ✅ **Free API**: Just requires registration, no cost
+- ✅ **Comprehensive data**: Cast, crew, plot, production details
+- ✅ **Rate limits**: 40 requests/10 seconds (very reasonable)
+- ✅ **Legal clarity**: Explicitly supports non-commercial use
+- ✅ **Active community**: Well-maintained, accurate data
+
+**TMDB API Results**:
+```json
+{
+  "title": "The Big Sleep",
+  "release_date": "1946-08-23",
+  "overview": "Private Investigator Philip Marlowe is hired by wealthy General Sternwood...",
+  "credits": {
+    "cast": [{"name": "Humphrey Bogart", "character": "Philip Marlowe"}],
+    "crew": [{"name": "Howard Hawks", "job": "Director"}]
+  }
+}
+```
+
+#### Wikipedia API Integration
+**Complementary Rich Context**: TMDB provides structured data, Wikipedia provides narrative context.
+
+**Wikipedia API Advantages**:
+- ✅ **Completely free**: No rate limits or API keys
+- ✅ **Rich articles**: Detailed plot analysis, production stories, cultural impact
+- ✅ **Actor biographies**: Career highlights, personal background, notable roles
+- ✅ **Director context**: Filmmaking style, recurring themes, other works
+
+### Film Context Library Architecture
+
+**Clean Separation of Concerns**:
+```
+tv/
+├── film_context/
+│   ├── __init__.py
+│   ├── tmdb_client.py        # TMDB search & movie data
+│   ├── wikipedia_client.py   # Wikipedia articles & biographies  
+│   ├── embeddings.py         # Vector database creation (TODO)
+│   └── context_search.py     # High-level search interface (TODO)
+├── tv_companion_with_transcription.py
+└── create_film_embeddings.py # CLI tool for building embeddings (TODO)
+```
+
+**Benefits of Library Structure**:
+- ✅ **Testable independently**: `python -m film_context.tmdb_client "Movie Title"`
+- ✅ **Reusable components**: Other projects could use film context search
+- ✅ **Clean imports**: Main TV companion just imports high-level functions
+- ✅ **Poetry integration**: All dependencies managed at project level
+
+### TMDB Client Implementation Success
+
+**Core Functionality**:
+```python
+def search_movie_with_credits(title: str, year: int = None):
+    # Search TMDB -> filter by year -> get full details with cast/crew
+    return movie_details_with_credits
+
+def format_movie_summary(movie):
+    # Convert TMDB data into readable text for embeddings
+    return formatted_summary
+```
+
+**Technical Challenges Solved**:
+1. **Date object handling**: `movie.release_date.year` vs `movie.release_date[:4]`
+2. **Year filtering**: `movie.release_date.year == year` vs `str(year) in movie.release_date`
+3. **Environment integration**: `os.getenv("TMDB_API_KEY")` with Poetry virtual environment
+
+**Testing Results**:
+```bash
+cd tv && poetry run python -m film_context.tmdb_client "The Big Sleep" 1946
+# ✅ Successfully retrieved 48 cast members, 20 crew members
+# ✅ Proper year filtering and data formatting
+```
+
+### Wikipedia Client Implementation
+
+**Hybrid Access Strategy**:
+```python
+async def get_wikipedia_article(name: str, content_type: str, year: int = None):
+    # 1. Try direct access: "The Big Sleep (1946 film)"
+    # 2. Fallback to search + first result
+    # 3. Return both summary + full article text
+```
+
+**API Selection**:
+- **REST API**: For article summaries and metadata
+- **Action API**: For full article text content
+- **Direct + Search**: Maximum success rate for finding articles
+
+**Plain Text Success**:
+```python
+# Initial problem: HTML markup in article text
+'<p class="mw-empty-elt"></p><p><b>Humphrey DeForest Bogart</b>...'
+
+# Solution: explaintext=true parameter  
+url = f"...&prop=extracts&format=json&explaintext=true"
+
+# Result: Clean plain text
+'Humphrey DeForest Bogart ( BOH-gart; December 25, 1899 – January 14, 1957)...'
+```
+
+**Testing Results**:
+```bash
+cd tv && poetry run python -m film_context.wikipedia_client "Humphrey Bogart" person
+# ✅ 58,169 character article retrieved
+# ✅ Clean plain text, no HTML markup
+# ✅ Direct access worked, no search fallback needed
+```
+
+### Data Quality and Coverage
+
+**TMDB Strengths**:
+- ✅ **Structured metadata**: Cast, crew, runtime, genres, production companies
+- ✅ **Basic plot summaries**: Good starting point for context
+- ✅ **Release information**: Dates, countries, languages
+- ✅ **Ratings and popularity**: Community scores and trending data
+
+**TMDB Limitations**:
+- ⚠️ **Sparse plot details**: Brief overviews, not detailed analysis
+- ⚠️ **Limited trivia**: Basic production info, minimal behind-the-scenes stories
+- ⚠️ **No critical analysis**: Raw data without interpretation
+
+**Wikipedia Fills the Gaps**:
+- ✅ **Rich plot analysis**: Detailed story breakdowns, themes, symbolism
+- ✅ **Production stories**: Behind-the-scenes drama, filming challenges, creative decisions
+- ✅ **Cultural impact**: Critical reception, influence on other films, legacy analysis
+- ✅ **Personal context**: Actor relationships, career trajectories, notable performances
+
+### Toward Vector Database Integration
+
+**Planned Architecture** (inspired by Wind Waker):
+```python
+# tv/create_film_embeddings.py
+async def create_film_knowledge_base(film_title: str, year: int):
+    # 1. Gather comprehensive film data
+    tmdb_data = await search_movie_with_credits(film_title, year)  
+    wiki_film = await get_wikipedia_article(film_title, "film", year)
+    
+    # 2. Get cast/crew Wikipedia articles
+    director = get_director(tmdb_data)
+    lead_actors = get_top_cast(tmdb_data, limit=3)
+    
+    wiki_people = []
+    for person in [director] + lead_actors:
+        wiki_people.append(await get_wikipedia_article(person.name, "person"))
+    
+    # 3. Combine and chunk all text
+    combined_text = format_combined_context(tmdb_data, wiki_film, wiki_people)
+    chunks = chunk_text(combined_text, chunk_size=1000, overlap=200)
+    
+    # 4. Create embeddings (using Wind Waker approach)
+    embeddings = create_embeddings_with_gemini(chunks)
+    save_embeddings(f"{film_title}_{year}_embeddings.json", embeddings)
+
+# tv/film_context/context_search.py  
+def search_film_context(query: str, film_embeddings: str, top_k=3):
+    # Identical to Wind Waker's search_walkthrough logic
+    # Load embeddings, calculate similarities, return relevant chunks
+```
+
+**Enhanced Scene Package Integration**:
+```python
+# In SceneBuffer.create_scene_package():
+def create_scene_package(self) -> dict:
+    # Vector search on current scene dialogue
+    relevant_context = search_film_context(self.transcript, self.film_embeddings)
+    
+    return {
+        "transcript": transcript_text,
+        "frames": self.frames,
+        "film_context": relevant_context,  # Rich contextual knowledge
+    }
+```
+
+**Expected Commentary Improvement**:
+
+**Before (generic)**:
+- *"This looks like a tense conversation between two people"*
+
+**After (contextual)**:  
+- *"This classic Bogart-Bacall dialogue scene showcases Howard Hawks' trademark rapid-fire exchanges. Notice how the camera work mirrors their earlier collaboration in 'To Have and Have Not' - Hawks loved these intimate two-shots that highlight their real-life chemistry."*
+
+### Next Steps: Film Knowledge Pipeline
+
+1. **Complete Vector Database Integration**:
+   - Adapt Wind Waker's embedding creation system
+   - Build film-specific search functions
+   - Test context injection into scene packages
+
+2. **Smart Film Detection**:
+   - Auto-detect current film from initial scene dialogue/visuals
+   - Load appropriate film knowledge base automatically
+   - Handle unknown/multiple films gracefully
+
+3. **Context Relevance Optimization**:
+   - Weight search results by scene content type (dialogue vs action vs atmosphere)
+   - Include temporal context (early scenes vs climax vs ending)
+   - Balance film-specific knowledge with general cinematic analysis
+
+4. **Performance and Caching**:
+   - Pre-build embeddings for popular films
+   - Implement efficient similarity search algorithms
+   - Cache search results within scenes
+
+The film context architecture positions the TV companion to evolve from basic scene commentary to knowledgeable film analysis, grounded in factual information rather than generic observations.
+
 ## Lessons Learned
 
 1. **Library Dependencies**: Don't trust outdated wrapper libraries - test direct tools first
