@@ -5,6 +5,7 @@ Combines continuous TV transcription with video streaming to Gemini Live API
 
 import asyncio
 import base64
+from datetime import datetime
 import io
 import queue
 import subprocess
@@ -15,8 +16,9 @@ import traceback
 import cv2
 from google import genai
 from google.cloud import speech
+from google.genai import types
 from PIL import Image
-from scenedetect import ContentDetector, HistogramDetector, SceneManager
+from scenedetect import AdaptiveDetector, ContentDetector, HistogramDetector, SceneManager
 from scenedetect.backends import VideoCaptureAdapter
 
 if sys.version_info < (3, 11, 0):
@@ -44,18 +46,77 @@ client = genai.Client()
 CONFIG = {
     "response_modalities": ["AUDIO"],
     "system_instruction": (
-        """You are an intelligent TV companion. You can see what's playing via video frames and hear via transcribed text.
+        """You are an intelligent TV companion. You receive complete scene packages containing:
+- A screenshot of what's on screen when the scene started
+- All dialogue/audio that occurred during that scene
+- Scene duration and number
 
 Your role:
-- Watch TV video frames and read transcribed dialogue/audio
+- Analyze each complete scene context (visual + audio together)
 - Only speak when you have something genuinely interesting to say
-- Don't comment on every transcript chunk - be selective
-- The transcribed text will be marked as [TV]: "dialogue here"
-- You might comment on plot developments, trivia, or interesting moments
+- Don't comment on every scene - be selective and thoughtful
+- You might comment on plot developments, visual storytelling, acting, cinematography, or interesting moments
+- Consider both what you see and what you hear together
 
-Stay natural and conversational."""
+Stay natural and conversational. You're watching TV with a friend."""
     ),
 }
+
+
+class SceneBuffer:
+  """Buffers visual and audio content for a single scene"""
+
+  def __init__(self, scene_number: int):
+    self.scene_number = scene_number
+    self.frames = []  # Store multiple frames per scene
+    self.transcripts = []
+    self.start_time = time.time()
+
+  def add_frame(self, frame_data, is_initial=False):
+    """Add a frame to this scene"""
+    elapsed = time.time() - self.start_time
+    timestamp = f"{int(elapsed//60):02d}:{elapsed%60:05.2f}"
+
+    frame_entry = {
+        "data": frame_data,
+        "timestamp": timestamp,
+        "is_initial": is_initial,
+    }
+    self.frames.append(frame_entry)
+
+    frame_type = "initial" if is_initial else "periodic"
+    print(
+        f"📸 Added {frame_type} frame to Scene {self.scene_number} at"
+        f" {timestamp}"
+    )
+
+  def add_transcript(self, text: str):
+    """Add a transcript line with timestamp"""
+    elapsed = time.time() - self.start_time
+    timestamp = f"{int(elapsed//60):02d}:{elapsed%60:05.2f}"
+    self.transcripts.append(f"[{timestamp}] {text}")
+
+  def get_duration(self) -> float:
+    """Get scene duration in seconds"""
+    return time.time() - self.start_time
+
+  def create_scene_package(self) -> dict:
+    """Create a complete scene package for the model"""
+    duration = self.get_duration()
+    transcript_text = "\n".join(self.transcripts) if self.transcripts else ""
+
+    return {
+        "type": "scene_package",
+        "scene_number": self.scene_number,
+        "duration": f"{duration:.1f}s",
+        "transcript": transcript_text,
+        "frames": self.frames,
+        "summary": (
+            f"Scene {self.scene_number} ({duration:.1f}s):"
+            f" {len(self.transcripts)} dialogue lines,"
+            f" {len(self.frames)} frames"
+        ),
+    }
 
 
 class TVAudioStream:
@@ -157,6 +218,9 @@ class HDMITVCompanionWithTranscription:
     self.video_cap = None
     self.speech_client = speech.SpeechClient()
 
+    # Shared video capture for both scene detection and periodic screenshots
+    self.shared_cap = None
+
     # Speech recognition config
     self.speech_config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
@@ -171,12 +235,20 @@ class HDMITVCompanionWithTranscription:
 
     # Scene detection setup
     self.scene_manager = SceneManager()
-    self.scene_manager.add_detector(
-        HistogramDetector(threshold=0.05)
-    )  # Better for B&W and generalizes to color
+    self.scene_manager.add_detector(HistogramDetector())
     self.scene_detection_active = False
-    self.latest_scene_frame = None
     self.video_fps = None  # Store frame rate for timestamp calculations
+
+    # Scene buffering
+    self.current_scene = None
+    self.scene_counter = 0
+    self.max_scene_duration = 180  # 3 minutes max per scene
+    self.periodic_screenshot_interval = (
+        30  # Take screenshot every 30 seconds within scene
+    )
+    self._last_scene_frame = (
+        None  # Store current frame for periodic capture sharing
+    )
 
   async def send_text(self):
     """Allow user to send text messages"""
@@ -196,8 +268,62 @@ class HDMITVCompanionWithTranscription:
 
     print(f"🎬 Scene change detected at frame {frame_num} ({timestamp_str})")
 
-    # Convert frame to our format and queue it for Gemini
+    # Send previous scene package if it exists
+    if self.current_scene is not None:
+      self._finalize_current_scene()
+
+    # Start new scene
+    self._start_new_scene(frame_img, frame_num, timestamp_str)
+
+  def _finalize_current_scene(self):
+    """Send the current scene package to Gemini"""
+    if self.current_scene is None:
+      return
+
+    scene_package = self.current_scene.create_scene_package()
+    print(f"📦 Finalizing {scene_package['summary']}")
+
+    try:
+      self.out_queue.put_nowait(scene_package)
+      print(f"✓ Scene package queued for Gemini")
+    except:
+      print(f"⚠️ Failed to queue scene package")
+
+  def _start_new_scene(self, frame_img, frame_num, timestamp_str):
+    """Start a new scene buffer"""
+    self.scene_counter += 1
+    self.current_scene = SceneBuffer(self.scene_counter)
+
+    print(
+        "🔍 _start_new_scene called: frame_img is"
+        f" {'None' if frame_img is None else 'present'}"
+    )
+
+    # Convert frame to our format
     if frame_img is not None:
+      try:
+        frame_data = self._convert_frame_to_base64(frame_img)
+        self.current_scene.add_frame(frame_data, is_initial=True)
+        print(
+            f"🎬 Started Scene {self.scene_counter} at frame"
+            f" {frame_num} ({timestamp_str})"
+        )
+      except Exception as e:
+        print(f"❌ Error converting initial frame: {e}")
+        import traceback
+
+        traceback.print_exc()
+    else:
+      print(f"🎬 Started Scene {self.scene_counter} (no frame available)")
+
+  def _convert_frame_to_base64(self, frame_img):
+    """Convert OpenCV frame to base64 format for Gemini"""
+    try:
+      print(
+          "🔧 Converting frame:"
+          f" shape={frame_img.shape if hasattr(frame_img, 'shape') else 'no shape'}"
+      )
+
       # Convert numpy array to PIL Image
       frame_rgb = cv2.cvtColor(frame_img, cv2.COLOR_BGR2RGB)
       img = Image.fromarray(frame_rgb)
@@ -208,40 +334,38 @@ class HDMITVCompanionWithTranscription:
       image_io.seek(0)
 
       image_bytes = image_io.read()
-      frame_data = {
+      print(f"🔧 Frame converted successfully: {len(image_bytes)} bytes")
+
+      return {
           "mime_type": "image/jpeg",
           "data": base64.b64encode(image_bytes).decode(),
       }
-
-      # Store latest frame (thread-safe)
-      self.latest_scene_frame = frame_data
-      print(
-          f"📸 Scene frame prepared for Gemini (frame #{frame_num} at"
-          f" {timestamp_str})"
-      )
+    except Exception as e:
+      print(f"❌ Frame conversion failed: {e}")
+      raise
 
   async def run_scene_detection(self):
     """Run PySceneDetect on HDMI video stream"""
     print("🎬 Starting PySceneDetect scene detection...")
 
-    # Open HDMI video capture
-    cap = cv2.VideoCapture(HDMI_VIDEO_DEVICE)
-    if not cap.isOpened():
+    # Initialize shared video capture
+    self.shared_cap = cv2.VideoCapture(HDMI_VIDEO_DEVICE)
+    if not self.shared_cap.isOpened():
       print(f"❌ Cannot open HDMI video device {HDMI_VIDEO_DEVICE}")
       return
 
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+    self.shared_cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    self.shared_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     # Get and store frame rate for timestamp calculations
-    self.video_fps = cap.get(cv2.CAP_PROP_FPS)
+    self.video_fps = self.shared_cap.get(cv2.CAP_PROP_FPS)
     print(f"📊 Video FPS: {self.video_fps}")
 
     # Wrap with VideoCaptureAdapter for PySceneDetect
-    video_adapter = VideoCaptureAdapter(cap)
+    video_adapter = VideoCaptureAdapter(self.shared_cap)
 
     print(f"✓ HDMI video capture ready for scene detection")
-    print(f"🎬 Using HistogramDetector for scene changes")
+    print(f"🎬 Using AdaptiveDetector for scene changes")
 
     # Run scene detection in a separate thread (it's blocking)
     await asyncio.to_thread(self._run_scene_detection_sync, video_adapter)
@@ -261,25 +385,58 @@ class HDMITVCompanionWithTranscription:
       traceback.print_exc()
     finally:
       self.scene_detection_active = False
-      video_adapter.capture.release()
+      if self.shared_cap:
+        self.shared_cap.release()
 
-  async def send_scene_frames(self):
-    """Monitor for new scene frames and send them to Gemini"""
-    print("📤 Starting scene frame sender...")
-    last_sent_frame = None
+  async def monitor_scene_duration(self):
+    """Monitor scene duration and finalize long scenes"""
+    print("⏱️ Starting scene duration monitor...")
 
     while True:
-      # Check if we have a new scene frame
       if (
-          self.latest_scene_frame is not None
-          and self.latest_scene_frame != last_sent_frame
+          self.current_scene is not None
+          and self.current_scene.get_duration() > self.max_scene_duration
       ):
 
-        print("📤 Sending new scene frame to Gemini")
-        await self.out_queue.put(self.latest_scene_frame)
-        last_sent_frame = self.latest_scene_frame
+        print(
+            f"⏱️ Scene {self.current_scene.scene_number} exceeded"
+            f" {self.max_scene_duration}s, finalizing..."
+        )
+        self._finalize_current_scene()
 
-      await asyncio.sleep(0.5)  # Check twice per second
+        # Start a new scene without a frame (we'll get one on next scene change)
+        self.scene_counter += 1
+        self.current_scene = SceneBuffer(self.scene_counter)
+        print(f"🎬 Started Scene {self.scene_counter} (duration timeout)")
+
+      await asyncio.sleep(10)  # Check every 10 seconds
+
+  async def capture_periodic_screenshots(self):
+    """Capture periodic screenshots within the current scene using shared capture"""
+    print(f"📸 Starting periodic screenshot capture every {self.periodic_screenshot_interval}s...")
+    
+    # Wait for shared capture to be initialized
+    while self.shared_cap is None:
+      await asyncio.sleep(1)
+    
+    print(f"📸 Shared video capture ready for periodic screenshots")
+    
+    while True:
+      # Capture immediately if there's a current scene
+      if self.current_scene is not None:
+        ret, frame = self.shared_cap.read()
+        if ret:
+          try:
+            frame_data = self._convert_frame_to_base64(frame)
+            self.current_scene.add_frame(frame_data, is_initial=False)
+            print(f"✓ Added periodic frame to Scene {self.current_scene.scene_number}")
+          except Exception as e:
+            print(f"❌ Error adding periodic frame: {e}")
+        else:
+          print("⚠️ Failed to capture periodic screenshot")
+      
+      # Then sleep
+      await asyncio.sleep(self.periodic_screenshot_interval)
 
   async def transcribe_tv_audio(self):
     """Continuously transcribe TV audio and send to Gemini"""
@@ -332,37 +489,82 @@ class HDMITVCompanionWithTranscription:
         transcripts_received += 1
         print(f"📝 Transcribed #{transcripts_received}: {transcript}")
 
-        # Send to async queue (thread-safe)
-        transcript_text = f"[TV]: {transcript}"
-        try:
-          self.out_queue.put_nowait(
-              {"type": "transcript", "text": transcript_text}
+        # Add to current scene buffer instead of sending immediately
+        if self.current_scene is not None:
+          self.current_scene.add_transcript(transcript)
+          print(
+              f"📝 Added to Scene {self.current_scene.scene_number}:"
+              f" {transcript[:50]}..."
           )
-        except asyncio.QueueFull:
-          print("⚠️ Transcript queue full, dropping message")
+        else:
+          # No scene yet, create first scene
+          self.scene_counter += 1
+          self.current_scene = SceneBuffer(self.scene_counter)
+          self.current_scene.add_transcript(transcript)
+          print(
+              f"📝 Started Scene {self.scene_counter} with transcript:"
+              f" {transcript[:50]}..."
+          )
 
   async def send_realtime(self):
-    """Send transcripts and video frames to Gemini Live API"""
-    items_sent = 0
+    """Send scene packages to Gemini Live API using client_content"""
+    packages_sent = 0
 
     while True:
       msg = await self.out_queue.get()
 
-      if isinstance(msg, dict):
-        if msg.get("type") == "transcript":
-          # Send transcribed text
-          items_sent += 1
-          print(
-              f"📤 Sending transcript #{items_sent} to Gemini:"
-              f" {msg['text'][:50]}..."
-          )
-          await self.session.send_realtime_input(text=msg["text"])
+      if isinstance(msg, dict) and msg.get("type") == "scene_package":
+        packages_sent += 1
+        scene_num = msg.get("scene_number", "?")
+        duration = msg.get("duration", "?")
+        frames = msg.get("frames", [])
 
-        elif "mime_type" in msg and msg["mime_type"] == "image/jpeg":
-          # Send video frame
-          items_sent += 1
-          print(f"📤 Sending video frame #{items_sent} to Gemini")
-          await self.session.send_realtime_input(media=msg)
+        print(
+            f"📤 Sending Scene Package #{packages_sent} (Scene {scene_num},"
+            f" {duration}) to Gemini"
+        )
+
+        # Build Content parts list
+        parts = []
+
+        # Add scene text if there's actual dialogue
+        if msg["transcript"].strip():
+          scene_text = f"""Scene {scene_num} ({duration}):
+
+{msg['transcript']}"""
+          parts.append({"text": scene_text})
+          print(f"📝 Added dialogue for Scene {scene_num}")
+        else:
+          print(f"🔇 No dialogue for Scene {scene_num}")
+
+        # Add all frames as image parts
+        for i, frame_entry in enumerate(frames):
+          frame_type = "initial" if frame_entry["is_initial"] else "periodic"
+          timestamp = frame_entry["timestamp"]
+
+          parts.append({
+              "inline_data": {
+                  "mime_type": frame_entry["data"]["mime_type"],
+                  "data": frame_entry["data"]["data"],
+              }
+          })
+          print(
+              f"📸 Added {frame_type} frame #{i+1} for Scene"
+              f" {scene_num} ({timestamp})"
+          )
+
+        # Send as complete client content turn (text + images together)
+        if parts:  # Only send if we have content
+          content = {"role": "user", "parts": parts}
+          await self.session.send_client_content(
+              turns=content, turn_complete=True
+          )
+          print(
+              f"📤 Sent complete scene package: {len(parts)} parts (text +"
+              " images together)"
+          )
+        else:
+          print(f"⚠️ No content to send for Scene {scene_num}")
 
   async def receive_audio(self):
     """Receive Gemini's audio responses"""
@@ -431,7 +633,10 @@ class HDMITVCompanionWithTranscription:
         tg.create_task(self.send_realtime())
         tg.create_task(self.transcribe_tv_audio())
         tg.create_task(self.run_scene_detection())  # PySceneDetect
-        tg.create_task(self.send_scene_frames())  # Scene frame sender
+        tg.create_task(self.monitor_scene_duration())  # Scene duration monitor
+        tg.create_task(
+            self.capture_periodic_screenshots()
+        )  # Periodic screenshots
         tg.create_task(self.receive_audio())
         tg.create_task(self.play_audio())
 

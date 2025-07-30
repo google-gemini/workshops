@@ -455,6 +455,218 @@ if gemini.is_speaking():
 3. Test separate vision model approach for detailed analysis
 4. Experiment with input pausing during model responses
 
+## Scene-Based Commentary Architecture Success! 🎬
+
+### The Context Association Problem
+**Initial Issue**: Gemini couldn't connect dialogue with visuals when sent separately via `send_realtime_input()`.
+
+**Symptoms observed:**
+```
+Gemini: "Wow, looks like they're having an intense dinner scene..."
+Gemini: "I wonder what they're talking about?"
+```
+
+Despite receiving both dialogue transcript and scene images, the model treated them as separate, unrelated inputs rather than cohesive scene context.
+
+### Scene Buffering Solution
+**BREAKTHROUGH**: Implemented complete scene packaging that groups visual and audio content together.
+
+**Architecture:**
+```python
+class SceneBuffer:
+    def __init__(self, scene_number: int):
+        self.frames = []          # Multiple screenshots per scene
+        self.transcripts = []     # Dialogue with timestamps
+        self.start_time = time.time()
+    
+    def create_scene_package(self) -> dict:
+        return {
+            "scene_number": self.scene_number,
+            "duration": f"{duration:.1f}s", 
+            "transcript": "\n".join(self.transcripts),
+            "frames": self.frames
+        }
+```
+
+**Key improvements:**
+- ✅ **Complete scene context**: All dialogue + multiple visual snapshots packaged together
+- ✅ **Duration tracking**: Each scene knows how long it lasted  
+- ✅ **Timestamp correlation**: Dialogue and images correlated by scene timeline
+- ✅ **Fallback timeout**: Long scenes (>3min) automatically finalized
+- ✅ **Rich visual context**: Initial scene frame + periodic screenshots every 30s
+
+### Scene Detection Optimization Journey
+
+#### Adaptive vs Histogram Detector Research 📊
+**AdaptiveDetector Failure**: Despite multiple sensitivity attempts, kept timing out:
+```python
+# All of these were too insensitive for TV content:
+AdaptiveDetector(adaptive_threshold=3.0)  # Default - mostly 3min timeouts
+AdaptiveDetector(adaptive_threshold=1.2)  # Still too conservative  
+AdaptiveDetector(adaptive_threshold=0.8)  # Better but still insufficient
+```
+
+**Research Discovery**: Found academic paper ([arXiv:2506.00667](https://arxiv.org/pdf/2506.00667)) explaining detector selection by content type:
+
+> **Adaptive Strategy**: For videos under 30 minutes, adaptive thresholding detects frame-to-frame changes via color histograms. These types of content typically exhibit abrupt transitions, making them ideal for change-based detection.
+
+> **Content Strategy**: Long-form narrative content (2–3 hours) is segmented using content-based methods for sustained differences in visual appearance.
+
+**Key insight**: TV content has "abrupt transitions" (quick cuts, scene changes, commercials) making **HistogramDetector** the optimal choice, not AdaptiveDetector.
+
+#### HistogramDetector Success ✅
+**Perfect fit for TV content:**
+- ✅ **Fast cuts detection**: Excellent at catching shot changes between scenes
+- ✅ **Lighting transitions**: Detects day/night, indoor/outdoor changes  
+- ✅ **Mixed content handling**: Works well with shows, commercials, news
+- ✅ **Reasonable sensitivity**: Some overtriggering but much better scene boundaries
+
+**Result**: Natural scene detection at ~1-2 minute intervals instead of 3-minute timeouts.
+
+### Video Capture Architecture Challenges
+
+#### Device Conflict Resolution 🔧
+**Problem**: Scene detection and periodic screenshots both trying to open `/dev/video4` simultaneously:
+```python
+# This failed - device busy error
+scene_detection: cv2.VideoCapture(HDMI_VIDEO_DEVICE)  
+periodic_shots:   cv2.VideoCapture(HDMI_VIDEO_DEVICE)  # ❌ Device busy
+```
+
+**Attempted Solutions:**
+1. **Shared frame approach**: Store frames from scene detection for reuse
+   - ❌ Introduced bugs with `None` frames
+   - ❌ Complex synchronization issues
+
+2. **Separate captures**: Let both open device independently  
+   - ❌ Second capture failed silently
+   - ❌ No error messages, just 0 frames captured
+
+**Final Solution**: Single shared video capture device:
+```python
+# Elegant solution - one device, shared access
+self.shared_cap = cv2.VideoCapture(HDMI_VIDEO_DEVICE)
+
+# Scene detection uses it via VideoCaptureAdapter
+video_adapter = VideoCaptureAdapter(self.shared_cap)
+
+# Periodic capture uses same device
+ret, frame = self.shared_cap.read()
+```
+
+#### Periodic Screenshot Logic Simplification
+**Original overcomplicated logic**:
+```python
+# Old: Complex duration checking, sleep-first approach
+await asyncio.sleep(30)  # Sleep first - misses scene beginnings!
+if scene.duration > 30:  # Skip short scenes - loses context!
+    capture_frame()
+```
+
+**Simplified approach**:
+```python
+# New: Capture-first, unconditional approach  
+while True:
+    if self.current_scene:
+        capture_frame()  # Capture immediately - get scene beginnings!
+    await asyncio.sleep(30)  # Then sleep
+```
+
+**Benefits:**
+- ✅ **Capture scene beginnings**: No initial sleep delay
+- ✅ **Support short scenes**: Even 10-second scenes get visual context
+- ✅ **Simpler logic**: No complex duration calculations
+
+### Gemini Live API Context Association
+
+#### send_realtime_input() Limitation Discovery
+**The problem**: Separate API calls created unrelated inputs:
+```python
+# This approach failed - Gemini saw these as separate events
+await session.send_realtime_input(text=scene_dialogue)      # Event 1
+await session.send_realtime_input(media=scene_frame_1)      # Event 2  
+await session.send_realtime_input(media=scene_frame_2)      # Event 3
+```
+
+Result: Gemini processed each input independently, couldn't connect dialogue with visuals.
+
+#### activity_start/activity_end Attempt 
+**Hypothesis**: Group inputs with activity markers:
+```python
+await session.send_realtime_input(activity_start=types.ActivityStart())
+await session.send_realtime_input(text=scene_dialogue)
+await session.send_realtime_input(media=scene_frames)  
+await session.send_realtime_input(activity_end=types.ActivityEnd())
+```
+
+**Failure**: WebSocket error revealed incompatibility:
+```
+ConnectionClosedError: received 1007 (invalid frame payload data) 
+Explicit activity control is not supported when automatic activity detection is enabled.
+```
+
+**Learning**: Gemini Live has automatic activity detection - manual control conflicts with VAD (Voice Activity Detection).
+
+#### send_client_content() Success! 🎉
+**BREAKTHROUGH**: Discovered proper API for structured content:
+```python
+# This approach works - guaranteed content association  
+parts = []
+parts.append({"text": scene_dialogue})           # Add dialogue
+parts.append({"inline_data": frame_1_data})      # Add frame 1  
+parts.append({"inline_data": frame_2_data})      # Add frame 2
+
+content = {"role": "user", "parts": parts}
+await session.send_client_content(turns=content, turn_complete=True)
+```
+
+**Key advantages:**
+- ✅ **Atomic content delivery**: All parts sent as single cohesive turn
+- ✅ **Guaranteed association**: Model sees text + images together  
+- ✅ **Turn completion**: `turn_complete=True` signals complete scene package
+- ✅ **Structured format**: Proper Content object with multiple parts
+
+**Result**: Gemini now receives complete scene packages like:
+```json
+{
+  "role": "user", 
+  "parts": [
+    {"text": "Scene 3 (45.2s): [00:02.1] Character A: 'We need to find the treasure'"},
+    {"inline_data": {"mime_type": "image/jpeg", "data": "...initial_frame..."}},
+    {"inline_data": {"mime_type": "image/jpeg", "data": "...periodic_frame_1..."}},
+    {"inline_data": {"mime_type": "image/jpeg", "data": "...periodic_frame_2..."}}
+  ]
+}
+```
+
+### Current Architecture Success Metrics
+
+**Scene Detection Performance:**
+- 📊 **Scene boundaries**: 1-2 minute natural intervals (vs 3-minute timeouts)
+- 📊 **Visual context**: 2-5 frames per scene (initial + periodic)
+- 📊 **Audio context**: Complete dialogue transcription per scene
+
+**API Integration Results:**  
+- ✅ **Context association**: Gemini connects dialogue with visuals
+- ✅ **Commentary quality**: More coherent, contextual responses
+- ✅ **Reduced fragmentation**: Complete scene packages vs scattered inputs
+
+**Technical Reliability:**
+- ✅ **Shared video capture**: No device conflicts
+- ✅ **Robust scene buffering**: Handles both scene changes and timeouts  
+- ✅ **Simplified periodic capture**: No complex timing logic
+
+### Architecture Evolution Lessons
+
+1. **Scene Detection**: Academic research crucial - detector choice depends on content type
+2. **Device Management**: Shared resources better than separate instances for video capture
+3. **API Design**: `send_client_content()` with structured parts > separate `send_realtime_input()` calls
+4. **Context Association**: Modern LLMs need explicit content structure, not just temporal proximity
+5. **Simplification**: Remove complex logic when simple approaches work better
+6. **Real-time Constraints**: Video device conflicts are silent failures - always test end-to-end
+
+The scene-based architecture now provides Gemini with rich, coherent context enabling intelligent TV commentary that connects visual and audio elements naturally!
+
 ## Lessons Learned
 
 1. **Library Dependencies**: Don't trust outdated wrapper libraries - test direct tools first
