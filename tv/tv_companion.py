@@ -1,3 +1,17 @@
+# Copyright 2025 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 HDMI TV Companion using Gemini Live API
 Streams HDMI audio and video to Gemini for intelligent TV commentary
@@ -6,17 +20,19 @@ Streams HDMI audio and video to Gemini for intelligent TV commentary
 import asyncio
 import base64
 import io
-import sys
-import traceback
 import subprocess
-import cv2
+import sys
 import tempfile
+import traceback
+
+import cv2
+from google import genai
 from PIL import Image
 
-from google import genai
-
 if sys.version_info < (3, 11, 0):
-    import taskgroup, exceptiongroup
+    import exceptiongroup
+    import taskgroup
+
     asyncio.TaskGroup = taskgroup.TaskGroup
     asyncio.ExceptionGroup = exceptiongroup.ExceptionGroup
 
@@ -28,7 +44,7 @@ CHUNK_SIZE = 1024
 MODEL = "gemini-2.5-flash-preview-native-audio-dialog"
 
 # HDMI capture device settings
-HDMI_VIDEO_DEVICE = '/dev/video4'
+HDMI_VIDEO_DEVICE = "/dev/video4"
 HDMI_AUDIO_TARGET = "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo"
 
 client = genai.Client()
@@ -46,13 +62,14 @@ Your role:
 - You might comment on:
   * Plot developments or interesting scenes
   * Historical context or trivia
-  * Technical aspects (cinematography, effects, etc.) 
+  * Technical aspects (cinematography, effects, etc.)
   * Sports play analysis or statistics
   * News context or background information
   * Funny moments or easter eggs
 
-Stay natural and don't over-explain. Think of yourself as a knowledgeable friend watching along."""
+Stay natural and don't over-explain. Think of yourself as a knowledgeable friend watching along.""",
 }
+
 
 class HDMITVCompanion:
     def __init__(self):
@@ -79,7 +96,7 @@ class HDMITVCompanion:
         # Convert BGR → RGB (OpenCV uses BGR, PIL expects RGB)
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         img = Image.fromarray(frame_rgb)
-        
+
         # Scale down for Gemini (same as Get_started_LiveAPI.py)
         img.thumbnail([1024, 1024])
 
@@ -89,16 +106,13 @@ class HDMITVCompanion:
         image_io.seek(0)
 
         image_bytes = image_io.read()
-        return {
-            "mime_type": "image/jpeg", 
-            "data": base64.b64encode(image_bytes).decode()
-        }
+        return {"mime_type": "image/jpeg", "data": base64.b64encode(image_bytes).decode()}
 
     async def get_hdmi_frames(self):
         """Continuously capture HDMI video frames"""
         # Initialize HDMI video capture
         self.video_cap = await asyncio.to_thread(cv2.VideoCapture, HDMI_VIDEO_DEVICE)
-        
+
         if not self.video_cap.isOpened():
             print(f"❌ Cannot open HDMI video device {HDMI_VIDEO_DEVICE}")
             return
@@ -106,7 +120,7 @@ class HDMITVCompanion:
         # Set resolution (optional)
         self.video_cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         self.video_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        
+
         print(f"✓ HDMI video capture started on {HDMI_VIDEO_DEVICE}")
 
         while True:
@@ -120,44 +134,47 @@ class HDMITVCompanion:
 
     async def listen_hdmi_audio(self):
         """Capture HDMI audio using pw-cat and send to Gemini"""
-        
+
         # Start pw-cat subprocess for HDMI audio capture
         cmd = [
             "pw-cat",
             "--record",
             "-",  # Write to stdout
-            "--target", HDMI_AUDIO_TARGET,
-            "--rate", str(SEND_SAMPLE_RATE),
-            "--channels", "1",
-            "--format", "s16",
+            "--target",
+            HDMI_AUDIO_TARGET,
+            "--rate",
+            str(SEND_SAMPLE_RATE),
+            "--channels",
+            "1",
+            "--format",
+            "s16",
             "--raw",  # Output raw PCM data, not WAV
         ]
-        
+
         print(f"🎤 Starting pw-cat audio capture: {' '.join(cmd)}")
-        
+
         try:
             self.audio_process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
-            
+
             print("✓ HDMI audio capture started with pw-cat")
-            
+
             # Continuously read audio chunks from pw-cat stdout
             while True:
                 # Read chunk size for Gemini (1600 bytes = ~0.1 sec at 16kHz mono s16)
                 data = await self.audio_process.stdout.read(1600)
-                
+
                 if not data:
                     print("❌ pw-cat audio stream ended")
                     break
-                    
+
                 await self.out_queue.put({"data": data, "mime_type": "audio/pcm"})
-                
+
         except Exception as e:
             print(f"❌ pw-cat audio error: {e}")
             import traceback
+
             traceback.print_exc()
 
     async def send_realtime(self):
@@ -188,37 +205,39 @@ class HDMITVCompanion:
 
     async def play_audio(self):
         """Play Gemini's audio responses using pw-cat"""
-        
+
         # Start pw-cat subprocess for audio playback
         cmd = [
             "pw-cat",
             "--playback",
             "-",  # Read from stdin
-            "--rate", str(RECEIVE_SAMPLE_RATE),
-            "--channels", "1", 
-            "--format", "s16",
+            "--rate",
+            str(RECEIVE_SAMPLE_RATE),
+            "--channels",
+            "1",
+            "--format",
+            "s16",
             "--raw",  # Input raw PCM data, not WAV
         ]
-        
+
         print(f"🔊 Starting pw-cat audio playback: {' '.join(cmd)}")
-        
+
         try:
             play_process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdin=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+                *cmd, stdin=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
-            
+
             print("✓ Audio playback started with pw-cat")
-            
+
             while True:
                 bytestream = await self.audio_in_queue.get()
                 play_process.stdin.write(bytestream)
                 await play_process.stdin.drain()
-                
+
         except Exception as e:
             print(f"❌ pw-cat playback error: {e}")
             import traceback
+
             traceback.print_exc()
 
     async def run(self):
@@ -226,7 +245,7 @@ class HDMITVCompanion:
         print("📺 Starting HDMI TV Companion...")
         print("🎧 Make sure to use headphones to prevent audio feedback!")
         print("💡 Type 'q' to quit, or just watch as Gemini comments on your TV content")
-        
+
         try:
             async with (
                 client.aio.live.connect(model=MODEL, config=CONFIG) as session,
