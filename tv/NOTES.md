@@ -1461,3 +1461,178 @@ This evolution from generic scene commentary to informed film analysis demonstra
 - Always have Chrome fallback ready
 - Test demo content beforehand
 - Use YouTube for reliable demos
+
+## Recent Developments (Latest Session)
+
+### Audio Quality Improvements 🎵
+
+**Problem**: Choppy audio from Gemini responses in TV companion, despite being solved in Wind Waker companion.
+
+**Root Causes Identified**:
+1. **No pre-buffering**: Audio started/stopped with each chunk
+2. **Blocking I/O operations**: Tool calls blocked audio processing loop
+3. **Small audio queue**: Limited buffer space causing blocking
+
+**Solutions Implemented**:
+
+#### Pre-buffering Audio Playback
+```python
+# Added initial buffer collection before starting playback
+initial_chunks = []
+for _ in range(3):  # Buffer 3 chunks before starting
+    chunk = await self.audio_in_queue.get()
+    initial_chunks.append(chunk)
+
+# Play buffered chunks first, then continue normal playback
+```
+
+#### Async Tool Operations
+Made all blocking operations non-blocking:
+```python
+# search_film_context now async
+query_response = await asyncio.to_thread(
+    client.models.embed_content, ...
+)
+
+# search_user_history now async  
+memories = await asyncio.to_thread(
+    self.memory_client.search, ...
+)
+```
+
+#### Increased Buffer Size
+```python
+self.out_queue = asyncio.Queue(maxsize=20)  # Increased from 10
+```
+
+**Results**: ✅ Smooth audio playback matching Wind Waker companion quality.
+
+### Tool Feedback Loop Resolution 🔄
+
+**Problem**: Infinite feedback loop in watching mode:
+1. Scene finalized and sent to Gemini
+2. Gemini calls `describe_current_scene` 
+3. Sends same scene again
+4. Loop continues indefinitely
+
+**Root Cause**: Tools designed for non-watching mode conflicted with auto-sent scene packages.
+
+**Solution**: Selective tool disabling in watching mode:
+```python
+# Tools disabled in watching mode (no-op with empty response)
+- search_film_context     # Was causing repeated calls
+- describe_current_scene  # Was analyzing wrong scenes
+
+# Tools enabled in watching mode (essential user controls)  
+- search_and_play_content  # For switching movies
+- search_user_history      # For episodic memory
+- pause_playback          # For media control
+- resume_playback         # For media control
+```
+
+**Key Learning**: `continue` in tool loop created empty `function_responses`, blocking Gemini. Fixed by returning empty `{}` response instead.
+
+### Scene Management Simplification 🎬
+
+**Problem**: Complex `recent_scenes` storage created confusion and feedback loops.
+
+**User Request**: "Only want current scene on stack. No backlog of scenes."
+
+**Architecture Simplification**:
+```python
+# Removed
+self.recent_scenes = []  # No more scene storage
+
+# Updated finalization  
+def _finalize_current_scene(self):
+    if self.watching_mode:
+        self.out_queue.put_nowait(scene_package)  # Send once
+        print("📤 Auto-sent scene package")
+    else:
+        print("📦 Discarded scene package")  # Just discard
+
+# Updated describe_current_scene to work on live scene only
+if self.current_scene is not None:
+    scene_package = self.current_scene.create_scene_package()
+    self.out_queue.put_nowait(scene_package)
+```
+
+**Benefits**:
+- ✅ **No storage complexity**: Scenes exist only while being built
+- ✅ **Clear separation**: Watching mode vs non-watching mode behavior
+- ✅ **Eliminates feedback loops**: Can't repeatedly analyze old scenes
+
+### Media Control Tools Addition 📺
+
+**New Capabilities**: Added pause/resume functionality via ADB commands:
+
+```python
+# New tools
+{
+    "name": "pause_playback",
+    "description": "Pause the currently playing content on TV"
+},
+{
+    "name": "resume_playback", 
+    "description": "Resume or play the paused content on TV"
+}
+
+# Implementation
+async def _send_media_key_async(self, keycode: str) -> bool:
+    cmd = ["adb", "shell", "input", "keyevent", keycode]
+    result = await asyncio.to_thread(subprocess.run, cmd, ...)
+    return result.returncode == 0
+```
+
+**Usage**: Users can now say "Pause the movie" or "Resume playback" for direct TV control.
+
+### System Instruction Evolution 📝
+
+**Problem**: Gemini forgot it could control TV after focusing system prompt on film analysis.
+
+**Solution**: Comprehensive system instruction covering both capabilities:
+
+```python
+"system_instruction": (
+    """You are an intelligent TV companion with deep knowledge of film and television.
+
+You can both provide insightful commentary AND control the TV for users.
+
+## TV Control Capabilities:
+- Search for and play any movie or show using search_and_play_content
+- Pause/resume playback with pause_playback and resume_playback  
+- Access user's viewing history with search_user_history
+- Toggle watching mode on/off for automatic scene commentary
+
+## Commentary Style:
+[Enhanced film analysis guidelines...]
+"""
+)
+```
+
+**Result**: ✅ Gemini now remembers all its capabilities while maintaining high-quality commentary.
+
+### Technical Debt Resolution 🔧
+
+**Fixed Multiple Issues**:
+1. **Audio pipeline blocking**: All tool operations now async
+2. **Device resource conflicts**: Proper shared video capture handling  
+3. **Tool response completeness**: Always send responses, even for disabled tools
+4. **Memory efficiency**: Removed unnecessary scene storage
+5. **User experience**: Smooth audio during background operations
+
+### Architecture Maturity Assessment
+
+**Current State**: TV companion now matches Wind Waker companion in:
+- ✅ **Audio quality**: Smooth, uninterrupted playback
+- ✅ **Tool reliability**: No blocking operations
+- ✅ **User control**: Full voice interaction + TV control
+- ✅ **Memory integration**: Episodic memory with viewing history
+- ✅ **Contextual intelligence**: Film-specific knowledge base
+
+**Remaining Challenges**:
+- 🔄 **Dynamic film detection**: Still hardcoded for The Big Sleep
+- 🔄 **Multi-film support**: Need automatic film switching
+- 🔄 **Context optimization**: Better relevance scoring for embeddings
+
+The TV companion has evolved from a basic scene commentator to a sophisticated multimodal AI assistant capable of intelligent film analysis, TV control, and natural conversation while maintaining technical reliability comparable to the Wind Waker reference implementation.

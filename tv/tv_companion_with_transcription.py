@@ -57,43 +57,59 @@ CONFIG = {
     # TODO: For demo, hardcoding The Big Sleep info. In production, should dynamically
     # pull film title, year, cast, director from TMDB/Wikipedia for whatever is being watched
     "system_instruction": (
-        """You are a TV companion watching The Big Sleep (1946), the classic film noir starring Humphrey Bogart and Lauren Bacall, directed by Howard Hawks.
+        """You are an intelligent TV companion with deep knowledge of film and television.
 
-You receive scene packages with screenshots and dialogue from the film.
+You can both provide insightful commentary AND control the TV for users.
 
-Your job: Use search_film_context to find relevant information about what you see and hear, then share interesting insights about this specific film with the viewer.
+## TV Control Capabilities:
+- Search for and play any movie or show using search_and_play_content
+- Pause playback with pause_playback
+- Access user's viewing history with search_user_history
+- Toggle watching mode on/off for automatic scene commentary
 
-Search for information about the actors, characters, plot points, production details, or anything else that might enhance understanding of The Big Sleep.
+## Commentary Style:
+When you receive scene packages (dialogue + screenshots), provide insightful commentary that enhances the viewing experience.
 
-Be conversational and informative."""
+Be curious and analytical:
+- Point out interesting cinematography, lighting, and visual composition
+- Comment on acting performances, dialogue delivery, and character dynamics  
+- Identify genre conventions, directorial techniques, and storytelling methods
+- Ask thought-provoking questions about what we're seeing
+- Make connections between scenes and build understanding of the narrative
+- Share relevant context about film history, techniques, or cultural significance
+- Suggest things to watch for in upcoming moments
+
+Strike a balance between being informative and conversational - like watching with a knowledgeable film buff friend who notices details others might miss.
+
+Feel free to suggest movies to watch or help users find content they're interested in. Only comment when you have something genuinely insightful to add. Silence is perfectly fine when scenes speak for themselves."""
     ),
     "tools": [{
         "function_declarations": [
-            {
-                "name": "search_film_context",
-                "description": (
-                    "Search comprehensive film knowledge including cast bios,"
-                    " crew info, plot analysis, themes, and production details."
-                    " Use this when you encounter something interesting that"
-                    " deserves deeper commentary."
-                ),
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": (
-                                "What to search for (e.g., 'Humphrey Bogart"
-                                " career', 'film noir lighting techniques',"
-                                " 'Howard Hawks directing style', 'Raymond"
-                                " Chandler vs William Faulkner writing"
-                                " differences')"
-                            ),
-                        }
-                    },
-                    "required": ["query"],
-                },
-            },
+            # {
+            #     "name": "search_film_context",
+            #     "description": (
+            #         "Search comprehensive film knowledge including cast bios,"
+            #         " crew info, plot analysis, themes, and production details."
+            #         " Use this when you encounter something interesting that"
+            #         " deserves deeper commentary."
+            #     ),
+            #     "parameters": {
+            #         "type": "object",
+            #         "properties": {
+            #             "query": {
+            #                 "type": "string",
+            #                 "description": (
+            #                     "What to search for (e.g., 'Humphrey Bogart"
+            #                     " career', 'film noir lighting techniques',"
+            #                     " 'Howard Hawks directing style', 'Raymond"
+            #                     " Chandler vs William Faulkner writing"
+            #                     " differences')"
+            #                 ),
+            #             }
+            #         },
+            #         "required": ["query"],
+            #     },
+            # },
             {
                 "name": "search_and_play_content",
                 "description": (
@@ -157,16 +173,34 @@ Be conversational and informative."""
                 },
             },
             {
-                "name": "describe_current_scene",
-                "description": (
-                    "Analyze what just happened in the most recent scene"
-                ),
+                "name": "pause_playback",
+                "description": "Pause the currently playing content on TV",
                 "parameters": {
                     "type": "object",
                     "properties": {},
                     "required": [],
                 },
             },
+            # {
+            #     "name": "resume_playback",
+            #     "description": "Resume or play the paused content on TV",
+            #     "parameters": {
+            #         "type": "object",
+            #         "properties": {},
+            #         "required": [],
+            #     },
+            # },
+            # {
+            #     "name": "describe_current_scene",
+            #     "description": (
+            #         "Analyze what just happened in the most recent scene"
+            #     ),
+            #     "parameters": {
+            #         "type": "object",
+            #         "properties": {},
+            #         "required": [],
+            #     },
+            # },
         ]
     }],
 }
@@ -333,7 +367,6 @@ class HDMITVCompanionWithTranscription:
 
     # Watching mode control
     self.watching_mode = False  # Default: don't auto-send scenes
-    self.recent_scenes = []  # Store recent scenes for manual analysis
 
     # Shared video capture for both scene detection and periodic screenshots
     self.shared_cap = None
@@ -471,7 +504,7 @@ class HDMITVCompanionWithTranscription:
     self._start_new_scene(frame_img, frame_num, timestamp_str)
 
   def _finalize_current_scene(self):
-    """Send or store scene package based on watching mode"""
+    """Send or discard scene package based on watching mode"""
     if self.current_scene is None:
       return
 
@@ -486,11 +519,8 @@ class HDMITVCompanionWithTranscription:
       except:
         print(f"⚠️ Failed to queue scene package")
     else:
-      # Store for manual analysis
-      self.recent_scenes.append(scene_package)
-      if len(self.recent_scenes) > 5:  # Keep last 5 scenes
-        self.recent_scenes.pop(0)
-      print(f"📦 Stored scene package (non-watching mode)")
+      # Just discard it - no storage
+      print(f"📦 Discarded scene package (non-watching mode)")
 
   def _start_new_scene(self, frame_img, frame_num, timestamp_str):
     """Start a new scene buffer"""
@@ -672,7 +702,7 @@ class HDMITVCompanionWithTranscription:
       print(f"❌ Error loading embeddings: {e}")
       return []
 
-  def search_film_context(self, query, top_k=3):
+  async def search_film_context(self, query, top_k=3):
     """Search film embeddings using semantic similarity"""
     try:
       print(f"🔍 Searching film context for: '{query}'")
@@ -683,7 +713,8 @@ class HDMITVCompanionWithTranscription:
       print(f"🔍 Using cached {len(self.embeddings_data)} chunks")
 
       # Get query embedding
-      query_response = client.models.embed_content(
+      query_response = await asyncio.to_thread(
+          client.models.embed_content,
           model="gemini-embedding-001",
           contents=query,
           config=types.EmbedContentConfig(task_type="retrieval_query"),
@@ -867,7 +898,7 @@ class HDMITVCompanionWithTranscription:
         await asyncio.sleep(wait_time)  # Use async sleep
 
       print(f"✅ [Background] Search completed for '{title}'")
-      
+
       # Auto-start watching mode after successful search
       await asyncio.sleep(10)  # Wait for content to start loading
       print("👁️ [Background] Auto-starting watching mode...")
@@ -876,7 +907,35 @@ class HDMITVCompanionWithTranscription:
     except Exception as e:
       print(f"❌ [Background] Search error for '{title}': {e}")
 
-  def search_user_history(self, query="", max_recent=10):
+  async def _send_media_key_async(self, keycode: str) -> bool:
+    """Send a media key command to TV asynchronously"""
+    try:
+      # Ensure we have TV connection first
+      if not await asyncio.to_thread(self.ensure_tv_connection):
+        print("❌ Could not connect to Google TV for media control")
+        return False
+
+      # Send the media key command
+      cmd = ["adb", "shell", "input", "keyevent", keycode]
+      result = await asyncio.to_thread(
+          subprocess.run, cmd, capture_output=True, text=True, timeout=5
+      )
+
+      if result.returncode == 0:
+        print(f"✅ Media key {keycode} sent successfully")
+        return True
+      else:
+        print(
+            "⚠️ Media key failed:"
+            f" {result.stderr.strip() if result.stderr else 'Unknown error'}"
+        )
+        return False
+
+    except Exception as e:
+      print(f"❌ Media key error: {e}")
+      return False
+
+  async def search_user_history(self, query="", max_recent=10):
     """Search user's TV viewing history or get recent memories"""
     if not self.memory_client:
       return "Memory system not available"
@@ -884,13 +943,17 @@ class HDMITVCompanionWithTranscription:
     try:
       if query:
         # Use semantic search for specific queries
-        memories = self.memory_client.search(
-            query=query, user_id="tv_companion_user", limit=5
+        memories = await asyncio.to_thread(
+            self.memory_client.search,
+            query=query,
+            user_id="tv_companion_user",
+            limit=5,
         )
         print(f"💭 Found {len(memories) if memories else 0} relevant memories")
       else:
         # Get recent memories when no query
-        memories = self.memory_client.get_all(
+        memories = await asyncio.to_thread(
+            self.memory_client.get_all,
             filters={"user_id": "tv_companion_user"},
             page_size=max_recent,
             version="v2",
@@ -1153,16 +1216,21 @@ class HDMITVCompanionWithTranscription:
       print(f"   Args: {fc.args}")
 
       if fc.name == "search_film_context":
-        query = fc.args.get("query", "")
-        print(f"📚 Searching film context for: {query}")
-        search_results = self.search_film_context(query)
+        # Disable in watching mode - send empty response
+        if self.watching_mode:
+          print(f"🔇 search_film_context disabled in watching mode")
+          result = {}
+        else:
+          query = fc.args.get("query", "")
+          print(f"📚 Searching film context for: {query}")
+          search_results = await self.search_film_context(query)
 
-        # Show what we're actually returning to Gemini
-        print(f"📊 Search results preview (first 200 chars):")
-        print(f"   {search_results[:200]}...")
-        print(f"📊 Total result length: {len(search_results)} characters")
+          # Show what we're actually returning to Gemini
+          print(f"📊 Search results preview (first 200 chars):")
+          print(f"   {search_results[:200]}...")
+          print(f"📊 Total result length: {len(search_results)} characters")
 
-        result = {"query": query, "results": search_results}
+          result = {"query": query, "results": search_results}
 
       elif fc.name == "search_and_play_content":
         title = fc.args.get("title", "")
@@ -1186,7 +1254,7 @@ class HDMITVCompanionWithTranscription:
             "🔍 Searching user history:"
             f" {'recent activity' if not query else query}"
         )
-        history_results = self.search_user_history(query)
+        history_results = await self.search_user_history(query)
         result = {
             "query": query or "recent_activity",
             "results": history_results,
@@ -1212,32 +1280,60 @@ class HDMITVCompanionWithTranscription:
         }
 
       elif fc.name == "describe_current_scene":
-        print("🔍 Analyzing most recent scene...")
-        if self.recent_scenes:
-          # Get the most recent scene and send it to Gemini for analysis
-          latest_scene = self.recent_scenes[-1]
-          print(
-              "📤 Sending most recent scene for analysis:"
-              f" {latest_scene['summary']}"
-          )
-
-          # Queue the scene package for immediate analysis
-          try:
-            self.out_queue.put_nowait(latest_scene)
-            result = {
-                "status": "scene_sent",
-                "message": f"Analyzing {latest_scene['summary']}",
-            }
-          except:
-            result = {
-                "status": "error",
-                "message": "Failed to send scene for analysis",
-            }
+        # Disable in watching mode - send empty response
+        if self.watching_mode:
+          print(f"🔇 describe_current_scene disabled in watching mode")
+          result = {}
         else:
-          result = {
-              "status": "no_scenes",
-              "message": "No recent scenes available to analyze",
-          }
+          print("🔍 Analyzing current active scene...")
+          if self.current_scene is not None:
+            # Create scene package from current active scene
+            scene_package = self.current_scene.create_scene_package()
+            print(
+                "📤 Sending current scene for analysis:"
+                f" {scene_package['summary']}"
+            )
+
+            try:
+              self.out_queue.put_nowait(scene_package)
+              result = {
+                  "status": "scene_sent",
+                  "message": f"Analyzing current {scene_package['summary']}",
+              }
+            except:
+              result = {
+                  "status": "error",
+                  "message": "Failed to send current scene for analysis",
+              }
+          else:
+            result = {
+                "status": "no_current_scene",
+                "message": "No scene currently active",
+            }
+
+      elif fc.name == "pause_playback":
+        print("⏸️ Pausing TV playback...")
+        pause_result = await self._send_media_key_async("KEYCODE_MEDIA_PAUSE")
+        result = {
+            "status": "pause_sent",
+            "message": (
+                "Pause command sent to TV"
+                if pause_result
+                else "Failed to pause TV"
+            ),
+        }
+
+      elif fc.name == "resume_playback":
+        print("▶️ Resuming TV playback...")
+        play_result = await self._send_media_key_async("KEYCODE_MEDIA_PLAY")
+        result = {
+            "status": "play_sent",
+            "message": (
+                "Play command sent to TV"
+                if play_result
+                else "Failed to resume TV"
+            ),
+        }
 
       else:
         result = {"error": f"Unknown function: {fc.name}"}
@@ -1261,9 +1357,7 @@ class HDMITVCompanionWithTranscription:
 
     try:
       # Search for context with a reasonable threshold
-      context = await asyncio.to_thread(
-          self.search_film_context, transcript, top_k=2
-      )
+      context = await self.search_film_context(transcript, top_k=2)
 
       # Only return if we got useful results (basic length check)
       if context and len(context) > 100:
@@ -1277,7 +1371,13 @@ class HDMITVCompanionWithTranscription:
       return None
 
   async def play_audio(self):
-    """Play Gemini's audio responses using pw-cat"""
+    """Play Gemini's audio responses using pw-cat with pre-buffering"""
+    # Wait for initial buffer
+    initial_chunks = []
+    for _ in range(3):  # Buffer 3 chunks before starting
+      chunk = await self.audio_in_queue.get()
+      initial_chunks.append(chunk)
+
     cmd = [
         "pw-cat",
         "--playback",
@@ -1298,6 +1398,12 @@ class HDMITVCompanionWithTranscription:
 
       print("✓ Audio playback started with pw-cat")
 
+      # Play buffered chunks first
+      for chunk in initial_chunks:
+        play_process.stdin.write(chunk)
+        await play_process.stdin.drain()
+
+      # Continue normal playback
       while True:
         bytestream = await self.audio_in_queue.get()
         play_process.stdin.write(bytestream)
@@ -1321,7 +1427,9 @@ class HDMITVCompanionWithTranscription:
       ):
         self.session = session
         self.audio_in_queue = asyncio.Queue()
-        self.out_queue = asyncio.Queue(maxsize=10)
+        self.out_queue = asyncio.Queue(
+            maxsize=20
+        )  # Larger buffer to prevent blocking
 
         # Start all tasks
         send_text_task = tg.create_task(self.send_text())
