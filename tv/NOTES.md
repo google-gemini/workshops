@@ -667,6 +667,325 @@ await session.send_client_content(turns=content, turn_complete=True)
 
 The scene-based architecture now provides Gemini with rich, coherent context enabling intelligent TV commentary that connects visual and audio elements naturally!
 
+## TV Control and Actuation Layer Development 📺
+
+### Chromecast Discovery Integration Success
+**Challenge**: Need programmatic TV control for demos - load content and seek to specific timestamps.
+
+**Discovery Breakthrough**: `pychromecast` works perfectly for device discovery and basic control:
+```bash
+# Discovered Google TV Streamer automatically
+🔍 Starting Chromecast discovery...
+Found: Cave TV
+📺 Discovered 1 device(s):
+  • Cave TV at 192.168.50.221:8009
+    Model: Google TV Streamer, Type: None
+    UUID: 9bcb366d-9e87-31be-ff60-49bd80f60463
+```
+
+**Key Insight**: Chromecast discovery reveals the IP address needed for ADB commands - same physical device, different protocols.
+
+### ADB Command Exploration Journey
+
+#### Initial Complex Approaches (Failed)
+**Problem**: Need to search for and play "The Big Sleep" on Google TV programmatically.
+
+**Attempted Solutions**:
+1. **Android Intent Actions**: 
+   ```bash
+   adb shell am start -a android.intent.action.ASSIST -e query "The Big Sleep 1946"
+   adb shell am start -a android.intent.action.WEB_SEARCH -e query "The Big Sleep 1946 movie"
+   ```
+   **Result**: ❌ Zero effect - no visible response on TV
+
+2. **Direct App Launching**:
+   ```bash
+   # Found Amazon Prime Video activity
+   adb shell dumpsys package com.amazon.amazonvideo.livingroom | grep -A 1 MAIN
+   adb shell am start -n com.amazon.amazonvideo.livingroom/com.amazon.ignition.IgnitionActivity
+   ```
+   **Result**: ✅ Launched Prime Video, but no search capability found
+
+3. **Complex DPAD Navigation**:
+   ```bash
+   # Navigate to search manually
+   adb shell input keyevent KEYCODE_DPAD_UP      # Go to top menu
+   adb shell input keyevent KEYCODE_DPAD_RIGHT   # Navigate to search  
+   adb shell input keyevent KEYCODE_ENTER        # Select search
+   adb shell input text "The+Big+Sleep"
+   ```
+   **Result**: ⚠️ Theoretically possible but complex, app-specific, fragile
+
+#### Universal Search Breakthrough! 🎉
+**DISCOVERY**: Google TV has built-in universal search accessible via `KEYCODE_SEARCH`!
+
+**The Magic Sequence**:
+```bash
+adb shell input keyevent KEYCODE_SEARCH     # Open universal search overlay
+adb shell input text "The%sBig%sSleep"      # Type query (% = space)
+adb shell input keyevent KEYCODE_ENTER      # Search
+adb shell input keyevent KEYCODE_ENTER      # Select first result
+```
+
+**Why This Works**:
+- ✅ **Universal**: Works across all streaming services (Prime, Netflix, Google Play, etc.)
+- ✅ **Simple**: 4 commands vs complex menu navigation sequences
+- ✅ **Reliable**: Google TV's built-in search handles content discovery
+- ✅ **Content-agnostic**: Don't need to know which service has the content
+
+**Test Results**: Successfully launched "The Big Sleep" from Google Play Movies with this approach!
+
+### TV Companion Integration Architecture
+
+#### Auto-Discovery with Fallback
+**Hybrid Approach**: Use Chromecast discovery to find TV IP, then ADB for control:
+
+```python
+def discover_tv_ip(self):
+    """Use Chromecast discovery to find Google TV IP address"""
+    chromecasts, browser = pychromecast.get_listed_chromecasts(discovery_timeout=10)
+    if chromecasts:
+        return chromecasts[0].cast_info.host  # Extract IP for ADB
+    return None
+
+def ensure_tv_connection(self):
+    if not self.tv_ip:
+        self.tv_ip = self.discover_tv_ip() or "192.168.50.221"  # Fallback hardcoded
+    subprocess.run(["adb", "connect", f"{self.tv_ip}:5555"])
+```
+
+**Benefits**:
+- ✅ **Auto-discovery**: Works on any network without configuration
+- ✅ **Fallback robustness**: Hardcoded IP for when discovery fails
+- ✅ **Demo reliability**: Can quickly switch to manual IP for presentations
+
+#### Tool Integration
+**Added `search_and_play_content` tool** for Gemini:
+```python
+{
+    "name": "search_and_play_content",
+    "description": "Search for and start playing a movie or show on the TV using Google TV's universal search",
+    "parameters": {
+        "properties": {
+            "title": {"type": "string", "description": "Movie or show title to search for"}
+        }
+    }
+}
+```
+
+**Usage**: User can say *"Play The Big Sleep"* and Gemini executes the universal search sequence.
+
+### Critical Performance Issue: ADB Blocking
+
+#### The Audio Pipeline Freeze Problem 🚫
+**Symptom**: When Gemini called `search_and_play_content`, entire system froze for ~14 seconds:
+- Google Cloud Speech API timeout (no audio data during freeze)
+- Gemini couldn't speak (audio pipeline blocked)
+- Scene detection paused
+- User interaction impossible
+
+**Root Cause**: Synchronous ADB commands with `time.sleep()` waits:
+```python
+# This blocked the entire event loop for 14 seconds total
+time.sleep(3)  # Wait for search overlay
+time.sleep(3)  # Wait for text input
+time.sleep(5)  # Wait for search results  
+time.sleep(3)  # Wait for selection
+```
+
+#### Fire-and-Forget Solution ✅
+**Architecture Change**: Tool returns immediately, ADB runs in background:
+
+```python
+def search_and_play_content(self, title: str):
+    """Return immediately to keep audio flowing"""
+    asyncio.create_task(self._search_and_play_async(title))
+    return f"🎬 Starting search for '{title}' - this will take a few seconds"
+
+async def _search_and_play_async(self, title: str):
+    """Actually perform ADB commands asynchronously"""
+    for cmd, description, wait_time in commands:
+        result = await asyncio.to_thread(subprocess.run, cmd, ...)
+        await asyncio.sleep(wait_time)  # Use async sleep
+```
+
+**Results**:
+- ✅ **Tool response**: <1ms (instant Gemini acknowledgment)
+- ✅ **Audio continuity**: No pipeline interruption
+- ✅ **Background execution**: ADB commands complete ~14 seconds later
+- ✅ **User experience**: Can continue talking during search
+
+## Voice Interaction Enhancement 🎤
+
+### User Microphone Integration
+**Gap Identified**: TV companion only accepted text input, but Wind Waker voice chat had full voice interaction.
+
+**Solution**: Added user microphone stream identical to Wind Waker implementation:
+```python
+# Added to TV companion
+self.pya = None           # PyAudio instance  
+self.mic_stream = None    # User microphone stream
+
+async def listen_user_audio(self):
+    """Capture audio from user microphone (like Wind Waker voice chat)"""
+    # Identical implementation to waker/voice_chat.py
+    self.mic_stream = await asyncio.to_thread(self.pya.open, ...)
+    while True:
+        data = await asyncio.to_thread(self.mic_stream.read, CHUNK_SIZE)
+        await self.out_queue.put({"data": data, "mime_type": "audio/pcm"})
+```
+
+**Audio Routing Architecture**:
+1. **User microphone** → Gemini Live API (for questions/commands)
+2. **TV audio (HDMI)** → Google Cloud Speech → transcription → scene packages  
+3. **Gemini responses** → speakers (with feedback risk - TBD)
+
+**Capabilities Unlocked**:
+- 🎤 **Voice commands**: *"Play The Big Sleep"*, *"Start watching mode"*
+- 🎤 **Live questions**: *"Who is that actor?"*, *"What's happening in this scene?"*
+- 🎤 **Natural interaction**: Full conversational flow while watching
+
+## Episodic Memory Integration 🧠
+
+### Mem0 Client Addition
+**Goal**: Remember user's viewing history and preferences, similar to Wind Waker's memory system.
+
+**Implementation**: Added mem0 client with TV-specific project ID:
+```python
+self.memory_client = MemoryClient(
+    api_key=os.getenv("MEM0_API_KEY"),
+    org_id="org_lOJM2vCRxHhS7myVb0vvaaY1rUauhqkKbg7Dg7KZ",
+    project_id="proj_I6CXbVIrt0AFlWE0MU3TyKxkkYJam2bHm8nUxgEu",  # TV companion specific
+)
+```
+
+**Memory Storage Strategy**: Focus on content requests rather than all interactions:
+```python
+# Store only when user requests content to watch
+if fc.name == "search_and_play_content":
+    title = fc.args.get("title", "")
+    context = {
+        "type": "content_request",
+        "query": f"User requested to play: {title}",
+        "timestamp": datetime.now(),
+    }
+    asyncio.create_task(self._store_memory_async(context))
+```
+
+**Search Integration**: Added `search_user_history` tool:
+```python
+{
+    "name": "search_user_history", 
+    "description": "Search the user's personal viewing history and past questions"
+}
+```
+
+**Benefits**:
+- 🧠 **Viewing continuity**: *"What was the last movie I watched?"*
+- 🧠 **Preference learning**: Remember favorite genres, actors, directors
+- 🧠 **Context awareness**: *"Continue from where we left off"*
+
+## Watching Mode Implementation 👁️
+
+### The Manual vs Automatic Commentary Problem
+**Challenge**: Should Gemini automatically comment on every scene, or wait for user requests?
+
+**User Request**: Simple toggle that doesn't change existing mechanics - just controls whether scene packages are auto-sent to Gemini.
+
+### Elegant Toggle Solution
+**Architecture**: Keep all scene detection, transcription, and screenshot mechanics unchanged:
+
+```python
+def __init__(self):
+    self.watching_mode = False  # Default: don't auto-send scenes
+    self.recent_scenes = []     # Store recent scenes for manual analysis
+
+def _finalize_current_scene(self):
+    """Send or store scene package based on watching mode"""
+    scene_package = self.current_scene.create_scene_package()
+    
+    if self.watching_mode:
+        # Auto-send to Gemini for commentary
+        self.out_queue.put_nowait(scene_package)
+        print(f"📤 Auto-sent scene package (watching mode)")
+    else:
+        # Store for manual analysis  
+        self.recent_scenes.append(scene_package)
+        if len(self.recent_scenes) > 5:  # Keep last 5 scenes
+            self.recent_scenes.pop(0)
+        print(f"📦 Stored scene package (non-watching mode)")
+```
+
+**Control Tools**:
+```python
+# Voice commands for mode control
+"start_watching_mode"     # Begin auto-commentary
+"stop_watching_mode"      # Return to manual analysis
+"describe_current_scene"  # Analyze most recent stored scene
+```
+
+**Usage Patterns**:
+- **Default (non-watching)**: Scenes stored locally, user asks *"What just happened?"*
+- **Watching mode**: Continuous commentary as scenes change
+- **On-demand**: *"Describe the current scene"* analyzes most recent scene
+
+### Auto-Activation After Content Search
+**Demo Enhancement**: Automatically start watching mode after successful content search:
+
+```python
+async def _search_and_play_async(self, title: str):
+    # ... execute search commands ...
+    print(f"✅ [Background] Search completed for '{title}'")
+    
+    # Auto-start watching mode after content loads
+    await asyncio.sleep(10)  # Wait for content to start playing
+    print("👁️ [Background] Auto-starting watching mode...")
+    self.watching_mode = True
+```
+
+**Demo Flow**:
+1. User: *"Play The Big Sleep"*
+2. System: Executes search in background (14 seconds)
+3. Content starts playing on TV
+4. System: Automatically enables watching mode
+5. Gemini: Begins providing scene-by-scene commentary
+
+**Benefits**:
+- 🎬 **Seamless demo experience**: One command starts everything
+- 🎬 **Smart timing**: Waits for content to load before commentary
+- 🎬 **User control**: Can still disable watching mode if desired
+
+## Technical Integration Challenges Solved
+
+### Audio Pipeline Stability
+**Problem**: ADB blocking caused Google Cloud Speech timeout errors.
+**Solution**: Fire-and-forget async tool calls maintain audio continuity.
+
+### Device Discovery Reliability  
+**Problem**: Chromecast discovery sometimes failed in different network environments.
+**Solution**: Hybrid approach with auto-discovery + hardcoded fallback.
+
+### Memory System Integration
+**Problem**: Mem0 v1.1 deprecation warnings cluttering output.
+**Solution**: Explicit version specification in all mem0 API calls.
+
+### Multi-Stream Audio Management
+**Challenge**: Managing user microphone + TV audio + Gemini responses without feedback.
+**Current**: User mic + TV transcription working; Gemini audio routing TBD.
+
+## Architecture Evolution Summary
+
+**Pre-Control Era**: TV companion could watch and analyze, but couldn't interact with content.
+
+**Post-Control Era**: Complete TV companion with:
+- ✅ **Content discovery**: Universal search across all streaming services
+- ✅ **Voice interaction**: Full conversational interface with users  
+- ✅ **Memory system**: Remembers viewing history and preferences
+- ✅ **Adaptive commentary**: Toggle between manual and automatic analysis
+- ✅ **Demo readiness**: One-command content loading with auto-commentary
+
+The TV control integration transforms the companion from a passive observer into an active participant in the viewing experience, capable of finding content, remembering preferences, and providing contextual commentary on demand.
+
 ## Film Context Knowledge Base Development 🎭
 
 ### The Generic Commentary Problem

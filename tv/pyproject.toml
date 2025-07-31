@@ -18,6 +18,8 @@ scenedetect = "*"
 themoviedb = "^1.0.2"
 aiohttp = "^3.12.15"
 pdfplumber = "^0.11.7"
+pychromecast = "^14.0.7"
+mem0ai = "^0.1.115"
 
 [build-system]
 requires = ["poetry-core"]

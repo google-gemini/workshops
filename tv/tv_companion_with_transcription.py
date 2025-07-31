@@ -8,6 +8,7 @@ import base64
 from datetime import datetime
 import io
 import json
+import os
 import queue
 import subprocess
 import sys
@@ -18,8 +19,11 @@ import cv2
 from google import genai
 from google.cloud import speech
 from google.genai import types
+from mem0 import MemoryClient
 import numpy as np
 from PIL import Image
+import pyaudio
+import pychromecast
 from scenedetect import AdaptiveDetector, ContentDetector, HistogramDetector, SceneManager
 from scenedetect.backends import VideoCaptureAdapter
 
@@ -30,8 +34,11 @@ if sys.version_info < (3, 11, 0):
   asyncio.ExceptionGroup = exceptiongroup.ExceptionGroup
 
 # Audio settings
+FORMAT = pyaudio.paInt16
+CHANNELS = 1
 SEND_SAMPLE_RATE = 16000
 RECEIVE_SAMPLE_RATE = 24000
+CHUNK_SIZE = 1024
 STREAMING_LIMIT = 240000  # 4 minutes (Google Cloud Speech limit)
 
 MODEL = "gemini-2.5-flash-preview-native-audio-dialog"
@@ -61,30 +68,106 @@ Search for information about the actors, characters, plot points, production det
 Be conversational and informative."""
     ),
     "tools": [{
-        "function_declarations": [{
-            "name": "search_film_context",
-            "description": (
-                "Search comprehensive film knowledge including cast bios, crew"
-                " info, plot analysis, themes, and production details. Use this"
-                " when you encounter something interesting that deserves deeper"
-                " commentary."
-            ),
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": (
-                            "What to search for (e.g., 'Humphrey Bogart"
-                            " career', 'film noir lighting techniques', 'Howard"
-                            " Hawks directing style', 'Raymond Chandler vs"
-                            " William Faulkner writing differences')"
-                        ),
-                    }
+        "function_declarations": [
+            {
+                "name": "search_film_context",
+                "description": (
+                    "Search comprehensive film knowledge including cast bios,"
+                    " crew info, plot analysis, themes, and production details."
+                    " Use this when you encounter something interesting that"
+                    " deserves deeper commentary."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": (
+                                "What to search for (e.g., 'Humphrey Bogart"
+                                " career', 'film noir lighting techniques',"
+                                " 'Howard Hawks directing style', 'Raymond"
+                                " Chandler vs William Faulkner writing"
+                                " differences')"
+                            ),
+                        }
+                    },
+                    "required": ["query"],
                 },
-                "required": ["query"],
             },
-        }]
+            {
+                "name": "search_and_play_content",
+                "description": (
+                    "Search for and start playing a movie or show on the TV"
+                    " using Google TV's universal search"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "title": {
+                            "type": "string",
+                            "description": "Movie or show title to search for",
+                        }
+                    },
+                    "required": ["title"],
+                },
+            },
+            {
+                "name": "search_user_history",
+                "description": (
+                    "Search the user's personal viewing history and past"
+                    " questions. Use this to recall what the user has"
+                    " previously asked about, movies they've watched, or topics"
+                    " they've discussed."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": (
+                                "Optional: What to search for in user's history"
+                                " (e.g., 'Humphrey Bogart questions', 'film"
+                                " noir discussions', 'previous movies"
+                                " watched'). Leave blank to get recent"
+                                " activity."
+                            ),
+                        }
+                    },
+                    "required": [],  # No required params - query is optional
+                },
+            },
+            {
+                "name": "start_watching_mode",
+                "description": (
+                    "Start automatically commenting on scenes as they happen"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": [],
+                },
+            },
+            {
+                "name": "stop_watching_mode",
+                "description": "Stop automatic scene commentary",
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": [],
+                },
+            },
+            {
+                "name": "describe_current_scene",
+                "description": (
+                    "Analyze what just happened in the most recent scene"
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {},
+                    "required": [],
+                },
+            },
+        ]
     }],
 }
 
@@ -240,11 +323,98 @@ class HDMITVCompanionWithTranscription:
     self.video_cap = None
     self.speech_client = speech.SpeechClient()
 
+    # User microphone input (like Wind Waker voice chat)
+    self.pya = None
+    self.mic_stream = None
+
+    # Episodic memory
+    self.memory_client = self._init_memory_client()
+    self.conversation_context = []  # Track conversation flow
+
+    # Watching mode control
+    self.watching_mode = False  # Default: don't auto-send scenes
+    self.recent_scenes = []  # Store recent scenes for manual analysis
+
     # Shared video capture for both scene detection and periodic screenshots
     self.shared_cap = None
 
     # Load film context embeddings once at startup
     self.embeddings_data = self._load_embeddings()
+
+    # TV connection management
+    self.tv_ip = None  # Will be auto-discovered on first use
+
+    # Speech recognition config
+    self.speech_config = speech.RecognitionConfig(
+        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=SEND_SAMPLE_RATE,
+        language_code="en-US",
+        max_alternatives=1,
+    )
+
+    self.streaming_config = speech.StreamingRecognitionConfig(
+        config=self.speech_config, interim_results=True
+    )
+
+    # Scene detection setup
+    self.scene_manager = SceneManager()
+    self.scene_manager.add_detector(HistogramDetector())
+    self.scene_detection_active = False
+    self.video_fps = None  # Store frame rate for timestamp calculations
+
+    # Scene buffering
+    self.current_scene = None
+    self.scene_counter = 0
+    self.max_scene_duration = 60  # 1 minutes max per scene
+    self.periodic_screenshot_interval = (
+        30  # Take screenshot every 30 seconds within scene
+    )
+    self._last_scene_frame = (
+        None  # Store current frame for periodic capture sharing
+    )
+
+  def _init_memory_client(self):
+    """Initialize mem0 client for episodic memory"""
+    api_key = os.getenv("MEM0_API_KEY")
+    if not api_key:
+      print("⚠️  MEM0_API_KEY not set, episodic memory disabled")
+      return None
+
+    try:
+      client = MemoryClient(
+          api_key=api_key,
+          org_id="org_lOJM2vCRxHhS7myVb0vvaaY1rUauhqkKbg7Dg7KZ",
+          project_id="proj_I6CXbVIrt0AFlWE0MU3TyKxkkYJam2bHm8nUxgEu",
+      )
+      print("✓ Episodic memory initialized")
+      return client
+    except Exception as e:
+      print(f"⚠️  Failed to initialize memory: {e}")
+      return None
+
+  async def _store_memory_async(self, context):
+    """Store memory asynchronously to avoid blocking audio"""
+    try:
+      await asyncio.to_thread(
+          self.memory_client.add,
+          messages=[{"role": "user", "content": context["query"]}],
+          user_id="tv_companion_user",
+          metadata={
+              "source": "tv_companion",
+              "timestamp": str(context["timestamp"]),
+          },
+      )
+      print(f"💾 Stored user query: {context['query'][:50]}...")
+    except Exception as e:
+      print(f"⚠️  Failed to store memory: {e}")
+
+  def find_pulse_device(self):
+    """Find a PulseAudio device that works with PipeWire"""
+    for i in range(self.pya.get_device_count()):
+      info = self.pya.get_device_info_by_index(i)
+      if "pulse" in info["name"].lower() and info["maxInputChannels"] > 0:
+        return info
+    return self.pya.get_default_input_device_info()
 
     # Speech recognition config
     self.speech_config = speech.RecognitionConfig(
@@ -301,18 +471,26 @@ class HDMITVCompanionWithTranscription:
     self._start_new_scene(frame_img, frame_num, timestamp_str)
 
   def _finalize_current_scene(self):
-    """Send the current scene package to Gemini"""
+    """Send or store scene package based on watching mode"""
     if self.current_scene is None:
       return
 
     scene_package = self.current_scene.create_scene_package()
     print(f"📦 Finalizing {scene_package['summary']}")
 
-    try:
-      self.out_queue.put_nowait(scene_package)
-      print(f"✓ Scene package queued for Gemini")
-    except:
-      print(f"⚠️ Failed to queue scene package")
+    if self.watching_mode:
+      # Auto-send to Gemini
+      try:
+        self.out_queue.put_nowait(scene_package)
+        print(f"📤 Auto-sent scene package (watching mode)")
+      except:
+        print(f"⚠️ Failed to queue scene package")
+    else:
+      # Store for manual analysis
+      self.recent_scenes.append(scene_package)
+      if len(self.recent_scenes) > 5:  # Keep last 5 scenes
+        self.recent_scenes.pop(0)
+      print(f"📦 Stored scene package (non-watching mode)")
 
   def _start_new_scene(self, frame_img, frame_num, timestamp_str):
     """Start a new scene buffer"""
@@ -521,28 +699,42 @@ class HDMITVCompanionWithTranscription:
       # Get top results
       similarities.sort(reverse=True)
       results = []
-      
+
       print(f"🔍 Top {min(top_k, len(similarities))} matches:")
       for i in range(min(top_k, len(similarities))):
         score, text, chunk_id = similarities[i]
-        
+
         # Try to identify what section this chunk comes from
         section_type = "Unknown"
-        if "=== SCREENPLAY ===" in text or any(keyword in text.upper() for keyword in ["FADE IN", "INT.", "EXT.", "CLOSE SHOT", "MARLOWE"]):
+        if "=== SCREENPLAY ===" in text or any(
+            keyword in text.upper()
+            for keyword in ["FADE IN", "INT.", "EXT.", "CLOSE SHOT", "MARLOWE"]
+        ):
           section_type = "Screenplay"
-        elif "=== CAST BIOGRAPHIES ===" in text or "was an American" in text or "born" in text.lower():
+        elif (
+            "=== CAST BIOGRAPHIES ===" in text
+            or "was an American" in text
+            or "born" in text.lower()
+        ):
           section_type = "Cast Bio"
-        elif "=== CREW BIOGRAPHIES ===" in text or "director" in text.lower() or "cinematographer" in text.lower():
+        elif (
+            "=== CREW BIOGRAPHIES ===" in text
+            or "director" in text.lower()
+            or "cinematographer" in text.lower()
+        ):
           section_type = "Crew Bio"
         elif "=== FILM ANALYSIS ===" in text or "film" in text.lower():
           section_type = "Film Analysis"
         elif "=== FILM OVERVIEW ===" in text or "TMDB" in text:
           section_type = "TMDB Data"
-        
-        print(f"🔍 Match {i+1}: chunk {chunk_id}, score {score:.3f} ({section_type})")
+
+        print(
+            f"🔍 Match {i+1}: chunk {chunk_id}, score"
+            f" {score:.3f} ({section_type})"
+        )
         print(f"    Preview: {text[:150].replace(chr(10), ' ')}...")
         print()
-        
+
         results.append(text)
 
       return "\n\n---\n\n".join(results)
@@ -551,6 +743,217 @@ class HDMITVCompanionWithTranscription:
       print(f"🔍 Film context search error: {e}")
       traceback.print_exc()
       return f"Search failed: {e}"
+
+  def discover_tv_ip(self):
+    """Use Chromecast discovery to find Google TV IP address"""
+    try:
+      print("🔍 Auto-discovering Google TV IP address...")
+
+      # Use Chromecast discovery to find devices
+      chromecasts, browser = pychromecast.get_listed_chromecasts(
+          discovery_timeout=10
+      )
+
+      if chromecasts:
+        cast = chromecasts[0]
+        cast.wait()
+        ip_address = cast.cast_info.host
+        print(
+            f"📺 Found Google TV '{cast.cast_info.friendly_name}' at:"
+            f" {ip_address}"
+        )
+
+        # Clean up discovery
+        pychromecast.discovery.stop_discovery(browser)
+        return ip_address
+      else:
+        print("❌ No Chromecast/Google TV devices found on network")
+        return None
+
+    except Exception as e:
+      print(f"❌ TV discovery failed: {e}")
+      return None
+
+  def ensure_tv_connection(self):
+    """Ensure we have ADB connection to TV"""
+    # Use known IP address directly
+    if not self.tv_ip:
+      self.tv_ip = "192.168.50.221"  # Hardcoded known IP
+      print(f"📺 Using known Google TV IP: {self.tv_ip}")
+
+    try:
+      # Connect ADB using known IP
+      print(f"🔗 Connecting ADB to {self.tv_ip}...")
+      result = subprocess.run(
+          ["adb", "connect", f"{self.tv_ip}:5555"],
+          capture_output=True,
+          text=True,
+          timeout=10,
+      )
+
+      if (
+          "connected" in result.stdout.lower()
+          or "already connected" in result.stdout.lower()
+      ):
+        print(f"✅ ADB connected to {self.tv_ip}")
+        return True
+      else:
+        print(f"⚠️ ADB connection result: {result.stdout.strip()}")
+        return False
+
+    except Exception as e:
+      print(f"❌ ADB connection failed: {e}")
+      return False
+
+  def search_and_play_content(self, title: str):
+    """Use Google TV universal search to find and start playing content (fire-and-forget)"""
+    print(f"🎬 Starting search for: '{title}' (async)")
+
+    # Fire-and-forget: start the search in background
+    asyncio.create_task(self._search_and_play_async(title))
+
+    # Return immediately to keep audio flowing
+    return f"🎬 Starting search for '{title}' - this will take a few seconds"
+
+  async def _search_and_play_async(self, title: str):
+    """Actually perform the ADB search commands asynchronously"""
+    try:
+      print(f"🎬 [Background] Searching for: '{title}'")
+
+      # Ensure we have TV connection first
+      if not await asyncio.to_thread(self.ensure_tv_connection):
+        print("❌ [Background] Could not connect to Google TV")
+        return
+
+      # Format title for ADB (replace spaces with %s)
+      title_formatted = title.replace(" ", "%s")
+
+      # Universal search sequence with proper waits
+      commands = [
+          (
+              ["adb", "shell", "input", "keyevent", "KEYCODE_SEARCH"],
+              "Open universal search",
+              3,
+          ),
+          (
+              ["adb", "shell", "input", "text", title_formatted],
+              "Type search query",
+              3,
+          ),
+          (
+              ["adb", "shell", "input", "keyevent", "KEYCODE_ENTER"],
+              "Submit search",
+              5,
+          ),
+          (
+              ["adb", "shell", "input", "keyevent", "KEYCODE_ENTER"],
+              "Select first result",
+              3,
+          ),
+      ]
+
+      for cmd, description, wait_time in commands:
+        print(f"🔧 [Background] {description}...")
+        result = await asyncio.to_thread(
+            subprocess.run, cmd, capture_output=True, text=True, timeout=10
+        )
+
+        if result.returncode != 0:
+          print(
+              "⚠️ [Background] Command failed:"
+              f" {result.stderr.strip() if result.stderr else 'Unknown error'}"
+          )
+
+        await asyncio.sleep(wait_time)  # Use async sleep
+
+      print(f"✅ [Background] Search completed for '{title}'")
+      
+      # Auto-start watching mode after successful search
+      await asyncio.sleep(10)  # Wait for content to start loading
+      print("👁️ [Background] Auto-starting watching mode...")
+      self.watching_mode = True
+
+    except Exception as e:
+      print(f"❌ [Background] Search error for '{title}': {e}")
+
+  def search_user_history(self, query="", max_recent=10):
+    """Search user's TV viewing history or get recent memories"""
+    if not self.memory_client:
+      return "Memory system not available"
+
+    try:
+      if query:
+        # Use semantic search for specific queries
+        memories = self.memory_client.search(
+            query=query, user_id="tv_companion_user", limit=5
+        )
+        print(f"💭 Found {len(memories) if memories else 0} relevant memories")
+      else:
+        # Get recent memories when no query
+        memories = self.memory_client.get_all(
+            filters={"user_id": "tv_companion_user"},
+            page_size=max_recent,
+            version="v2",
+        )
+        print(
+            f"💭 Retrieved {len(memories) if memories else 0} recent memories"
+        )
+
+      # Format memories chronologically
+      if memories and isinstance(memories, list):
+        history_items = []
+        for m in memories:
+          if isinstance(m, dict) and m.get("memory"):
+            timestamp = "unknown"
+            if m.get("metadata"):
+              timestamp = m["metadata"].get("timestamp", "unknown")
+            elif m.get("created_at"):
+              timestamp = m["created_at"]
+
+            history_items.append(f"[{timestamp}] {m['memory']}")
+
+        # Sort by timestamp if we have them
+        if history_items:
+          history_items.sort()  # Assuming ISO format timestamps
+          return "\n".join(history_items)
+
+      return "No user history found"
+
+    except Exception as e:
+      print(f"⚠️  User history search failed: {e}")
+      return f"Failed to retrieve history: {str(e)}"
+
+  async def listen_user_audio(self):
+    """Capture audio from user microphone (like Wind Waker voice chat)"""
+    try:
+      self.pya = pyaudio.PyAudio()
+      mic_info = self.find_pulse_device()
+      print(f"🎤 Using user microphone: {mic_info['name']}")
+
+      self.mic_stream = await asyncio.to_thread(
+          self.pya.open,
+          format=FORMAT,
+          channels=CHANNELS,
+          rate=SEND_SAMPLE_RATE,
+          input=True,
+          input_device_index=mic_info["index"],
+          frames_per_buffer=CHUNK_SIZE,
+      )
+
+      if __debug__:
+        kwargs = {"exception_on_overflow": False}
+      else:
+        kwargs = {}
+
+      while True:
+        data = await asyncio.to_thread(
+            self.mic_stream.read, CHUNK_SIZE, **kwargs
+        )
+        await self.out_queue.put({"data": data, "mime_type": "audio/pcm"})
+
+    except Exception as e:
+      print(f"❌ User audio capture error: {e}")
+      raise
 
   async def transcribe_tv_audio(self):
     """Continuously transcribe TV audio and send to Gemini"""
@@ -621,12 +1024,18 @@ class HDMITVCompanionWithTranscription:
           )
 
   async def send_realtime(self):
-    """Send scene packages to Gemini Live API using client_content"""
+    """Send scene packages and user audio to Gemini Live API"""
     packages_sent = 0
 
     while True:
       msg = await self.out_queue.get()
 
+      # Handle user microphone audio
+      if isinstance(msg, dict) and msg.get("mime_type") == "audio/pcm":
+        await self.session.send_realtime_input(audio=msg)
+        continue
+
+      # Handle scene packages
       if isinstance(msg, dict) and msg.get("type") == "scene_package":
         packages_sent += 1
         scene_num = msg.get("scene_number", "?")
@@ -703,6 +1112,29 @@ class HDMITVCompanionWithTranscription:
           print(f"🎬 TV Companion: {text}")
           continue
 
+        # Server content (for extracting user queries for memory storage)
+        if response.server_content:
+          model_turn = response.server_content.model_turn
+          if model_turn and model_turn.parts:
+            for part in model_turn.parts:
+              # Extract user query for memory storage
+              if part.executable_code and "query=" in part.executable_code.code:
+                code = part.executable_code.code
+                query_start = code.find('query="') + 7
+                query_end = code.find('"', query_start)
+                if query_end > query_start:
+                  user_query = code[query_start:query_end]
+                  context = {
+                      "type": "user_intent",
+                      "query": user_query,
+                      "timestamp": datetime.now(),
+                  }
+                  self.conversation_context.append(context)
+
+                  # Store memory asynchronously
+                  if self.memory_client:
+                    asyncio.create_task(self._store_memory_async(context))
+
         # Tool calls
         if response.tool_call:
           await self.handle_tool_call(response.tool_call)
@@ -731,6 +1163,82 @@ class HDMITVCompanionWithTranscription:
         print(f"📊 Total result length: {len(search_results)} characters")
 
         result = {"query": query, "results": search_results}
+
+      elif fc.name == "search_and_play_content":
+        title = fc.args.get("title", "")
+        print(f"🎬 TV control: searching and playing '{title}'")
+        search_result = self.search_and_play_content(title)
+
+        # Store what user requested to watch
+        if self.memory_client and title.strip():
+          context = {
+              "type": "content_request",
+              "query": f"User requested to play: {title}",
+              "timestamp": datetime.now(),
+          }
+          asyncio.create_task(self._store_memory_async(context))
+
+        result = {"title": title, "result": search_result}
+
+      elif fc.name == "search_user_history":
+        query = fc.args.get("query", "").strip()
+        print(
+            "🔍 Searching user history:"
+            f" {'recent activity' if not query else query}"
+        )
+        history_results = self.search_user_history(query)
+        result = {
+            "query": query or "recent_activity",
+            "results": history_results,
+        }
+
+      elif fc.name == "start_watching_mode":
+        print("👁️ Starting watching mode - will auto-comment on scenes")
+        self.watching_mode = True
+        result = {
+            "status": "watching_mode_started",
+            "message": "Now automatically commenting on scenes",
+        }
+
+      elif fc.name == "stop_watching_mode":
+        print(
+            "👁️ Stopping watching mode - scenes will be stored for manual"
+            " analysis"
+        )
+        self.watching_mode = False
+        result = {
+            "status": "watching_mode_stopped",
+            "message": "Automatic scene commentary disabled",
+        }
+
+      elif fc.name == "describe_current_scene":
+        print("🔍 Analyzing most recent scene...")
+        if self.recent_scenes:
+          # Get the most recent scene and send it to Gemini for analysis
+          latest_scene = self.recent_scenes[-1]
+          print(
+              "📤 Sending most recent scene for analysis:"
+              f" {latest_scene['summary']}"
+          )
+
+          # Queue the scene package for immediate analysis
+          try:
+            self.out_queue.put_nowait(latest_scene)
+            result = {
+                "status": "scene_sent",
+                "message": f"Analyzing {latest_scene['summary']}",
+            }
+          except:
+            result = {
+                "status": "error",
+                "message": "Failed to send scene for analysis",
+            }
+        else:
+          result = {
+              "status": "no_scenes",
+              "message": "No recent scenes available to analyze",
+          }
+
       else:
         result = {"error": f"Unknown function: {fc.name}"}
 
@@ -818,6 +1326,7 @@ class HDMITVCompanionWithTranscription:
         # Start all tasks
         send_text_task = tg.create_task(self.send_text())
         tg.create_task(self.send_realtime())
+        tg.create_task(self.listen_user_audio())  # User microphone input
         tg.create_task(self.transcribe_tv_audio())
         tg.create_task(self.run_scene_detection())  # PySceneDetect
         tg.create_task(self.monitor_scene_duration())  # Scene duration monitor
@@ -834,6 +1343,12 @@ class HDMITVCompanionWithTranscription:
       print("👋 TV Companion stopped")
     except Exception as e:
       traceback.print_exception(e)
+    finally:
+      # Clean up audio resources
+      if self.mic_stream:
+        self.mic_stream.close()
+      if self.pya:
+        self.pya.terminate()
 
 
 if __name__ == "__main__":
