@@ -1,1 +1,3 @@
 utils/params.py
+.aider*
+.env

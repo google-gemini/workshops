@@ -1,0 +1,25 @@
+digraph ReasoningLoop {
+	graph [bgcolor=transparent,
+		layout=fdp,
+		sep=1
+	];
+	node [shape=box,
+		style="rounded,filled"
+	];
+	edge [fontsize=10];
+	subgraph cluster_loop {
+		graph [bgcolor="#f0f0f0",
+			label="The Reasoning Loop",
+			labeljust=l,
+			style=rounded
+		];
+		Game	[label="Game Screen", fillcolor="#a6c8ff"];
+		LLM	[label="Multimodal LLM", fillcolor="#d4bbff"];
+		Game -> LLM	[label=" perceives "];
+		Tool	[label="Tool Use", fillcolor="#ffb082"];
+		LLM -> Tool	[label=" reasons & selects "];
+		Controller	[label="Virtual Controller", fillcolor="#6fdc8c"];
+		Tool -> Controller	[label=" translates & executes "];
+		Controller -> Game	[label=" acts on "];
+	}
+}

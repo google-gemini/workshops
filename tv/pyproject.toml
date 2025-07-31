@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "llm-tv-companion"
+version = "0.1.0"
+description = "LLM-powered TV companion for movies and shows"
+authors = ["Your Name"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+pipewire_python = "*"
+pyaudio = "*"
+opencv-python = "*"
+pillow = "*"
+google-genai = "*"
+google-cloud-speech = "*"
+scenedetect = "*"
+themoviedb = "^1.0.2"
+aiohttp = "^3.12.15"
+pdfplumber = "^0.11.7"
+pychromecast = "^14.0.7"
+mem0ai = "^0.1.115"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
