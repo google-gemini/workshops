@@ -8,6 +8,7 @@ from typing import Optional
 from parse_pgn import parse_pgn_to_positions
 from position_features import extract_position_features
 from stockfish_pool import create_deep_analysis_pool
+from chess_description_generator import ChessDescriptionGenerator, enhance_single_position_with_retry
 
 
 def analyze_single_position_with_pool(pos_with_idx, analysis_pool):
@@ -210,18 +211,73 @@ async def build_chess_database(
     print(f"   ❌ Error saving intermediate file: {e}")
     return
 
-  # Step 4: Generate enhanced quick descriptions using Stockfish data
-  print(f"\n📝 Step 4: Generating engine-enhanced descriptions")
+  # Step 4: Generate LLM-enhanced descriptions using Gemini 2.0 Flash-Lite
+  print(f"\n📝 Step 4: Generating LLM-enhanced descriptions")
+  print(f"   Using Gemini 2.0 Flash-Lite with 10 concurrent workers...")
 
-  for i, position in enumerate(positions):
-    # Generate a simple template-based description for now
-    position["quick_description"] = generate_quick_description(position)
+  # Initialize generator and chain
+  generator = ChessDescriptionGenerator()
+  chain = generator.create_description_chain()
+  
+  # Prepare positions with indices for async processing
+  positions_with_idx = [(pos, i) for i, pos in enumerate(positions)]
+  
+  # Process with async concurrency (similar to chess_description_generator.py)
+  enhanced_count = 0
+  errors = 0
+  completed = 0
+  
+  # Create semaphore for rate limiting
+  semaphore = asyncio.Semaphore(10)
+  
+  # Create all tasks
+  tasks = [
+      enhance_single_position_with_retry(pos_data, generator, chain, semaphore)
+      for pos_data in positions_with_idx
+  ]
+  
+  # Process tasks with progress tracking
+  for task in asyncio.as_completed(tasks):
+      try:
+          idx, enhanced_desc, error = await task
+          
+          if error:
+              print(f"   ❌ Error enhancing position {idx+1}: {error}")
+              errors += 1
+              # Use fallback template description
+              positions[idx]["enhanced_description"] = {
+                  "description": generate_quick_description(positions[idx]),
+                  "strategic_themes": [],
+                  "tactical_elements": [],
+                  "key_squares": [],
+                  "generated_by": "template-fallback"
+              }
+          else:
+              positions[idx]["enhanced_description"] = enhanced_desc
+              enhanced_count += 1
+              
+              # Show samples every 10th completion
+              if completed % 10 == 0:
+                  print(f"\n   📝 Sample (position {idx+1}):")
+                  print(f"      Game: {positions[idx]['game_context']['white_player']} vs {positions[idx]['game_context']['black_player']}")
+                  print(f"      Move: {positions[idx]['move_number']} {positions[idx]['last_move']}")
+                  print(f"      Description: {enhanced_desc['description']}")
+                  print(f"      Themes: {', '.join(enhanced_desc['strategic_themes'])}")
+                  if enhanced_desc['tactical_elements']:
+                      print(f"      Tactical: {', '.join(enhanced_desc['tactical_elements'])}")
+          
+          completed += 1
+          if completed % 25 == 0:
+              print(f"   Progress: {completed}/{len(positions)} positions processed ({enhanced_count} enhanced, {errors} errors)")
+              
+      except Exception as e:
+          print(f"   ❌ Task execution error: {e}")
+          errors += 1
 
-    if i < 10:  # Show first 10 as examples
-      print(f"   Sample {i+1}: {position['quick_description'][:80]}...")
+  print(f"   ✓ LLM enhancement completed: {enhanced_count} enhanced, {errors} errors")
 
   # Step 5: Analysis summary and LLM cost estimation
-  print(f"\n💰 Step 5: Analysis Summary")
+  print(f"\n💰 Step 5: Analysis and Cost Summary")
 
   # Count positions by evaluation range
   eval_ranges = {
@@ -267,15 +323,22 @@ async def build_chess_database(
   print(f"   - Checkmate positions: {eval_ranges['mate']}")
   print(f"   - Tactical positions (|eval| > 1.0): {tactical_positions}")
 
-  estimated_cost = len(positions) * 0.015  # ~$0.015 per description
-  print(f"\n   LLM Enhancement Options:")
-  print(f"   - Current: Template descriptions + Stockfish data")
-  print(f"   - Upgrade: Rich LLM descriptions using engine analysis")
-  print(
-      f"   - Estimated cost: ${estimated_cost:.2f} for"
-      f" {len(positions)} positions"
-  )
-  print(f"   - Benefit: Engine facts + human-readable storytelling")
+  # Calculate actual LLM costs
+  avg_input_tokens = 500  # Estimated
+  avg_output_tokens = 250  # Estimated  
+  total_input_tokens = enhanced_count * avg_input_tokens
+  total_output_tokens = enhanced_count * avg_output_tokens
+  
+  input_cost = (total_input_tokens / 1_000_000) * 0.075  # Gemini 2.0 Flash-Lite pricing
+  output_cost = (total_output_tokens / 1_000_000) * 0.30
+  total_llm_cost = input_cost + output_cost
+
+  print(f"\n   LLM Enhancement Results:")
+  print(f"   - Enhanced positions: {enhanced_count}/{len(positions)}")
+  print(f"   - Template fallbacks: {errors}")
+  print(f"   - Estimated cost: ${total_llm_cost:.2f}")
+  print(f"   - Input tokens: {total_input_tokens:,} (${input_cost:.2f})")
+  print(f"   - Output tokens: {total_output_tokens:,} (${output_cost:.2f})")
 
   # Step 6: Save final database
   print(f"\n💾 Step 6: Saving final database")
@@ -458,6 +521,7 @@ def main():
   print(f"  Max positions: {max_positions}")
   print(f"  Output file: {output_file}")
   print(f"  Resume from checkpoints: {resume}")
+  print(f"  LLM enhancement: Gemini 2.0 Flash-Lite (10 concurrent)")
 
   # Run the database builder
   asyncio.run(
