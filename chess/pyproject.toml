@@ -14,6 +14,8 @@ langchain = "*"
 langchain-google-genai = "*"
 langchain-core = "*"
 google-generativeai = "*"
+numpy = "*"
+google-genai = "*"
 
 [build-system]
 requires = ["poetry-core"]
