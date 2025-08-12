@@ -1871,6 +1871,155 @@ search_query = await lightweight_llm_call(query_prompt)
 
 The live chess companion represents the culmination of the chess analysis pipeline, bringing together the rich position database, sophisticated analysis tools, and proven multi-modal architecture from the TV companion to create an intelligent chess viewing experience that rivals human expert commentary.
 
+## Live Chess Companion Implementation: Next Steps (January 2025)
+
+### Vision-Based Move Detection Pipeline
+
+Following the successful breakthrough in chess vision recognition, we can now implement the complete live chess companion using the proven TV companion architecture with chess-specific adaptations.
+
+### Core Architecture: TV Companion → Chess Companion
+
+**Direct Pattern Mapping**:
+- **Scene Detection** → **Move Detection** (board position changes via consensus vision)
+- **Audio Transcription** → **Commentary Transcription + User Voice** (dual audio streams)
+- **Film Knowledge Base** → **Chess Vector Database** (5,000+ enhanced position embeddings)
+- **Multi-modal Analysis** → **Position Analysis** (python-chess + Stockfish + historical context)
+
+### Implementation Strategy
+
+**Default Operating Mode: "Analyzing Mode"**
+- System continuously monitors video frames for board position changes
+- Waits for legal moves to trigger analysis pipeline
+- No automatic game search/control initially - focus on analysis quality
+- User can queue up chess games manually for watching
+
+**Move-Triggered Analysis Pipeline**:
+```python
+# Replace TV's scene package with chess move package
+Move Detected → Position Analysis → Vector Search → Commentary Generation
+
+class LiveChessCompanion(HDMITVCompanionWithTranscription):
+    async def detect_move_changes(self):
+        """Replace scene detection with move detection"""
+        current_fen = None
+        
+        while True:
+            # Extract board position using consensus vision
+            frame = await self.get_latest_frame()
+            new_fen = await self.extract_position_consensus(frame)
+            
+            if new_fen != current_fen and self.is_legal_move(current_fen, new_fen):
+                await self.handle_new_move(current_fen, new_fen)
+                current_fen = new_fen
+            
+            await asyncio.sleep(1)  # Check every second
+
+    async def handle_new_move(self, old_fen, new_fen):
+        """Replace scene package creation with move analysis"""
+        
+        # 1. Extract deterministic features (reuse build_database.py)
+        features = extract_position_features(new_fen)
+        
+        # 2. Get Stockfish analysis (reuse engine pool)
+        engine_analysis = await self.analyze_with_stockfish(new_fen)
+        
+        # 3. Generate qualitative description (reuse LLM pipeline)
+        description = await self.generate_position_description(features, engine_analysis)
+        
+        # 4. Search vector database for similar positions
+        similar_games = await self.vector_search.search(
+            self.create_position_query(description, features)
+        )
+        
+        # 5. Bundle everything for Gemini Live
+        move_package = {
+            "type": "move_analysis",
+            "position": new_fen,
+            "move_played": self.extract_last_move(old_fen, new_fen),
+            "features": features,
+            "engine_analysis": engine_analysis,
+            "position_description": description,
+            "similar_games": similar_games,
+            "live_commentary": self.get_recent_commentary()  # Last 30s
+        }
+        
+        await self.send_move_package(move_package)
+```
+
+### Commentary Buffer Integration
+
+**Enhanced Commentary Strategy**:
+```python
+class CommentaryBuffer:
+    def __init__(self):
+        self.commentary_lines = []
+        self.max_age = 30  # seconds
+    
+    def add_commentary(self, text, timestamp):
+        """Buffer live commentary for context"""
+        self.commentary_lines.append((text, timestamp))
+        self._cleanup_old_commentary()
+    
+    def get_recent_commentary(self):
+        """Get commentary from last 30 seconds for move context"""
+        return [text for text, ts in self.commentary_lines]
+```
+
+**Why This Works Better Than TV**:
+- ✅ **Precise triggers**: Legal moves vs fuzzy scene boundaries  
+- ✅ **Rich analysis**: Stockfish + python-chess + vector search + commentary
+- ✅ **Atomic events**: Each move is a discrete analytical moment
+- ✅ **Historical context**: Deep database of similar analyzed positions
+- ✅ **Real-time synthesis**: Human commentary + engine + historical database
+
+### Implementation Phases
+
+**Phase 1: Core Move Detection (1-2 weeks)**
+- [ ] Integrate consensus vision system with HDMI capture pipeline
+- [ ] Implement board state tracking and legal move validation
+- [ ] Create move package generation (reusing build_database.py analysis)
+- [ ] Basic Gemini Live integration for move commentary
+
+**Phase 2: Commentary Integration (1 week)**
+- [ ] Commentary transcription using existing TV companion audio pipeline
+- [ ] Commentary buffer implementation with move-triggered bundling  
+- [ ] Enhanced move packages including recent commentary context
+- [ ] User voice input for position questions
+
+**Phase 3: Vector Search Integration (1 week)**
+- [ ] Integrate ChessVectorSearch with live analysis pipeline
+- [ ] Position query generation from features + descriptions
+- [ ] Historical context synthesis in move packages
+- [ ] Similar game presentation and explanation
+
+**Phase 4: Content Control (Next Phase)**
+- [ ] YouTube chess content search and control
+- [ ] Game state management (start new game, reset position tracking)
+- [ ] Multiple game source support (YouTube, Chess.com, Lichess)
+- [ ] Advanced user interactions (pause, rewind, analyze specific positions)
+
+### Development Strategy
+
+**Initial Testing Setup**:
+- Queue up chess games manually (YouTube chess videos)
+- Focus on analysis quality over content control
+- Use existing HDMI capture infrastructure
+- Test with variety of chess board styles and viewing angles
+
+**Advantages of This Approach**:
+- **Proven foundation**: 80%+ code reuse from TV companion
+- **Reliable triggers**: Chess moves are unambiguous state changes
+- **Rich analytical power**: Combines multiple analysis sources
+- **Educational value**: Historical context + engine analysis + live commentary synthesis
+
+**Key Files to Modify**:
+- `chess/live_chess_companion.py` - Main application (adapted from TV companion)
+- `chess/move_detection.py` - Board position change detection
+- `chess/position_analysis.py` - Integration of existing analysis pipeline
+- `chess/chess_commentary.py` - Chess-specific Gemini Live interactions
+
+This implementation strategy provides a clear path from the current chess analysis foundation to a fully functional live chess companion that can provide expert-level commentary on streaming chess games.
+
 ## Vector Database Implementation and Optimization Journey (December 2024)
 
 ### Completing the Foundation: Embeddings Creation
