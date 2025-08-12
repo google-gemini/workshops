@@ -2374,3 +2374,99 @@ The implementation phases provide a clear path from basic PGN processing through
 The performance optimization journey revealed crucial insights about parallel processing architectures, leading to a final system that processes 5,000 chess positions in under an hour using ThreadPoolExecutor + shared engine pools, with a clear path to cloud distribution for 100x scaling when needed.
 
 **Recent breakthrough**: The successful implementation of LLM-enhanced position descriptions using Gemini 2.0 Flash-Lite at 150x lower cost than initially projected, with async concurrency delivering superior performance to the Stockfish analysis pipeline. The system now generates rich, semantically searchable chess descriptions ready for vector embedding creation.
+# Chess Vision System Development Notes
+
+## Model and Temperature Optimization (2024-08-11)
+
+### Initial Problem
+- JSON format was giving consistently best results for FEN extraction
+- Board cropping was problematic - missing entire ranks/files despite explicit instructions
+- High variance in piece recognition accuracy (18-100% range)
+
+### Board Detection Improvements
+
+#### Three Detection Approaches
+Created three board detection variants to improve cropping:
+
+1. **Completeness**: "Detect the complete chess board with all 8 ranks and 8 files"
+2. **Boundaries**: "Detect the chess board boundaries to include all ranks (1-8) and files (a-h)" 
+3. **Coverage**: "Detect the chess board, ensuring all 64 squares are included"
+
+New command: `crop_and_test_all_json` - tests all three approaches and compares results.
+
+#### Model Upgrades
+**Phase 1: Board Detection Upgrade**
+- Upgraded board detection from `gemini-2.5-flash-lite` to `gemini-2.5-flash`
+- Reason: Better spatial understanding and instruction following
+- Result: More consistent bounding boxes, better rank/file coverage
+
+**Phase 2: Piece Recognition Upgrade** 
+- Upgraded piece recognition from `gemini-2.5-flash-lite` to `gemini-2.5-flash`
+- Reason: High variance in piece recognition (82% → 55% with similar crops)
+- Result: More consistent piece identification
+
+**Phase 3: Temperature Optimization**
+- Set temperature to 0.0 for both board detection and piece recognition
+- Reason: Eliminate randomness in precision task requiring pixel-perfect accuracy
+- Result: Dramatic reduction in variance, more deterministic results
+
+### Consensus-Based Approach
+
+#### Architecture
+- **Single crop** with coverage detection (most consistent approach)
+- **5x parallel piece recognition** on same cropped image  
+- **3-out-of-5 majority consensus** on individual squares
+- **Square-by-square voting** rather than full-FEN voting
+
+#### Implementation
+New command: `coverage_consensus` 
+- Uses coverage detection for board cropping
+- Runs 5 parallel piece detections with JSON format
+- Implements `majority_vote_fen()` for per-square consensus
+- Reports voting details and consensus statistics
+
+#### Parallelization Fix
+**Initial Issue**: Despite using `asyncio.gather()`, detections ran sequentially
+- Problem: LangChain's `invoke()` method blocks entire event loop
+- Solution: Switch to `ainvoke()` for truly async API calls
+- Result: True parallelism - all 5 detections start within 0.016 seconds
+
+**Performance Impact**:
+- Before: ~20+ seconds (5 × 4+ seconds sequentially) 
+- After: ~5.5 seconds (parallel execution, limited by slowest API call)
+- Speedup: ~4x improvement
+
+### Final Production System
+
+#### Configuration
+- **Board Detection**: `gemini-2.5-flash`, temperature=0.0, coverage prompt
+- **Piece Recognition**: `gemini-2.5-flash`, temperature=0.0, JSON format
+- **Consensus**: 5 runs, 3-vote minimum for square consensus
+- **Parallelization**: `ainvoke()` for true async execution
+
+#### Results
+- **Accuracy**: 100% (14/14 squares correct)
+- **Consistency**: Unanimous consensus (5/5 votes on all pieces)
+- **Reliability**: Multiple test runs showing identical results
+- **Performance**: ~5.5 seconds total execution time
+
+#### Usage
+```bash
+cd chess && poetry run python chess_vision_test.py var/chess-facial.png coverage_consensus --fen="CANONICAL_FEN"
+```
+
+### Key Learnings
+
+1. **Model Selection Matters**: Full models significantly outperform lite versions for precision tasks
+2. **Temperature=0.0 Critical**: Even small randomness (0.1) causes unacceptable variance in chess position recognition  
+3. **Consensus Voting Essential**: Single runs too variable even with deterministic settings
+4. **Async Implementation**: `ainvoke()` required for true parallelism in LangChain
+5. **Coverage Detection**: Most reliable board detection approach across multiple tests
+
+### Architecture Decision
+The final architecture prioritizes **reliability over speed**: better to take 5.5 seconds and get 100% accuracy than risk incorrect position recognition in live chess analysis.
+
+## Next Steps
+- Test on diverse chess board images (different angles, lighting, piece sets)
+- Integrate into live streaming chess analysis pipeline
+- Consider caching/optimization for repeated similar positions

@@ -2,13 +2,16 @@
 """Chess vision proof-of-concept: analyze chess board screenshots."""
 
 import argparse
+import asyncio
 import base64
 import json
 from pathlib import Path
 import re
 import sys
+import time
 from textwrap import dedent
 from typing import List
+from collections import Counter
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
@@ -313,6 +316,143 @@ def compare_fen_positions(canonical_fen: str, test_fen: str) -> dict:
   }
 
 
+def majority_vote_fen(fens: List[str], min_consensus: int = 3) -> str:
+  """Take majority vote on FEN positions, voting on each square individually."""
+  if not fens:
+    return "Invalid: No FENs provided"
+  
+  # Convert all FENs to square mappings
+  square_mappings = []
+  for fen in fens:
+    if fen and not fen.startswith('Invalid'):
+      square_mappings.append(fen_board_to_squares(fen))
+    else:
+      square_mappings.append({})  # Empty mapping for invalid FEN
+  
+  if not square_mappings:
+    return "Invalid: No valid FENs"
+  
+  # Get all squares that appear in any mapping
+  all_squares = set()
+  for mapping in square_mappings:
+    all_squares.update(mapping.keys())
+  
+  # Vote on each square
+  consensus_squares = {}
+  consensus_details = []
+  
+  for square in sorted(all_squares):
+    # Get all pieces claimed for this square (including empty '.')
+    pieces_for_square = []
+    for mapping in square_mappings:
+      piece = mapping.get(square, '.')
+      pieces_for_square.append(piece)
+    
+    # Count votes for each piece type
+    piece_votes = Counter(pieces_for_square)
+    most_common_piece, vote_count = piece_votes.most_common(1)[0]
+    
+    # Only include if it meets consensus threshold and isn't empty
+    if vote_count >= min_consensus and most_common_piece != '.':
+      consensus_squares[square] = most_common_piece
+      consensus_details.append(f"{square}: {most_common_piece} ({vote_count}/{len(fens)} votes)")
+    elif vote_count >= min_consensus and most_common_piece == '.':
+      # Consensus that square is empty - don't add to consensus_squares
+      consensus_details.append(f"{square}: empty ({vote_count}/{len(fens)} votes)")
+    else:
+      # No consensus
+      votes_str = ", ".join([f"{piece}:{count}" for piece, count in piece_votes.most_common()])
+      consensus_details.append(f"{square}: NO CONSENSUS ({votes_str})")
+  
+  # Convert consensus squares back to FEN
+  board = [['.' for _ in range(8)] for _ in range(8)]
+  
+  for square, piece in consensus_squares.items():
+    col = ord(square[0]) - ord('a')
+    row = 8 - int(square[1])
+    if 0 <= col < 8 and 0 <= row < 8:
+      board[row][col] = piece
+  
+  # Convert board to FEN
+  fen_parts = []
+  for row in board:
+    fen_row = ''
+    empty_count = 0
+    for cell in row:
+      if cell == '.':
+        empty_count += 1
+      else:
+        if empty_count > 0:
+          fen_row += str(empty_count)
+          empty_count = 0
+        fen_row += cell
+    if empty_count > 0:
+      fen_row += str(empty_count)
+    fen_parts.append(fen_row)
+  
+  consensus_fen = '/'.join(fen_parts)
+  
+  # Add consensus metadata
+  total_consensus_squares = sum(1 for detail in consensus_details if "NO CONSENSUS" not in detail)
+  
+  return consensus_fen, consensus_details, total_consensus_squares
+
+
+async def consensus_piece_detection(cropped_image_path: str, n: int = 5, min_consensus: int = 3) -> dict:
+  """Run n piece detections in parallel using semaphore approach (like create_embeddings.py)."""
+  print(f"🔍 Running {n} parallel piece detections for consensus...")
+  
+  # Use semaphore approach that worked in embeddings
+  semaphore = asyncio.Semaphore(n)  # Allow all n to run concurrently
+  
+  async def single_detection(run_id: int):
+    async with semaphore:  # Semaphore pattern from embeddings
+      start_time = time.time()
+      print(f"🚀 Detection {run_id + 1}: Started at {start_time:.3f}")
+      try:
+        result = await analyze_chess_image(cropped_image_path, 'json')
+        fen = convert_json_to_fen(result)
+        end_time = time.time()
+        print(f"✅ Detection {run_id + 1}: Completed at {end_time:.3f} (took {end_time - start_time:.3f}s)")
+        return result, fen
+      except Exception as e:
+        end_time = time.time()
+        print(f"❌ Detection {run_id + 1} failed at {end_time:.3f} (took {end_time - start_time:.3f}s): {e}")
+        return None, f"Invalid: {e}"
+  
+  # Use as_completed() like in embeddings for better progress tracking
+  tasks = [single_detection(i) for i in range(n)]
+  
+  json_results = []
+  fens = []
+  completed_count = 0
+  
+  # Process results as they complete (like embeddings approach)
+  for task in asyncio.as_completed(tasks):
+    json_result, fen = await task
+    json_results.append(json_result)
+    fens.append(fen)
+    completed_count += 1
+    print(f"   Progress: {completed_count}/{n} detections completed")
+  
+  print(f"📊 Got {len([f for f in fens if f and not f.startswith('Invalid')])} valid FENs out of {n} attempts")
+  
+  # Perform majority voting
+  consensus_fen, consensus_details, consensus_squares = majority_vote_fen(fens, min_consensus)
+  
+  print(f"🗳️  Consensus achieved on {consensus_squares} squares (minimum {min_consensus}/{n} votes required)")
+  
+  return {
+    'consensus_fen': consensus_fen,
+    'individual_fens': fens,
+    'individual_results': json_results,
+    'consensus_details': consensus_details,
+    'consensus_squares': consensus_squares,
+    'total_runs': n,
+    'min_consensus': min_consensus
+  }
+
+
 def crop_image_with_bounding_box(image_path: str, bounding_box: BoundingBox, padding: float = 0.0, output_path: str = None) -> str:
   """Crop image using bounding box coordinates with optional padding and save the result."""
   with Image.open(image_path) as img:
@@ -345,7 +485,7 @@ def crop_image_with_bounding_box(image_path: str, bounding_box: BoundingBox, pad
     return output_path
 
 
-def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
+async def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
   """Analyze chess board image with different prompt levels."""
 
   # Load and encode image
@@ -434,10 +574,17 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
             """),
         
         'board_detection': "Detect the chess board. Output bounding box with label.",
+        'board_detection_completeness': "Detect the complete chess board with all 8 ranks and 8 files. Output bounding box with label.",
+        'board_detection_boundaries': "Detect the chess board boundaries to include all ranks (1-8) and files (a-h). Output bounding box with label.",
+        'board_detection_coverage': "Detect the chess board, ensuring all 64 squares are included. Output bounding box with label.",
         
         'crop_and_detect': "Full pipeline: detect board, crop, then extract pieces",
         
         'crop_and_test_all': "Crop board, then test all four approaches",
+        
+        'crop_and_test_all_json': "Crop board with 3 different detection methods, then test JSON on each",
+        
+        'coverage_consensus': "Use coverage detection + 5x parallel consensus (robust n=5, m=3)",
   }
 
   # Handle structured output cases differently
@@ -470,10 +617,10 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     chain = {'image_data': RunnablePassthrough()} | prompt | model
 
     # Get response
-    response = chain.invoke(image_data)
+    response = await chain.ainvoke(image_data)
     return response  # Return the structured object
     
-  elif prompt_level == 'board_detection':
+  elif prompt_level.startswith('board_detection'):
     # Create the human message template for bounding box detection
     human_message = HumanMessagePromptTemplate(
         prompt=[
@@ -485,10 +632,10 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
         ]
     )
 
-    # Initialize model with bounding box structured output
+    # Initialize model with bounding box structured output (using full Flash for better precision)
     model = ChatGoogleGenerativeAI(
-        model='gemini-2.5-flash-lite',
-        temperature=0.1,
+        model='gemini-2.5-flash',
+        temperature=0.0,
     ).with_structured_output(BoundingBoxResponse)
 
     # Create the chain
@@ -496,7 +643,7 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     chain = {'image_data': RunnablePassthrough()} | prompt | model
 
     # Get response
-    response = chain.invoke(image_data)
+    response = await chain.ainvoke(image_data)
     
     # If we got bounding boxes, crop the image
     if response.bounding_boxes:
@@ -511,7 +658,7 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     print("🔍 Step 1: Detecting chess board...")
     
     # Step 1: Detect and crop the chess board
-    board_detection_response = analyze_chess_image(image_path, 'board_detection')
+    board_detection_response = await analyze_chess_image(image_path, 'board_detection')
     
     if not board_detection_response.bounding_boxes:
       return "No chess board detected!"
@@ -523,7 +670,7 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     print("\n🔍 Step 2: Extracting pieces from cropped board...")
     
     # Step 2: Extract pieces from the cropped image
-    pieces_response = analyze_chess_image(cropped_path, 'pydantic')
+    pieces_response = await analyze_chess_image(cropped_path, 'pydantic')
     print(f"✅ Found {len(pieces_response.pieces)} pieces")
     
     return pieces_response  # Return the structured piece data
@@ -532,7 +679,7 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     print("🔍 Step 1: Detecting and cropping chess board...")
     
     # Step 1: Detect and crop the chess board
-    board_detection_response = analyze_chess_image(image_path, 'board_detection')
+    board_detection_response = await analyze_chess_image(image_path, 'board_detection')
     
     if not board_detection_response.bounding_boxes:
       return "No chess board detected!"
@@ -548,7 +695,7 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     for approach in test_approaches:
       print(f"\n🔍 Testing {approach.upper()} on cropped board...")
       try:
-        result = analyze_chess_image(cropped_path, approach)
+        result = await analyze_chess_image(cropped_path, approach)
         results[approach] = result
         
         # Convert to FEN for approaches that support it
@@ -579,6 +726,161 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
         results[approach] = f"Error: {e}"
     
     return results
+    
+  elif prompt_level == 'crop_and_test_all_json':
+    print("🔍 Testing 3 board detection approaches + JSON analysis...")
+    
+    # Test all three board detection variants
+    detection_approaches = [
+        ('completeness', 'board_detection_completeness'),
+        ('boundaries', 'board_detection_boundaries'), 
+        ('coverage', 'board_detection_coverage')
+    ]
+    
+    results = {}
+    
+    for name, detection_prompt in detection_approaches:
+        print(f"\n{'='*60}")
+        print(f"🎯 Testing {name.upper()} detection approach")
+        print(f"{'='*60}")
+        
+        try:
+            # Step 1: Detect and crop board with this approach
+            print(f"🔍 Step 1: Detecting chess board with '{name}' prompt...")
+            board_detection_response = await analyze_chess_image(image_path, detection_prompt)
+            
+            if not board_detection_response.bounding_boxes:
+                print(f"❌ No chess board detected with {name} approach!")
+                results[name] = "No board detected"
+                continue
+            
+            chess_board_box = board_detection_response.bounding_boxes[0]
+            # Generate unique filename for each approach
+            input_path = Path(image_path)
+            cropped_path = str(input_path.parent / f"{input_path.stem}_cropped_{name}{input_path.suffix}")
+            cropped_path = crop_image_with_bounding_box(image_path, chess_board_box, output_path=cropped_path)
+            print(f"✅ Board detected and cropped to: {cropped_path}")
+            print(f"📐 Bounding box: {chess_board_box.box_2d}")
+            
+            # Step 2: Extract pieces using JSON on the cropped image
+            print(f"🔍 Step 2: Extracting pieces with JSON from cropped board...")
+            json_result = await analyze_chess_image(cropped_path, 'json')
+            
+            # Step 3: Convert to FEN
+            fen = convert_json_to_fen(json_result)
+            print(f"✅ JSON analysis completed")
+            print(f"FEN: {fen}")
+            
+            if fen and not fen.startswith('Invalid'):
+                print(f"🔗 Lichess: {create_lichess_link(fen)}")
+                
+                # Compare to canonical FEN if provided
+                if 'canonical_fen' in globals():
+                    canonical = globals()['canonical_fen']
+                    similarity = similarity_ratio(canonical.split()[0], fen.split()[0])
+                    comparison = compare_fen_positions(canonical, fen)
+                    print(f"📊 Similarity to canonical: {similarity:.3f}")
+                    print(f"📊 Square accuracy: {comparison['correct_squares']}/64 ({comparison['accuracy']:.1f}%)")
+                    if comparison['details'][:3]:  # Show first 3 errors
+                        print(f"⚠️  Sample errors: {', '.join(comparison['details'][:3])}")
+            
+            results[name] = {
+                'bounding_box': chess_board_box.box_2d,
+                'fen': fen,
+                'json_result': json_result,
+                'cropped_path': cropped_path
+            }
+            
+        except Exception as e:
+            print(f"❌ Error with {name} approach: {e}")
+            results[name] = f"Error: {e}"
+    
+    # Summary comparison
+    print(f"\n{'='*80}")
+    print("📋 SUMMARY COMPARISON")
+    print(f"{'='*80}")
+    
+    if 'canonical_fen' in globals():
+        canonical = globals()['canonical_fen']
+        best_similarity = 0
+        best_approach = None
+        
+        for name, result in results.items():
+            if isinstance(result, dict) and 'fen' in result:
+                fen = result['fen']
+                if fen and not fen.startswith('Invalid'):
+                    similarity = similarity_ratio(canonical.split()[0], fen.split()[0])
+                    comparison = compare_fen_positions(canonical, fen)
+                    print(f"{name:12}: {similarity:.3f} similarity, {comparison['accuracy']:.1f}% accuracy")
+                    if similarity > best_similarity:
+                        best_similarity = similarity
+                        best_approach = name
+                else:
+                    print(f"{name:12}: Invalid FEN")
+            else:
+                print(f"{name:12}: {result}")
+        
+        if best_approach:
+            print(f"\n🏆 Best approach: {best_approach.upper()} ({best_similarity:.3f} similarity)")
+    
+    return results
+    
+  elif prompt_level == 'coverage_consensus':
+    print("🎯 Using COVERAGE detection + 5x parallel consensus (robust)...")
+    
+    # Step 1: Single crop with coverage detection
+    print("🔍 Step 1: Detecting chess board with 'coverage' approach...")
+    board_detection_response = await analyze_chess_image(image_path, 'board_detection_coverage')
+    
+    if not board_detection_response.bounding_boxes:
+      print("❌ No chess board detected with coverage approach!")
+      return "No board detected"
+    
+    chess_board_box = board_detection_response.bounding_boxes[0]
+    input_path = Path(image_path)
+    cropped_path = str(input_path.parent / f"{input_path.stem}_cropped_consensus{input_path.suffix}")
+    cropped_path = crop_image_with_bounding_box(image_path, chess_board_box, output_path=cropped_path)
+    print(f"✅ Board detected and cropped to: {cropped_path}")
+    print(f"📐 Bounding box: {chess_board_box.box_2d}")
+    
+    # Step 2: Run 5x parallel consensus detection
+    print("\n🔍 Step 2: Running parallel consensus detection...")
+    consensus_result = await consensus_piece_detection(cropped_path, n=5, min_consensus=3)
+    
+    # Step 3: Display results
+    print(f"\n✅ Consensus analysis completed")
+    print(f"Consensus FEN: {consensus_result['consensus_fen']}")
+    
+    if consensus_result['consensus_fen'] and not consensus_result['consensus_fen'].startswith('Invalid'):
+      print(f"🔗 Lichess: {create_lichess_link(consensus_result['consensus_fen'])}")
+      
+      # Compare to canonical FEN if provided
+      if 'canonical_fen' in globals():
+        canonical = globals()['canonical_fen']
+        similarity = similarity_ratio(canonical.split()[0], consensus_result['consensus_fen'].split()[0])
+        comparison = compare_fen_positions(canonical, consensus_result['consensus_fen'])
+        print(f"📊 Similarity to canonical: {similarity:.3f}")
+        print(f"📊 Square accuracy: {comparison['correct_squares']}/64 ({comparison['accuracy']:.1f}%)")
+        if comparison['details'][:3]:  # Show first 3 errors
+          print(f"⚠️  Sample errors: {', '.join(comparison['details'][:3])}")
+    
+    # Show individual run results
+    print(f"\n📋 Individual FEN results:")
+    for i, fen in enumerate(consensus_result['individual_fens']):
+      if fen and not fen.startswith('Invalid'):
+        similarity = similarity_ratio(consensus_result['consensus_fen'].split()[0], fen.split()[0]) if consensus_result['consensus_fen'] else 0
+        print(f"  Run {i+1}: {similarity:.3f} similarity to consensus")
+      else:
+        print(f"  Run {i+1}: Invalid FEN")
+    
+    # Show consensus details for first few squares
+    print(f"\n🗳️  Sample consensus voting:")
+    for detail in consensus_result['consensus_details'][:5]:
+      print(f"  {detail}")
+    if len(consensus_result['consensus_details']) > 5:
+      print(f"  ... and {len(consensus_result['consensus_details']) - 5} more squares")
+    
+    return consensus_result
   else:
     # Create the human message template with both text and image
     human_message = HumanMessagePromptTemplate(
@@ -591,10 +893,10 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
         ]
     )
 
-    # Initialize model
+    # Initialize model (using full Flash for better piece recognition consistency)
     model = ChatGoogleGenerativeAI(
-        model='gemini-2.5-flash-lite',
-        temperature=0.1,
+        model='gemini-2.5-flash',
+        temperature=0.0,
     )
 
     # Create the chain
@@ -602,15 +904,15 @@ def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     chain = {'image_data': RunnablePassthrough()} | prompt | model
 
     # Get response
-    response = chain.invoke(image_data)
+    response = await chain.ainvoke(image_data)
     return response.content
 
 
-def main():
+async def async_main():
   parser = argparse.ArgumentParser(description='Chess vision analysis tool')
   parser.add_argument('image_path', help='Path to chess board image')
   parser.add_argument('prompt_level', nargs='?', default='describe',
-                     help='Analysis method: describe, chess, structured, fen, unstructured, oneshot, json, pydantic, board_detection, crop_and_detect, crop_and_test_all, all')
+                     help='Analysis method: describe, chess, structured, fen, unstructured, oneshot, json, pydantic, board_detection, crop_and_detect, crop_and_test_all, crop_and_test_all_json, coverage_consensus, all')
   parser.add_argument('--fen', help='Canonical FEN position for accuracy comparison')
   
   args = parser.parse_args()
@@ -633,7 +935,7 @@ def main():
       print('=' * 80)
 
       try:
-        result = analyze_chess_image(args.image_path, level)
+        result = await analyze_chess_image(args.image_path, level)
         print(result)
 
         # Convert to FEN for comparison
@@ -672,7 +974,7 @@ def main():
   print('=' * 60)
 
   try:
-    result = analyze_chess_image(args.image_path, args.prompt_level)
+    result = await analyze_chess_image(args.image_path, args.prompt_level)
     print(result)
 
     # Convert to FEN for comparison
@@ -704,6 +1006,11 @@ def main():
 
   except Exception as e:
     print(f'Error: {e}')
+
+
+def main():
+  """Wrapper to run async_main."""
+  asyncio.run(async_main())
 
 
 if __name__ == '__main__':
