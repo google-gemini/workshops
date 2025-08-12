@@ -2018,6 +2018,17 @@ class CommentaryBuffer:
 - `chess/position_analysis.py` - Integration of existing analysis pipeline
 - `chess/chess_commentary.py` - Chess-specific Gemini Live interactions
 
+### Future Enhancement: Ambient Context Capture
+
+**Biometric and Environmental Commentary Integration**:
+- Capture ambient shots in addition to board position (wider camera angle or second camera)
+- Include player biometric data visible on screen (heart rate, etc.) for enhanced commentary
+- Example: Carlsen typically maintains 70-80 BPM during games, while Nakamura often shows 120-130 BPM
+- This physiological context could add significant depth to move analysis and player state commentary
+- Technical implementation: dual video capture or wider frame analysis with player detection
+
+This biometric context would enable commentary like "Notice Nakamura's elevated heart rate suggests he's feeling time pressure here, which might explain the aggressive piece sacrifice" - adding human drama to the technical analysis.
+
 This implementation strategy provides a clear path from the current chess analysis foundation to a fully functional live chess companion that can provide expert-level commentary on streaming chess games.
 
 ## Vector Database Implementation and Optimization Journey (December 2024)

@@ -17,6 +17,15 @@ google-generativeai = "*"
 numpy = "*"
 google-genai = "*"
 pillow = "*"
+opencv-python = "*"
+pyaudio = "*"
+pychromecast = "*"
+google-cloud-speech = "*"
+mem0ai = "*"
+scenedetect = "*"
+themoviedb = "*"
+aiohttp = "*"
+pdfplumber = "*"
 
 [build-system]
 requires = ["poetry-core"]

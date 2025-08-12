@@ -61,3 +61,35 @@ def create_quick_analysis_pool(pool_size: int = 4) -> StockfishEnginePool:
 def create_deep_analysis_pool(pool_size: int = 4) -> StockfishEnginePool:
     """Pool for deep position analysis"""
     return StockfishEnginePool(pool_size, threads_per_engine=2, purpose="deep analysis")
+
+
+# Async wrapper functions for live companion integration
+import asyncio
+
+async def analyze_position_async(engine_pool: StockfishEnginePool, fen: str, time_limit: float = 0.5) -> dict:
+    """Async wrapper for position analysis using engine pool"""
+    try:
+        engine = engine_pool.get_engine()
+        
+        def _analyze():
+            import chess
+            import chess.engine
+            board = chess.Board(fen)
+            info = engine.analyse(board, chess.engine.Limit(time=time_limit))
+            return info
+        
+        # Run analysis in thread pool
+        info = await asyncio.to_thread(_analyze)
+        
+        engine_pool.return_engine(engine)
+        
+        return {
+            "evaluation": info.get("score").relative.cp if info.get("score") else 0,
+            "best_move": str(info.get("pv", [None])[0]) if info.get("pv") else None,
+            "depth": info.get("depth", 0),
+            "nodes": info.get("nodes", 0)
+        }
+        
+    except Exception as e:
+        print(f"❌ Async engine analysis failed: {e}")
+        return {"evaluation": 0, "best_move": None, "depth": 0, "nodes": 0}
