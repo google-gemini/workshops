@@ -632,9 +632,9 @@ async def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
         ]
     )
 
-    # Initialize model with bounding box structured output (using full Flash for better precision)
+    # Initialize model with bounding box structured output (try lite for speed)
     model = ChatGoogleGenerativeAI(
-        model='gemini-2.5-flash',
+        model='gemini-2.5-flash-lite',
         temperature=0.0,
     ).with_structured_output(BoundingBoxResponse)
 

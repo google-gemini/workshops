@@ -2466,6 +2466,35 @@ cd chess && poetry run python chess_vision_test.py var/chess-facial.png coverage
 ### Architecture Decision
 The final architecture prioritizes **reliability over speed**: better to take 5.5 seconds and get 100% accuracy than risk incorrect position recognition in live chess analysis.
 
+### Hybrid Model Optimization (Final Production Setup)
+
+After achieving perfect accuracy with full models, discovered optimal cost/performance balance:
+
+#### Hybrid Approach
+- **Board Detection**: `gemini-2.5-flash-lite`, temperature=0.0 (fast cropping)
+- **Piece Recognition**: `gemini-2.5-flash`, temperature=0.0 (accurate extraction)
+- **Consensus**: 5 parallel runs, 3-vote minimum
+
+#### Performance Comparison
+**All Full Models**:
+- Board detection: ~4+ seconds
+- 5x piece detection: ~5 seconds parallel
+- Total: ~10+ seconds
+
+**Hybrid Approach**:
+- Board detection: ~1-2 seconds (lite model)  
+- 5x piece detection: ~4-5 seconds parallel (full model)
+- Total: ~6-7 seconds
+
+#### Results
+- **Accuracy**: 100% (14/14 squares correct)
+- **Consistency**: Unanimous consensus (5/5 votes on all pieces)
+- **Performance**: ~40% faster than all-full-model approach
+- **Cost**: Significantly reduced (lite model for simpler task)
+
+#### Key Insight
+**Use the right model for the right task**: Lite model handles board detection perfectly, while full model ensures precision where it matters most. This hybrid approach delivers production-ready performance with optimal cost efficiency.
+
 ## Next Steps
 - Test on diverse chess board images (different angles, lighting, piece sets)
 - Integrate into live streaming chess analysis pipeline
