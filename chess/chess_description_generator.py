@@ -70,6 +70,9 @@ GAME CONTEXT:
 - Tournament: {event}
 - Opening: {eco}
 
+LIVE COMMENTARY CONTEXT:
+{live_commentary}
+
 Create a rich 3-4 sentence description that captures:
 1. The strategic situation and key themes
 2. Tactical opportunities and threats
@@ -152,7 +155,8 @@ Make it engaging and educational - as if explaining to an intermediate player wa
             "white_player": context.get("white_player", ""),
             "black_player": context.get("black_player", ""),
             "event": context.get("event", ""),
-            "eco": context.get("eco", "")
+            "eco": context.get("eco", ""),
+            "live_commentary": position.get("live_commentary", "No commentary available")
         }
     
     def format_pawn_structure(self, pawn_structure: dict) -> str:
