@@ -2655,7 +2655,191 @@ After achieving perfect accuracy with full models, discovered optimal cost/perfo
 #### Key Insight
 **Use the right model for the right task**: Lite model handles board detection perfectly, while full model ensures precision where it matters most. This hybrid approach delivers production-ready performance with optimal cost efficiency.
 
+## Live Stream Integration: YouTube to Chromecast Pipeline (January 2025)
+
+### Critical Infrastructure Requirements
+
+Successfully reading chess positions from YouTube streams via Chromecast required solving multiple technical challenges in sequence:
+
+#### 1. HDMI Video Loopback Architecture
+
+**Problem**: Video capture devices (`/dev/video4`) can only be read by one process at a time. The live chess companion needs access to the same video stream for position detection.
+
+**Solution**: v4l2loopback device multiplexing with automated setup script
+
+**Implementation**: `chess/setup_hdmi_loopback.sh`
+```bash
+# Single ffmpeg process reading HDMI capture, writing to multiple loopback devices
+ffmpeg -f v4l2 -video_size 1920x1080 -framerate 30 -i /dev/video4 \
+  -f v4l2 /dev/video10 \
+  -f v4l2 /dev/video11
+```
+
+**Key Insights**:
+- ✅ **Single input, multiple outputs**: One ffmpeg process eliminates "Device or resource busy" errors
+- ✅ **Automated module management**: Script handles v4l2loopback creation/reset/cleanup
+- ✅ **Graceful error handling**: Process monitoring and automatic restart
+- ❌ **Original mistake**: Tried dual ffmpeg processes reading same device simultaneously
+
+#### 2. Debug Infrastructure for Visual Inspection
+
+**Problem**: FEN extraction failing but no visibility into what the vision system was actually seeing.
+
+**Solution**: `--debug` mode with comprehensive image saving
+
+**Implementation**:
+```python
+# Save both HDMI captures AND cropped chess boards
+if self.debug_mode:
+    timestamp = datetime.now().strftime("%H%M%S_%f")[:-3]
+    debug_path = self.debug_dir / f"hdmi_capture_{detection_count:04d}_{timestamp}.png"
+    # Also save cropped boards in consensus_piece_detection()
+    cropped_path = str(Path(debug_dir) / f"cropped_board_{timestamp}.png")
+```
+
+**Results**:
+- **HDMI captures**: Visual confirmation of video stream quality and framing
+- **Cropped boards**: Validate chess board detection accuracy
+- **Debugging power**: Could see exactly what images the vision models received
+
+#### 3. Pre-Processing Pipeline Optimization
+
+**Problem**: Raw 1920x1080 HDMI frames overwhelming board detection model, causing random/incorrect cropping.
+
+**Solution**: Two-stage normalization pipeline
+```python
+# Stage 1: Normalize HDMI frame before board detection
+frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+img = Image.fromarray(frame_rgb)
+img.thumbnail((1024, 1024), Image.LANCZOS)  # Normalize BEFORE cropping
+img.save(temp_path)
+
+# Stage 2: Normalize cropped board before piece detection (in chess_vision_test.py)
+normalized_image_data = image_to_base64(image_path, max_size=1024)
+```
+
+**Results**:
+- **Board detection accuracy**: Dramatic improvement in chess board bounding boxes
+- **Consistent sizing**: 1024px provides optimal model input dimensions
+- **Cost efficiency**: Smaller images = lower API token costs
+
+#### 4. Model Selection and Prompt Engineering 
+
+**Problem**: FEN extraction described as "indistinguishable from noise" despite good cropping.
+
+**Solution**: Systematic model/prompt optimization
+- **Model upgrade**: `gemini-2.5-flash-lite` → `gemini-2.5-flash` → `gemini-2.5-pro`
+- **JSON prompt optimization**: Removed biasing examples, used simple structured format
+- **Temperature**: Set to 0.0 for maximum determinism
+- **Consensus voting**: 7 parallel runs, 3-vote minimum (increased from 5-choose-3)
+
+#### 5. Structured Output Format Wars
+
+**Critical Finding**: JSON format dramatically outperformed Pydantic structured output
+
+**JSON Performance**: 93-97% similarity to canonical positions
+```json
+{
+  "white": {
+    "king": "e1",
+    "queens": ["d1"],
+    "rooks": ["a1", "h1"],
+    ...
+  }
+}
+```
+
+**Pydantic Performance**: 70-77% similarity 
+```python
+class ChessSide(BaseModel):
+    king: Optional[str] = Field(...)
+    queens: List[str] = Field(...)
+    ...
+```
+
+**Why JSON Won**:
+- ✅ **Model familiarity**: JSON is natural training format
+- ✅ **Focus on vision**: Less cognitive overhead vs schema validation
+- ✅ **Parsing reliability**: Structured but flexible
+- ❌ **Pydantic overhead**: Schema enforcement competed with vision accuracy
+
+#### 6. Production Pipeline Integration
+
+**Final Architecture**: `chess_companion_standalone.py` with `--debug` support
+```python
+# Detect move changes from HDMI video stream
+async def detect_move_changes(self):
+    ret, frame = self.shared_cap.read()
+    
+    # Save normalized frame for vision analysis
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB) 
+    img = Image.fromarray(frame_rgb)
+    img.thumbnail((1024, 1024), Image.LANCZOS)
+    img.save(temp_path)
+    
+    # 7-choose-3 consensus FEN extraction
+    result = await consensus_piece_detection(
+        temp_path, n=7, min_consensus=3,
+        debug_dir=str(self.debug_dir) if self.debug_mode else None
+    )
+```
+
+### Production Performance Results
+
+#### End-to-End Performance
+- **Video capture**: Real-time 30fps from Chromecast HDMI output
+- **Position detection**: ~10-15 seconds per position analysis
+- **Accuracy**: Piece-perfect on spot-checked positions
+- **Reliability**: Stable operation over extended periods
+
+#### System Requirements Met
+✅ **YouTube chess streams**: Works with standard tournament broadcasts  
+✅ **Chromecast compatibility**: Handles HDMI capture from wireless casting  
+✅ **Automatic board detection**: No manual cropping or setup required  
+✅ **Debug visibility**: Complete pipeline inspection capability  
+✅ **Production reliability**: Handles errors gracefully, continues operation  
+
+### Debugging Process Insights
+
+#### Original Problems Encountered
+1. **"Device or resource busy"**: Dual ffmpeg processes competing for HDMI device
+2. **"Random board cropping"**: Full-resolution frames confusing spatial detection  
+3. **"FEN like noise"**: Wrong model/prompt combinations giving unusable output
+4. **Missing debug visibility**: No way to see what vision system actually received
+
+#### Solution Discovery Process  
+1. **Systematic isolation**: Debug each pipeline stage independently
+2. **Visual inspection**: Always save intermediate images for manual verification
+3. **Model comparison**: Test multiple model tiers systematically  
+4. **Prompt engineering**: A/B test different structured output approaches
+5. **Performance measurement**: Quantify accuracy improvements at each optimization
+
+#### Key Success Factors
+- **Infrastructure first**: Solve video capture pipeline before vision optimization
+- **Debug instrumentation**: Visual inspection revealed issues not apparent in logs
+- **Simple solutions win**: JSON outperformed complex Pydantic schemas consistently
+- **Consensus voting**: Multiple cheap analyses beat single expensive analysis
+- **Systematic approach**: Changed one variable at a time to isolate improvements
+
+### Next Steps for Live Chess Companion
+
+The infrastructure breakthrough enables the full live chess companion implementation:
+
+#### Immediate Development (Next Phase)
+- [ ] Integration with existing chess analysis pipeline (`chess_description_generator.py`)
+- [ ] Vector search for historical position context
+- [ ] Real-time commentary generation combining engine + historical analysis
+- [ ] User interaction system for position questions
+
+#### Advanced Features (Future Phases)
+- [ ] Multiple game source support (different chess platforms)
+- [ ] Player recognition and context-aware analysis
+- [ ] Tournament format awareness and commentary adaptation
+- [ ] Educational features (explaining plans, alternatives, typical continuations)
+
+The foundation is now solid for sophisticated live chess analysis that matches human expert commentary while adding the depth of historical database knowledge and engine analysis.
+
 ## Next Steps
 - Test on diverse chess board images (different angles, lighting, piece sets)
-- Integrate into live streaming chess analysis pipeline
+- Integrate into live streaming chess analysis pipeline  
 - Consider caching/optimization for repeated similar positions

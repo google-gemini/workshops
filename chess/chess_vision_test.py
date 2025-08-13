@@ -5,12 +5,13 @@ import argparse
 import asyncio
 import base64
 import json
+import os
 from pathlib import Path
 import re
 import sys
 import time
 from textwrap import dedent
-from typing import List
+from typing import List, Optional
 from collections import Counter
 from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain_core.prompts import PromptTemplate
@@ -23,20 +24,18 @@ from difflib import SequenceMatcher
 
 
 # Pydantic models for structured output
-class ChessPieceLocation(BaseModel):
-  square: str = Field(description="Square like 'e1', 'a8'")
-  piece: str = Field(
-      description=(
-          "Piece like 'king', 'queen', 'rook', 'bishop', 'knight', 'pawn'"
-      )
-  )
-  color: str = Field(description="'white' or 'black'")
+class ChessSide(BaseModel):
+  king: Optional[str] = Field(description="King square location like 'e1'")
+  queens: List[str] = Field(description="Queen square locations like ['d1']", default_factory=list)
+  rooks: List[str] = Field(description="Rook square locations like ['a1', 'h1']", default_factory=list)
+  bishops: List[str] = Field(description="Bishop square locations like ['c1', 'f1']", default_factory=list)
+  knights: List[str] = Field(description="Knight square locations like ['b1', 'g1']", default_factory=list)
+  pawns: List[str] = Field(description="Pawn square locations like ['a2', 'b2']", default_factory=list)
 
 
 class ChessPosition(BaseModel):
-  pieces: List[ChessPieceLocation] = Field(
-      description='List of all pieces visible on the board'
-  )
+  white: ChessSide = Field(description="White pieces on the board")
+  black: ChessSide = Field(description="Black pieces on the board")
 
 
 class BoundingBox(BaseModel):
@@ -50,10 +49,21 @@ class BoundingBoxResponse(BaseModel):
   bounding_boxes: List[BoundingBox] = Field(description="List of detected bounding boxes")
 
 
-def image_to_base64(image_path: str) -> str:
-  """Convert image to base64 string."""
-  with open(image_path, 'rb') as f:
-    return base64.b64encode(f.read()).decode('utf-8')
+def image_to_base64(image_path: str, max_size: int = None) -> str:
+  """Convert image to base64 string, optionally resizing first."""
+  if max_size:
+    # Load and resize image
+    with Image.open(image_path) as img:
+      img.thumbnail((max_size, max_size), Image.LANCZOS)
+      import io
+      img_buffer = io.BytesIO()
+      img.save(img_buffer, format='PNG')
+      img_buffer.seek(0)
+      return base64.b64encode(img_buffer.read()).decode('utf-8')
+  else:
+    # Original behavior - no resizing
+    with open(image_path, 'rb') as f:
+      return base64.b64encode(f.read()).decode('utf-8')
 
 
 def convert_oneshot_to_fen(oneshot_text: str) -> str:
@@ -178,7 +188,9 @@ def convert_json_to_fen(json_text: str) -> str:
   for color in ['white', 'black']:
     if color in data:
       for piece_type, squares in data[color].items():
-        if piece_type in piece_map and squares is not None:
+        # Map queens -> queen for backwards compatibility
+        lookup_piece = 'queen' if piece_type == 'queens' else piece_type
+        if lookup_piece in piece_map and squares is not None:
           if isinstance(squares, str):
             squares = [squares]
           for square in squares:
@@ -188,7 +200,7 @@ def convert_json_to_fen(json_text: str) -> str:
               row = 8 - int(square[1])
               # Add bounds checking
               if 0 <= col < 8 and 0 <= row < 8:
-                board[row][col] = piece_map[piece_type][color]
+                board[row][col] = piece_map[lookup_piece][color]
 
   # Convert board to FEN
   fen_parts = []
@@ -214,24 +226,34 @@ def convert_pydantic_to_fen(pydantic_result) -> str:
   """Convert Pydantic ChessPosition to FEN notation."""
   board = [['.' for _ in range(8)] for _ in range(8)]
 
-  piece_map = {
-      'king': {'white': 'K', 'black': 'k'},
-      'queen': {'white': 'Q', 'black': 'q'},
-      'rook': {'white': 'R', 'black': 'r'},
-      'bishop': {'white': 'B', 'black': 'b'},
-      'knight': {'white': 'N', 'black': 'n'},
-      'pawn': {'white': 'P', 'black': 'p'},
-  }
+  def place_pieces(squares_list, piece_symbol):
+    """Helper to place pieces on board"""
+    for square in squares_list:
+      if square and len(square) == 2 and square[0].isalpha() and square[1].isdigit():
+        col = ord(square[0]) - ord('a')
+        row = 8 - int(square[1])
+        if 0 <= col < 8 and 0 <= row < 8:
+          board[row][col] = piece_symbol
 
-  for piece_location in pydantic_result.pieces:
-    square = piece_location.square
-    piece_type = piece_location.piece
-    color = piece_location.color
+  # Place white pieces
+  white = pydantic_result.white
+  if white.king:
+    place_pieces([white.king], 'K')
+  place_pieces(white.queens, 'Q')
+  place_pieces(white.rooks, 'R')
+  place_pieces(white.bishops, 'B')
+  place_pieces(white.knights, 'N')
+  place_pieces(white.pawns, 'P')
 
-    if len(square) == 2 and piece_type in piece_map:
-      col = ord(square[0]) - ord('a')
-      row = 8 - int(square[1])
-      board[row][col] = piece_map[piece_type][color]
+  # Place black pieces  
+  black = pydantic_result.black
+  if black.king:
+    place_pieces([black.king], 'k')
+  place_pieces(black.queens, 'q')
+  place_pieces(black.rooks, 'r')
+  place_pieces(black.bishops, 'b')
+  place_pieces(black.knights, 'n')
+  place_pieces(black.pawns, 'p')
 
   # Convert board to FEN
   fen_parts = []
@@ -398,9 +420,64 @@ def majority_vote_fen(fens: List[str], min_consensus: int = 3) -> str:
   return consensus_fen, consensus_details, total_consensus_squares
 
 
-async def consensus_piece_detection(cropped_image_path: str, n: int = 5, min_consensus: int = 3) -> dict:
+async def consensus_piece_detection(image_path: str, n: int = 5, min_consensus: int = 3, debug_dir: Optional[str] = None) -> dict:
   """Run n piece detections in parallel using semaphore approach (like create_embeddings.py)."""
   print(f"🔍 Running {n} parallel piece detections for consensus...")
+  
+  # Step 1: Detect and crop chess board first
+  print("🎯 Step 1: Detecting and cropping chess board...")
+  try:
+    board_detection_response = await analyze_chess_image(image_path, 'board_detection_coverage')
+    
+    if not board_detection_response.bounding_boxes:
+      return {
+        'consensus_fen': 'Invalid: No chess board detected',
+        'individual_fens': [],
+        'individual_results': [],
+        'consensus_details': [],
+        'consensus_squares': 0,
+        'total_runs': n,
+        'min_consensus': min_consensus,
+        'error': 'No chess board detected in image'
+      }
+    
+    chess_board_box = board_detection_response.bounding_boxes[0]
+    
+    # Generate cropped image path
+    input_path = Path(image_path)
+    if debug_dir:
+      # Save to debug directory with timestamp
+      from datetime import datetime
+      timestamp = datetime.now().strftime("%H%M%S_%f")[:-3]
+      cropped_path = str(Path(debug_dir) / f"cropped_board_{timestamp}.png")
+      print(f"🐛 Debug: Cropping board to {cropped_path}")
+    else:
+      # Use temp file
+      import tempfile
+      temp_file = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+      cropped_path = temp_file.name
+      temp_file.close()
+    
+    # Crop the chess board
+    cropped_path = crop_image_with_bounding_box(image_path, chess_board_box, output_path=cropped_path)
+    print(f"✅ Chess board cropped to: {cropped_path}")
+    print(f"📐 Bounding box: {chess_board_box.box_2d}")
+    
+  except Exception as e:
+    print(f"❌ Board detection failed: {e}")
+    return {
+      'consensus_fen': f'Invalid: Board detection failed: {e}',
+      'individual_fens': [],
+      'individual_results': [],
+      'consensus_details': [],
+      'consensus_squares': 0,
+      'total_runs': n,
+      'min_consensus': min_consensus,
+      'error': f'Board detection failed: {e}'
+    }
+  
+  # Step 2: Run parallel piece detection on cropped board
+  print(f"🔍 Step 2: Running {n} parallel piece detections on cropped board...")
   
   # Use semaphore approach that worked in embeddings
   semaphore = asyncio.Semaphore(n)  # Allow all n to run concurrently
@@ -410,7 +487,7 @@ async def consensus_piece_detection(cropped_image_path: str, n: int = 5, min_con
       start_time = time.time()
       print(f"🚀 Detection {run_id + 1}: Started at {start_time:.3f}")
       try:
-        result = await analyze_chess_image(cropped_image_path, 'json')
+        result = await analyze_chess_image(cropped_path, 'json')
         fen = convert_json_to_fen(result)
         end_time = time.time()
         print(f"✅ Detection {run_id + 1}: Completed at {end_time:.3f} (took {end_time - start_time:.3f}s)")
@@ -442,6 +519,13 @@ async def consensus_piece_detection(cropped_image_path: str, n: int = 5, min_con
   
   print(f"🗳️  Consensus achieved on {consensus_squares} squares (minimum {min_consensus}/{n} votes required)")
   
+  # Clean up temp cropped file if not in debug mode
+  if not debug_dir:
+    try:
+      os.unlink(cropped_path)
+    except:
+      pass
+  
   return {
     'consensus_fen': consensus_fen,
     'individual_fens': fens,
@@ -449,7 +533,8 @@ async def consensus_piece_detection(cropped_image_path: str, n: int = 5, min_con
     'consensus_details': consensus_details,
     'consensus_squares': consensus_squares,
     'total_runs': n,
-    'min_consensus': min_consensus
+    'min_consensus': min_consensus,
+    'cropped_board_path': cropped_path if debug_dir else None
   }
 
 
@@ -548,25 +633,23 @@ async def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
             Only list pieces you can clearly see - do not guess or infer.
             """),
       'json': dedent("""\
-            Look at this chess board and identify all piece locations.
-            
-            Return the result as JSON in this exact format:
+            Identify all chess pieces on this board and return as JSON in this exact format:
             {{
               "white": {{
                 "king": "e1",
-                "queen": "d1", 
+                "queens": ["d1"],
                 "rooks": ["a1", "h1"],
                 "bishops": ["c1", "f1"],
-                "knights": ["c3", "f3"],
-                "pawns": ["a2", "b2", "f2", "g2", "h2"]
+                "knights": ["b1", "g1"],
+                "pawns": ["a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2"]
               }},
               "black": {{
                 "king": "e8",
-                "queen": "d8",
+                "queens": ["d8"],
                 "rooks": ["a8", "h8"],
                 "bishops": ["c8", "f8"],
-                "knights": ["b8", "f6"],
-                "pawns": ["a7", "b7", "d4", "e6", "f7", "g7", "h7"]
+                "knights": ["b8", "g8"],
+                "pawns": ["a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7"]
               }}
             }}
             
@@ -593,11 +676,7 @@ async def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     human_message = HumanMessagePromptTemplate(
         prompt=[
             PromptTemplate(
-                template=(
-                    'Look at this chess board and identify the exact location'
-                    ' of every piece you can clearly see. Only report pieces'
-                    ' that are definitely visible - do not guess.'
-                )
+                template='Identify each chess piece and its square location on this board.'
             ),
             ImagePromptTemplate(
                 input_variables=['image_data'],
@@ -606,9 +685,9 @@ async def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
         ]
     )
 
-    # Initialize model with structured output
+    # Initialize model with structured output (use Pro for maximum accuracy)
     model = ChatGoogleGenerativeAI(
-        model='gemini-2.5-flash-lite',
+        model='gemini-2.5-pro',
         temperature=0.1,
     ).with_structured_output(ChessPosition)
 
@@ -621,6 +700,9 @@ async def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     return response  # Return the structured object
     
   elif prompt_level.startswith('board_detection'):
+    # Normalize image to 1024px before bounding box detection
+    normalized_image_data = image_to_base64(image_path, max_size=1024)
+    
     # Create the human message template for bounding box detection
     human_message = HumanMessagePromptTemplate(
         prompt=[
@@ -632,9 +714,9 @@ async def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
         ]
     )
 
-    # Initialize model with bounding box structured output (try lite for speed)
+    # Initialize model with bounding box structured output (use Pro for maximum accuracy)
     model = ChatGoogleGenerativeAI(
-        model='gemini-2.5-flash-lite',
+        model='gemini-2.5-pro',
         temperature=0.0,
     ).with_structured_output(BoundingBoxResponse)
 
@@ -643,7 +725,7 @@ async def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
     chain = {'image_data': RunnablePassthrough()} | prompt | model
 
     # Get response
-    response = await chain.ainvoke(image_data)
+    response = await chain.ainvoke(normalized_image_data)
     
     # If we got bounding boxes, crop the image
     if response.bounding_boxes:
@@ -893,9 +975,9 @@ async def analyze_chess_image(image_path: str, prompt_level: str = 'describe'):
         ]
     )
 
-    # Initialize model (using full Flash for better piece recognition consistency)
+    # Initialize model (using Pro for maximum piece recognition accuracy)
     model = ChatGoogleGenerativeAI(
-        model='gemini-2.5-flash',
+        model='gemini-2.5-pro',
         temperature=0.0,
     )
 

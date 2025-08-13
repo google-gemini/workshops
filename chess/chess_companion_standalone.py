@@ -7,6 +7,7 @@ Forked from TV companion architecture for chess-specific analysis:
 - Expert chess commentary via Gemini Live
 """
 
+import argparse
 import asyncio
 import base64
 from datetime import datetime
@@ -36,6 +37,13 @@ from position_features import extract_position_features
 import pyaudio
 from stockfish_pool import StockfishEnginePool, create_quick_analysis_pool
 from vector_search import ChessVectorSearch, SearchResult
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Chess Companion with move detection")
+    parser.add_argument("--debug", action="store_true", 
+                       help="Save debug images (HDMI captures and crops)")
+    return parser.parse_args()
+
 
 if sys.version_info < (3, 11, 0):
   import exceptiongroup
@@ -481,11 +489,18 @@ class TVAudioStream:
 class ChessCompanionStandalone:
   """Standalone Chess Companion - Complete chess analysis system"""
 
-  def __init__(self):
+  def __init__(self, debug_mode=False):
     self.audio_in_queue = None
     self.out_queue = None
     self.session = None
     self.shared_cap = None
+
+    # Debug mode setup
+    self.debug_mode = debug_mode
+    if self.debug_mode:
+      self.debug_dir = Path("debug_chess_frames")
+      self.debug_dir.mkdir(exist_ok=True)
+      print(f"🐛 Debug mode: saving frames to {self.debug_dir}")
 
     # Gemini client
     self.client = genai.Client()
@@ -622,7 +637,8 @@ class ChessCompanionStandalone:
         # Use consensus vision to detect position
         print(f"🔍 Running consensus detection #{detection_count}...")
         result = await consensus_piece_detection(
-            temp_path, n=5, min_consensus=3
+            temp_path, n=7, min_consensus=3,
+            debug_dir=str(self.debug_dir) if self.debug_mode else None
         )
         new_fen = result["consensus_fen"]
 
@@ -1230,5 +1246,6 @@ Move played: {msg.get('move_played', 'Unknown')}"""
 
 
 if __name__ == "__main__":
-  companion = ChessCompanionStandalone()
+  args = parse_args()
+  companion = ChessCompanionStandalone(debug_mode=args.debug)
   asyncio.run(companion.run())
