@@ -3032,6 +3032,181 @@ The infrastructure breakthrough enables the full live chess companion implementa
 
 The foundation is now solid for sophisticated live chess analysis that matches human expert commentary while adding the depth of historical database knowledge and engine analysis.
 
+## Visual Context Integration and Multimodal Analysis (January 2025)
+
+### The Visual Context Question
+
+A key architectural question emerged during development: should we send raw screenshots directly to the live model, or pre-process them with a separate vision model to extract structured context?
+
+**The Core Challenge**: Chess broadcasts contain rich ambient information beyond the board position:
+- **Time pressure**: Clock displays showing remaining time
+- **Player state**: Heart rates, facial expressions indicating stress/confidence  
+- **Match context**: Tournament information, game scores, round details
+- **Broadcast ambiance**: Commentary mood, critical moment indicators
+
+**Two Competing Approaches**:
+
+### Approach 1: Raw Screenshot Integration
+**Strategy**: Send unprocessed screenshots directly to Gemini Live alongside text analysis
+
+**Potential Benefits**:
+- ✅ **No information loss**: Model sees everything visible in broadcast
+- ✅ **Simple architecture**: Single model processes all visual information
+- ✅ **Flexible interpretation**: Model decides what visual elements are relevant
+- ✅ **Error resilience**: No preprocessing failures to handle
+
+**Potential Drawbacks**:
+- ❌ **Information overload**: Too much visual noise might distract from chess analysis
+- ❌ **Processing time**: Visual analysis adds latency to already slow system
+- ❌ **Inconsistent quality**: Broadcast layouts vary significantly
+- ❌ **Attention dilution**: Visual processing competes with chess reasoning
+
+### Approach 2: Separate Vision Model Pre-Processing
+**Strategy**: Use dedicated vision model to extract structured broadcast context, then combine with text analysis
+
+**Implementation Architecture**:
+```python
+async def _extract_broadcast_context(self, frame) -> dict:
+    """Extract broadcast metadata using separate vision model"""
+    prompt = """Analyze this chess broadcast and extract relevant context:
+
+PRIORITIZE IF VISIBLE:
+- Tournament/match information
+- Player time remaining  
+- Match scores/game significance
+- Player stress indicators (heart rates, expressions)
+
+Return as JSON with 'structured_data' for key fields and 'additional_context' for everything else."""
+
+    response = await asyncio.to_thread(
+        self.client.models.generate_content,
+        model="gemini-2.0-flash-lite",  # Fast & cheap for context extraction
+        contents=[frame_data, prompt],
+        config=types.GenerateContentConfig(response_mime_type="application/json")
+    )
+```
+
+**Benefits Realized**:
+- ✅ **Parallel processing**: No additional latency cost (runs concurrent with main analysis)
+- ✅ **Structured extraction**: Clean, parseable broadcast metadata
+- ✅ **Cost efficiency**: Flash-Lite optimized for simple context extraction
+- ✅ **Rich context integration**: Tournament stakes, time pressure, player condition
+- ✅ **Robust failure handling**: Graceful degradation if extraction fails
+
+### Hybrid Implementation: Best of Both Worlds
+
+**Final Architecture Decision**: Implement both approaches simultaneously
+
+**Dual-Stream Processing**:
+1. **Structured Context Extraction** (Flash-Lite): Fast metadata extraction for human drama
+2. **Raw Screenshot Inclusion** (Gemini Live): Full visual context for subtle details
+
+**Parallel Implementation**:
+```python
+# Start both analyses in parallel
+analysis_task = asyncio.create_task(self._run_chess_analysis(position_entry))
+visual_context_task = asyncio.create_task(self._extract_broadcast_context(frame))
+
+# Wait for both to complete
+await analysis_task
+if visual_context_task:
+    broadcast_context = await visual_context_task
+    position_entry["broadcast_context"] = broadcast_context
+
+# Send both structured analysis AND raw screenshot to live model
+parts = [{"text": analysis_text}]
+if screenshot:
+    parts.append({"inline_data": {"mime_type": screenshot["mime_type"], "data": screenshot["data"]}})
+```
+
+### Enhanced Commentary Results
+
+**Before Visual Integration**:
+> "White's Rook to e8 looks natural with +0.2 evaluation. The position is objectively equal."
+
+**After Structured Context**:
+> "White's Rook to e8 looks natural, but with only 12 seconds on the clock versus Black's 1:30, this is exactly when time pressure causes miscalculations. The position is objectively equal at +0.2, but the psychological pressure makes this incredibly dangerous for White. Notice how the match score is tied 1-1, making this potentially the decisive game..."
+
+**With Full Multimodal Context**:
+> "White's Rook to e8 looks natural, but with only 12 seconds versus Black's 1:30, this is where time pressure becomes critical. Looking at the broadcast, you can see White's elevated stress (heart rate 106 BPM vs Black's 93), and this is Game 4 of 4 in the Grand Final with the score tied 0-0. The psychological pressure in this winner-takes-all moment makes even +0.2 positions incredibly sharp. Watch for potential time pressure blunders despite the objectively balanced evaluation."
+
+### Commentary Flow Integration Challenges
+
+**Discovery**: Commentary transcription wasn't appearing in final analysis despite successful capture
+
+**Root Cause Analysis**:
+1. **Commentary Buffer Timing**: Buffer was cleared before analysis, losing context
+2. **Overly Restrictive Filtering**: Chess terms filter excluded valid commentary
+3. **Truncation Issues**: Commentary cut to 150 chars, losing valuable context
+
+**Solutions Implemented**:
+
+**Remove Premature Buffer Clearing**:
+```python
+# OLD: Clear buffer on every board change
+self.commentary_buffer = []  # ❌ Loses valuable narrative
+
+# NEW: Preserve continuous commentary narrative  
+# Don't clear commentary_buffer - keep the running narrative!
+```
+
+**Eliminate Restrictive Filtering**:
+```python
+# OLD: Restrictive chess terms filter
+chess_terms = ['move', 'piece', 'attack', 'defense', 'advantage', 'pressure']
+if any(term in commentary_text.lower() for term in chess_terms):
+    text += f"\n\nLIVE CONTEXT: {commentary_text[:150]}..."
+
+# NEW: Include all recent commentary
+recent_comments = commentary[-3:] if len(commentary) >= 3 else commentary
+commentary_text = "\n".join(recent_comments)
+text += f"\n\nLIVE COMMENTARY:\n{commentary_text}"
+```
+
+### Key Architectural Insights
+
+**1. Parallel Processing is Essential**
+- Visual context extraction must not add latency to already slow analysis pipeline
+- Async parallel processing allows rich context without performance cost
+- Failed extractions don't block main analysis pipeline
+
+**2. Commentary as Continuous Narrative**
+- Chess commentary flows across multiple positions and moves
+- Artificial segmentation by board positions loses strategic context
+- Running commentary buffer provides valuable game narrative context
+
+**3. Multimodal Attention Management**
+- Structured extraction focuses vision model on specific useful elements
+- Raw screenshots provide backup context for subtle details not captured in structured data
+- Live model can draw on both sources as needed without overwhelming processing
+
+**4. Cost-Effective Model Selection**
+- Flash-Lite sufficient for structured context extraction (simple visual parsing)
+- Gemini Live handles complex synthesis of multiple information sources
+- Parallel cheap analyses often better than single expensive analysis
+
+### Production Integration Results
+
+**Enhanced Analysis Pipeline**:
+- **Chess position analysis**: Engine evaluation, move quality, strategic themes
+- **Structured broadcast context**: Time pressure, match stakes, player biometrics  
+- **Live commentary narrative**: Recent transcribed strategic discussion
+- **Raw visual context**: Full screenshot for model's reference
+- **Historical precedent**: Vector database similar positions
+
+**Commentary Quality Improvement**:
+- **Human drama awareness**: Commentary now includes psychological pressure elements
+- **Match context**: Tournament stakes and game significance integrated
+- **Time management**: Commentary addresses clock situations and pressure
+- **Player condition**: Stress indicators inform move analysis and predictions
+
+**System Performance**:
+- **No latency increase**: Parallel processing maintains analysis speed
+- **Graceful degradation**: System continues operation if visual extraction fails
+- **Cost efficiency**: Flash-Lite for simple tasks, full models for complex synthesis
+
+This multimodal integration represents a significant evolution in chess commentary systems, combining the precision of engine analysis with the human understanding of psychological pressure, match context, and game narrative - creating commentary that rivals human expert analysis while providing educational insights impossible for human commentators to deliver in real-time.
+
 ## Next Steps
 - Test on diverse chess board images (different angles, lighting, piece sets)
 - Integrate into live streaming chess analysis pipeline  

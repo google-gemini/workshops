@@ -482,10 +482,10 @@ class ChessCompanionSimplified:
         """Handle new board position detected"""
         print(f"🎯 Board changed from {self.current_board} to {new_fen}")
         
-        # Update current state
+        # Update current state - keep commentary buffer for continuous narrative
         self.current_board = new_fen
         self.current_analysis = None
-        self.commentary_buffer = []  # Fresh start for new position
+        # Don't clear commentary_buffer - commentary flows across positions
         
         # Start analysis (don't wait for it)
         if not self.analyzing:
@@ -531,9 +531,9 @@ class ChessCompanionSimplified:
             
             # Enhance position entry with commentary context for better descriptions
             if self.commentary_buffer:
-                recent_commentary = " ".join(self.commentary_buffer[-5:])  # Last 5 commentary lines
+                recent_commentary = " ".join(self.commentary_buffer[-3:])  # Last 3 commentary lines
                 position_entry["live_commentary"] = recent_commentary
-                print(f"📺 Including commentary context: {recent_commentary[:100]}...")
+                print(f"📺 Including commentary context ({len(recent_commentary)} chars)")
             
             _, enhanced_desc, error = await enhance_single_position_with_retry(
                 (position_entry, 0), generator, chain, semaphore
@@ -553,8 +553,19 @@ class ChessCompanionSimplified:
                     "generated_by": "template-fallback"
                 }
             
-            # Add simple vector search mentions
-            position_entry["similar_positions"] = await self._get_simple_similar_games()
+            # Add simple vector search mentions and broadcast context in parallel
+            vector_task = asyncio.create_task(self._get_simple_similar_games())
+            broadcast_task = None
+            if frame is not None:
+                broadcast_task = asyncio.create_task(self._extract_broadcast_context(frame))
+            
+            # Wait for both to complete
+            position_entry["similar_positions"] = await vector_task
+            if broadcast_task:
+                broadcast_context = await broadcast_task
+                if broadcast_context:
+                    position_entry["broadcast_context"] = broadcast_context
+                    print(f"📺 Extracted broadcast context: {len(broadcast_context)} elements")
             
             # Store complete database-style entry
             self.current_analysis = position_entry
@@ -582,9 +593,23 @@ class ChessCompanionSimplified:
             print(analysis_text)
             print("=" * 50)
             
-            content = {"role": "user", "parts": [{"text": analysis_text}]}
+            # Build content parts - always include text analysis
+            parts = [{"text": analysis_text}]
+            
+            # Add screenshot if available
+            screenshot = analysis.get("board_screenshot")
+            if screenshot:
+                parts.append({
+                    "inline_data": {
+                        "mime_type": screenshot["mime_type"],
+                        "data": screenshot["data"]
+                    }
+                })
+                print(f"📸 Including screenshot with analysis")
+            
+            content = {"role": "user", "parts": parts}
             await self.session.send_client_content(turns=content, turn_complete=True)
-            print(f"✅ Sent analysis to Gemini (watching mode)")
+            print(f"✅ Sent analysis to Gemini (watching mode) - {len(parts)} parts")
             
         except Exception as e:
             print(f"❌ Failed to send analysis: {e}")
@@ -631,20 +656,69 @@ STRATEGIC ELEMENTS:
                 mentions.append(f"{game['game']} ({result_emoji})")
             text += ", ".join(mentions)
         
-        # Recent commentary if available (selective for live model)
+        # Always include recent commentary - no filtering!
         commentary = database_entry.get("commentary", [])
         if commentary:
-            # For live model, only include most recent impactful commentary
-            recent = commentary[-2:] if len(commentary) >= 2 else commentary
-            commentary_text = " ".join(recent)
-            
-            # Only include if commentary seems relevant (contains chess terms)
-            chess_terms = ['move', 'piece', 'attack', 'defense', 'advantage', 'pressure', 'critical', 'tactical', 'strategic']
-            if any(term in commentary_text.lower() for term in chess_terms):
-                text += f"\n\nLIVE CONTEXT: {commentary_text[:150]}..."  # Limit length
+            # Just take last 3 comments, full text
+            recent_comments = commentary[-3:] if len(commentary) >= 3 else commentary
+            commentary_text = "\n".join(recent_comments)  # Each on separate line
+            text += f"\n\nLIVE COMMENTARY:\n{commentary_text}"
         
-        # Add explicit request for commentary
-        text += f"\n\nPlease provide your expert chess commentary on this position. What should players be thinking about? What are the key plans and ideas?"
+        # Add broadcast context for human drama and stakes
+        broadcast = database_entry.get("broadcast_context", {})
+        if broadcast:
+            structured = broadcast.get("structured_data", {})
+            additional = broadcast.get("additional_context", "")
+            
+            text += f"\n\nBROADCAST CONTEXT:\n"
+            
+            # Time information
+            times = structured.get("times", {})
+            if times:
+                white_time = times.get("white", "?")
+                black_time = times.get("black", "?")
+                text += f"⏰ Time remaining - White: {white_time}, Black: {black_time}\n"
+                
+                # Detect time pressure
+                try:
+                    w_minutes = int(white_time.split(':')[0]) if ':' in str(white_time) else 0
+                    b_minutes = int(black_time.split(':')[0]) if ':' in str(black_time) else 0
+                    if w_minutes < 2 or b_minutes < 2:
+                        text += f"🔥 TIME PRESSURE SITUATION!\n"
+                except:
+                    pass
+            
+            # Match stakes
+            match_info = structured.get("match_info", "")
+            if match_info:
+                text += f"🏆 Match situation: {match_info}\n"
+            
+            # Player condition
+            heart_rates = structured.get("heart_rates", {})
+            if heart_rates:
+                white_hr = heart_rates.get("white", "?")
+                black_hr = heart_rates.get("black", "?")
+                text += f"💓 Heart rates - White: {white_hr}, Black: {black_hr}\n"
+                
+                # Stress analysis
+                try:
+                    if isinstance(white_hr, int) and isinstance(black_hr, int):
+                        if abs(white_hr - black_hr) > 10:
+                            higher = "White" if white_hr > black_hr else "Black"
+                            text += f"⚠️ {higher} showing elevated stress!\n"
+                except:
+                    pass
+            
+            # Additional context
+            if additional:
+                text += f"📺 {additional}\n"
+        
+        # Add explicit request for commentary with context awareness
+        context_instruction = ""
+        if broadcast:
+            context_instruction = " Consider both the chess position and the broadcast context (time pressure, match stakes, player condition) in your analysis."
+        
+        text += f"\n\nPlease provide your expert chess commentary on this position. What should players be thinking about? What are the key plans and ideas?{context_instruction}"
         
         return text
 
@@ -814,6 +888,65 @@ STRATEGIC ELEMENTS:
             print(f"⚠️ Similar games search failed: {e}")
             return []
 
+    async def _extract_broadcast_context(self, frame) -> dict:
+        """Extract broadcast context using separate vision model"""
+        try:
+            # Convert frame for vision analysis
+            frame_data = self._convert_frame_to_base64(frame)
+            
+            prompt = """Analyze this chess broadcast and extract relevant context for commentary.
+
+PRIORITIZE IF VISIBLE:
+- Tournament/match information
+- Player time remaining  
+- Match scores/game significance
+- Player stress indicators (heart rates, expressions)
+- Ratings or titles
+
+THEN DESCRIBE any other notable broadcast elements that would help a commentator understand:
+- The stakes and pressure level
+- Human drama or storyline
+- Technical broadcast details worth mentioning
+
+Return as JSON with 'structured_data' for key fields and 'additional_context' for everything else:
+
+{
+  "structured_data": {
+    "players": {"white": "Player Name", "black": "Player Name"},
+    "times": {"white": "mm:ss", "black": "mm:ss"},
+    "heart_rates": {"white": 95, "black": 88},
+    "match_info": "Tournament name, game significance",
+    "ratings": {"white": 2650, "black": 2700}
+  },
+  "additional_context": "Free-form description of other notable elements, broadcast-specific features, atmosphere, human drama, etc."
+}
+
+Only include what's clearly visible. Omit fields rather than guessing."""
+
+            # Use Flash-Lite for fast, cheap context extraction
+            from google.genai import types
+            
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model="gemini-2.0-flash-lite",
+                contents=[
+                    types.Part.from_bytes(
+                        data=base64.b64decode(frame_data["data"]), 
+                        mime_type=frame_data["mime_type"]
+                    ),
+                    prompt
+                ],
+                config=types.GenerateContentConfig(response_mime_type="application/json")
+            )
+            
+            context = json.loads(response.text)
+            print(f"🎥 Broadcast context extracted successfully")
+            return context
+            
+        except Exception as e:
+            print(f"⚠️ Broadcast context extraction failed: {e}")
+            return {}
+
     async def listen_user_audio(self):
         """Capture audio from user microphone for questions"""
         try:
@@ -902,7 +1035,8 @@ STRATEGIC ELEMENTS:
                 if len(self.commentary_buffer) > 10:
                     self.commentary_buffer = self.commentary_buffer[-10:]
                 
-                print(f"📝 Added to commentary buffer: {transcript[:50]}...")
+                print(f"📝 Commentary buffer now has {len(self.commentary_buffer)} items")
+                print(f"📝 Latest: {transcript}")
 
     async def receive_audio(self):
         """Receive Gemini's audio responses and handle tool calls"""
