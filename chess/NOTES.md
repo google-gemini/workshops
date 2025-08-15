@@ -1618,6 +1618,112 @@ With rich descriptions generated, the next step is:
 
 The foundation is now complete for sophisticated semantic search across chess positions, combining the power of Stockfish analysis with human-readable strategic insights.
 
+## Recent Implementation: Interactive Chess Analysis
+
+### Query-Driven Analysis Mode (December 2025)
+
+#### Problem Solved
+- **User Interaction Gap**: System provided automatic commentary but no way for users to ask specific questions
+- **Temporal Mismatch**: Background analysis took ~1 minute, but user questions needed immediate response
+- **Tool Redundancy**: Multiple overlapping tools (`see_current_chess_position`, `analyze_current_position`, `search_similar_positions`)
+
+#### Solution: Fresh Position Analysis Tool
+
+**Command Line Interface**:
+```bash
+# Query-only mode (no automatic commentary)
+python chess_companion_standalone.py --no-watch
+
+# Normal operation with automatic commentary
+python chess_companion_standalone.py
+```
+
+**Consolidated Tool**: `analyze_current_position`
+- Takes fresh screenshot when user asks question
+- Runs full analysis pipeline (FEN extraction, Stockfish, LLM description, vector search)
+- Returns immediately with "analysis in progress" message
+- Delivers comprehensive results via `send_client_content` when complete
+
+#### Key Innovation: Move Context Determination
+
+**Problem**: Vision system only extracts piece positions, not whose turn it is
+**Solution**: LLM-based inference from user query + broadcast context
+
+```python
+User: "What should Magnus do here?"
+Broadcast Context: {"players": {"white": "ALIREZA FIROUZJA", "black": "MAGNUS CARLSEN"}}
+LLM Inference: "black" (Magnus is black)
+FEN Construction: pieces + "b KQkq - 0 1" (Black to move)
+Stockfish Analysis: Suggests moves for Black
+```
+
+#### Broadcast Context Breakthrough
+
+**Flash-Lite Vision Model** successfully extracts structured broadcast data:
+```json
+{
+  "structured_data": {
+    "players": {"white": "MAGNUS CARLSEN", "black": "ALIREZA FIROUZJA"},
+    "times": {"white": "7:49", "black": "7:15"},
+    "match_info": "GRAND FINAL SET #2, GAME 2 OF 4, TOTAL SCORE: 1-0",
+    "ratings": {"white": 2931, "black": 2862}
+  }
+}
+```
+
+This solves the player-color assignment problem that was causing incorrect analysis.
+
+#### Implementation Results
+- ✅ **Fresh Analysis**: Takes new screenshot on demand, doesn't use stale background data
+- ✅ **Player Context**: Correctly identifies which player user is asking about
+- ✅ **Proper FEN Construction**: Builds complete FEN with correct turn information
+- ✅ **Accurate Stockfish Analysis**: Engine analyzes from requested player's perspective
+- ✅ **Non-blocking**: Tool responds immediately, analysis runs asynchronously
+
+### Debug Methodology
+When Stockfish continued analyzing from wrong perspective:
+1. **Comprehensive logging** added to trace data flow through pipeline
+2. **Missing method detection**: `determine_move_context()` wasn't implemented
+3. **FEN parsing issues**: Vision system only provided piece positions, not turn info
+4. **Successful resolution**: LLM-based move context determination + proper FEN construction
+
+## Future Performance and Architecture Improvements
+
+### Low-Latency Vision Pipeline Investigation
+
+**Current Challenge**: Consensus vision with Gemini takes 40+ seconds for position detection
+**Proposed Solution**: Hybrid segmentation + classification approach
+
+#### Segmentation Model Integration
+- **Target**: https://universe.roboflow.com/steven-lt9bf/chessboard-segmentation/model/1
+- **Benefits**: Performs well across variety of chess broadcast scenes
+- **Strategy**: Only run segmentation on scene changes (not every frame)
+- **Expected latency**: Sub-second board detection vs current 10-15 second consensus
+
+#### Alternative FEN Generation Models
+- **HuggingFace Option 1**: https://huggingface.co/spaces/salominavina/chessboard-recognizer
+- **HuggingFace Option 2**: https://huggingface.co/spaces/yamero999/chess-fen-generation-api
+- **Benefits**: Pre-trained models specifically for chess FEN generation
+- **Strategy**: Could replace entire Gemini consensus vision pipeline
+- **Expected latency**: Potentially faster than current 40+ second approach
+- **Fallback**: Keep Gemini consensus as backup for edge cases
+
+#### Mechanical Board Partitioning
+After segmentation:
+1. **Grid overlay**: Mechanically divide detected board into 64 squares
+2. **Parallel classification**: Run lightweight piece classification on each square simultaneously
+3. **Speed advantage**: 64 parallel classifications vs full-board vision analysis
+4. **Fallback**: Keep Gemini consensus as backup for complex/unclear cases
+
+### Episodic Memory Strategy
+
+**Current Issue**: All analysis stored indiscriminately in mem0
+**Proposed Selectivity**:
+- **High-priority storage**: User-requested position analysis, specific match requests
+- **Contextual storage**: Tournament stakes, famous games, educational moments
+- **Skip routine**: Basic position changes without user engagement
+- **Easy recall**: Tag requested matches with searchable metadata for quick access
+
 ## Next Phase: Live Chess Companion Implementation
 
 ### Architecture: TV Companion → Chess Companion
