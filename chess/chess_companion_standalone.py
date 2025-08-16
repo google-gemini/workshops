@@ -23,8 +23,8 @@ from typing import Dict, List, Optional
 
 import chess
 import chess.engine
-# Import chess-specific components
-from chess_vision_test import consensus_piece_detection
+# Import chess-specific components  
+from test_roboflow_segmentation import roboflow_piece_detection as consensus_piece_detection
 import cv2
 from google import genai
 from google.cloud import speech
@@ -319,6 +319,10 @@ class ChessCompanionSimplified:
 
     # Watching mode - configurable
     self.watching_mode = watching_mode
+
+    # Verify Roboflow API key for vision pipeline
+    if not os.getenv("ROBOFLOW_API_KEY"):
+      raise ValueError("ROBOFLOW_API_KEY environment variable required for vision pipeline")
 
     # Debug setup
     self.debug_mode = debug_mode

@@ -508,6 +508,62 @@ class RoboflowSegmentationTester:
             traceback.print_exc()
             return None
 
+async def roboflow_piece_detection(image_path, debug_dir=None, **kwargs):
+    """Roboflow-based chess position detection (replaces Gemini consensus)
+    
+    Args:
+        image_path: Path to chess board image
+        debug_dir: Optional debug directory for saving intermediate images
+        **kwargs: Ignored (for compatibility with consensus_piece_detection interface)
+        
+    Returns:
+        dict: {"consensus_fen": str, "board_confidence": float, "method": "roboflow"}
+    """
+    try:
+        tester = RoboflowSegmentationTester()
+        if debug_dir:
+            tester.debug_dir = Path(debug_dir)
+            tester.debug_dir.mkdir(exist_ok=True)
+        
+        print(f"🎯 Running Roboflow chess position detection...")
+        
+        # Step 1: Board segmentation
+        result = tester.run_segmentation(image_path)
+        
+        # Step 2: Extract best board prediction
+        best_crop = tester.extract_best_prediction(image_path, result)
+        if not best_crop:
+            return {"consensus_fen": None, "error": "Board segmentation failed"}
+        
+        # Step 3: Piece detection  
+        piece_result = tester.test_roboflow_piece_detection(
+            best_crop['path'], 
+            model_id="chess.comdetection/4"
+        )
+        
+        if not piece_result:
+            return {"consensus_fen": None, "error": "Piece detection failed"}
+        
+        # Step 4: Convert to FEN
+        fen, board_grid = tester.pieces_to_fen(
+            piece_result, 
+            best_crop['path'], 
+            "chess.comdetection/4"
+        )
+        
+        print(f"✅ Roboflow detection complete: {fen}")
+        
+        return {
+            "consensus_fen": fen,
+            "board_confidence": best_crop['confidence'],
+            "piece_count": len(piece_result.get("predictions", [])),
+            "method": "roboflow"
+        }
+        
+    except Exception as e:
+        print(f"❌ Roboflow detection failed: {e}")
+        return {"consensus_fen": None, "error": str(e)}
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Chess board detection and piece recognition")
     parser.add_argument("--use-cached-board", 
