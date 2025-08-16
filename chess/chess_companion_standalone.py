@@ -24,8 +24,9 @@ from typing import Dict, List, Optional
 import chess
 import chess.engine
 # Import chess-specific components  
-from test_roboflow_segmentation import roboflow_piece_detection as consensus_piece_detection
+from roboflow import roboflow_piece_detection as consensus_piece_detection
 import cv2
+from scenedetection import ChessSceneDetector
 from google import genai
 from google.cloud import speech
 from google.genai import types
@@ -320,6 +321,12 @@ class ChessCompanionSimplified:
     # Watching mode - configurable
     self.watching_mode = watching_mode
 
+    # Scene detection and bounding box caching
+    self.current_board_mask = None  # Cached board bounding box
+    self.scene_detector = None
+    self.scene_detection_task = None
+    self.board_mask_last_updated = None
+
     # Verify Roboflow API key for vision pipeline
     if not os.getenv("ROBOFLOW_API_KEY"):
       raise ValueError("ROBOFLOW_API_KEY environment variable required for vision pipeline")
@@ -425,10 +432,10 @@ class ChessCompanionSimplified:
       print(f"❌ Frame conversion failed: {e}")
       raise
 
-  async def detect_board_changes(self):
-    """Detect when board position changes and analyze"""
-    print("♟️  Starting board position detection...")
-
+  async def detect_initial_board_mask(self):
+    """Detect initial board location on startup - no scene change needed"""
+    print("🎯 Detecting initial board location...")
+    
     # Initialize video capture
     self.shared_cap = cv2.VideoCapture(HDMI_VIDEO_DEVICE)
     if not self.shared_cap.isOpened():
@@ -438,51 +445,224 @@ class ChessCompanionSimplified:
     self.shared_cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
     self.shared_cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     print("✅ HDMI capture ready")
+    
+    ret, frame = self.shared_cap.read()
+    if ret:
+      await self.update_board_mask(frame)
+      print("✅ Initial board mask detected")
+    else:
+      print("❌ Failed to capture initial frame for board detection")
 
+  async def start_scene_detection(self):
+    """Start background scene detection for board mask updates"""
+    print("🎬 Starting background scene detection...")
+    
+    if not self.shared_cap or not self.shared_cap.isOpened():
+      print("❌ Video capture not ready for scene detection")
+      return
+    
+    # Initialize scene detector
+    debug_dir = str(self.debug_dir) if self.debug_mode else None
+    self.scene_detector = ChessSceneDetector(debug_dir=debug_dir)
+    
+    # Define callback for scene changes
+    async def on_scene_change(frame):
+      print("🎬 Scene change detected - queuing board mask update")
+      asyncio.create_task(self.update_board_mask(frame))
+    
+    # Start detection
+    await self.scene_detector.start_detection(self.shared_cap, on_scene_change)
+
+  async def fast_fen_detection_loop(self):
+    """Fast FEN detection using cached board mask"""
+    print("♟️ Starting fast FEN detection loop...")
+    
     detection_count = 0
-
+    
     while True:
       try:
+        if self.current_board_mask is None:
+          print("⏳ Waiting for board mask...")
+          await asyncio.sleep(2)
+          continue
+        
         detection_count += 1
         ret, frame = self.shared_cap.read()
-
+        
         if not ret:
-          print("⚠️  Failed to capture frame")
+          print("⚠️  Failed to capture frame for FEN detection")
           await asyncio.sleep(2)
           continue
 
-        # Save frame and detect position
-        temp_path = await self.save_frame_to_temp(frame)
-
-        print(f"🔍 Detection #{detection_count}: Running consensus...")
-        result = await consensus_piece_detection(
-            temp_path,
-            n=7,
-            min_consensus=3,
-            debug_dir=str(self.debug_dir) if self.debug_mode else None,
-        )
-
-        new_fen = result["consensus_fen"]
-        os.unlink(temp_path)  # Cleanup
-
-        # Validate FEN before proceeding
+        # Use cached mask for fast FEN extraction
+        new_fen = await self.extract_fen_with_cached_mask(frame)
+        
         if new_fen and self.is_valid_fen(new_fen):
           if new_fen != self.current_board:
-            print(f"🆕 New board detected: {new_fen[:30]}...")
+            print(f"🆕 Position change detected #{detection_count}: {new_fen[:30]}...")
             await self.on_board_change(new_fen, frame)
           else:
-            print(f"📍 Same board: {new_fen[:30]}...")
-        elif new_fen and not self.is_valid_fen(new_fen):
-          print(f"❌ Invalid FEN returned: {new_fen[:50]}...")
+            if detection_count % 6 == 0:  # Log every 30 seconds (6 * 5s)
+              print(f"📍 Position stable #{detection_count}: {new_fen[:30]}...")
         else:
-          print(f"❌ No FEN detected")
-
-        await asyncio.sleep(30)  # Check every 30 seconds
-
+          print(f"❌ Invalid/no FEN detected #{detection_count}")
+        
+        await asyncio.sleep(5)  # Check every 5 seconds - much faster than 30s
+        
       except Exception as e:
-        print(f"❌ Board detection error: {e}")
+        print(f"❌ Fast FEN detection error: {e}")
         traceback.print_exc()
         await asyncio.sleep(5)
+
+  async def update_board_mask(self, frame):
+    """Update cached board bounding box from scene change"""
+    try:
+      print("📐 Updating board bounding box...")
+      start_time = time.time()
+      
+      # Step 1: Fresh screenshot → 1024x1024 (for segmentation)
+      ret, screenshot = self.shared_cap.read()
+      if not ret:
+        print("❌ Failed to capture screenshot for board mask")
+        return
+      
+      # Convert to PIL and resize to 1024x1024 
+      screenshot_rgb = cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB)
+      pil_screenshot = Image.fromarray(screenshot_rgb)
+      pil_1024 = pil_screenshot.resize((1024, 1024), Image.LANCZOS)
+      
+      print(f"📐 Screenshot: {screenshot.shape[:2]} → 1024x1024 for segmentation")
+      
+      # Step 2: Segment to get bounding box (on 1024x1024 space)
+      from roboflow import ChessVisionPipeline
+      pipeline = ChessVisionPipeline(debug_dir=str(self.debug_dir) if self.debug_mode else None)
+      
+      segmentation_result = pipeline.segment_board_direct(pil_1024)
+      
+      if segmentation_result.get("predictions"):
+        bbox = pipeline.extract_bbox_from_segmentation(segmentation_result)
+        
+        if bbox:
+          # Cache bbox (coordinates in 1024x1024 space)
+          self.current_board_mask = {
+            "bbox": bbox["coords"],  # (x_min, y_min, x_max, y_max) in 1024x1024 space
+            "confidence": bbox["confidence"], 
+            "timestamp": start_time
+          }
+          print(f"✅ Board mask cached: {bbox['coords']}, confidence={bbox['confidence']:.3f}")
+        else:
+          print("❌ No valid bounding box extracted")
+          self.current_board_mask = None
+      else:
+        print("❌ Board segmentation found no predictions")
+        self.current_board_mask = None
+      
+      elapsed = time.time() - start_time
+      print(f"✅ Board mask update complete in {elapsed:.1f}s")
+      
+    except Exception as e:
+      print(f"❌ Board mask update failed: {e}")
+      traceback.print_exc()
+      self.current_board_mask = None
+
+  async def extract_fen_with_cached_mask(self, frame):
+    """Fast FEN extraction using cached board bounding box"""
+    try:
+      if not self.current_board_mask or "bbox" not in self.current_board_mask:
+        print("⚠️  No cached board mask - falling back")
+        return await self._fallback_full_detection(frame)
+      
+      # Step 1: Screenshot → 1024x1024 (same space as cached bbox)
+      screenshot_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+      pil_screenshot = Image.fromarray(screenshot_rgb)
+      pil_1024 = pil_screenshot.resize((1024, 1024), Image.LANCZOS)
+      
+      # Step 2: Crop using cached bbox (in 1024x1024 space)
+      bbox = self.current_board_mask["bbox"]  # (x_min, y_min, x_max, y_max)
+      pil_crop = pil_1024.crop(bbox)
+      
+      if pil_crop.size[0] == 0 or pil_crop.size[1] == 0:
+        print("❌ Empty crop from cached bbox - falling back")
+        return await self._fallback_full_detection(frame)
+      
+      # Step 3: Resize crop to 640x640 (optimal for piece detection)
+      pil_crop_640 = pil_crop.resize((640, 640), Image.LANCZOS)
+      
+      print(f"🚀 Fast path: {frame.shape[:2]} → 1024² → crop → 640² → piece detection")
+      
+      # Step 4: Piece detection directly on PIL Image (ONE API CALL)
+      from roboflow import ChessVisionPipeline
+      pipeline = ChessVisionPipeline(debug_dir=str(self.debug_dir) if self.debug_mode else None)
+      
+      piece_result = pipeline.detect_pieces_direct(pil_crop_640, model_id="chess.comdetection/4")
+      
+      if not piece_result:
+        print("❌ Fast piece detection failed - falling back")
+        return await self._fallback_full_detection(frame)
+      
+      # Step 5: Convert to FEN (coordinate math only, no API calls)
+      piece_count = len(piece_result.get("predictions", []))
+      if piece_count < 2:
+        print(f"❌ Fast path: Only {piece_count} pieces detected")
+        return None
+        
+      fen, _ = pipeline.pieces_to_fen_from_dimensions(
+        piece_result, 
+        pil_crop_640.size[0], 
+        pil_crop_640.size[1], 
+        "chess.comdetection/4"
+      )
+      
+      if fen == "8/8/8/8/8/8/8/8":
+        print(f"❌ Empty board FEN from {piece_count} pieces")
+        return None
+      
+      # Optional: Save debug frames
+      if self.debug_mode:
+        timestamp = datetime.now().strftime("%H%M%S_%f")[:-3]
+        debug_path = self.debug_dir / f"fast_crop_{timestamp}.png"
+        pil_crop_640.save(debug_path)
+        print(f"🐛 Debug: Saved fast crop to {debug_path}")
+      
+      print(f"🚀 Fast FEN: {piece_count} pieces → {fen[:20]}...")
+      return fen
+      
+    except Exception as e:
+      print(f"❌ Fast FEN extraction failed: {e}")
+      return await self._fallback_full_detection(frame)
+
+  async def _fallback_full_detection(self, frame):
+    """Fallback to full consensus detection when cached approach fails"""
+    print("🔄 Fallback: Running full consensus detection...")
+    try:
+      temp_path = await self.save_frame_to_temp(frame)
+      
+      result = await consensus_piece_detection(
+          temp_path,
+          n=7,
+          min_consensus=3,
+          debug_dir=str(self.debug_dir) if self.debug_mode else None,
+      )
+      
+      piece_count = result.get("piece_count", 0)
+      if piece_count < 2:
+        print(f"❌ Fallback: Only {piece_count} pieces detected")
+        os.unlink(temp_path)
+        return None
+      
+      new_fen = result["consensus_fen"]
+      os.unlink(temp_path)
+      
+      if new_fen == "8/8/8/8/8/8/8/8":
+        print(f"❌ Fallback: Empty board FEN despite {piece_count} pieces")
+        return None
+      
+      print(f"🔄 Fallback detection complete: {new_fen[:20]}...")
+      return new_fen
+      
+    except Exception as e:
+      print(f"❌ Fallback detection failed: {e}")
+      return None
 
   async def on_board_change(self, new_fen: str, frame):
     """Handle new board position detected"""
@@ -1389,7 +1569,12 @@ Examples:
 
         # Start all tasks
         send_text_task = tg.create_task(self.send_text())
-        tg.create_task(self.detect_board_changes())  # Main detection loop
+        
+        # New background architecture: scene detection + fast FEN detection
+        tg.create_task(self.detect_initial_board_mask())  # Seed the bounding box
+        tg.create_task(self.start_scene_detection())       # Background scene detection  
+        tg.create_task(self.fast_fen_detection_loop())     # Fast FEN checking
+        
         tg.create_task(self.listen_user_audio())
         tg.create_task(self.transcribe_tv_audio())
         tg.create_task(self.receive_audio())
