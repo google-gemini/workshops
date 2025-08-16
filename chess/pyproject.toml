@@ -26,6 +26,9 @@ scenedetect = "*"
 themoviedb = "*"
 aiohttp = "*"
 pdfplumber = "*"
+inference-sdk = "^0.52.1"
+requests = "^2.32.4"
+huggingface-hub = "*"
 
 [build-system]
 requires = ["poetry-core"]
