@@ -139,16 +139,19 @@ class RoboflowSegmentationTester:
             
         return frame
     
-    def save_frame_as_image(self, frame, filename="captured_frame.png"):
-        """Convert CV2 frame to PIL Image and save"""
+    def save_frame_as_image(self, frame, filename="captured_frame.png", target_size=1024):
+        """Convert CV2 frame to PIL Image, resize to target size, and save"""
         # Convert BGR to RGB
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(frame_rgb)
         
-        # Save full frame
+        # Resize to target size for balance of speed and accuracy
+        frame_resized = cv2.resize(frame_rgb, (target_size, target_size))
+        img = Image.fromarray(frame_resized)
+        
+        # Save resized frame
         full_path = self.debug_dir / filename
         img.save(full_path)
-        print(f"💾 Saved frame: {full_path}")
+        print(f"💾 Saved frame (resized to {target_size}x{target_size}): {full_path}")
         
         return str(full_path), img
     
@@ -171,89 +174,90 @@ class RoboflowSegmentationTester:
         
         return result
     
-    def extract_and_crop_all_predictions(self, image_path, segmentation_result, padding=0.02):
-        """Extract and crop ALL predictions to see what we're working with"""
+    def extract_best_prediction(self, image_path, segmentation_result, confidence_threshold=0.7, padding=0.02):
+        """Extract and crop only the best prediction above confidence threshold"""
         
         predictions = segmentation_result.get("predictions", [])
         if not predictions:
             print("❌ No predictions found in result")
-            return []
+            return None
             
-        print(f"📊 Found {len(predictions)} predictions - cropping all...")
+        # Find first prediction above threshold
+        best_prediction = None
+        for i, prediction in enumerate(predictions):
+            confidence = prediction.get('confidence', 0)
+            print(f"🔍 Checking prediction #{i+1}: confidence={confidence:.4f}")
+            
+            if confidence >= confidence_threshold:
+                best_prediction = prediction
+                print(f"✅ Using prediction #{i+1} (confidence: {confidence:.4f})")
+                break
         
-        # Load original image once
+        if not best_prediction:
+            print(f"❌ No predictions above confidence threshold {confidence_threshold}")
+            # Fall back to highest confidence prediction
+            best_prediction = max(predictions, key=lambda p: p.get('confidence', 0))
+            print(f"🔄 Falling back to highest confidence: {best_prediction.get('confidence', 0):.4f}")
+        
+        # Load image once
         img = Image.open(image_path)
         img_width, img_height = img.size
-        print(f"🖼️ Original image: {img_width}x{img_height}")
+        print(f"🖼️ Processing image: {img_width}x{img_height}")
         
-        cropped_results = []
+        # Extract bounding box coordinates
+        prediction = best_prediction
+        if 'x' not in prediction or 'y' not in prediction:
+            print("❌ Invalid bounding box format")
+            return None
+            
+        center_x = prediction['x']
+        center_y = prediction['y'] 
+        width = prediction['width']
+        height = prediction['height']
+        
+        # Convert to corner coordinates
+        x_min = center_x - width / 2
+        y_min = center_y - height / 2
+        x_max = center_x + width / 2
+        y_max = center_y + height / 2
+        
+        print(f"📐 Bounding box: ({x_min:.1f}, {y_min:.1f}) to ({x_max:.1f}, {y_max:.1f})")
+        
+        # Convert to absolute coordinates and add padding
+        abs_x_min = int(x_min)
+        abs_y_min = int(y_min) 
+        abs_x_max = int(x_max)
+        abs_y_max = int(y_max)
+        
+        # Add padding
+        pad_x = int(padding * (abs_x_max - abs_x_min))
+        pad_y = int(padding * (abs_y_max - abs_y_min))
+        
+        crop_x_min = max(0, abs_x_min - pad_x)
+        crop_y_min = max(0, abs_y_min - pad_y)
+        crop_x_max = min(img_width, abs_x_max + pad_x)  
+        crop_y_max = min(img_height, abs_y_max + pad_y)
+        
+        # Crop the image
+        cropped = img.crop((crop_x_min, crop_y_min, crop_x_max, crop_y_max))
+        
+        # Resize cropped board to 640x640 for optimal piece detection
+        cropped_640 = cropped.resize((640, 640), Image.Resampling.LANCZOS)
+        
+        # Save with descriptive filename
         timestamp = datetime.now().strftime("%H%M%S_%f")[:-3]
+        confidence_str = f"{prediction.get('confidence', 0):.4f}".replace('.', '_')
+        cropped_path = self.debug_dir / f"best_board_640x640_{timestamp}_conf_{confidence_str}.png"
+        cropped_640.save(cropped_path)
+        print(f"✂️ Saved best board crop (640x640): {cropped_path}")
         
-        for i, prediction in enumerate(predictions):
-            print(f"\n🎯 Processing prediction #{i+1}:")
-            print(f"   Confidence: {prediction.get('confidence', 0):.4f}")
-            print(f"   Class: {prediction.get('class', 'unknown')}")
-            print(f"   Detection ID: {prediction.get('detection_id', 'none')}")
-            
-            # Extract bounding box coordinates (center + width/height format)
-            if 'x' in prediction and 'y' in prediction:
-                center_x = prediction['x']
-                center_y = prediction['y'] 
-                width = prediction['width']
-                height = prediction['height']
-                
-                # Convert to corner coordinates
-                x_min = center_x - width / 2
-                y_min = center_y - height / 2
-                x_max = center_x + width / 2
-                y_max = center_y + height / 2
-                
-                print(f"   Center: ({center_x}, {center_y})")
-                print(f"   Size: {width}x{height}")
-                print(f"   Bounding box: ({x_min:.1f}, {y_min:.1f}) to ({x_max:.1f}, {y_max:.1f})")
-                
-            else:
-                print("❌ Unexpected bounding box format for prediction #{i+1}")
-                continue
-            
-            # Convert to absolute coordinates and add padding
-            abs_x_min = int(x_min)
-            abs_y_min = int(y_min) 
-            abs_x_max = int(x_max)
-            abs_y_max = int(y_max)
-            
-            # Add padding
-            pad_x = int(padding * (abs_x_max - abs_x_min))
-            pad_y = int(padding * (abs_y_max - abs_y_min))
-            
-            crop_x_min = max(0, abs_x_min - pad_x)
-            crop_y_min = max(0, abs_y_min - pad_y)
-            crop_x_max = min(img_width, abs_x_max + pad_x)  
-            crop_y_max = min(img_height, abs_y_max + pad_y)
-            
-            # Crop the image
-            cropped = img.crop((crop_x_min, crop_y_min, crop_x_max, crop_y_max))
-            
-            # Save with descriptive filename
-            confidence_str = f"{prediction.get('confidence', 0):.4f}".replace('.', '_')
-            cropped_path = self.debug_dir / f"prediction_{i+1}_{timestamp}_conf_{confidence_str}.png"
-            cropped.save(cropped_path)
-            print(f"   ✂️ Saved: {cropped_path}")
-            
-            cropped_results.append({
-                'path': str(cropped_path),
-                'image': cropped,
-                'confidence': prediction.get('confidence', 0),
-                'prediction_index': i+1,
-                'bbox': (crop_x_min, crop_y_min, crop_x_max, crop_y_max),
-                'original_prediction': prediction
-            })
-        
-        # Sort by confidence (best first)
-        cropped_results.sort(key=lambda x: x['confidence'], reverse=True)
-        print(f"\n✅ Cropped {len(cropped_results)} predictions, sorted by confidence")
-        
-        return cropped_results
+        return {
+            'path': str(cropped_path),
+            'image': cropped_640,
+            'confidence': prediction.get('confidence', 0),
+            'bbox': (crop_x_min, crop_y_min, crop_x_max, crop_y_max),
+            'original_prediction': prediction
+        }
     
     def test_yolo_detection(self, image_path):
         """Test YOLO piece detection via HuggingFace Inference API"""
@@ -464,43 +468,23 @@ class RoboflowSegmentationTester:
         return board_fen
     
     def test_roboflow_piece_detection(self, image_path, model_id="chess-pieces-22cbf/3"):
-        """Test Roboflow piece detection"""
+        """Test Roboflow piece detection (no preprocessing needed since image is already 640x640)"""
         print(f"\n🎯 Testing Roboflow piece detection on: {image_path}")
         print(f"🎯 Using model: {model_id}")
         
-        preprocessed_path = None
         try:
-            # Preprocess image to optimal size for YOLO models
-            preprocessed_path, offset, resized_dims, original_dims = preprocess_for_roboflow(image_path, target_size=640)
+            print("📡 Sending request to Roboflow API (image already optimized)...")
             
-            print("📡 Sending preprocessed request to Roboflow API...")
-            
-            result = self.client.infer(preprocessed_path, model_id=model_id)
+            result = self.client.infer(image_path, model_id=model_id)
             
             print(f"✅ Roboflow piece detection completed!")
             print(f"📊 Result keys: {result.keys()}")
             
-            # Scale predictions back to original image coordinates
+            # No coordinate scaling needed since we're working in native 640x640 space
             predictions = result.get("predictions", [])
-            if predictions:
-                print(f"🔄 Scaling {len(predictions)} predictions back to original coordinates...")
-                
-                scale_x = original_dims[0] / resized_dims[0]
-                scale_y = original_dims[1] / resized_dims[1]
-                
-                for prediction in predictions:
-                    # Adjust coordinates from preprocessed image back to original
-                    pred_x = prediction["x"] - offset[0]  # Remove padding offset
-                    pred_y = prediction["y"] - offset[1]
-                    
-                    # Scale back to original dimensions
-                    prediction["x"] = pred_x * scale_x
-                    prediction["y"] = pred_y * scale_y
-                    prediction["width"] = prediction["width"] * scale_x
-                    prediction["height"] = prediction["height"] * scale_y
             
             # Dump full JSON response for debugging
-            print(f"\n🔍 PIECE DETECTION RESULTS (scaled back to original coordinates):")
+            print(f"\n🔍 PIECE DETECTION RESULTS:")
             print("=" * 80)
             print(json.dumps(result, indent=2, default=str))
             print("=" * 80)
@@ -523,11 +507,6 @@ class RoboflowSegmentationTester:
             import traceback
             traceback.print_exc()
             return None
-        finally:
-            # Clean up temporary preprocessed file
-            if preprocessed_path and os.path.exists(preprocessed_path):
-                os.remove(preprocessed_path)
-                print(f"🗑️ Cleaned up: {preprocessed_path}")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Chess board detection and piece recognition")
@@ -582,15 +561,14 @@ async def main():
             # Step 4: Extract and crop best prediction
             crop_start = time.time()
             print("✂️ Extracting best prediction...")
-            cropped_results = tester.extract_and_crop_all_predictions(image_path, result)
+            best_crop = tester.extract_best_prediction(image_path, result)
             crop_time = (time.time() - crop_start) * 1000
             print(f"⏱️ Board cropping: {crop_time:.1f}ms")
             
-            if not cropped_results:
-                print("❌ Failed to extract any predictions")
+            if not best_crop:
+                print("❌ Failed to extract best prediction")
                 return
                 
-            best_crop = cropped_results[0]  # Highest confidence
             board_image_path = best_crop['path']
             print(f"\n🏆 Using board: {board_image_path} (confidence: {best_crop['confidence']:.4f})")
             
