@@ -2137,6 +2137,286 @@ This biometric context would enable commentary like "Notice Nakamura's elevated 
 
 This implementation strategy provides a clear path from the current chess analysis foundation to a fully functional live chess companion that can provide expert-level commentary on streaming chess games.
 
+## Live Chess Companion Implementation: Recent Breakthroughs (January 2025)
+
+### Parallel Analysis Strategy: Elegant Solution to Turn Attribution
+
+**The Turn Attribution Problem**: 
+Vision systems can extract piece positions but determining whose turn it is relies on subtle, stream-specific cues (clock colors, commentary context). This created a fundamental challenge for providing relevant move suggestions.
+
+**Two Potential Solutions Evaluated**:
+
+1. **Turn Determination Approach**: Invest in reliable turn detection
+   - Parse commentary, visual cues, time displays  
+   - Complex, brittle, stream-dependent
+   - High failure rate on edge cases
+
+2. **Parallel Analysis Approach**: Pre-compute both perspectives
+   - Analyze positions from both white and black viewpoints
+   - Let user queries determine perspective ("What should Magnus do?")
+   - Sidesteps the hard problem entirely
+
+**Decision: Parallel Analysis**
+
+**Why This Approach Won**:
+- ✅ **Sidesteps brittle heuristics**: No dependency on inconsistent broadcast signals
+- ✅ **Leverages existing infrastructure**: Same analysis pipeline, run twice
+- ✅ **User-centric design**: Queries naturally indicate perspective
+- ✅ **Educational value bonus**: Can provide both perspectives for learning
+- ✅ **Reasonable computational cost**: 2x analysis cost for significantly better reliability
+
+**Implementation**:
+```python
+async def analyze_both_perspectives(self, fen, frame=None, commentary_context=None):
+    """Run parallel white + black analysis"""
+    white_analysis, black_analysis = await asyncio.gather(
+        self.analyze_position(fen, "white", frame, commentary_context),
+        self.analyze_position(fen, "black", frame, commentary_context)
+    )
+    
+    return {
+        "white": white_analysis,
+        "black": black_analysis
+    }
+```
+
+### Architecture Simplification: Current Analysis Pattern
+
+**Problem**: Complex cache management with position_cache lookups created unnecessary complexity for the core use case.
+
+**Solution**: Simplified to "current analysis" pattern that gets overwritten on FEN change.
+
+**Before (Complex)**:
+```python
+# Complex cache lookups and management
+if new_fen not in self.position_cache and not self.analyzing:
+    asyncio.create_task(self.analyze_new_position(new_fen, frame))
+elif new_fen in self.position_cache and self.watching_mode:
+    cached_analysis = self.position_cache[new_fen]["auto_perspective"]
+    await self.send_analysis_to_gemini(cached_analysis)
+```
+
+**After (Simple)**:
+```python
+# Simple current analysis pattern
+if not self.analyzing:
+    asyncio.create_task(self.analyze_new_position(new_fen, frame))
+
+# Update current analysis (overwrite)
+self.current_analysis = analyses
+```
+
+**Benefits**:
+- ✅ **Reduced complexity**: No cache key management or lookup logic
+- ✅ **Clear state model**: One current position, one current analysis
+- ✅ **Accepts staleness**: Willing to trade slight staleness for simplicity and low latency
+- ✅ **Easy debugging**: Clear data flow and state representation
+
+### Analysis Refactoring: Separation of Concerns
+
+**Problem**: chess_companion_standalone.py grew to ~1600 lines with mixed responsibilities.
+
+**Solution**: Extract analysis logic into dedicated `chess_analyzer.py` module.
+
+**Clean API Design**:
+```python
+class ChessAnalyzer:
+    async def analyze_both_perspectives(self, fen, frame=None, commentary_context=None):
+        """Complete analysis package ready for Gemini Live"""
+        
+    async def analyze_position(self, fen, color, frame=None, commentary_context=None):
+        """Single perspective analysis with all context"""
+        
+    async def determine_query_perspective(self, user_query, broadcast_context):
+        """Parse user query to determine white vs black perspective"""
+        
+    async def _extract_broadcast_context(self, frame):
+        """Extract time pressure, player info, match stakes from frame"""
+```
+
+**What Moved to ChessAnalyzer**:
+- ✅ `analyze_position()` - Core analysis pipeline
+- ✅ `determine_query_perspective()` - Turn inference from queries  
+- ✅ `_extract_broadcast_context()` - Visual context extraction
+- ✅ `_get_stockfish_analysis()` - Engine analysis
+- ✅ `_get_simple_similar_games()` - Vector search
+- ✅ `_format_for_live_model()` - LLM formatting
+
+**What Stays in Companion**:
+- ✅ Video capture orchestration
+- ✅ Scene detection coordination  
+- ✅ FEN detection loops
+- ✅ Audio streams (TV + user mic)
+- ✅ Gemini Live session management
+- ✅ Tool call handling
+
+**Benefits**:
+- ✅ **Focused files**: Companion = streams, Analyzer = chess logic
+- ✅ **Testability**: Can unit test analysis without video streams
+- ✅ **Reusability**: Other chess tools can use the analyzer
+- ✅ **Clear responsibilities**: Clean separation between orchestration and analysis
+
+### Tool Response Architecture: Direct Return Pattern
+
+**Problem**: Tool was sending analysis via `send_client_content()` AND returning generic response, causing Gemini to respond twice.
+
+**Original Flow**:
+1. User asks "What should Magnus do?"
+2. Tool sends detailed analysis via `send_client_content()`
+3. Tool returns generic "analysis ready" message
+4. Gemini responds to generic message, then detailed analysis
+5. **Result**: Double responses, awkward flow
+
+**Solution**: Return analysis content directly from tool.
+
+**New Flow**:
+```python
+# Return analysis directly from tool (don't send separately)
+result = {
+    "status": "analysis_ready",
+    "analysis": analysis.get("formatted_for_gemini", "Analysis unavailable"),
+    "query": user_query,
+    "perspective": color
+}
+```
+
+**Benefits**:
+- ✅ **Single coherent response**: Gemini gets analysis as tool response
+- ✅ **Cleaner conversation flow**: No awkward double responses
+- ✅ **Direct data path**: Analysis goes straight to model processing
+- **Trade-off**: Lose screenshot capability in tool responses (mitigated by broadcast context)
+
+### System Instruction Enhancement: Explicit Tool Usage
+
+**Problem**: Gemini often gave generic chess advice instead of using the analysis tool.
+
+**Solution**: Explicit instruction about when to analyze positions.
+
+**Enhanced System Instruction**:
+```
+## IMPORTANT: When to Analyze the Current Position
+ALWAYS use the `analyze_current_position` tool when users ask about:
+- What should [player] do/play? (e.g. "What should Magnus do?" "What should Alireza play?")
+- Current position evaluation (e.g. "How good is this position?" "Who's winning?") 
+- Best moves or move suggestions (e.g. "What's the best move?" "Any good moves here?")
+- Position-specific questions (e.g. "Is this winning?" "Should White attack?")
+
+Don't give generic chess advice - analyze the actual board position first!
+```
+
+**Result**: Gemini now consistently uses the tool for position-specific queries.
+
+### Vision Pipeline Optimization: Quiet Operation
+
+**Problem**: Roboflow piece detection was extremely verbose, logging details for every piece detected.
+
+**Before**:
+```
+📊 Piece detection summary:
+   Total detections: 27
+   black-bishop: 1
+   [... 27 lines of individual piece details ...]
+  Detection 1: black-queen → q at (520.5, 363.5) → grid (4, 6) conf=0.979
+  [... etc for all 27 pieces ...]
+```
+
+**After (Quiet Operation)**:
+```
+✅ Processed 27 detections cleanly
+```
+
+**Changes Made**:
+- Only log unusual piece counts (< 10 or > 35 pieces)
+- Only log conflicts and out-of-bounds detections
+- Added visual board representation on FEN change (not every detection)
+
+**Benefits**:
+- ✅ **Clean logs**: Focus on actual issues, not routine success
+- ✅ **Visual board on change**: See position when it actually matters
+- ✅ **Easier debugging**: Important information not buried in spam
+
+### Debug Infrastructure: Tool Response Inspection
+
+**Problem**: Tool responses weren't working as expected but no visibility into what was being returned.
+
+**Solution**: Comprehensive debug logging for tool responses.
+
+**Debug Output**:
+```
+🔧 TOOL RESPONSE DEBUG:
+============================================================
+Status: analysis_ready
+Query: What should Alireza do?
+Perspective: white
+Analysis length: 1887
+FULL ANALYSIS CONTENT:
+----------------------------------------
+[Complete formatted analysis for debugging]
+----------------------------------------
+============================================================
+```
+
+**Tool Response Validation**:
+```
+🔧 SENDING 1 TOOL RESPONSES TO GEMINI
+Tool Response 1: analyze_current_position (ID: abc123)
+  → Analysis content length: 1887 chars
+  → Full response: {'status': 'analysis_ready', ...}
+✅ Tool responses sent to Gemini successfully
+```
+
+**Benefits**:
+- ✅ **Complete visibility**: See exactly what's sent to Gemini
+- ✅ **Content validation**: Verify analysis content is generated correctly
+- ✅ **Response debugging**: Track tool response delivery and format
+
+### Key Architectural Insights
+
+**1. Parallel Analysis Sidesteps Hard Problems**
+- Turn determination is fundamentally brittle across different broadcast formats
+- Pre-computing both perspectives eliminates the need for turn detection
+- User queries naturally indicate the desired perspective
+
+**2. Simplicity Beats Complexity**
+- Simple "current analysis" pattern easier to reason about than complex caching
+- Direct tool returns cleaner than dual-channel communication
+- Explicit instructions work better than implicit model behavior
+
+**3. Separation of Concerns Enables Growth**
+- Analysis logic separated from orchestration enables reuse and testing
+- Clean APIs between components make the system more maintainable
+- Focused modules are easier to understand and debug
+
+**4. Debug Infrastructure is Essential**
+- Complex AI systems require extensive debugging capabilities
+- Visual feedback (debug images, log analysis) critical for vision systems  
+- Tool response inspection necessary for multi-modal AI debugging
+
+### Current System Status
+
+**✅ What Works Now**:
+- Parallel white/black analysis for all positions
+- Simple current analysis architecture with low latency
+- Clean separation between analysis logic and stream orchestration
+- Direct tool response pattern for cleaner conversations
+- Quiet vision pipeline with meaningful visual feedback
+- Comprehensive debug infrastructure for development
+
+**🔄 Recent Improvements**:
+- 19x speedup in vision pipeline (40s → 2s FEN detection)
+- Eliminated verbose logging spam from piece detection
+- Added visual board representation for position changes
+- Enhanced system instructions for consistent tool usage
+- Complete tool response debugging and validation
+
+**📋 Ready for Next Phase**:
+- Live game integration with consistent sub-3s position detection
+- Rich multi-perspective analysis ready for any user query
+- Clean architecture foundation for advanced features
+- Proven analysis quality matching database generation pipeline
+
+The live chess companion represents a successful evolution of the TV companion architecture, adapted for the rich analytical domain of chess with significant performance and user experience improvements through architectural simplification and parallel analysis strategies.
+
 ## Live Chess Companion Implementation: Breakthrough Architecture (January 2025)
 
 ### The Performance Revolution: 19x Speedup Achievement
