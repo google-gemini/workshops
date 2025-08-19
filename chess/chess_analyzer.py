@@ -118,9 +118,22 @@ class ChessAnalyzer:
                 results.append({})
             
             # Store results in position entry
-            position_entry["stockfish_analysis"] = results[0]
+            stockfish_analysis = results[0]
+            position_entry["stockfish_analysis"] = stockfish_analysis
             position_entry["similar_positions"] = results[1]
             position_entry["broadcast_context"] = results[2]
+            
+            # Compute PV final evaluation for richer analysis
+            pv = stockfish_analysis.get("principal_variation", [])
+            if pv and len(pv) > 1:
+                try:
+                    # Use the analysis perspective color
+                    starting_color = color
+                    pv_final_eval = await self._evaluate_after_pv(fen, pv[:4], starting_color)
+                    position_entry["stockfish_analysis"]["pv_final_evaluation"] = pv_final_eval
+                    print(f"✅ PV final evaluation computed: {pv_final_eval:+.1f}")
+                except Exception as e:
+                    print(f"⚠️ PV final evaluation failed: {e}")
             
             # Generate LLM-enhanced description
             enhanced_desc = await self._generate_enhanced_description(position_entry)
@@ -442,6 +455,17 @@ STRATEGIC ELEMENTS:
             
             text += f"\nENGINE ANALYSIS: {eval_text}, best move: {best_move}"
             
+            # Add principal variation with final evaluation if available
+            pv = engine.get("principal_variation", [])
+            if pv and len(pv) > 1:
+                pv_moves = " ".join(pv[:4])  # Show first 4 moves
+                pv_final = engine.get("pv_final_evaluation")
+                
+                if pv_final is not None:
+                    text += f"\nPrincipal variation: {pv_moves} → {pv_final:+.1f}"
+                else:
+                    text += f"\nPrincipal variation: {pv_moves}"
+            
             # Add move context if available  
             move_context = database_entry.get("move_context")
             if move_context and move_context in ["white", "black"]:
@@ -518,6 +542,293 @@ STRATEGIC ELEMENTS:
             print(f"❌ Frame conversion failed: {e}")
             raise
     
+    async def analyze_hypothetical_move(
+        self, 
+        current_fen: str, 
+        move_description: str
+    ) -> dict:
+        """Analyze what happens if a specific move is played"""
+        try:
+            print(f"🤔 Analyzing hypothetical move: '{move_description}' from {current_fen[:30]}...")
+            
+            # Step 1: Parse the move description to algebraic notation
+            parsed_move = await self._parse_move_description(move_description, current_fen)
+            if not parsed_move:
+                return {"error": f"Could not parse move: {move_description}"}
+            
+            print(f"📝 Parsed move: {move_description} → {parsed_move}")
+            
+            # Step 2: Apply the move to current position
+            board = chess.Board(f"{current_fen} w KQkq - 0 1")  # Assume white to move for now
+            
+            # Try to parse and apply the move
+            try:
+                move = board.parse_san(parsed_move)
+                board.push(move)
+                new_fen = board.fen().split()[0]  # Just the position part
+                print(f"✅ Move applied successfully: {current_fen[:20]}... → {new_fen[:20]}...")
+            except ValueError as e:
+                # Try with black to move
+                try:
+                    board = chess.Board(f"{current_fen} b KQkq - 0 1")
+                    move = board.parse_san(parsed_move)
+                    board.push(move)
+                    new_fen = board.fen().split()[0]
+                    print(f"✅ Move applied (black to move): {current_fen[:20]}... → {new_fen[:20]}...")
+                except ValueError:
+                    return {"error": f"Invalid move '{parsed_move}' for current position"}
+            
+            # Step 3: Get full analysis for both positions to compare PVs
+            current_analysis_task = self._get_stockfish_analysis_database_format(current_fen, "white")  # Default perspective
+            new_analysis_task = self._get_stockfish_analysis_database_format(new_fen, "black")  # Opposite perspective after move
+            
+            current_analysis, new_analysis = await asyncio.gather(current_analysis_task, new_analysis_task)
+            
+            # Step 4: Calculate evaluation change
+            current_eval = current_analysis.get("evaluation", 0.0)
+            new_eval = new_analysis.get("evaluation", 0.0)
+            evaluation_change = new_eval - current_eval
+            
+            # Step 5: Generate human-readable analysis
+            analysis_text = await self._format_hypothetical_analysis(
+                move_description=move_description,
+                parsed_move=parsed_move,
+                current_eval=current_eval,
+                new_eval=new_eval,
+                evaluation_change=evaluation_change,
+                current_analysis=current_analysis,
+                new_analysis=new_analysis,
+                current_fen=current_fen,
+                new_fen=new_fen
+            )
+            
+            return {
+                "analysis": analysis_text,
+                "parsed_move": parsed_move,
+                "current_evaluation": current_eval,
+                "new_evaluation": new_eval,
+                "evaluation_change": evaluation_change,
+                "assessment": "good" if evaluation_change > 0 else ("neutral" if abs(evaluation_change) < 0.2 else "questionable"),
+                "best_move_after": new_analysis.get("best_move_san"),
+                "principal_variation": new_analysis.get("principal_variation", []),
+                "current_best_move": current_analysis.get("best_move_san"),
+                "current_principal_variation": current_analysis.get("principal_variation", [])
+            }
+            
+        except Exception as e:
+            print(f"❌ Hypothetical move analysis failed: {e}")
+            traceback.print_exc()
+            return {"error": f"Analysis failed: {str(e)}"}
+    
+    async def _parse_move_description(self, move_description: str, current_fen: str) -> str:
+        """Parse natural language move description to algebraic notation"""
+        try:
+            prompt = f"""Current chess position (piece positions only): {current_fen}
+
+Convert this move description to standard algebraic notation:
+"{move_description}"
+
+Examples:
+- "rook to e8" → "Re8"
+- "takes the pawn on e5" → "Nxe5" (if knight can take)
+- "castles kingside" → "O-O"
+- "queen to d4" → "Qd4"
+- "knight f3" → "Nf3"
+
+Return ONLY the move in algebraic notation, nothing else."""
+
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model="gemini-2.0-flash-lite",
+                contents=[prompt]
+            )
+            
+            parsed_move = response.text.strip()
+            print(f"🔍 Move parsing: '{move_description}' → '{parsed_move}'")
+            return parsed_move
+            
+        except Exception as e:
+            print(f"❌ Move parsing failed: {e}")
+            return None
+    
+    async def _get_quick_stockfish_evaluation(self, fen: str) -> float:
+        """Get quick Stockfish evaluation (just the number)"""
+        try:
+            engine = self.engine_pool.get_engine()
+            
+            # Build FEN with white to move (simple assumption)
+            board = chess.Board(f"{fen} w KQkq - 0 1")
+            
+            # Very quick analysis (0.2 seconds)
+            info = await asyncio.to_thread(
+                engine.analyse, board, chess.engine.Limit(time=0.2)
+            )
+            
+            self.engine_pool.return_engine(engine)
+            
+            # Extract just the evaluation number
+            score = info["score"].white()
+            if score.is_mate():
+                return 10000 if score.mate() > 0 else -10000
+            else:
+                return score.score() / 100.0  # Convert centipawns to pawns
+                
+        except Exception as e:
+            print(f"❌ Quick evaluation failed: {e}")
+            return 0.0
+    
+    async def _format_hypothetical_analysis(
+        self, 
+        move_description: str,
+        parsed_move: str,
+        current_eval: float,
+        new_eval: float,
+        evaluation_change: float,
+        current_analysis: dict = None,
+        new_analysis: dict = None,
+        current_fen: str = None,
+        new_fen: str = None
+    ) -> str:
+        """Format hypothetical move analysis for human reading"""
+        
+        # Format evaluation numbers
+        def format_eval(eval_val):
+            if abs(eval_val) > 50:
+                return f"Mate in {int(abs(eval_val) / 1000)}"
+            else:
+                return f"{eval_val:+.1f}"
+        
+        current_eval_str = format_eval(current_eval)
+        new_eval_str = format_eval(new_eval)
+        
+        # Determine move quality
+        if evaluation_change > 0.5:
+            quality = "excellent"
+        elif evaluation_change > 0.2:
+            quality = "good" 
+        elif evaluation_change > -0.2:
+            quality = "neutral"
+        elif evaluation_change > -0.5:
+            quality = "questionable"
+        else:
+            quality = "poor"
+        
+        analysis = f"""HYPOTHETICAL MOVE ANALYSIS
+
+Move: {move_description} ({parsed_move})
+
+EVALUATION IMPACT:
+• Current position: {current_eval_str}
+• After {parsed_move}: {new_eval_str}
+• Change: {evaluation_change:+.2f}
+
+ASSESSMENT: This appears to be a {quality} move."""
+
+        if abs(evaluation_change) < 0.1:
+            analysis += " The evaluation remains essentially unchanged."
+        elif evaluation_change > 0:
+            analysis += f" The position improves by {evaluation_change:.2f}, indicating this is a strong choice."
+        else:
+            analysis += f" The position worsens by {abs(evaluation_change):.2f}, suggesting this may not be optimal."
+        
+        # Add principal variation comparison with final evaluations
+        if current_analysis and new_analysis and current_fen and new_fen:
+            current_pv = current_analysis.get("principal_variation", [])
+            current_best = current_analysis.get("best_move_san")
+            new_pv = new_analysis.get("principal_variation", [])
+            new_best = new_analysis.get("best_move_san")
+            
+            analysis += f"\n\nPOSITION COMPARISON:"
+            
+            if current_best and current_pv and len(current_pv) > 1:
+                current_line = " ".join(current_pv[:4])
+                # Get evaluation after current PV
+                current_pv_final_eval = asyncio.create_task(
+                    self._evaluate_after_pv(current_fen, current_pv[:4], "white")
+                )
+                analysis += f"\n• Current best line: {current_best} {current_line}"
+            
+            if new_best and new_pv and len(new_pv) > 1:
+                new_line = " ".join(new_pv[:4])
+                # Get evaluation after new PV  
+                new_pv_final_eval = asyncio.create_task(
+                    self._evaluate_after_pv(new_fen, new_pv[:4], "black")
+                )
+                analysis += f"\n• After {parsed_move}: {new_best} {new_line}"
+            
+            # Wait for PV evaluations and add them
+            try:
+                if 'current_pv_final_eval' in locals():
+                    current_final = await current_pv_final_eval
+                    analysis = analysis.replace(
+                        f"Current best line: {current_best} {current_line}",
+                        f"Current best line: {current_best} {current_line} → {current_final:+.1f}"
+                    )
+                
+                if 'new_pv_final_eval' in locals():
+                    new_final = await new_pv_final_eval
+                    analysis = analysis.replace(
+                        f"After {parsed_move}: {new_best} {new_line}",
+                        f"After {parsed_move}: {new_best} {new_line} → {new_final:+.1f}"
+                    )
+                    
+                    # Add long-term assessment
+                    if 'current_pv_final_eval' in locals():
+                        pv_eval_change = new_final - current_final
+                        if abs(pv_eval_change) > 0.3:
+                            if pv_eval_change > 0:
+                                assessment = "The hypothetical move leads to better long-term prospects after best play."
+                            else:
+                                assessment = "The hypothetical move leads to complications that favor the opponent after best play."
+                            analysis += f"\n\nLONG-TERM ASSESSMENT: {assessment}"
+                        
+            except Exception as e:
+                print(f"⚠️ PV evaluation failed: {e}")
+                
+        elif new_analysis:
+            # Fallback to old format if current analysis missing
+            best_move = new_analysis.get("best_move_san")
+            pv = new_analysis.get("principal_variation", [])
+            
+            analysis += f"\n\nRESULTING POSITION:"
+            if best_move:
+                analysis += f"\n• Engine recommends: {best_move}"
+            
+            if pv and len(pv) > 1:
+                pv_moves = " ".join(pv[:4])
+                analysis += f"\n• Best continuation: {pv_moves}"
+        
+        return analysis
+    
+    async def _evaluate_after_pv(self, starting_fen: str, pv_moves: list, starting_color: str) -> float:
+        """Play out principal variation and evaluate the final position"""
+        try:
+            # Construct proper FEN with starting color
+            color_char = 'w' if starting_color == 'white' else 'b'
+            full_fen = f"{starting_fen} {color_char} KQkq - 0 1"
+            board = chess.Board(full_fen)
+            
+            # Play out the PV moves
+            moves_played = 0
+            for move_str in pv_moves:
+                if moves_played >= 4:  # Limit to first 4 moves
+                    break
+                try:
+                    board.push_san(move_str)
+                    moves_played += 1
+                except ValueError:
+                    # If move can't be played, stop here
+                    break
+            
+            # Quick evaluation of final position
+            final_eval = await self._get_quick_stockfish_evaluation(board.fen().split()[0])
+            print(f"🔍 PV evaluation: {' '.join(pv_moves[:moves_played])} → {final_eval:+.1f}")
+            return final_eval
+            
+        except Exception as e:
+            print(f"❌ PV evaluation failed: {e}")
+            return 0.0
+
     def _create_error_analysis(self, fen: str, color: str, error_msg: str) -> dict:
         """Create error analysis entry"""
         return {

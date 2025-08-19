@@ -86,12 +86,17 @@ CHESS_CONFIG = {
 
 You can provide insightful commentary AND control the TV for chess content.
 
-## IMPORTANT: When to Analyze the Current Position
+## IMPORTANT: When to Analyze Positions
 ALWAYS use the `analyze_current_position` tool when users ask about:
 - What should [player] do/play? (e.g. "What should Magnus do?" "What should Alireza play?")
 - Current position evaluation (e.g. "How good is this position?" "Who's winning?") 
 - Best moves or move suggestions (e.g. "What's the best move?" "Any good moves here?")
 - Position-specific questions (e.g. "Is this winning?" "Should White attack?")
+
+Use the `analyze_hypothetical_move` tool for "what if" questions:
+- What if Magnus plays Re8? 
+- What happens if White castles?
+- Is Nf3 a good move here?
 
 Don't give generic chess advice - analyze the actual board position first!
 
@@ -143,6 +148,28 @@ Feel free to suggest chess content to watch or help users find specific games.
                         }
                     },
                     "required": [],
+                },
+            },
+            {
+                "name": "analyze_hypothetical_move",
+                "description": (
+                    "Analyze what happens if a specific move is played from"
+                    " the current position. Compare the resulting evaluation"
+                    " with the current position and explain the consequences."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "move_description": {
+                            "type": "string",
+                            "description": (
+                                "The hypothetical move to analyze (e.g.,"
+                                " 'rook to e8', 'takes the pawn on e5',"
+                                " 'Nf3', 'castles kingside')"
+                            ),
+                        }
+                    },
+                    "required": ["move_description"],
                 },
             },
             {
@@ -395,7 +422,7 @@ class ChessCompanionSimplified:
       client = MemoryClient(
           api_key=api_key,
           org_id="org_lOJM2vCRxHhS7myVb0vvaaY1rUauhqkKbg7Dg7KZ",
-          project_id="proj_I6CXbVIrt0AFlWE0MU3TyKxkkYJam2bHm8nUxgEu",
+          project_id="proj_LJWUhnYLUYsJzLVx4U7buckvgXmDyBQoA6758PQM",
       )
       print("✓ Episodic memory initialized")
       return client
@@ -536,30 +563,42 @@ class ChessCompanionSimplified:
         print("❌ Failed to capture screenshot for board mask")
         return
       
-      # Convert to PIL and resize to 1024x1024 
+      # Keep full resolution for higher quality
       screenshot_rgb = cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB)
       pil_screenshot = Image.fromarray(screenshot_rgb)
-      pil_1024 = pil_screenshot.resize((1024, 1024), Image.LANCZOS)
+      original_size = pil_screenshot.size
       
-      print(f"📐 Screenshot: {screenshot.shape[:2]} → 1024x1024 for segmentation")
+      print(f"📐 Screenshot: {screenshot.shape[:2]} → full resolution for segmentation")
       
-      # Step 2: Segment to get bounding box (on 1024x1024 space)
+      # Step 2: Segment to get bounding box (on full resolution)
       from roboflow import ChessVisionPipeline
       pipeline = ChessVisionPipeline(debug_dir=str(self.debug_dir) if self.debug_mode else None)
       
-      segmentation_result = pipeline.segment_board_direct(pil_1024)
+      segmentation_result = await asyncio.to_thread(
+          pipeline.segment_board_direct, pil_screenshot
+      )
       
       if segmentation_result.get("predictions"):
         bbox = pipeline.extract_bbox_from_segmentation(segmentation_result)
         
         if bbox:
-          # Cache bbox (coordinates in 1024x1024 space)
+          # Convert absolute coordinates to relative coordinates (0.0-1.0)
+          abs_coords = bbox["coords"]  # (x_min, y_min, x_max, y_max) in full resolution
+          rel_coords = (
+            abs_coords[0] / original_size[0],  # x_min relative
+            abs_coords[1] / original_size[1],  # y_min relative  
+            abs_coords[2] / original_size[0],  # x_max relative
+            abs_coords[3] / original_size[1]   # y_max relative
+          )
+          
+          # Cache bbox as relative coordinates
           self.current_board_mask = {
-            "bbox": bbox["coords"],  # (x_min, y_min, x_max, y_max) in 1024x1024 space
+            "bbox_relative": rel_coords,  # Relative coordinates (0.0-1.0)
             "confidence": bbox["confidence"], 
-            "timestamp": start_time
+            "timestamp": start_time,
+            "original_size": original_size  # For debugging
           }
-          print(f"✅ Board mask cached: {bbox['coords']}, confidence={bbox['confidence']:.3f}")
+          print(f"✅ Board mask cached (relative): {rel_coords}, confidence={bbox['confidence']:.3f}")
         else:
           print("❌ No valid bounding box extracted")
           self.current_board_mask = None
@@ -578,49 +617,58 @@ class ChessCompanionSimplified:
   async def extract_fen_with_cached_mask(self, frame):
     """Fast FEN extraction using cached board bounding box"""
     try:
-      if not self.current_board_mask or "bbox" not in self.current_board_mask:
+      if not self.current_board_mask or "bbox_relative" not in self.current_board_mask:
         print("⚠️  No cached board mask - falling back")
         return await self._fallback_full_detection(frame)
       
-      # Step 1: Screenshot → 1024x1024 (same space as cached bbox)
+      # Step 1: Keep screenshot at full resolution
       screenshot_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
       pil_screenshot = Image.fromarray(screenshot_rgb)
-      pil_1024 = pil_screenshot.resize((1024, 1024), Image.LANCZOS)
+      current_size = pil_screenshot.size
       
-      # Step 2: Crop using cached bbox (in 1024x1024 space)
-      bbox = self.current_board_mask["bbox"]  # (x_min, y_min, x_max, y_max)
-      pil_crop = pil_1024.crop(bbox)
+      # Step 2: Crop using relative bbox coordinates
+      rel_bbox = self.current_board_mask["bbox_relative"]  # (x_min, y_min, x_max, y_max) in 0.0-1.0
+      abs_bbox = (
+        int(rel_bbox[0] * current_size[0]),  # x_min
+        int(rel_bbox[1] * current_size[1]),  # y_min
+        int(rel_bbox[2] * current_size[0]),  # x_max  
+        int(rel_bbox[3] * current_size[1])   # y_max
+      )
+      pil_crop = pil_screenshot.crop(abs_bbox)
       
       if pil_crop.size[0] == 0 or pil_crop.size[1] == 0:
         print("❌ Empty crop from cached bbox - falling back")
         return await self._fallback_full_detection(frame)
       
-      # Step 3: Resize crop to 640x640 (optimal for piece detection)
-      pil_crop_640 = pil_crop.resize((640, 640), Image.LANCZOS)
+      print(f"🚀 Full resolution path: {frame.shape[:2]} → full res crop ({pil_crop.size}) → no preprocessing")
       
-      print(f"🚀 Fast path: {frame.shape[:2]} → 1024² → crop → 640² → piece detection")
-      
-      # Step 4: Piece detection directly on PIL Image (ONE API CALL)
+      # Step 3: No preprocessing - use raw crop for piece detection
       from roboflow import ChessVisionPipeline
       pipeline = ChessVisionPipeline(debug_dir=str(self.debug_dir) if self.debug_mode else None)
       
-      piece_result = pipeline.detect_pieces_direct(pil_crop_640, model_id="chess.comdetection/4")
+      print(f"✅ Using raw crop with no preprocessing: {pil_crop.size}")
+      
+      # Step 3: Piece detection on full resolution crop only
+      piece_result = await asyncio.to_thread(
+          pipeline.detect_pieces_direct, pil_crop, model_id="2dcpd/2"
+      )
+      crop_for_fen = pil_crop
       
       if not piece_result:
         print("❌ Fast piece detection failed - falling back")
         return await self._fallback_full_detection(frame)
       
-      # Step 5: Convert to FEN (coordinate math only, no API calls)
+      # Step 4: Convert to FEN using actual crop dimensions
       piece_count = len(piece_result.get("predictions", []))
       if piece_count < 2:
-        print(f"❌ Fast path: Only {piece_count} pieces detected")
+        print(f"❌ Full-res path: Only {piece_count} pieces detected")
         return None
         
       fen, _ = pipeline.pieces_to_fen_from_dimensions(
         piece_result, 
-        pil_crop_640.size[0], 
-        pil_crop_640.size[1], 
-        "chess.comdetection/4"
+        crop_for_fen.size[0], 
+        crop_for_fen.size[1], 
+        "2dcpd/2"
       )
       
       if fen == "8/8/8/8/8/8/8/8":
@@ -630,11 +678,11 @@ class ChessCompanionSimplified:
       # Optional: Save debug frames
       if self.debug_mode:
         timestamp = datetime.now().strftime("%H%M%S_%f")[:-3]
-        debug_path = self.debug_dir / f"fast_crop_{timestamp}.png"
-        pil_crop_640.save(debug_path)
-        print(f"🐛 Debug: Saved fast crop to {debug_path}")
+        debug_path = self.debug_dir / f"raw_crop_{timestamp}.png"
+        crop_for_fen.save(debug_path)
+        print(f"🐛 Debug: Saved raw crop to {debug_path}")
       
-      print(f"🚀 Fast FEN: {piece_count} pieces → {fen[:20]}...")
+      print(f"🚀 Full-resolution FEN: {piece_count} pieces → {fen[:20]}...")
       return fen
       
     except Exception as e:
@@ -647,7 +695,8 @@ class ChessCompanionSimplified:
     try:
       temp_path = await self.save_frame_to_temp(frame)
       
-      result = await consensus_piece_detection(
+      result = await asyncio.to_thread(
+          consensus_piece_detection,
           temp_path,
           n=7,
           min_consensus=3,
@@ -999,6 +1048,39 @@ class ChessCompanionSimplified:
         self.watching_mode = False
         result = {"status": "watching_mode_stopped"}
         print("👁️ Watching mode OFF")
+
+      elif fc.name == "analyze_hypothetical_move":
+        move_description = fc.args.get("move_description", "")
+        print(f"🔧 Hypothetical move analysis requested: '{move_description}'")
+
+        if self.current_board and move_description:
+          try:
+            # Use analyzer for hypothetical move analysis
+            hypothetical_result = await self.analyzer.analyze_hypothetical_move(
+              current_fen=self.current_board,
+              move_description=move_description
+            )
+            
+            result = {
+              "status": "hypothetical_analysis_complete",
+              "move_description": move_description,
+              "analysis": hypothetical_result.get("analysis", "Analysis unavailable"),
+              "evaluation_change": hypothetical_result.get("evaluation_change"),
+              "new_evaluation": hypothetical_result.get("new_evaluation"),
+              "best_move_after": hypothetical_result.get("best_move_after"),
+              "principal_variation": hypothetical_result.get("principal_variation", [])
+            }
+          except Exception as e:
+            print(f"❌ Hypothetical analysis failed: {e}")
+            result = {
+              "status": "analysis_error",
+              "error": f"Could not analyze hypothetical move: {str(e)}"
+            }
+        else:
+          result = {
+            "status": "no_position",
+            "message": "No current position available for hypothetical analysis."
+          }
 
       else:
         result = {"error": f"Unknown function: {fc.name}"}

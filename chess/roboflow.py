@@ -154,6 +154,16 @@ class ChessVisionPipeline:
                     "black-bishop": "b", "black-knight": "n", "black-pawn": "p"
                 },
                 "ignore_classes": ["board"]
+            },
+            "2dcpd/2": {
+                "label_format": "hyphenated",
+                "piece_mapping": {
+                    "white-king": "K", "white-queen": "Q", "white-rook": "R", 
+                    "white-bishop": "B", "white-knight": "N", "white-pawn": "P",
+                    "black-king": "k", "black-queen": "q", "black-rook": "r",
+                    "black-bishop": "b", "black-knight": "n", "black-pawn": "p"
+                },
+                "ignore_classes": ["board"]
             }
         }
         
@@ -251,22 +261,22 @@ async def roboflow_piece_detection(image_path, debug_dir=None, **kwargs):
         if not bbox:
             return {"consensus_fen": None, "error": "Board segmentation failed"}
         
-        # Step 3: Crop board region
+        # Step 3: Crop board region at full resolution
         img = Image.open(image_path) if isinstance(image_path, str) else image_path
         board_crop = img.crop(bbox['coords'])
-        board_crop_640 = board_crop.resize((640, 640), Image.LANCZOS)
         
-        # Step 4: Piece detection  
-        piece_result = pipeline.detect_pieces_direct(board_crop_640, model_id="chess.comdetection/4")
+        # Step 4: Piece detection on full resolution crop
+        piece_result = pipeline.detect_pieces_direct(board_crop, model_id="2dcpd/2")
         
         if not piece_result:
             return {"consensus_fen": None, "error": "Piece detection failed"}
         
-        # Step 5: Convert to FEN
+        # Step 5: Convert to FEN using actual crop dimensions
         fen, board_grid = pipeline.pieces_to_fen_from_dimensions(
             piece_result, 
-            640, 640,
-            "chess.comdetection/4"
+            board_crop.size[0],
+            board_crop.size[1],
+            "2dcpd/2"
         )
         
         print(f"✅ Roboflow detection complete: {fen}")

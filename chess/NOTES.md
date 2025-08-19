@@ -2417,6 +2417,275 @@ Tool Response 1: analyze_current_position (ID: abc123)
 
 The live chess companion represents a successful evolution of the TV companion architecture, adapted for the rich analytical domain of chess with significant performance and user experience improvements through architectural simplification and parallel analysis strategies.
 
+## Advanced Analysis Features: Principal Variations and Hypothetical Moves (January 2025)
+
+### The Question Evolution: From Basic Engine Analysis to Strategic Understanding
+
+During development, users asked increasingly sophisticated questions that revealed gaps in our analysis depth:
+
+- **Basic**: "What should Magnus play?" → Engine suggests best move
+- **Strategic**: "What happens after that line?" → Need principal variation outcomes  
+- **Counterfactual**: "What if he takes the pawn instead?" → Need hypothetical analysis
+- **Comparative**: "How do these two plans compare?" → Need deep positional understanding
+
+### Principal Variation Enhancement: Seeing the Future
+
+**The Problem**: Engine analysis showed immediate evaluation and best moves, but users wanted to understand *where* the recommended lines lead.
+
+**Original Output**:
+```
+ENGINE ANALYSIS: -4.2, best move: bxa4
+Principal variation: bxa4 b4b3 a1f1 b3b2
+```
+
+**User Question**: *"But what happens after that line? Does it get better or worse?"*
+
+**Enhanced Implementation**: Added `_evaluate_after_pv()` method to play out principal variations and evaluate final positions:
+
+```python
+async def _evaluate_after_pv(self, starting_fen: str, pv_moves: list, starting_color: str) -> float:
+    """Play out principal variation and evaluate the final position"""
+    try:
+        color_char = 'w' if starting_color == 'white' else 'b'
+        full_fen = f"{starting_fen} {color_char} KQkq - 0 1"
+        board = chess.Board(full_fen)
+        
+        # Play out the PV moves
+        moves_played = 0
+        for move_str in pv_moves:
+            if moves_played >= 4:  # Limit to first 4 moves
+                break
+            try:
+                board.push_san(move_str)
+                moves_played += 1
+            except ValueError:
+                break
+        
+        # Quick evaluation of final position
+        final_eval = await self._get_quick_stockfish_evaluation(board.fen().split()[0])
+        return final_eval
+    except Exception as e:
+        return 0.0
+```
+
+**Enhanced Output**:
+```
+ENGINE ANALYSIS: -4.2, best move: bxa4
+Principal variation: bxa4 b4b3 a1f1 b3b2 → -3.9
+```
+
+**Result**: Users could now see that the engine's recommended line leads to a slightly improved position (-4.2 → -3.9), showing there's practical fighting value despite being behind.
+
+### Hypothetical Move Analysis Tool: "What If" Scenarios
+
+**The User Need**: 
+- *"What happens if Nakamura takes that pawn with his rook?"*
+- *"What if Magnus castles instead of playing that move?"*
+- *"Is Nf3 better than the engine's suggestion?"*
+
+**Design Decision**: Create separate tool rather than extending existing analysis, because:
+- Different analysis depth needed (quick comparison vs comprehensive analysis)
+- Different response format (focused comparison vs broad position assessment)
+- Clear user intent separation
+
+**Implementation Architecture**:
+```python
+{
+    "name": "analyze_hypothetical_move",
+    "description": "Analyze what happens if a specific move is played",
+    "parameters": {
+        "move_description": {
+            "type": "string", 
+            "description": "The hypothetical move (e.g., 'rook to e8', 'takes the pawn on e5', 'Nf3')"
+        }
+    }
+}
+```
+
+**Pipeline**:
+1. **Natural language parsing**: "rook to e8" → "Re8"
+2. **Position application**: Current FEN + hypothetical move → new position  
+3. **Dual evaluation**: Stockfish analysis of both positions
+4. **Comparison synthesis**: Evaluation change + strategic consequences
+
+### Natural Language Move Parsing Challenge
+
+**The Problem**: Users describe moves in natural language, but chess engines need precise algebraic notation.
+
+**Examples**:
+- "rook to e8" → "Re8" (but which rook if multiple can go there?)
+- "takes the pawn on e5" → "Nxe5" (but what piece is capturing?)
+- "castles kingside" → "O-O"
+
+**Solution**: Use Gemini Flash-Lite as a chess-aware parser:
+
+```python
+async def _parse_move_description(self, move_description: str, current_fen: str) -> str:
+    """Parse natural language move description to algebraic notation"""
+    prompt = f"""Current chess position: {current_fen}
+
+Convert this move description to standard algebraic notation:
+"{move_description}"
+
+Examples:
+- "rook to e8" → "Re8"
+- "takes the pawn on e5" → "Nxe5" (if knight can take)
+- "castles kingside" → "O-O"
+
+Return ONLY the move in algebraic notation, nothing else."""
+
+    response = await asyncio.to_thread(
+        self.client.models.generate_content,
+        model="gemini-2.0-flash-lite",
+        contents=[prompt]
+    )
+    
+    return response.text.strip()
+```
+
+**Success Rate**: High accuracy for standard chess descriptions, with chess-legal validation.
+
+### Example Hypothetical Analysis Output
+
+**User Query**: *"What happens if Nakamura moves rook to a4?"*
+
+**System Response**:
+```
+HYPOTHETICAL MOVE ANALYSIS
+
+Move: Nakamura moves rook to a4 (Ra4)
+
+EVALUATION IMPACT:
+• Current position: -4.0
+• After Ra4: -6.2
+• Change: -2.26
+
+POSITION COMPARISON:
+• Current best line: Qxb4 g4b4 a4b3 a1f1 d5d3 → -4.4
+• After Ra4: Rd1+ d2d1 g4d1 d5d1 g1g2 → -4.6
+
+ASSESSMENT: This appears to be a poor move. The position worsens by 2.26, suggesting this may not be optimal.
+
+LONG-TERM ASSESSMENT: The hypothetical move leads to complications that favor the opponent after best play.
+```
+
+### Async Architecture Fixes: Solving Audio Cutouts
+
+**Critical Problem Discovered**: FEN detection was causing Gemini's voice to cut out mid-sentence.
+
+**Root Cause**: Blocking Roboflow API calls freezing the event loop where audio streaming happens:
+
+```python
+# BLOCKING - causes audio cutouts
+piece_result = pipeline.detect_pieces_direct(pil_crop, model_id="2dcpd/2")
+
+# FIXED - non-blocking 
+piece_result = await asyncio.to_thread(
+    pipeline.detect_pieces_direct, pil_crop, model_id="2dcpd/2"
+)
+```
+
+**Solution Applied Throughout**:
+- Board segmentation calls: `await asyncio.to_thread(pipeline.segment_board_direct, ...)`
+- Piece detection calls: `await asyncio.to_thread(pipeline.detect_pieces_direct, ...)`
+- Consensus detection calls: `await asyncio.to_thread(consensus_piece_detection, ...)`
+
+**Result**: Smooth audio streaming during FEN detection and analysis.
+
+### Enhanced Engine Failure Logging
+
+**Problem**: Cryptic engine failures like `+0.0, best move: ?` with no debugging info.
+
+**Discovery**: Stockfish segmentation faults (exit code: -11) caused by invalid FENs:
+```
+❌ Engine analysis failed: engine process died unexpectedly (exit code: -11)
+```
+
+**Enhanced Debugging**:
+```python
+except Exception as e:
+    print(f"\n{'='*60}")
+    print(f"❌ STOCKFISH SEGFAULT DETECTED" if "exit code: -11" in str(e) else "❌ ENGINE ANALYSIS FAILURE")
+    print(f"{'='*60}")
+    print(f"Deadly FEN: {fen_to_analyze}")
+    print(f"Original position FEN: {fen}")  
+    
+    # Try to validate the FEN manually
+    try:
+        test_board = chess.Board(fen_to_analyze)
+        print(f"✅ FEN is valid according to python-chess")
+        print(f"Board pieces: {len(test_board.piece_map())} pieces")
+    except Exception as fen_error:
+        print(f"❌ FEN IS INVALID: {fen_error}")
+        print(f"🚨 This invalid FEN likely caused the Stockfish segfault!")
+    
+    print(f"{'='*60}\n")
+```
+
+**Insight**: Invalid FENs with missing kings (like `r2q1rk1/6pp/3p4/p1BPp2n/2B5/5P2/PP1Q3P/3R3R`) were causing Stockfish to crash rather than return errors gracefully.
+
+### Vision Pipeline Challenges: The Ongoing King Problem  
+
+**Current Issue**: 2dcpd/2 model consistently misclassifies white king as queen, creating invalid positions:
+
+```
+r2q1rk1/6pp/3p4/p1BPp2n/2B5/5P2/PP1Q3P/3R3R
+                                    ^^
+```
+
+**Analysis**: Two white queens, no white king = invalid position = Stockfish segfault.
+
+**Investigation Results**:
+- **Preprocessing experiments**: Auto-orient, stretch-to-640, various resize methods all reduced accuracy
+- **Model comparison**: `chess.comdetection/4` even worse on this stream despite working on EWC
+- **Resolution optimization**: Full resolution better than compressed, but king problem persists
+
+**Current Theory**: The specific piece detection model or preprocessing pipeline has systematic bias misclassifying certain piece types on this broadcast format.
+
+**Next Steps**: 
+- Restore 640x640 fallback logic that was working before 
+- Investigate whether "good results" were actually using fallback path
+- Consider hybrid approach or different specialized models
+
+### Architectural Insights from Enhancement Development
+
+#### 1. User Questions Drive Feature Development
+Starting with basic "what should X play?" evolved into sophisticated strategic analysis through user feedback and natural follow-up questions.
+
+#### 2. Natural Language Interfaces Require Chess Intelligence  
+Simple string matching fails; need chess-aware parsing that understands context, piece disambiguation, and legal moves.
+
+#### 3. Async Architecture is Critical for Real-Time Systems
+Any blocking operation in the event loop breaks audio streaming and user experience. All external API calls must be wrapped in `asyncio.to_thread()`.
+
+#### 4. Debugging Infrastructure Pays Dividends
+Enhanced error logging revealed that "mysterious engine failures" were actually invalid FENs causing segfaults. Proper debugging tools essential for complex AI systems.
+
+#### 5. Separate Tools Beat Complex Single Tools
+Hypothetical move analysis as separate tool provides cleaner user experience and implementation than trying to overload the main analysis tool.
+
+#### 6. Principal Variation Context is Essential
+Users don't just want to know the best move - they want to understand the strategic consequences and where the recommended plans lead.
+
+### Future Enhancement Directions
+
+#### Advanced Hypothetical Analysis
+- **Multiple scenario comparison**: "Compare Nf3, Bc4, and O-O"  
+- **Decision tree analysis**: "If White plays X, then Black's best responses are..."
+- **Time-horizon analysis**: "This looks good short-term but has long-term problems"
+
+#### Enhanced Natural Language Processing
+- **Move sequence parsing**: "What if Magnus plays Nf3, then Alireza responds with Nc6?"
+- **Contextual disambiguation**: Use board position to resolve ambiguous descriptions  
+- **Chess vocabulary expansion**: Handle more colloquial chess terminology
+
+#### Predictive Analysis Features  
+- **Opening preparation**: "What opening is Magnus likely to choose?"
+- **Endgame tablebase integration**: Perfect play in simplified positions
+- **Style analysis**: "This move is typical of Carlsen's positional style"
+
+The advanced analysis features represent a significant evolution in chess AI, moving beyond simple evaluation to providing the kind of strategic insight and speculative analysis that human experts offer, while maintaining the computational depth impossible for human real-time analysis.
+
 ## Live Chess Companion Implementation: Breakthrough Architecture (January 2025)
 
 ### The Performance Revolution: 19x Speedup Achievement
@@ -4355,6 +4624,62 @@ def extract_best_prediction(self, ..., confidence_threshold=0.7):
 The Roboflow optimization represents a **fundamental breakthrough** that transforms the chess companion from a slow analytical tool into a responsive real-time commentary system capable of providing expert-level insights during live games.
 
 **Status**: **Production deployed** - 19x performance improvement with maintained accuracy ✅
+
+## Demo Plan: Live Chess Companion Showcase
+
+### Demo Scenario 1: Nakamura vs. Carlsen, EWC 25 Semifinals
+
+**YouTube Link**: [youtube.com/watch?v=jGGf41oiCT8&t=4335s](https://youtube.com/watch?v=jGGf41oiCT8&t=4335s) at 1:12:13
+
+**Setup**: Carlsen with shit-eating grin; plays a4
+
+**Demo Flow**:
+1. "Wait Gemini, pause; what happens if Nakamura takes that pawn with his rook?"
+2. "What should he do, then?"
+
+**Expected Showcase**: 
+- Hypothetical move analysis tool (`analyze_hypothetical_move`)
+- Follow-up question handling with context
+- Real-time position analysis with broadcast context
+
+### Demo Scenario 2: Claude 4 Opus vs. Gemini 2.5 Pro
+
+**YouTube Link**: [https://www.youtube.com/watch?v=JWvXULUjfPc](https://www.youtube.com/watch?v=JWvXULUjfPc) at 5:44
+
+**Setup**: Claude could have played Be3; plays Qg4!?; hangs queen; Nakamura facepalms.
+
+**Demo Flow**:
+1. "Wait Gemini, go back; what should Claude have played here?"
+
+**Expected Showcase**:
+- Current position analysis tool (`analyze_current_position`)
+- Engine evaluation with principal variation
+- Historical context from vector database
+- AI vs AI game commentary
+
+### Demo Notes
+
+*"Let's see how it actually goes, though (no plan survives the first blow, etc.)"*
+
+**Key Features to Highlight**:
+- ✅ **Real-time position recognition** from YouTube chess streams
+- ✅ **Hypothetical move analysis** with evaluation changes and principal variations
+- ✅ **Broadcast context integration** (time pressure, match stakes, player biometrics)
+- ✅ **Follow-up question handling** with conversational context
+- ✅ **Engine analysis** with move suggestions and evaluations
+- ✅ **Historical precedent** from chess games database
+
+**Technical Demo Readiness**:
+- Vision pipeline: 19x speedup (40s → 2s FEN detection)
+- Analysis system: Both white/black perspectives pre-computed
+- Tool integration: Clean single-tool interface with rich backend
+- Error handling: Graceful degradation and fallback strategies
+
+**Contingency Considerations**:
+- Vision accuracy may vary with different board styles/layouts
+- API latency could affect real-time responsiveness
+- Complex positions might require longer analysis times
+- User questions may reveal edge cases not covered in testing
 # Chess Companion Architecture Notes
 
 ## Context: Performance Breakthrough
