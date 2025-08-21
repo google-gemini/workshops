@@ -640,49 +640,29 @@ class ChessCompanionSimplified:
         print("❌ Empty crop from cached bbox - falling back")
         return await self._fallback_full_detection(frame)
       
-      print(f"🚀 Full resolution path: {frame.shape[:2]} → full res crop ({pil_crop.size}) → no preprocessing")
+      print(f"🚀 Cached crop path: {frame.shape[:2]} → crop ({pil_crop.size}) → centralized detection")
       
-      # Step 3: No preprocessing - use raw crop for piece detection
-      from roboflow import ChessVisionPipeline
-      pipeline = ChessVisionPipeline(debug_dir=str(self.debug_dir) if self.debug_mode else None)
+      # Step 3: Use centralized roboflow detection with pre-cropped board
+      from roboflow import roboflow_piece_detection
       
-      print(f"✅ Using raw crop with no preprocessing: {pil_crop.size}")
-      
-      # Step 3: Piece detection on full resolution crop only
-      piece_result = await asyncio.to_thread(
-          pipeline.detect_pieces_direct, pil_crop, model_id="2dcpd/2"
+      result = await roboflow_piece_detection(
+          pil_crop,  # Pass PIL crop directly
+          debug_dir=str(self.debug_dir) if self.debug_mode else None,
+          skip_segmentation=True  # Skip segmentation, we already have the crop
       )
-      crop_for_fen = pil_crop
       
-      if not piece_result:
-        print("❌ Fast piece detection failed - falling back")
+      if not result or not result.get("consensus_fen"):
+        print("❌ Cached crop detection failed - falling back")
         return await self._fallback_full_detection(frame)
       
-      # Step 4: Convert to FEN using actual crop dimensions
-      piece_count = len(piece_result.get("predictions", []))
-      if piece_count < 2:
-        print(f"❌ Full-res path: Only {piece_count} pieces detected")
-        return None
-        
-      fen, _ = pipeline.pieces_to_fen_from_dimensions(
-        piece_result, 
-        crop_for_fen.size[0], 
-        crop_for_fen.size[1], 
-        "2dcpd/2"
-      )
+      fen = result["consensus_fen"]
+      piece_count = result.get("piece_count", 0)
       
       if fen == "8/8/8/8/8/8/8/8":
         print(f"❌ Empty board FEN from {piece_count} pieces")
         return None
       
-      # Optional: Save debug frames
-      if self.debug_mode:
-        timestamp = datetime.now().strftime("%H%M%S_%f")[:-3]
-        debug_path = self.debug_dir / f"raw_crop_{timestamp}.png"
-        crop_for_fen.save(debug_path)
-        print(f"🐛 Debug: Saved raw crop to {debug_path}")
-      
-      print(f"🚀 Full-resolution FEN: {piece_count} pieces → {fen[:20]}...")
+      print(f"🚀 Cached crop FEN: {piece_count} pieces → {fen[:20]}...")
       return fen
       
     except Exception as e:
@@ -695,12 +675,10 @@ class ChessCompanionSimplified:
     try:
       temp_path = await self.save_frame_to_temp(frame)
       
-      result = await asyncio.to_thread(
-          consensus_piece_detection,
+      result = await consensus_piece_detection(
           temp_path,
-          n=7,
-          min_consensus=3,
           debug_dir=str(self.debug_dir) if self.debug_mode else None,
+          skip_segmentation=False  # Full detection for fallback
       )
       
       piece_count = result.get("piece_count", 0)

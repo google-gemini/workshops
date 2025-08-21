@@ -38,8 +38,8 @@ class ChessVisionPipeline:
             print(f"❌ Board segmentation failed: {e}")
             return {}
     
-    def extract_bbox_from_segmentation(self, segmentation_result, confidence_threshold=0.7):
-        """Extract best bounding box from segmentation result"""
+    def extract_bbox_from_segmentation(self, segmentation_result, confidence_threshold=0.7, padding_percent=0.02):
+        """Extract best bounding box from segmentation result with padding"""
         predictions = segmentation_result.get("predictions", [])
         if not predictions:
             return None
@@ -61,11 +61,19 @@ class ChessVisionPipeline:
         width = best_prediction['width']
         height = best_prediction['height']
         
-        # Convert to corner coordinates
-        x_min = center_x - width / 2
-        y_min = center_y - height / 2
-        x_max = center_x + width / 2
-        y_max = center_y + height / 2
+        # Add padding to capture edge pieces
+        padding_x = width * padding_percent
+        padding_y = height * padding_percent
+        
+        # Convert to corner coordinates with padding
+        x_min = center_x - (width / 2) - padding_x
+        y_min = center_y - (height / 2) - padding_y
+        x_max = center_x + (width / 2) + padding_x
+        y_max = center_y + (height / 2) + padding_y
+        
+        # Ensure we don't go negative (though PIL crop handles this gracefully)
+        x_min = max(0, x_min)
+        y_min = max(0, y_min)
         
         return {
             "coords": (int(x_min), int(y_min), int(x_max), int(y_max)),
@@ -164,6 +172,15 @@ class ChessVisionPipeline:
                     "black-bishop": "b", "black-knight": "n", "black-pawn": "p"
                 },
                 "ignore_classes": ["board"]
+            },
+            "chess-piece-detection-lnpzs/1": {
+                "label_format": "fen_direct",
+                "piece_mapping": {
+                    # Direct FEN notation - no mapping needed!
+                    "K": "K", "Q": "Q", "R": "R", "B": "B", "N": "N", "P": "P",  # White pieces
+                    "k": "k", "q": "q", "r": "r", "b": "b", "n": "n", "p": "p"   # Black pieces
+                },
+                "ignore_classes": ["board", "empty"]
             }
         }
         
@@ -237,12 +254,13 @@ class ChessVisionPipeline:
         return board_fen
 
 
-async def roboflow_piece_detection(image_path, debug_dir=None, **kwargs):
+async def roboflow_piece_detection(image_path, debug_dir=None, skip_segmentation=False, **kwargs):
     """Roboflow-based chess position detection (replaces Gemini consensus)
     
     Args:
-        image_path: Path to chess board image
+        image_path: Path to chess board image or PIL Image (if skip_segmentation=True)
         debug_dir: Optional debug directory for saving intermediate images
+        skip_segmentation: If True, assume image_path is already a cropped board
         **kwargs: Ignored (for compatibility with consensus_piece_detection interface)
         
     Returns:
@@ -251,41 +269,53 @@ async def roboflow_piece_detection(image_path, debug_dir=None, **kwargs):
     try:
         pipeline = ChessVisionPipeline(debug_dir=debug_dir)
         
-        print(f"🎯 Running Roboflow chess position detection...")
+        if skip_segmentation:
+            # Use pre-cropped board image directly
+            print(f"🎯 Running piece detection on pre-cropped board...")
+            img = image_path if isinstance(image_path, Image.Image) else Image.open(image_path)
+            board_crop_640 = img.resize((640, 640), Image.LANCZOS)
+            board_confidence = 1.0  # Assume good crop from cached mask
+            
+        else:
+            # Full pipeline: segmentation + crop + resize
+            print(f"🎯 Running Roboflow chess position detection...")
+            
+            # Step 1: Board segmentation
+            img = Image.open(image_path) if isinstance(image_path, str) else image_path
+            result = pipeline.segment_board_direct(img)
+            
+            # Step 2: Extract best board prediction
+            bbox = pipeline.extract_bbox_from_segmentation(result)
+            if not bbox:
+                return {"consensus_fen": None, "error": "Board segmentation failed"}
+            
+            # Step 3: Crop board region and resize to 640x640 for efficiency
+            board_crop = img.crop(bbox['coords'])
+            board_crop_640 = board_crop.resize((640, 640), Image.LANCZOS)
+            board_confidence = bbox['confidence']
         
-        # Step 1: Board segmentation
-        result = pipeline.segment_board_direct(image_path)
-        
-        # Step 2: Extract best board prediction
-        bbox = pipeline.extract_bbox_from_segmentation(result)
-        if not bbox:
-            return {"consensus_fen": None, "error": "Board segmentation failed"}
-        
-        # Step 3: Crop board region at full resolution
-        img = Image.open(image_path) if isinstance(image_path, str) else image_path
-        board_crop = img.crop(bbox['coords'])
-        
-        # Step 4: Piece detection on full resolution crop
-        piece_result = pipeline.detect_pieces_direct(board_crop, model_id="2dcpd/2")
+        # Step 4: Piece detection on 640x640 crop (more efficient)
+        piece_result = pipeline.detect_pieces_direct(board_crop_640, model_id="chess-piece-detection-lnpzs/1")
         
         if not piece_result:
             return {"consensus_fen": None, "error": "Piece detection failed"}
         
-        # Step 5: Convert to FEN using actual crop dimensions
+        # Step 5: Convert to FEN using 640x640 dimensions
         fen, board_grid = pipeline.pieces_to_fen_from_dimensions(
             piece_result, 
-            board_crop.size[0],
-            board_crop.size[1],
-            "2dcpd/2"
+            640,
+            640,
+            "chess-piece-detection-lnpzs/1"
         )
         
-        print(f"✅ Roboflow detection complete: {fen}")
+        method = "roboflow_cached_crop" if skip_segmentation else "roboflow"
+        print(f"✅ Roboflow detection complete ({method}): {fen}")
         
         return {
             "consensus_fen": fen,
-            "board_confidence": bbox['confidence'],
+            "board_confidence": board_confidence,
             "piece_count": len(piece_result.get("predictions", [])),
-            "method": "roboflow"
+            "method": method
         }
         
     except Exception as e:

@@ -26,8 +26,8 @@ scenedetect = "*"
 themoviedb = "*"
 aiohttp = "*"
 pdfplumber = "*"
-inference-sdk = "^0.52.1"
-requests = "^2.32.4"
+inference-sdk = "*"
+requests = "*"
 huggingface-hub = "*"
 
 [build-system]
