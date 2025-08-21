@@ -42,15 +42,16 @@ class ChessAnalyzer:
         self, 
         fen: str, 
         frame=None, 
-        commentary_context: List[str] = None
+        commentary_context: List[str] = None,
+        stored_broadcast_context: dict = None
     ) -> dict:
         """Run parallel white + black analysis, return both perspectives"""
         
         print(f"🧠 Analyzing both perspectives for {fen[:30]}...")
         
         white_analysis, black_analysis = await asyncio.gather(
-            self.analyze_position(fen, "white", frame, commentary_context),
-            self.analyze_position(fen, "black", frame, commentary_context)
+            self.analyze_position(fen, "white", frame, commentary_context, stored_broadcast_context=stored_broadcast_context),
+            self.analyze_position(fen, "black", frame, commentary_context, stored_broadcast_context=stored_broadcast_context)
         )
         
         return {
@@ -64,7 +65,8 @@ class ChessAnalyzer:
         color: str,  # "white" or "black"
         frame=None,
         commentary_context: List[str] = None,
-        user_query: str = None
+        user_query: str = None,
+        stored_broadcast_context: dict = None
     ) -> dict:
         """Complete analysis package ready for Gemini Live"""
         
@@ -77,13 +79,6 @@ class ChessAnalyzer:
                 self._get_stockfish_analysis_database_format(fen, color)
             )
             vector_task = asyncio.create_task(self._get_simple_similar_games(fen))
-            
-            # Broadcast context extraction (if frame provided)
-            broadcast_task = None
-            if frame is not None:
-                broadcast_task = asyncio.create_task(
-                    self._extract_broadcast_context(frame)
-                )
             
             # Create position entry in database format
             position_entry = {
@@ -108,20 +103,13 @@ class ChessAnalyzer:
                     print(f"❌ Screenshot error: {e}")
             
             # Gather analysis results
-            results = []
-            results.append(await stockfish_task)  # Stockfish analysis
-            results.append(await vector_task)    # Similar games
-            
-            if broadcast_task:
-                results.append(await broadcast_task)  # Broadcast context
-            else:
-                results.append({})
+            stockfish_analysis = await stockfish_task
+            similar_games = await vector_task
             
             # Store results in position entry
-            stockfish_analysis = results[0]
             position_entry["stockfish_analysis"] = stockfish_analysis
-            position_entry["similar_positions"] = results[1]
-            position_entry["broadcast_context"] = results[2]
+            position_entry["similar_positions"] = similar_games
+            position_entry["broadcast_context"] = stored_broadcast_context or {}
             
             # Compute PV final evaluation for richer analysis
             pv = stockfish_analysis.get("principal_variation", [])
@@ -158,6 +146,7 @@ class ChessAnalyzer:
         """Determine who the user is asking about - return 'white' or 'black'"""
         try:
             print(f"🎯 Determining query perspective for: '{user_query}'")
+            print(f"🎯 Broadcast context received: {json.dumps(broadcast_context, indent=2)}")
             
             prompt = f"""User question: "{user_query}"
 
@@ -177,9 +166,13 @@ Examples:
                 contents=[prompt]
             )
             
+            print(f"🎯 LLM raw response: '{response.text}'")
+            
             color = response.text.strip().lower()
             final_result = color if color in ["white", "black"] else "white"
-            print(f"🎯 Query perspective determined: {final_result}")
+            print(f"🎯 Final query perspective determined: {final_result}")
+            print(f"🎯 Context check - Claude listed as: {broadcast_context.get('structured_data', {}).get('players', {}).get('black', 'unknown')}")
+            print(f"🎯 Context check - Gemini listed as: {broadcast_context.get('structured_data', {}).get('players', {}).get('white', 'unknown')}")
             return final_result
             
         except Exception as e:
@@ -307,21 +300,124 @@ Examples:
         
         return " ".join(query_parts) if query_parts else "chess position analysis"
     
-    async def _extract_broadcast_context(self, frame) -> dict:
-        """Extract broadcast context using separate vision model"""
+    async def _extract_broadcast_context(self, frame, cached_player_colors=None) -> dict:
+        """Extract broadcast context - runs full parallel detection on scene changes"""
         try:
             frame_data = self._convert_frame_to_base64(frame)
             
+            print("🎥 Running full parallel color + rich context detection...")
+            
+            # Dispatch both requests in parallel (always run fresh detection)
+            color_task = asyncio.create_task(self._extract_player_colors(frame_data))
+            context_task = asyncio.create_task(self._extract_rich_context(frame_data))
+            
+            color_result, context_result = await asyncio.gather(color_task, context_task)
+            
+            # DEBUG: Show what each model returned
+            print(f"🔍 COLOR ASSIGNMENT MODEL RETURNED:")
+            print(json.dumps(color_result, indent=2))
+            if color_result.get("thinking"):
+                print(f"🧠 MODEL REASONING: {color_result['thinking']}")
+            print(f"🔍 RICH CONTEXT MODEL RETURNED:")
+            print(json.dumps(context_result, indent=2))
+            
+            # Merge results - color assignment takes priority
+            merged_result = context_result.copy() if context_result else {}
+            
+            if color_result and "structured_data" in merged_result:
+                print(f"🔄 BEFORE MERGE - players in rich context: {merged_result['structured_data'].get('players', 'NONE')}")
+                # Override player colors from the focused request
+                merged_result["structured_data"]["players"] = color_result.get("players", {})
+                print(f"🔄 AFTER MERGE - players now: {merged_result['structured_data'].get('players', 'NONE')}")
+            elif color_result:
+                print(f"🔄 Creating new structured_data with color assignment")
+                # Create structured_data if it doesn't exist
+                merged_result["structured_data"] = {"players": color_result.get("players", {})}
+            else:
+                print(f"🔄 No color result to merge!")
+            
+            print(f"🔍 FINAL MERGED RESULT:")
+            print(json.dumps(merged_result, indent=2))
+            
+            print(f"🎥 Broadcast context extracted (merged from parallel requests)")
+            return merged_result
+            
+        except Exception as e:
+            print(f"⚠️ Broadcast context extraction failed: {e}")
+            return {}
+    
+    async def _extract_player_colors(self, frame_data) -> dict:
+        """Simple, focused player color assignment"""
+        try:
+            prompt = """CRITICAL MISSION: Identify which chess player is White and which is Black based ONLY on screen layout position.
+
+STEP-BY-STEP INSTRUCTIONS:
+1. Look at the chess broadcast screen
+2. Find the two player information boxes/panels (ignore everything else)
+3. Determine which player info is on the LEFT/BOTTOM vs RIGHT/TOP
+4. Apply the rule: LEFT/BOTTOM = White, RIGHT/TOP = Black
+
+EXAMPLES OF CORRECT MAPPING:
+- If "Magnus Carlsen" info appears on LEFT side → Magnus is WHITE
+- If "Hikaru Nakamura" info appears on RIGHT side → Hikaru is BLACK
+- If "Player A" info appears on BOTTOM → Player A is WHITE  
+- If "Player B" info appears on TOP → Player B is BLACK
+
+CRITICAL RULE TO FOLLOW:
+- The player whose name/info appears on the LEFT or BOTTOM of the screen is WHITE
+- The player whose name/info appears on the RIGHT or TOP of the screen is BLACK
+
+THINGS TO COMPLETELY IGNORE:
+- Any chess pieces visible anywhere on screen
+- Captured pieces near player names
+- Colors of anything in the background
+- The actual chess board orientation
+- Any logos or graphics
+
+YOUR ONLY JOB: Look at where the player name boxes are positioned and apply the position rule.
+
+THINK STEP BY STEP and return JSON with your reasoning:
+{
+  "thinking": "I can see [Player 1] positioned on the [LEFT/RIGHT/TOP/BOTTOM] and [Player 2] positioned on the [LEFT/RIGHT/TOP/BOTTOM]. According to the rule LEFT/BOTTOM = White and RIGHT/TOP = Black, this means...",
+  "players": {"white": "Player Name", "black": "Player Name"}
+}
+
+DO NOT get this wrong. The broadcast layout position is the ONLY thing that matters. Show your spatial reasoning in the thinking field."""
+            
+            response = await asyncio.to_thread(
+                self.client.models.generate_content,
+                model="gemini-2.5-pro",
+                contents=[
+                    types.Part.from_bytes(
+                        data=base64.b64decode(frame_data["data"]),
+                        mime_type=frame_data["mime_type"],
+                    ),
+                    prompt,
+                ],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json"
+                ),
+            )
+            
+            return json.loads(response.text)
+            
+        except Exception as e:
+            print(f"⚠️ Player color assignment failed: {e}")
+            return {}
+
+    async def _extract_rich_context(self, frame_data) -> dict:
+        """Rich broadcast context extraction (without color assignment)"""
+        try:
             prompt = """Analyze this chess broadcast and extract relevant context for commentary.
 
-PRIORITIZE IF VISIBLE:
+EXTRACT IF VISIBLE:
 - Tournament/match information
 - Player time remaining  
 - Match scores/game significance
 - Player stress indicators (heart rates, expressions)
 - Ratings or titles
 
-THEN DESCRIBE any other notable broadcast elements that would help a commentator understand:
+DESCRIBE any other notable broadcast elements that would help a commentator understand:
 - The stakes and pressure level
 - Human drama or storyline
 - Technical broadcast details worth mentioning
@@ -330,7 +426,6 @@ Return as JSON with 'structured_data' for key fields and 'additional_context' fo
 
 {
   "structured_data": {
-    "players": {"white": "Player Name", "black": "Player Name"},
     "times": {"white": "mm:ss", "black": "mm:ss"},
     "heart_rates": {"white": 95, "black": 88},
     "match_info": "Tournament name, game significance",
@@ -356,12 +451,10 @@ Only include what's clearly visible. Omit fields rather than guessing."""
                 ),
             )
             
-            context = json.loads(response.text)
-            print(f"🎥 Broadcast context extracted successfully")
-            return context
+            return json.loads(response.text)
             
         except Exception as e:
-            print(f"⚠️ Broadcast context extraction failed: {e}")
+            print(f"⚠️ Rich context extraction failed: {e}")
             return {}
     
     async def _generate_enhanced_description(self, position_entry: dict) -> dict:

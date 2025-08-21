@@ -5289,3 +5289,148 @@ User: "Show me the engine line"
 - Audio context from commentary integration
 - Broadcast graphics OCR for additional context
 - Time pressure and player emotion analysis
+
+## Broadcast Context Detection: Solving the Color Assignment Problem (January 2025)
+
+### The Critical Challenge
+
+One of the most persistent problems during development was **player color assignment**: the broadcast context detector consistently reversed colors for Claude vs. Gemini, showing Claude as black when he was actually white, and vice versa.
+
+**Root Cause**: The vision model was inferring colors from nearby pieces rather than screen layout. Claude appeared next to captured black pieces, leading to incorrect color inference.
+
+### The Solution Journey
+
+#### Phase 1: Positional Heuristic Addition
+**Initial Fix**: Added explicit spatial rules to the broadcast context prompt:
+```
+IMPORTANT - PLAYER COLOR ASSIGNMENT:
+- White player info typically appears on the LEFT or BOTTOM of the broadcast
+- Black player info typically appears on the RIGHT or TOP of the broadcast  
+- Ignore captured pieces near player names - focus on broadcast layout position
+- Use the board orientation and player positioning to determine colors
+```
+
+**Result**: Still failed with complex prompts trying to do too much at once.
+
+#### Phase 2: Task Separation Strategy  
+**Insight**: The single prompt was asking the vision model to extract tournament info, times, heart rates, ratings, AND figure out colors simultaneously.
+
+**Solution**: Split into two focused tasks:
+1. **Simple color assignment**: Only determine which player is where on screen
+2. **Rich broadcast context**: Everything else (times, ratings, tournament info)
+
+**Architecture**:
+```python
+# Dispatch both requests in parallel
+color_task = asyncio.create_task(self._extract_player_colors(frame_data))
+context_task = asyncio.create_task(self._extract_rich_context(frame_data))
+
+color_result, context_result = await asyncio.gather(color_task, context_task)
+
+# Merge results - color assignment takes priority
+merged_result["structured_data"]["players"] = color_result.get("players", {})
+```
+
+#### Phase 3: Model Progression and Chain-of-Thought
+**Model Upgrades**:
+- Started with `gemini-2.5-flash-lite`: Fast but inaccurate
+- Upgraded to `gemini-2.5-flash`: Better but still failed  
+- Finally `gemini-2.5-pro`: Accurate but slow (acceptable since run infrequently)
+
+**Critical Breakthrough**: Chain-of-thought reasoning
+```python
+prompt = """CRITICAL MISSION: Identify which chess player is White and which is Black based ONLY on screen layout position.
+
+THINK STEP BY STEP and return JSON with your reasoning:
+{
+  "thinking": "I can see [Player 1] positioned on the [LEFT/RIGHT/TOP/BOTTOM] and [Player 2] positioned on the [LEFT/RIGHT/TOP/BOTTOM]. According to the rule LEFT/BOTTOM = White and RIGHT/TOP = Black, this means...",
+  "players": {"white": "Player Name", "black": "Player Name"}
+}
+
+DO NOT get this wrong. The broadcast layout position is the ONLY thing that matters. Show your spatial reasoning in the thinking field."""
+```
+
+**Success Example**:
+```json
+{
+  "thinking": "I can see Gemini 2.5 Pro positioned on the TOP and Claude Opus 4 positioned on the BOTTOM. According to the rule LEFT/BOTTOM = White and RIGHT/TOP = Black, this means Claude Opus 4 is White and Gemini 2.5 Pro is Black.",
+  "players": {
+    "white": "Claude Opus 4",
+    "black": "Gemini 2.5 Pro"  
+  }
+}
+```
+
+#### Phase 4: Scene Change Architecture
+**Problem**: Running expensive `gemini-2.5-pro` color detection on every analysis was too slow.
+
+**Solution**: Move color detection to scene changes only:
+1. **Initial detection** on startup (after video capture ready)
+2. **Scene change updates** when camera angles or layouts change  
+3. **Cached results** used for all analyses until next scene change
+
+**Implementation**:
+```python
+# On scene change
+async def on_scene_change(frame):
+    asyncio.create_task(self.update_board_mask(frame))
+    asyncio.create_task(self.update_broadcast_context(frame))  # Full parallel detection
+
+# In analysis tool calls  
+analysis["broadcast_context"] = self.stored_broadcast_context  # Use cached
+```
+
+### Final Architecture Benefits
+
+**Performance**:
+- ✅ **Accurate color detection**: `gemini-2.5-pro` with chain-of-thought reasoning
+- ✅ **No analysis delays**: Expensive detection runs in background on scene changes
+- ✅ **Rich context**: Both color assignment and broadcast metadata extracted
+
+**Reliability**:  
+- ✅ **Spatial reasoning**: Model explicitly explains its left/right/top/bottom analysis
+- ✅ **Focused tasks**: Simple color detection separate from complex metadata extraction
+- ✅ **Fallback handling**: Graceful degradation if color detection fails
+
+**User Experience**:
+- ✅ **Instant responses**: Tool calls use pre-computed broadcast context
+- ✅ **Correct analysis**: "What should Claude do?" now correctly identifies Claude's color
+- ✅ **Rich commentary**: Tournament stakes, time pressure, and match context integrated
+
+### Key Learnings
+
+#### 1. Task Separation is Critical
+Single complex prompts often fail where focused simple prompts succeed. Vision models perform better with clear, singular objectives.
+
+#### 2. Chain-of-Thought for Spatial Tasks
+Requiring models to explain their spatial reasoning dramatically improves accuracy. The "thinking" field forces methodical analysis.
+
+#### 3. Model Selection by Task Complexity
+- Simple tasks: `gemini-2.5-flash-lite` (fast, cheap)  
+- Complex reasoning: `gemini-2.5-pro` (accurate, expensive)
+- Match model capability to task requirements
+
+#### 4. Scene Change Optimization  
+Running expensive operations only when actually needed (scene changes) rather than on every analysis provides best performance/accuracy balance.
+
+#### 5. Parallel Processing Architecture
+Running color detection and rich context extraction simultaneously eliminates the performance penalty of comprehensive broadcast analysis.
+
+### Current Status
+
+**✅ Production Ready**: Color assignment now works reliably across different chess broadcasts, correctly identifying player positions and providing rich contextual analysis for enhanced commentary quality.
+
+**Debug Output Example**:
+```
+🔍 COLOR ASSIGNMENT MODEL RETURNED:
+{
+  "thinking": "I can see Claude Opus 4 positioned on the BOTTOM and Gemini 2.5 Pro positioned on the TOP. According to the rule LEFT/BOTTOM = White and RIGHT/TOP = Black, this means Claude Opus 4 is White and Gemini 2.5 Pro is Black.",
+  "players": {
+    "white": "Claude Opus 4",
+    "black": "Gemini 2.5 Pro"
+  }
+}
+🧠 MODEL REASONING: [Shows explicit spatial analysis]
+```
+
+This broadcast context detection breakthrough was essential for the chess companion to provide accurate, contextually-aware analysis that correctly identifies which player the user is asking about.
