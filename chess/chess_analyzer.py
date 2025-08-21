@@ -166,13 +166,9 @@ Examples:
                 contents=[prompt]
             )
             
-            print(f"🎯 LLM raw response: '{response.text}'")
-            
             color = response.text.strip().lower()
             final_result = color if color in ["white", "black"] else "white"
             print(f"🎯 Final query perspective determined: {final_result}")
-            print(f"🎯 Context check - Claude listed as: {broadcast_context.get('structured_data', {}).get('players', {}).get('black', 'unknown')}")
-            print(f"🎯 Context check - Gemini listed as: {broadcast_context.get('structured_data', {}).get('players', {}).get('white', 'unknown')}")
             return final_result
             
         except Exception as e:
