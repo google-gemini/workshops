@@ -29,6 +29,7 @@ pdfplumber = "*"
 inference-sdk = "*"
 requests = "*"
 huggingface-hub = "*"
+google-cloud-bigquery = "*"
 
 [build-system]
 requires = ["poetry-core"]
