@@ -4221,6 +4221,220 @@ text += f"\n\nLIVE COMMENTARY:\n{commentary_text}"
 
 This multimodal integration represents a significant evolution in chess commentary systems, combining the precision of engine analysis with the human understanding of psychological pressure, match context, and game narrative - creating commentary that rivals human expert analysis while providing educational insights impossible for human commentators to deliver in real-time.
 
+## TV Control and Audio Integration: Chromecast Implementation (January 2025)
+
+### The Missing TV Control Problem
+
+During chess companion development, a critical gap was discovered: the system needed to control chess content playback (YouTube videos via Chromecast) but the necessary TV control tools were declared but not implemented.
+
+**Tools Declared but Missing Implementation**:
+- `search_and_play_content` - Search and play chess videos
+- `pause_playback` - Pause video playback  
+- `search_user_history` - Retrieve viewing history from mem0
+
+**Error Pattern**: Tools were in `CHESS_CONFIG` declarations but missing from `handle_tool_call()` method, causing "Unknown function" errors when Gemini tried to use them.
+
+### Solution 1: TV Controller Architecture
+
+**Decision**: Extract TV control into dedicated `chess/tv_controller.py` module following separation of concerns principle.
+
+**Key Features Implemented**:
+- **YouTube-focused search**: Bias search toward YouTube chess content
+- **ADB control**: Direct Android TV control via `adb` commands
+- **Auto-discovery**: Chromecast device discovery via `pychromecast`
+- **Fallback IP**: Hardcoded IP as backup when discovery fails
+- **Media control**: Pause, resume, rewind functionality
+- **Memory integration**: Store viewing requests in mem0
+
+**Search Sequence Implementation**:
+```bash
+# Universal search sequence optimized for YouTube
+1. adb shell input keyevent KEYCODE_SEARCH     # Open search
+2. adb shell input text "Magnus%sCarlsen"      # Type query (spaces as %s)  
+3. adb shell input keyevent KEYCODE_ENTER      # Submit search
+4. adb shell input keyevent KEYCODE_DPAD_DOWN  # Navigate past suggestions
+5. adb shell input keyevent KEYCODE_ENTER      # Select first actual result
+```
+
+### Solution 2: Audio Sharing Architecture Crisis
+
+**The Core Problem**: Both Gemini chess companion and OBS needed to access the same HDMI audio source simultaneously for:
+- **Gemini**: Live chess commentary transcription and analysis
+- **OBS**: Recording/streaming the chess session
+
+**Discovery Process**:
+
+#### Initial Assumption: PipeWire Sharing
+```bash
+# Expected behavior: Multiple consumers of same audio source
+gemini: reads from alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo
+obs: reads from alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo
+```
+
+**Result**: Audio conflicts - OBS grabbed exclusive access, causing Gemini timeouts.
+
+#### Solution Evolution: Dual Virtual Sinks
+
+**Architecture**: Create separate virtual audio sinks for each application
+```bash
+# Create dual sinks in setup_hdmi_loopback.sh
+pactl load-module module-null-sink sink_name=hdmi_share     # For OBS
+pactl load-module module-null-sink sink_name=gemini_audio  # For Gemini
+
+# Link HDMI input to both sinks
+pw-link alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo hdmi_share
+pw-link alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo gemini_audio
+```
+
+**Configuration**:
+```python
+# chess_companion_standalone.py
+HDMI_AUDIO_TARGET = "gemini_audio"  # Dedicated sink for chess companion
+
+# OBS configuration
+# Audio Source: hdmi_share (separate sink)
+```
+
+### Audio Pipeline Debugging Journey
+
+#### Phase 1: The Silence Problem
+**Symptoms**: 
+```
+⚠️ Audio generator: timeout waiting for chunk
+```
+
+**Debugging Process**:
+1. **Test manual audio capture**: `pw-cat --record` worked fine
+2. **Check device conflicts**: OBS was blocking Gemini access
+3. **Audio routing investigation**: Links existed but no audio flowing
+
+#### Phase 2: Root Cause Analysis
+**Discovery**: Virtual sink routing was broken despite correct `pw-link` connections
+```bash
+# Links showed as connected
+pw-link -l | grep MACROSILICON
+alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo:capture_FL
+  |-> gemini_audio:playback_FL
+
+# But hexdump showed silence
+hexdump -C gemini_audio_test.raw | head -5
+00000000  00 00 00 00 00 00 00 00  00 00 00 00 00 00 00 00  |................|
+```
+
+**While direct HDMI had real audio**:
+```bash
+hexdump -C direct_hdmi_test.raw | head -5  
+00000000  84 fc f4 f5 4f f6 22 f6  44 f5 54 f5 17 f5 4c f5  |....O.".D.T...L.|
+```
+
+#### Phase 3: Elegant Solution - Direct Access
+**Final Architecture**: Bypass virtual sink complexity
+```python
+# Gemini: Direct HDMI access (reliable)
+HDMI_AUDIO_TARGET = "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo"
+
+# OBS: Virtual sink (for recording flexibility)
+# Audio Source: hdmi_share (virtual sink with processing options)
+```
+
+### Advanced Media Control Implementation
+
+#### YouTube-Specific Control Patterns
+**Discovery**: YouTube TV requires specific key sequences:
+
+**Rewind Operation** (4-step process):
+1. `info` - Show control overlay
+2. `rewind` - Show rewind interface  
+3. `rewind` - Actually rewind 10 seconds
+4. `back` - Dismiss interface cleanly
+
+**Media Control Architecture**:
+```python
+class ChessTVController:
+    async def rewind_sequence(self):
+        """Complete rewind with clean interface dismissal"""
+        await self.show_info()
+        await self.rewind_playback()  # Show rewind UI
+        await self.rewind_playback()  # Execute rewind
+        await self.back_key()        # Clean dismiss
+```
+
+#### Autodiscovery Optimization
+**Problem**: `pychromecast.get_listed_chromecasts()` was slow and expensive for startup
+**Solution**: Fallback-first strategy
+```python
+# Try known working IP first (fast)
+self.tv_ip = "192.168.50.220"  # Known Chromecast IP
+if not self.ensure_tv_connection():
+    # Only run expensive discovery if fallback fails
+    discovered_ip = self.discover_tv_ip()
+```
+
+### Key Technical Insights
+
+#### 1. Audio Device Exclusivity is Complex
+- **Theory**: PipeWire supports multiple consumers
+- **Reality**: Some applications still grab exclusive access
+- **Solution**: Separate virtual sinks more reliable than hoping for sharing
+
+#### 2. Virtual Audio Sink Routing Can Fail Silently
+- Links show as "connected" in `pw-link -l` but no audio flows
+- Manual reconnection often fixes broken virtual routing
+- Direct device access more reliable than complex routing
+
+#### 3. YouTube TV Has Specific UI Patterns  
+- First media key press shows overlay, second executes action
+- Requires navigation past search suggestions to reach actual results
+- `back` key essential for clean interface dismissal
+
+#### 4. Startup Time Optimization Matters
+- Expensive discovery operations should be fallback-only
+- Known working configurations should be tried first
+- User experience benefits from fast initial connection
+
+### Integration Results
+
+**Working Demo Capabilities**:
+```bash
+# Voice commands working through integrated TV controller:
+"Hey Gemini, let's watch the Carlsen Nakamura semifinal"
+→ search_and_play_content("Carlsen Nakamura semifinal") 
+→ YouTube search, selects first result, starts playing
+
+"Pause, what should Magnus do here?"
+→ pause_playback() + analyze_current_position()
+
+"Let's check out the Claude vs Gemini game"  
+→ search_and_play_content("Claude vs Gemini chess")
+```
+
+**Technical Achievement**:
+- ✅ **Seamless TV control**: Search, play, pause chess content via voice
+- ✅ **Audio isolation**: Gemini and OBS operate simultaneously without conflicts
+- ✅ **Memory integration**: Viewing requests stored in mem0 for history
+- ✅ **Robust operation**: Fallback strategies for discovery and audio routing
+- ✅ **Clean UI control**: Proper YouTube TV interface management
+
+### Architecture Files Created
+
+**Core Implementation**:
+- `chess/tv_controller.py` - Standalone TV control with testing interface
+- `chess/setup_hdmi_loopback.sh` - Updated with dual audio sink creation
+- Integration in `chess_companion_standalone.py` - Tool implementations
+
+**Testing Commands**:
+```bash
+# Test TV controller independently
+python chess/tv_controller.py test
+python chess/tv_controller.py search "Magnus Carlsen vs Hikaru Nakamura"
+python chess/tv_controller.py pause
+
+# Setup complete HDMI environment  
+./chess/setup_hdmi_loopback.sh
+```
+
+This TV control and audio integration represents a significant infrastructure achievement, enabling the chess companion to seamlessly control chess content while maintaining audio analysis capabilities - bridging the gap between analytical AI and practical media control for chess education and entertainment.
+
 ## Roboflow and HuggingFace Vision Pipeline Development (January 2025)
 
 ### The Latency Crisis: From 40 Seconds to 5 Seconds

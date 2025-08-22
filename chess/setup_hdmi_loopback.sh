@@ -35,6 +35,10 @@ cleanup() {
         kill $FFMPEG_PID2 2>/dev/null && log "Killed ffmpeg process $FFMPEG_PID2"
     fi
     
+    
+    # Kill any pw-cat processes
+    killall -v pw-cat 2>/dev/null || true
+    
     # Wait a moment for graceful shutdown
     sleep 1
     
@@ -110,10 +114,12 @@ main() {
     
     # 7. Show device info
     log "HDMI loopback setup complete!"
-    log "Available devices:"
+    log "Video devices:"
     v4l2-ctl --list-devices | grep -A3 "HDMI Loop" || log "Device listing failed"
     
-    log "Process ID: ffmpeg=$FFMPEG_PID1"
+    log "Process IDs: ffmpeg=$FFMPEG_PID1"
+    log "📺 Video: Use /dev/video10 or /dev/video11"
+    log "🔊 Audio: Both Chess Companion and OBS read directly from HDMI device"
     log "Press Ctrl+C to stop and cleanup"
     
     # 8. Keep running and monitor

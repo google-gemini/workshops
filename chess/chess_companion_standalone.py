@@ -26,6 +26,7 @@ import chess.engine
 # Import chess-specific components  
 from chess_analyzer import ChessAnalyzer
 from roboflow import roboflow_piece_detection as consensus_piece_detection
+from tv_controller import ChessTVController
 import cv2
 from scenedetection import ChessSceneDetector
 from google import genai
@@ -72,9 +73,7 @@ CHUNK_SIZE = 1024
 
 # HDMI capture device settings
 HDMI_VIDEO_DEVICE = "/dev/video11"
-HDMI_AUDIO_TARGET = (
-    "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo"
-)
+HDMI_AUDIO_TARGET = "alsa_input.usb-MACROSILICON_USB3.0_Video_26241327-02.analog-stereo"
 
 MODEL = "gemini-2.5-flash-preview-native-audio-dialog"
 
@@ -249,6 +248,15 @@ Feel free to suggest chess content to watch or help users find specific games.
                     "required": [],
                 },
             },
+            {
+                "name": "rewind_sequence", 
+                "description": "Rewind the current video to review a previous moment (uses the info-rewind-rewind-back sequence)",
+                "parameters": {
+                    "type": "object", 
+                    "properties": {},
+                    "required": [],
+                },
+            },
         ]
     }],
 }
@@ -290,6 +298,9 @@ class TVAudioStream:
 
     # Start feeding audio data into buffer
     asyncio.create_task(self._feed_buffer())
+    
+    # Wait a moment for _feed_buffer to actually start
+    await asyncio.sleep(0.5)
     return self
 
   async def __aexit__(self, type, value, traceback):
@@ -308,39 +319,55 @@ class TVAudioStream:
     while not self.closed:
       try:
         data = await self.audio_process.stdout.read(bytes_expected)
+        
         if not data:
           print(f"📡 No more audio data from pw-cat")
           break
 
-        self._buff.put(data)  # Sync put to sync queue
+        self._buff.put(data)
         chunks_sent += 1
 
-        # Remove noisy logging - only log major milestones
-        if chunks_sent % 500 == 0:  # Log every 50 seconds instead
-          print(f"📡 Audio buffer: {chunks_sent} chunks processed")
+        # Keep milestone logging only
+        if chunks_sent % 500 == 0:  # Log every 50 seconds
+          print(f"📡 TV Audio: {chunks_sent} chunks processed")
 
       except Exception as e:
         print(f"❌ Audio feed error: {e}")
         break
 
   def generator(self):
-    """Generator that yields audio chunks for Google Cloud Speech"""
+    """Generator with robust timeout handling and circuit breaker"""
     chunks_yielded = 0
+    consecutive_timeouts = 0
+    max_consecutive_timeouts = 10  # Give up after 10 timeouts in a row
+    
     while not self.closed:
       try:
-        chunk = self._buff.get(timeout=1.0)  # Sync get with timeout
+        chunk = self._buff.get(timeout=1.0)
         if chunk is None:
           print("📡 Audio generator: received termination signal")
           return
-
+        
+        # Reset timeout counter on successful chunk
+        consecutive_timeouts = 0
         chunks_yielded += 1
+        
         # Remove noisy logging - only log major milestones
         if chunks_yielded % 500 == 0:  # Log every 50 seconds instead
           print(f"📡 Audio generator: {chunks_yielded} chunks yielded")
-
+        
         yield chunk
+        
       except:
-        print("⚠️ Audio generator: timeout waiting for chunk")
+        consecutive_timeouts += 1
+        print(f"⚠️ Audio timeout #{consecutive_timeouts}/{max_consecutive_timeouts} - continuing...")
+        
+        # Circuit breaker: if too many timeouts, assume stream is broken
+        if consecutive_timeouts >= max_consecutive_timeouts:
+          print("🚫 Too many consecutive timeouts - audio stream likely broken")
+          return
+        
+        # Just continue - don't yield anything, try again
         continue
 
 
@@ -407,6 +434,10 @@ class ChessCompanionSimplified:
     # Memory and speech
     self.memory_client = self._init_memory_client()
     self.speech_client = speech.SpeechClient()
+    
+    # TV Controller
+    self.tv_controller = ChessTVController(memory_client=self.memory_client)
+    print("📺 TV Controller integrated")
     self.speech_config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=SEND_SAMPLE_RATE,
@@ -903,22 +934,37 @@ class ChessCompanionSimplified:
       raise
 
   async def transcribe_tv_audio(self):
-    """Continuously transcribe TV audio and add to commentary buffer"""
-    print("🎤 Starting TV audio transcription...")
-
-    while True:
+    """Auto-restart transcription on failures with exponential backoff"""
+    print("🎤 Starting TV audio transcription with auto-restart...")
+    
+    restart_count = 0
+    max_restarts = 10
+    
+    while restart_count < max_restarts:
       try:
-        print("🎤 Creating new audio stream...")
+        print(f"🎤 Creating audio stream (attempt #{restart_count + 1})...")
         async with TVAudioStream() as stream:
           print("🎤 Audio stream created, starting transcription...")
-
+          
           # Run transcription in a separate thread to avoid blocking
           await asyncio.to_thread(self._run_transcription_sync, stream)
-
+          
+          # If we get here, transcription ended normally - reset restart count
+          restart_count = 0
+          print("🎤 Transcription ended normally, restarting...")
+          await asyncio.sleep(1)
+          
       except Exception as e:
-        print(f"❌ Transcription error: {e}")
-        traceback.print_exc()
-        await asyncio.sleep(2)  # Brief pause before restarting
+        restart_count += 1
+        wait_time = min(restart_count * 2, 10)  # Exponential backoff, max 10s
+        print(f"❌ Transcription failed (attempt {restart_count}/{max_restarts}): {e}")
+        
+        if restart_count < max_restarts:
+          print(f"🔄 Restarting in {wait_time}s...")
+          await asyncio.sleep(wait_time)
+        else:
+          print("🚫 Max transcription restart attempts reached - disabling TV audio")
+          break
 
   def _run_transcription_sync(self, stream):
     """Run transcription synchronously in a thread"""
@@ -1096,6 +1142,76 @@ class ChessCompanionSimplified:
             "status": "no_position",
             "message": "No current position available for hypothetical analysis."
           }
+
+      elif fc.name == "search_and_play_content":
+        title = fc.args.get("title", "")
+        print(f"🎬 TV control: searching and playing '{title}'")
+        search_result = self.tv_controller.search_and_play_content(title)
+        
+        # Store what user requested to watch  
+        if self.memory_client and title.strip():
+            await self.tv_controller.store_viewing_request(title)
+        
+        result = {"title": title, "result": search_result}
+
+      elif fc.name == "search_user_history":
+        query = fc.args.get("query", "").strip()
+        print(f"🔍 Searching user history: {'recent activity' if not query else query}")
+        
+        if self.memory_client:
+            try:
+                if query:
+                    memories = await asyncio.to_thread(
+                        self.memory_client.search,
+                        query=query,
+                        user_id="chess_tv_user", 
+                        limit=5,
+                    )
+                else:
+                    memories = await asyncio.to_thread(
+                        self.memory_client.get_all,
+                        filters={"user_id": "chess_tv_user"},
+                        page_size=10,
+                    )
+                
+                # Format memories
+                if memories:
+                    history_items = []
+                    for m in memories:
+                        if isinstance(m, dict) and m.get("memory"):
+                            history_items.append(m["memory"])
+                    history_text = "\n".join(history_items)
+                else:
+                    history_text = "No viewing history found"
+                    
+            except Exception as e:
+                history_text = f"Failed to retrieve history: {str(e)}"
+        else:
+            history_text = "Memory system not available"
+            
+        result = {"query": query or "recent_activity", "results": history_text}
+
+      elif fc.name == "pause_playback":
+        print("⏸️ Pausing TV playback...")
+        pause_result = await self.tv_controller.pause_playback()
+        result = {
+            "status": "pause_sent",
+            "message": "Pause command sent to TV" if pause_result else "Failed to pause TV"
+        }
+
+      elif fc.name == "rewind_sequence":
+        print("⏪ Executing rewind sequence...")
+        try:
+            await self.tv_controller.show_info()
+            await asyncio.sleep(1)
+            await self.tv_controller.rewind_playback() 
+            await asyncio.sleep(1)
+            await self.tv_controller.rewind_playback()
+            await asyncio.sleep(1) 
+            await self.tv_controller.back_key()
+            result = {"status": "rewind_complete", "message": "Rewound ~10 seconds and ready for analysis"}
+        except Exception as e:
+            result = {"status": "rewind_failed", "error": str(e)}
 
       else:
         result = {"error": f"Unknown function: {fc.name}"}
