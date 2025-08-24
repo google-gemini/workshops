@@ -411,20 +411,12 @@ class ChessCompanionSimplified:
     self.engine_pool = create_quick_analysis_pool(pool_size=4)
     self.analyzer = ChessAnalyzer(self.vector_search, self.engine_pool, self.client)
     
-    # Link cached colors to analyzer
-    def get_cached_colors():
-      return getattr(self, 'cached_player_colors', None)
-    self.analyzer._get_cached_player_colors = get_cached_colors
-
     # Fresh analysis task tracking
     self.fresh_analysis_task = None
     self.pending_user_query = None
     
     # Cached player colors (set once during initialization)
     self.cached_player_colors = None
-    
-    # Stored broadcast context (updated on scene changes)
-    self.stored_broadcast_context = {}
 
     # Audio components
     self.pya = None
@@ -546,9 +538,8 @@ class ChessCompanionSimplified:
     
     # Define callback for scene changes
     async def on_scene_change(frame):
-      print("🎬 Scene change detected - updating board mask and broadcast context")
+      print("🎬 Scene change detected - updating board mask only")
       asyncio.create_task(self.update_board_mask(frame))
-      asyncio.create_task(self.update_broadcast_context(frame))
     
     # Start detection
     await self.scene_detector.start_detection(self.shared_cap, on_scene_change)
@@ -768,12 +759,11 @@ class ChessCompanionSimplified:
     try:
       print(f"🧠 Analyzing new position with both perspectives: {fen[:30]}...")
       
-      # Use analyzer to get both perspectives (pass stored broadcast context)
+      # Use analyzer to get both perspectives
       analyses = await self.analyzer.analyze_both_perspectives(
           fen=fen,
-          frame=None,  # Don't pass frame - we'll use stored context
-          commentary_context=self.commentary_buffer,
-          stored_broadcast_context=self.stored_broadcast_context
+          frame=None,
+          commentary_context=self.commentary_buffer
       )
       
       # Update current analysis (overwrite)
@@ -852,33 +842,6 @@ class ChessCompanionSimplified:
     except Exception as e:
       print(f"⚠️ Board visualization failed: {e}")
   
-  async def detect_initial_broadcast_context(self):
-    """Detect initial broadcast context on startup - no scene change needed"""
-    print("🎥 Detecting initial broadcast context...")
-    
-    if not self.shared_cap or not self.shared_cap.isOpened():
-      print("❌ Video capture not ready for broadcast context detection")
-      return
-
-    ret, frame = self.shared_cap.read()
-    if ret:
-      await self.update_broadcast_context(frame)
-      print("✅ Initial broadcast context detected")
-    else:
-      print("❌ Failed to capture initial frame for broadcast context")
-
-  async def update_broadcast_context(self, frame):
-    """Update broadcast context on scene changes - runs full parallel detection"""
-    try:
-      print("🎥 Updating broadcast context for scene change...")
-      # Run full parallel color + rich context detection (no cached colors)
-      self.stored_broadcast_context = await self.analyzer._extract_broadcast_context(
-        frame, cached_player_colors=None  # Force fresh detection
-      )
-      print(f"✅ Broadcast context updated: {len(str(self.stored_broadcast_context))} chars")
-    except Exception as e:
-      print(f"❌ Broadcast context update failed: {e}")
-      self.stored_broadcast_context = {}
 
   async def save_frame_to_temp(self, frame) -> str:
     """Save video frame to temporary file for vision analysis"""
@@ -1050,9 +1013,16 @@ class ChessCompanionSimplified:
         if self.current_analysis:
           print(f"✅ Using current analysis (might be slightly stale)")
           
-          # Determine perspective using stored broadcast context (no expensive detection)
+          # Get FRESH broadcast context instead of using stored
+          print("📸 Taking fresh screenshot for broadcast context...")
+          ret, frame = self.shared_cap.read()
+          fresh_broadcast_context = {}
+          if ret:
+            fresh_broadcast_context = await self.analyzer._extract_broadcast_context(frame)
+          
+          # Determine perspective using FRESH broadcast context
           try:
-            color = await self.analyzer.determine_query_perspective(user_query, self.stored_broadcast_context)
+            color = await self.analyzer.determine_query_perspective(user_query, fresh_broadcast_context)
           except:
             color = "white"
           
@@ -1065,7 +1035,7 @@ class ChessCompanionSimplified:
             # Update user query context AND fresh broadcast context
             analysis = analysis.copy()
             analysis["user_query"] = user_query
-            analysis["broadcast_context"] = self.stored_broadcast_context  # INJECT FRESH CONTEXT
+            analysis["broadcast_context"] = fresh_broadcast_context  # USE FRESH CONTEXT
             analysis["formatted_for_gemini"] = self.analyzer._format_for_live_model(analysis)
             
             # Return analysis directly from tool (don't send separately)
@@ -1311,9 +1281,6 @@ class ChessCompanionSimplified:
         
         # New background architecture: scene detection + fast FEN detection
         await self.detect_initial_board_mask()  # Seed the bounding box - WAIT for this
-        
-        # Initial broadcast context detection (mid-broadcast startup) - run in background
-        tg.create_task(self.detect_initial_broadcast_context())
         
         tg.create_task(self.start_scene_detection())       # Background scene detection  
         tg.create_task(self.fast_fen_detection_loop())     # Fast FEN checking

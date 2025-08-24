@@ -3734,6 +3734,192 @@ Just mention similar games with outcomes rather than detailed analysis:
 - Position comparison: "How is this different from 5 moves ago?"
 - Opening/endgame specific analysis modes
 
+## Recent Development: Broadcast Context Hallucination Fix (January 2025)
+
+### The Hallucination Crisis
+
+During live testing, a critical problem emerged with the broadcast context extraction: the system was "hallucinating horribly" and "assigning totally made-up players to colors." Despite having good position detection, the player color assignment was completely wrong.
+
+**Original Problematic Architecture**:
+```python
+# Parallel color + context detection
+color_task = asyncio.create_task(self._extract_player_colors(frame_data))
+context_task = asyncio.create_task(self._extract_rich_context(frame_data))
+
+color_result, context_result = await asyncio.gather(color_task, context_task)
+
+# Merge results with complex priority logic
+if color_result and "structured_data" in merged_result:
+    merged_result["structured_data"]["players"] = color_result.get("players", {})
+```
+
+**Problems Identified**:
+1. **Dual model calls**: Two separate LLM calls trying to solve overlapping problems
+2. **Complex merging logic**: Attempting to combine potentially conflicting results
+3. **Over-specific prompts**: Detailed spatial instructions actually led to more hallucination
+4. **Stale cached context**: Using stored broadcast context instead of fresh analysis
+
+### The Solution: Radical Simplification
+
+#### Step 1: Single Model Call Architecture
+**Decision**: Eliminate parallel calls and use one model to handle both player identification and broadcast context.
+
+```python
+# OLD: Parallel processing with merging
+color_task = asyncio.create_task(self._extract_player_colors(frame_data))
+context_task = asyncio.create_task(self._extract_rich_context(frame_data))
+
+# NEW: Single comprehensive call
+context_task = asyncio.create_task(self._extract_rich_context(frame_data))
+context_result = await context_task
+```
+
+#### Step 2: Prompt De-complication
+**Original Over-Specific Prompt**:
+```
+EXTRACT IF VISIBLE:
+- Player names and determine which is White/Black based on screen position:
+  * LEFT/BOTTOM player info box = White
+  * RIGHT/TOP player info box = Black
+[... many more specific instructions ...]
+```
+
+**Simplified Effective Prompt**:
+```
+Look at this chess broadcast and tell me:
+
+1. Which player is White and which is Black
+2. Any other notable broadcast context
+
+Return JSON:
+{
+  "structured_data": {
+    "players": {"white": "Player Name", "black": "Player Name"}
+  },
+  "additional_context": "Brief description of what else is notable"
+}
+
+Only include what you can clearly see. If you can't determine player colors, omit the players field.
+```
+
+**Key Insight**: "Over-specification can lead to hallucination" - simpler prompts worked better than detailed instructions.
+
+#### Step 3: Fresh Context Over Cached Context
+**Problem**: The system was using stale `stored_broadcast_context` from scene changes, which often had generic "Player Name" entries.
+
+**Solution**: Get fresh broadcast context when actually needed for user queries:
+
+```python
+elif fc.name == "analyze_current_position":
+    # Get FRESH broadcast context instead of using stored
+    print("📸 Taking fresh screenshot for broadcast context...")
+    ret, frame = self.shared_cap.read()
+    fresh_broadcast_context = {}
+    if ret:
+        fresh_broadcast_context = await self.analyzer._extract_broadcast_context(frame)
+    
+    # Use fresh context for perspective determination
+    color = await self.analyzer.determine_query_perspective(query, fresh_broadcast_context)
+```
+
+#### Step 4: Architecture Cleanup
+**Removed Unnecessary Complexity**:
+- ✅ Eliminated separate `_extract_player_colors()` method
+- ✅ Removed cached player colors system entirely  
+- ✅ Simplified `_extract_broadcast_context()` method signature
+- ✅ Removed complex merging logic and parallel processing overhead
+
+### Results: Working System
+
+**Before Fix**:
+```json
+{
+  "structured_data": {
+    "players": {"white": "Player Name", "black": "Player Name"}
+  }
+}
+```
+*Generic players, wrong colors, no useful context*
+
+**After Fix**:
+```json
+{
+  "structured_data": {
+    "players": {"white": "Hikaru Nakamura", "black": "Magnus Carlsen"},
+    "times": {"white": "7:49", "black": "7:15"},
+    "match_info": "GRAND FINAL SET #2, GAME 2 OF 4, TOTAL SCORE: 1-1",
+    "ratings": {"white": 2931, "black": 2862}
+  },
+  "additional_context": "Game is part of the Semi Final, Game 4 of 6..."
+}
+```
+*Accurate players, correct colors, rich contextual information*
+
+### Enhanced Context Addition
+
+After confirming the basic system worked, we enhanced it to include richer broadcast details while maintaining the simple approach:
+
+**Enhanced but Simple Prompt**:
+```
+Look at this chess broadcast and extract what you can clearly see:
+
+1. Which player is White and which is Black
+2. Any other broadcast details that are clearly visible
+
+Return JSON:
+{
+  "structured_data": {
+    "players": {"white": "Player Name", "black": "Player Name"},
+    "ratings": {"white": 2650, "black": 2700},
+    "times": {"white": "05:30", "black": "03:45"},
+    "heart_rates": {"white": 95, "black": 88},
+    "event": "Tournament/Match Name"
+  },
+  "additional_context": "Brief description of other notable broadcast elements"
+}
+
+IMPORTANT: Only include fields you can actually see clearly displayed. Don't guess ratings, times, or heart rates.
+```
+
+### Key Insights and Lessons
+
+#### 1. Simplicity Beats Complexity
+- **Single model call** more reliable than parallel processing with merging
+- **Simple prompts** outperformed detailed, specific instructions
+- **Fresh context** more accurate than complex caching strategies
+
+#### 2. Over-Engineering Can Hurt Performance
+- Parallel processing added complexity without improving accuracy
+- Detailed spatial instructions led to more hallucination, not less
+- Cached context became stale and generic over time
+
+#### 3. User-Driven Analysis is Superior
+- Getting fresh context when user asks a question works better than background processing
+- User queries provide natural context for perspective determination
+- "What should Magnus do?" clearly indicates Magnus is the player to analyze
+
+#### 4. Trust the Model's Natural Abilities
+- Models can often determine spatial relationships (white/black assignment) without explicit rules
+- JSON format natural for models vs over-structured schemas
+- Conservative approach ("omit if unsure") better than forcing answers
+
+### Current System Status
+
+**✅ Production Ready**: 
+- Accurate player color assignment across different chess broadcasts
+- Rich contextual information (time pressure, match stakes, ratings)
+- Fresh context extraction ensures current, relevant data
+- Simple, maintainable architecture with clear error handling
+
+**Example Working Query**:
+```
+User: "What should Magnus do here?"
+System: [Takes fresh screenshot, identifies Magnus as Black, provides analysis from Black's perspective]
+→ Correct perspective, accurate context, relevant analysis
+```
+
+The broadcast context fix represents a crucial breakthrough that transformed the system from a hallucinating prototype to a reliable, context-aware chess analysis companion.
+
 ## Conclusion
 
 The journey from "move detection companion" to "position analysis companion" illustrates the importance of matching system architecture to real-world constraints. While we couldn't achieve real-time move commentary for blitz chess, we built something arguably more valuable: a system that provides genuine grandmaster-level analysis of any chess position with rich historical context and strategic insight.
@@ -3741,6 +3927,8 @@ The journey from "move detection companion" to "position analysis companion" ill
 The chess companion represents a sophisticated evolution of the TV companion architecture, adapted for the rich analytical domain of chess. By combining proven vector database techniques with chess-specific tools (python-chess, Stockfish) and leveraging comprehensive analysis pipelines, the system delivers expert-level commentary that synthesizes engine analysis, human expertise, and historical precedent.
 
 The key breakthrough was recognizing that **position analysis quality** matters more than **move tracking speed** for educational chess commentary. The final system processes chess positions with the same depth as our database creation pipeline, ensuring consistency and quality across both historical and live analysis.
+
+The recent broadcast context fixes demonstrate another important principle: **simplicity often beats complexity** in AI systems. By moving from parallel processing with complex merging logic to a single, focused model call with fresh context extraction, the system achieved both higher accuracy and better maintainability.
 # Chess Vision System Development Notes
 
 ## Model and Temperature Optimization (2024-08-11)
