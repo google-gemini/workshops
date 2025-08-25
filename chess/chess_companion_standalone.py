@@ -15,6 +15,7 @@ import io
 import json
 import os
 from pathlib import Path
+import queue
 import sys
 import tempfile
 import time
@@ -96,6 +97,12 @@ Use the `analyze_hypothetical_move` tool for "what if" questions:
 - What if Magnus plays Re8? 
 - What happens if White castles?
 - Is Nf3 a good move here?
+
+Use the `search_related_games` tool to find historical precedent:
+- How Magnus and Hikaru handled similar positions  
+- Success rates for different strategic approaches
+- Common themes and patterns in comparable games
+- Historical outcomes to inform current position assessment
 
 Don't give generic chess advice - analyze the actual board position first!
 
@@ -257,6 +264,34 @@ Feel free to suggest chess content to watch or help users find specific games.
                     "required": [],
                 },
             },
+            {
+                "name": "search_related_games",
+                "description": (
+                    "Search for similar chess positions from the Nakamura vs Carlsen historical database. "
+                    "Find how these masters handled comparable positions, strategic themes, and typical outcomes."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "query": {
+                            "type": "string",
+                            "description": (
+                                "Optional: Specific aspect to focus on (e.g., 'similar pawn structures', "
+                                "'tactical themes', 'Magnus in winning positions'). If blank, uses current position."
+                            ),
+                        },
+                        "min_similarity": {
+                            "type": "number",
+                            "description": "Minimum similarity threshold (0.0-1.0, default 0.75)",
+                        },
+                        "max_results": {
+                            "type": "number",
+                            "description": "Maximum results to return (default 5)",
+                        },
+                    },
+                    "required": [],
+                },
+            },
         ]
     }],
 }
@@ -266,8 +301,6 @@ class TVAudioStream:
   """Captures TV audio using pw-cat and provides it as a stream for transcription"""
 
   def __init__(self):
-    import queue
-
     self._buff = (
         queue.Queue()
     )  # Use sync queue for Google Cloud Speech compatibility
@@ -336,10 +369,8 @@ class TVAudioStream:
         break
 
   def generator(self):
-    """Generator with robust timeout handling and circuit breaker"""
+    """Generator with robust timeout handling"""
     chunks_yielded = 0
-    consecutive_timeouts = 0
-    max_consecutive_timeouts = 10  # Give up after 10 timeouts in a row
     
     while not self.closed:
       try:
@@ -358,16 +389,12 @@ class TVAudioStream:
         
         yield chunk
         
-      except:
-        consecutive_timeouts += 1
-        print(f"⚠️ Audio timeout #{consecutive_timeouts}/{max_consecutive_timeouts} - continuing...")
-        
-        # Circuit breaker: if too many timeouts, assume stream is broken
-        if consecutive_timeouts >= max_consecutive_timeouts:
-          print("🚫 Too many consecutive timeouts - audio stream likely broken")
-          return
-        
-        # Just continue - don't yield anything, try again
+      except queue.Empty:
+        # Normal silence - just continue waiting (no error counting)
+        continue
+      except Exception as e:
+        # Actual error - log it but keep trying
+        print(f"❌ Audio generator error: {e}")
         continue
 
 
@@ -407,7 +434,7 @@ class ChessCompanionSimplified:
     self.audio_in_queue = None
 
     # Chess analysis components
-    self.vector_search = ChessVectorSearch()
+    self.vector_search = ChessVectorSearch("nakamura_carlsen_embeddings.json")
     self.engine_pool = create_quick_analysis_pool(pool_size=4)
     self.analyzer = ChessAnalyzer(self.vector_search, self.engine_pool, self.client)
     
@@ -841,6 +868,61 @@ class ChessCompanionSimplified:
         print(f"{rank}: {' '.join(pieces_row)}")
     except Exception as e:
       print(f"⚠️ Board visualization failed: {e}")
+
+  def _format_related_games_report(self, results: list, query: str) -> str:
+    """Format search results into a digestible narrative report for Gemini"""
+    if not results:
+      return "No similar games found in the database."
+    
+    # Summary statistics
+    total = len(results)
+    sim_range = f"{min(r['similarity'] for r in results):.2f}-{max(r['similarity'] for r in results):.2f}"
+    
+    # Count outcomes
+    white_wins = sum(1 for r in results if r["result"] == "1-0")
+    black_wins = sum(1 for r in results if r["result"] == "0-1") 
+    draws = sum(1 for r in results if r["result"] == "1/2-1/2")
+    
+    # Most similar game (first result)
+    top_game = results[0]
+    
+    # Build narrative report
+    report = f"""🔍 RELATED GAMES ANALYSIS
+Query: {query}
+Found {total} similar positions (similarity range: {sim_range})
+
+📊 HISTORICAL OUTCOMES:
+• White wins: {white_wins}
+• Black wins: {black_wins}  
+• Draws: {draws}
+
+🎯 MOST SIMILAR GAME ({top_game['similarity']:.3f} similarity):
+{top_game['players']} → {top_game['result']}
+{top_game['event']} ({top_game['date']})
+
+Position Context: "{top_game['position_description'][:200]}{'...' if len(top_game['position_description']) > 200 else ''}"
+
+Engine Assessment: {top_game['engine_evaluation']} (evaluation)
+Recommended Move: {top_game['best_move'] or 'Not available'}
+Strategic Focus: {', '.join(top_game['strategic_themes'][:3]) if top_game['strategic_themes'] else 'General position'}
+Critical Squares: {', '.join(top_game['key_squares'][:3]) if top_game['key_squares'] else 'Various'}"""
+
+    # Add pattern analysis if we have multiple games
+    if len(results) >= 2:
+      # Success rate analysis
+      known_results = [r for r in results if r["result"] != "Unknown"]
+      if known_results:
+        decisive_games = len([r for r in known_results if r["result"] != "1/2-1/2"])
+        if decisive_games > 0:
+          success_rate = (decisive_games / len(known_results)) * 100
+          report += f"\n\n🎯 POSITION TYPE ANALYSIS:\nDecisive result rate: {success_rate:.0f}% ({decisive_games}/{len(known_results)} games)."
+
+    # Add second-best game for additional context if available
+    if len(results) >= 2:
+      second_game = results[1]
+      report += f"\n\n🔍 ALSO RELEVANT ({second_game['similarity']:.3f} similarity):\n{second_game['players']} → {second_game['result']} ({second_game['event']})"
+    
+    return report
   
 
   async def save_frame_to_temp(self, frame) -> str:
@@ -1182,6 +1264,106 @@ class ChessCompanionSimplified:
             result = {"status": "rewind_complete", "message": "Rewound ~10 seconds and ready for analysis"}
         except Exception as e:
             result = {"status": "rewind_failed", "error": str(e)}
+
+      elif fc.name == "search_related_games":
+        query = fc.args.get("query", "").strip()
+        min_similarity = fc.args.get("min_similarity", 0.6)
+        max_results = int(fc.args.get("max_results", 5))
+        
+        print(f"🔍 Searching related games: {query or 'current position'}")
+        
+        # Build query from current position if none provided
+        if not query and self.current_board:
+          if self.current_analysis:
+            # Use enhanced description from current analysis
+            white_analysis = self.current_analysis.get("white", {})
+            enhanced = white_analysis.get("enhanced_description", {})
+            query_parts = []
+            if enhanced.get("description"):
+              query_parts.append(f"Position: {enhanced['description']}")
+            if enhanced.get("strategic_themes"):
+              query_parts.append(f"Strategic themes: {', '.join(enhanced['strategic_themes'])}")
+            if enhanced.get("tactical_elements"):
+              query_parts.append(f"Tactical elements: {', '.join(enhanced['tactical_elements'])}")
+            query = " ".join(query_parts) if query_parts else f"Chess position: {self.current_board}"
+          else:
+            query = f"Chess position: {self.current_board}"
+        elif not query:
+          query = "tactical chess positions"
+        
+        try:
+          # Use existing vector search
+          search_results = await self.vector_search.search(
+            query=query,
+            top_k=max_results,
+            similarity_threshold=min_similarity
+          )
+          
+          # Debug the search result structure
+          if search_results:
+            print("🔍 DEBUG: Search result structure:")
+            first_result = search_results[0]
+            print(f"  - Type: {type(first_result)}")
+            print(f"  - Attributes: {dir(first_result)}")
+            print(f"  - Metadata keys: {first_result.metadata.keys() if hasattr(first_result, 'metadata') else 'No metadata attr'}")
+            
+            if hasattr(first_result, 'metadata') and 'full_position' in first_result.metadata:
+              full_pos = first_result.metadata['full_position']
+              print(f"  - full_position keys: {full_pos.keys()}")
+              if 'game_context' in full_pos:
+                game_context = full_pos['game_context']
+                print(f"  - game_context keys: {game_context.keys()}")
+                print(f"  - white_player: {game_context.get('white_player', 'NOT FOUND')}")
+          
+          if search_results:
+            # Format results for the model
+            formatted_results = []
+            for search_result in search_results:
+              # Extract from actual SearchResult structure  
+              game_info = search_result.metadata  # Game context is directly in metadata
+              full_pos = search_result.full_position if hasattr(search_result, 'full_position') else {}
+              enhanced = full_pos.get("enhanced_description", {}) if full_pos else {}
+              stockfish = full_pos.get("stockfish_analysis", {}) if full_pos else {}
+              
+              # Get game context from the correct location
+              game_context = full_pos.get("game_context", {}) if full_pos else {}
+              
+              formatted_result = {
+                "similarity": round(search_result.similarity, 3),
+                "players": f"{game_info.get('white_player', 'Unknown')} vs {game_info.get('black_player', 'Unknown')}",
+                "result": game_context.get("result", "Unknown"),
+                "date": game_context.get("date", "Unknown"), 
+                "event": game_context.get("event", "Unknown"),
+                "position_description": enhanced.get("description", ""),
+                "strategic_themes": enhanced.get("strategic_themes", []),
+                "tactical_elements": enhanced.get("tactical_elements", []),
+                "key_squares": enhanced.get("key_squares", []),
+                "engine_evaluation": stockfish.get("evaluation"),
+                "best_move": stockfish.get("best_move_san"),
+                "fen": search_result.metadata.get("fen", "")
+              }
+              formatted_results.append(formatted_result)
+            
+            # Generate narrative report instead of raw JSON
+            report = self._format_related_games_report(formatted_results, query)
+            
+            result = {
+              "status": "related_games_found", 
+              "report": report
+            }
+          else:
+            result = {
+              "status": "no_matches",
+              "query": query,
+              "message": "No similar games found."
+            }
+            
+        except Exception as e:
+          print(f"❌ Related games search failed: {e}")
+          result = {
+            "status": "search_error", 
+            "error": f"Failed to search related games: {str(e)}"
+          }
 
       else:
         result = {"error": f"Unknown function: {fc.name}"}

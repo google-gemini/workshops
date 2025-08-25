@@ -253,4 +253,7 @@ async def create_chess_embeddings(
 
 
 if __name__ == "__main__":
-  asyncio.run(create_chess_embeddings())
+  asyncio.run(create_chess_embeddings(
+    input_file="nakamura_carlsen_comprehensive.json",
+    output_file="nakamura_carlsen_embeddings.json"
+  ))

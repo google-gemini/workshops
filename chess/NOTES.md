@@ -164,6 +164,128 @@ def should_extract_position_smart(board, move_number, prev_eval):
 4. **Parallel analysis sidesteps hard problems**: Computing both perspectives avoids brittle turn detection
 5. **Background processing is essential**: Pre-computation shifts expensive work to idle time for responsive user experience
 
+## Recent Development: Search Related Games Tool Implementation
+
+### Problem Definition
+The existing `analyze_current_position` tool was getting information-saturated when trying to incorporate historical game context. The model wasn't effectively picking up on related games when flooded with Stockfish analysis, qualitative analysis, and ambient analysis all in one tool call.
+
+**Core Challenge**: How to provide historical context from the vector database without overwhelming the primary position analysis tool?
+
+### Implementation Journey
+
+#### Phase 1: Vector Database Setup
+**Challenge**: Had `nakamura_carlsen_comprehensive.json` but needed to generate embeddings.
+
+**Solution**: 
+- Updated `create_embeddings.py` to use correct input/output file names
+- Generated `nakamura_carlsen_embeddings.json` successfully
+- Updated `chess_companion_standalone.py` to use the Nakamura-Carlsen specific embeddings
+
+**Outcome**: Vector search infrastructure ready for integration.
+
+#### Phase 2: Audio System Bug Fix
+**Problem**: Overly aggressive audio timeout circuit breaker was shutting down the stream after 10 seconds of normal silence.
+
+**Root Cause**: 
+```python
+except:  # Caught both queue.Empty (silence) AND real errors
+    consecutive_timeouts += 1
+    if consecutive_timeouts >= 10: return  # Fatal shutdown
+```
+
+**Solution**: Distinguished between normal silence and actual errors:
+```python
+except queue.Empty:
+    continue  # Normal silence - keep waiting
+except Exception as e:
+    print(f"❌ Audio generator error: {e}")
+    continue  # Real error but keep trying
+```
+
+**Outcome**: Audio transcription now runs indefinitely through quiet TV moments instead of treating silence as stream failure.
+
+#### Phase 3: Tool Implementation  
+**Design Decision**: Implement as separate tool rather than refactor into modular files (immediate needs vs. long-term architecture).
+
+**Tool Specification**:
+- **Name**: `search_related_games`
+- **Purpose**: Find historical Nakamura vs Carlsen games with similar positions
+- **Parameters**: Query string, similarity threshold, max results
+- **Integration**: Added to `CHESS_CONFIG` and `handle_tool_call()` dispatcher
+
+**Initial Implementation**: Basic vector search integration with JSON response format.
+
+#### Phase 4: Metadata Extraction Debugging
+**Problem**: Tool returning similarity matches but all metadata as "Unknown vs Unknown", empty descriptions.
+
+**Investigation Process**:
+1. **Vector search working**: Getting good similarity scores (0.78+)
+2. **Metadata structure mystery**: Expected nested structure not matching actual data
+3. **Debug approach**: Added temporary logging to inspect `SearchResult` object structure
+4. **Discovery tool**: Used `jq '.[0] | del(.embedding)'` to examine actual embeddings file structure
+
+**Key Finding**: Metadata wasn't nested as expected:
+- **Expected**: `search_result.metadata.game_context.white_player`
+- **Actual**: `search_result.metadata.white_player` (direct) + `search_result.full_position.game_context.result`
+
+**Solution**: Updated extraction to match real structure:
+```python
+game_info = search_result.metadata  # Direct access
+full_pos = search_result.full_position  # Attribute not nested in metadata  
+game_context = full_pos.get("game_context", {})  # Game outcomes here
+```
+
+**Outcome**: Rich metadata now extracted correctly - real player names, game results, event details, strategic themes.
+
+#### Phase 5: User Experience Optimization
+**Problem 1**: Default similarity threshold (0.75) too strict for demo - finding 0 results.
+
+**Solution**: Lowered to 0.6 for better demo experience while maintaining quality.
+
+**Problem 2**: JSON dump format not giving Gemini good talking points.
+
+**Core Issue**: Raw data structures led to generic chess commentary ("open files", "pawn structure") rather than specific historical insights.
+
+**Solution**: Implemented narrative report format:
+```python
+def _format_related_games_report(results, query):
+    return f"""🔍 RELATED GAMES ANALYSIS
+📊 HISTORICAL OUTCOMES: White wins: {white_wins}, Black wins: {black_wins}, Draws: {draws}
+🎯 MOST SIMILAR GAME: {top_game['players']} → {top_game['result']}
+{top_game['event']} ({top_game['date']})
+Position Context: "{top_game['position_description'][:200]}..."
+"""
+```
+
+**Problem 3**: Historical move patterns misleading Gemini.
+
+**Issue**: `hxg4 was played 20% of the time` from similar positions was being interpreted as advice for current position.
+
+**Solution**: Removed specific move statistics, kept outcome patterns and strategic themes that apply to position types rather than specific moves.
+
+### Final Implementation Results
+
+**Successful Features**:
+- **Historical context on demand**: Model calls tool when historical precedent would be valuable
+- **Rich game metadata**: Real player names, tournament details, game outcomes  
+- **Narrative format**: Digestible reports instead of raw JSON dumps
+- **Strategic insights**: "Black wins 60% of these position types" vs "hxg4 is common"
+- **Concrete talking points**: "Magnus handled this material deficit against Hikaru in London 2024..."
+
+**User Experience Transformation**:
+- **Before**: Generic chess advice with no historical context
+- **After**: Specific historical comparisons with authentic game results and strategic precedents
+
+**Technical Architecture**: Clean separation of concerns where `analyze_current_position` handles immediate tactical/strategic analysis while `search_related_games` provides historical context when the model determines it's valuable.
+
+### Key Lessons Learned
+
+1. **Debug with actual data structure**: `jq` investigation revealed the real metadata nesting vs assumptions
+2. **User experience over technical purity**: Narrative reports work better than perfect JSON schemas
+3. **Threshold tuning matters**: Demo success often depends on parameters that work in practice vs theory
+4. **Avoid misleading specificity**: Historical move frequencies from similar positions confuse more than help
+5. **Separation of concerns works**: Dedicated tools for specific purposes vs overloaded multi-purpose tools
+
 ## Archived Development Notes
 
 Detailed implementation history, optimization journeys, and technical deep-dives archived in:
