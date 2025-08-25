@@ -70,14 +70,20 @@ GAME CONTEXT:
 - Tournament: {event}
 - Opening: {eco}
 
+EXPERT COMMENTARY (from historical games):
+{expert_commentary}
+
 LIVE COMMENTARY CONTEXT:
 {live_commentary}
 
 Create a rich 3-4 sentence description that captures:
 1. The strategic situation and key themes
-2. Tactical opportunities and threats
+2. Tactical opportunities and threats  
 3. The critical decision points
 4. Historical/opening context when relevant
+5. **Incorporate expert commentary insights when available**
+
+When expert commentary exists, weave those insights into your analysis. Expert commentary often contains move-specific insights, psychological context, and historical patterns that should enhance your systematic analysis.
 
 Focus on concepts that would help find similar positions: piece coordination, pawn structures, tactical motifs, strategic plans, king safety issues, material imbalances, endgame techniques.
 
@@ -156,8 +162,39 @@ Make it engaging and educational - as if explaining to an intermediate player wa
             "black_player": context.get("black_player", ""),
             "event": context.get("event", ""),
             "eco": context.get("eco", ""),
+            "expert_commentary": self.format_expert_commentary(position),
             "live_commentary": position.get("live_commentary", "No commentary available")
         }
+    
+    def format_expert_commentary(self, position: dict) -> str:
+        """Format expert commentary from PGN when available"""
+        
+        human_commentary = position.get("human_commentary", {})
+        if not human_commentary:
+            return "No expert commentary available for this position."
+        
+        commentary_parts = []
+        
+        # Add main commentary description
+        if human_commentary.get("description"):
+            commentary_parts.append(f"Expert analysis: {human_commentary['description']}")
+        
+        # Add strategic themes from expert
+        expert_themes = human_commentary.get("strategic_themes", [])
+        if expert_themes:
+            commentary_parts.append(f"Expert identifies themes: {', '.join(expert_themes)}")
+        
+        # Add tactical elements from expert  
+        expert_tactics = human_commentary.get("tactical_elements", [])
+        if expert_tactics:
+            commentary_parts.append(f"Expert notes tactical: {', '.join(expert_tactics)}")
+            
+        # Add raw commentary snippet for context
+        raw_commentary = human_commentary.get("raw_commentary", "")
+        if raw_commentary and len(raw_commentary.strip()) > 10:
+            commentary_parts.append(f"Original annotation: \"{raw_commentary[:100]}...\"")
+        
+        return " | ".join(commentary_parts) if commentary_parts else "No expert commentary available for this position."
     
     def format_pawn_structure(self, pawn_structure: dict) -> str:
         """Format pawn structure into readable description"""

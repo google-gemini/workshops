@@ -18,14 +18,21 @@ class ChessEmbeddingGenerator:
     self.client = genai.Client()
 
   def create_embedding_text(self, position: dict) -> str:
-    """Combine enhanced description with structured elements for optimal search"""
+    """Combine LLM analysis with human commentary for optimal search"""
 
+    parts = []
+    
+    # Start with LLM systematic analysis
     enhanced_desc = position.get("enhanced_description", {})
+    if enhanced_desc.get("description"):
+        parts.append(enhanced_desc["description"])
 
-    # Start with the main description
-    parts = [enhanced_desc.get("description", "")]
+    # Add human expert commentary when available
+    human_commentary = position.get("human_commentary", {})
+    if human_commentary.get("description"):
+        parts.append(f"Expert insight: {human_commentary['description']}")
 
-    # Add structured elements as searchable keywords
+    # Add LLM structured elements as searchable keywords
     strategic_themes = enhanced_desc.get("strategic_themes", [])
     if strategic_themes:
       parts.append(f"Strategic themes: {', '.join(strategic_themes)}")
@@ -34,9 +41,17 @@ class ChessEmbeddingGenerator:
     if tactical_elements:
       parts.append(f"Tactical elements: {', '.join(tactical_elements)}")
 
-    key_squares = enhanced_desc.get("key_squares", [])
-    if key_squares:
-      parts.append(f"Key squares: {', '.join(key_squares)}")
+    # Add human-extracted themes if available
+    human_themes = human_commentary.get("strategic_themes", [])
+    if human_themes and human_themes != strategic_themes:
+      parts.append(f"Expert themes: {', '.join(human_themes)}")
+
+    # Add key squares from both sources
+    llm_squares = enhanced_desc.get("key_squares", [])
+    human_squares = human_commentary.get("key_squares", [])
+    all_squares = list(set(llm_squares + human_squares))
+    if all_squares:
+      parts.append(f"Key squares: {', '.join(all_squares)}")
 
     # Add some position facts for additional searchability
     features = position.get("position_features", {})
@@ -202,6 +217,9 @@ async def create_chess_embeddings(
                       "tactical_elements", []
                   )
               ),
+              "has_human_commentary": bool(pos.get("human_commentary")),
+              "commentary_source": pos.get("human_commentary", {}).get("source"),
+              "human_themes": pos.get("human_commentary", {}).get("strategic_themes", []),
           },
           # Full position data (for detailed analysis)
           "full_position": pos,

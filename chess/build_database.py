@@ -4,6 +4,9 @@ from pathlib import Path
 import sys
 import chess.engine
 import concurrent.futures
+import chess.pgn
+import io
+import re
 from typing import Optional
 from parse_pgn import parse_pgn_to_positions
 from position_features import extract_position_features
@@ -211,70 +214,116 @@ async def build_chess_database(
     print(f"   ❌ Error saving intermediate file: {e}")
     return
 
-  # Step 4: Generate LLM-enhanced descriptions using Gemini 2.0 Flash-Lite
-  print(f"\n📝 Step 4: Generating LLM-enhanced descriptions")
-  print(f"   Using Gemini 2.0 Flash-Lite with 10 concurrent workers...")
+  # Step 4: Dual enhancement - Human commentary + LLM analysis
+  print(f"\n📝 Step 4: Dual enhancement - Human commentary + LLM analysis")
+  
+  # Load PGN games for commentary extraction
+  print("   Loading PGN games for commentary lookup...")
+  original_pgn_games = load_pgn_games(pgn_file)
+  print(f"   ✓ Loaded {len(original_pgn_games)} games for commentary extraction")
 
-  # Initialize generator and chain
+  # Initialize LLM generator for systematic analysis
+  print("   Initializing LLM generator for systematic analysis...")
   generator = ChessDescriptionGenerator()
   chain = generator.create_description_chain()
-  
-  # Prepare positions with indices for async processing
-  positions_with_idx = [(pos, i) for i, pos in enumerate(positions)]
-  
-  # Process with async concurrency (similar to chess_description_generator.py)
+
+  # Process each position: extract commentary + generate LLM description
   enhanced_count = 0
+  commentary_count = 0
+  llm_count = 0
   errors = 0
-  completed = 0
-  
+
+  # Prepare positions with indices for async LLM processing
+  positions_with_idx = [(pos, i) for i, pos in enumerate(positions)]
+
+  print(f"   Processing {len(positions)} positions with dual enhancement...")
+
+  # Step 4a: Extract human commentary for all positions
+  print(f"\n   📝 Step 4a: Extracting human commentary...")
+  for idx, position in enumerate(positions):
+      try:
+          # Extract human commentary when available
+          commentary_desc = extract_pgn_commentary(position, original_pgn_games)
+          
+          if commentary_desc:
+              position["human_commentary"] = commentary_desc
+              commentary_count += 1
+              
+              if idx % 50 == 0:
+                  print(f"\n   💬 Commentary sample (position {idx+1}):")
+                  print(f"      Game: {position['game_context']['white_player']} vs {position['game_context']['black_player']}")
+                  print(f"      Move: {position['move_number']} {position['last_move']}")
+                  print(f"      Expert: {commentary_desc['description'][:150]}...")
+                  print(f"      Raw: {commentary_desc.get('raw_commentary', '')[:100]}...")
+          
+          if (idx + 1) % 200 == 0:
+              print(f"   Commentary progress: {idx+1}/{len(positions)} positions ({commentary_count} with commentary)")
+              
+      except Exception as e:
+          print(f"   ⚠️ Commentary extraction error for position {idx+1}: {e}")
+
+  print(f"   ✓ Commentary extraction completed: {commentary_count}/{len(positions)} positions have expert commentary")
+
+  # Step 4b: Generate LLM descriptions for ALL positions (incorporating expert commentary)
+  print(f"\n   🤖 Step 4b: Generating comprehensive LLM analysis...")
+  print(f"   LLM will incorporate expert commentary when available")
+  print(f"   Using Gemini 2.0 Flash-Lite with 10 concurrent workers...")
+
   # Create semaphore for rate limiting
   semaphore = asyncio.Semaphore(10)
   
-  # Create all tasks
+  # Create all LLM enhancement tasks
   tasks = [
       enhance_single_position_with_retry(pos_data, generator, chain, semaphore)
       for pos_data in positions_with_idx
   ]
   
-  # Process tasks with progress tracking
+  # Process LLM tasks with progress tracking
   for task in asyncio.as_completed(tasks):
       try:
           idx, enhanced_desc, error = await task
           
           if error:
-              print(f"   ❌ Error enhancing position {idx+1}: {error}")
-              errors += 1
-              # Use fallback template description
+              print(f"   ❌ LLM error for position {idx+1}: {error}")
+              # Use template fallback for LLM description
               positions[idx]["enhanced_description"] = {
                   "description": generate_quick_description(positions[idx]),
                   "strategic_themes": [],
                   "tactical_elements": [],
                   "key_squares": [],
-                  "generated_by": "template-fallback"
+                  "source": "template_fallback"
               }
+              errors += 1
           else:
               positions[idx]["enhanced_description"] = enhanced_desc
-              enhanced_count += 1
+              llm_count += 1
               
-              # Show samples every 10th completion
-              if completed % 10 == 0:
-                  print(f"\n   📝 Sample (position {idx+1}):")
-                  print(f"      Game: {positions[idx]['game_context']['white_player']} vs {positions[idx]['game_context']['black_player']}")
-                  print(f"      Move: {positions[idx]['move_number']} {positions[idx]['last_move']}")
-                  print(f"      Description: {enhanced_desc['description']}")
-                  print(f"      Themes: {', '.join(enhanced_desc['strategic_themes'])}")
-                  if enhanced_desc['tactical_elements']:
-                      print(f"      Tactical: {', '.join(enhanced_desc['tactical_elements'])}")
+              # Show combined sample every 25th completion
+              if llm_count % 25 == 0:
+                  pos = positions[idx]
+                  print(f"\n   📝 Comprehensive analysis sample (position {idx+1}):")
+                  print(f"      Game: {pos['game_context']['white_player']} vs {pos['game_context']['black_player']}")
+                  print(f"      Move: {pos['move_number']} {pos['last_move']}")
+                  print(f"      LLM synthesis: {enhanced_desc['description'][:150]}...")
+                  print(f"      LLM themes: {', '.join(enhanced_desc['strategic_themes'])}")
+                  if pos.get('human_commentary'):
+                      print(f"      ✓ Incorporated expert commentary: {pos['human_commentary']['description'][:100]}...")
+                  else:
+                      print(f"      ○ No expert commentary to incorporate")
           
-          completed += 1
-          if completed % 25 == 0:
-              print(f"   Progress: {completed}/{len(positions)} positions processed ({enhanced_count} enhanced, {errors} errors)")
+          enhanced_count += 1
+          if enhanced_count % 50 == 0:
+              print(f"   LLM progress: {enhanced_count}/{len(positions)} positions processed ({llm_count} success, {errors} errors)")
               
       except Exception as e:
           print(f"   ❌ Task execution error: {e}")
           errors += 1
 
-  print(f"   ✓ LLM enhancement completed: {enhanced_count} enhanced, {errors} errors")
+  print(f"   ✓ Dual enhancement completed:")
+  print(f"     - Positions with human commentary: {commentary_count}")
+  print(f"     - Positions with LLM analysis: {llm_count}")
+  print(f"     - Positions with BOTH: {sum(1 for pos in positions if pos.get('human_commentary') and pos.get('enhanced_description'))}")
+  print(f"     - Errors: {errors}")
 
   # Step 5: Analysis summary and LLM cost estimation
   print(f"\n💰 Step 5: Analysis and Cost Summary")
@@ -406,6 +455,139 @@ async def build_chess_database(
     print(f"   {pos.get('quick_description', 'No description')}")
     print(f"   FEN: {pos['fen'][:50]}...")
 
+
+def extract_pgn_commentary(position: dict, original_pgn_games: dict) -> dict:
+    """Extract human commentary from PGN for this position"""
+    
+    try:
+        # Find the game this position came from
+        game_context = position.get("game_context", {})
+        game_key = f"{game_context.get('white_player')}_{game_context.get('black_player')}_{game_context.get('date')}"
+        
+        if game_key not in original_pgn_games:
+            return None
+            
+        game = original_pgn_games[game_key]
+        move_number = position.get("move_number", 0)
+        
+        # Walk through the game to find commentary at this move
+        board = game.board()
+        current_move = 1
+        
+        for node in game.mainline():
+            if current_move == move_number:
+                # Extract commentary from this move
+                commentary_text = node.comment if hasattr(node, 'comment') else ""
+                if commentary_text.strip():
+                    return {
+                        "description": parse_commentary_to_description(commentary_text),
+                        "strategic_themes": extract_strategic_themes(commentary_text),
+                        "tactical_elements": extract_tactical_elements(commentary_text),
+                        "key_squares": extract_key_squares(commentary_text),
+                        "source": "human_expert",
+                        "raw_commentary": commentary_text[:200] + "..." if len(commentary_text) > 200 else commentary_text
+                    }
+            
+            board.push(node.move)
+            current_move += 1
+            
+    except Exception as e:
+        print(f"   ⚠️ Commentary extraction error: {e}")
+        
+    return None
+
+def parse_commentary_to_description(commentary: str) -> str:
+    """Convert raw PGN commentary to natural description"""
+    
+    # Clean up PGN annotations
+    cleaned = re.sub(r'\[%[^\]]*\]', '', commentary)  # Remove evaluation annotations
+    cleaned = re.sub(r'\$\d+', '', cleaned)  # Remove NAG codes
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()  # Clean whitespace
+    
+    if len(cleaned) > 300:
+        cleaned = cleaned[:300] + "..."
+    
+    return cleaned if cleaned else "Position with expert commentary"
+
+def extract_strategic_themes(commentary: str) -> list:
+    """Extract strategic themes from commentary text"""
+    
+    themes = []
+    commentary_lower = commentary.lower()
+    
+    # Look for common strategic keywords
+    strategic_keywords = {
+        'attack': ['attack', 'attacking', 'offensive'],
+        'defense': ['defense', 'defensive', 'defending'],
+        'control': ['control', 'domination', 'pressure'],
+        'development': ['development', 'developing', 'piece activity'],
+        'king safety': ['king safety', 'castling', 'king position'],
+        'pawn structure': ['pawn structure', 'pawn chain', 'pawn weakness'],
+        'space advantage': ['space', 'territory', 'expansion'],
+        'piece coordination': ['coordination', 'cooperation', 'harmony'],
+        'counterplay': ['counterplay', 'counter-attack', 'initiative']
+    }
+    
+    for theme, keywords in strategic_keywords.items():
+        if any(keyword in commentary_lower for keyword in keywords):
+            themes.append(theme)
+    
+    return themes[:5]  # Limit to 5 themes
+
+def extract_tactical_elements(commentary: str) -> list:
+    """Extract tactical motifs from commentary"""
+    
+    elements = []
+    commentary_lower = commentary.lower()
+    
+    tactical_keywords = {
+        'pin': ['pin', 'pinned'],
+        'fork': ['fork', 'double attack'],
+        'skewer': ['skewer'],
+        'discovered attack': ['discovered', 'discovery'],
+        'sacrifice': ['sacrifice', 'sacrificial'],
+        'combination': ['combination', 'tactical sequence'],
+        'mate threat': ['mate', 'checkmate', 'mating'],
+        'blunder': ['blunder', 'mistake', 'error']
+    }
+    
+    for element, keywords in tactical_keywords.items():
+        if any(keyword in commentary_lower for keyword in keywords):
+            elements.append(element)
+    
+    return elements[:3]  # Limit to 3 elements
+
+def extract_key_squares(commentary: str) -> list:
+    """Extract square references from commentary"""
+    
+    # Look for chess square notation (e4, d5, etc.)
+    squares = re.findall(r'\b[a-h][1-8]\b', commentary)
+    return list(set(squares))[:5]  # Unique squares, limit to 5
+
+def load_pgn_games(pgn_file: str) -> dict:
+    """Load and index PGN games for commentary lookup"""
+    
+    games = {}
+    
+    try:
+        with open(pgn_file, 'r', encoding='utf-8') as f:
+            while True:
+                game = chess.pgn.read_game(f)
+                if game is None:
+                    break
+                
+                # Create unique key for game
+                white = game.headers.get("White", "Unknown")
+                black = game.headers.get("Black", "Unknown")  
+                date = game.headers.get("Date", "")
+                
+                game_key = f"{white}_{black}_{date}"
+                games[game_key] = game
+                
+    except Exception as e:
+        print(f"   ⚠️ Error loading PGN games: {e}")
+    
+    return games
 
 def generate_quick_description(position: dict) -> str:
   """Generate engine-enhanced template-based description"""
