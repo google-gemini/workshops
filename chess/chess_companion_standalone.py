@@ -107,10 +107,15 @@ Use the `search_related_games` tool to find historical precedent:
 Don't give generic chess advice - analyze the actual board position first!
 
 ## TV Control Capabilities:
-- Search for and play chess videos using search_and_play_content  
-- Pause playback with pause_playback
+- Play chess content using play_content (for ANY play/watch request: "play it", "watch Magnus vs Hikaru", etc.)
+- Pause playback with pause_playback  
 - Access user's viewing history with search_user_history
 - Toggle watching mode on/off for automatic position commentary
+
+Use `play_content` for ANY content playback request:
+- "Play Claude vs Gemini" → Use remembered alias "GUESS THE ELO AI COMPETITION"  
+- "Can you play it?" → Use context from recent conversation
+- "Watch Magnus vs Hikaru" → Search and play directly
 
 ## Chess Commentary Style:
 When you receive position analysis packages (from analyze_current_position), provide expert chess commentary that enhances understanding:
@@ -179,22 +184,18 @@ Feel free to suggest chess content to watch or help users find specific games.
                 },
             },
             {
-                "name": "search_and_play_content",
+                "name": "play_content",
                 "description": (
-                    "Search for and start playing chess content on the TV using"
-                    " Google TV's universal search. Works well with queries"
-                    " like 'magnus carlsen vs hikaru nakamura' or 'world"
-                    " championship 2023'"
+                    "Play chess content on the TV. Use this for ANY request to play or watch content: "
+                    "'play Magnus vs Hikaru', 'can you play it?', 'watch the world championship', etc. "
+                    "Automatically handles searching and playing the content."
                 ),
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "title": {
                             "type": "string",
-                            "description": (
-                                "Chess game, tournament, or players to"
-                                " search for"
-                            ),
+                            "description": "What to play - chess game, tournament, players, or content name"
                         }
                     },
                     "required": ["title"],
@@ -291,6 +292,24 @@ Feel free to suggest chess content to watch or help users find specific games.
                     },
                     "required": [],
                 },
+            },
+            {
+                "name": "remember_information", 
+                "description": "Store important information for future reference, like content aliases, user preferences, or chess insights",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "information": {
+                            "type": "string", 
+                            "description": "The information to remember (e.g., 'Claude vs Gemini is actually called GUESS THE ELO AI COMPETITION on YouTube')"
+                        },
+                        "category": {
+                            "type": "string",
+                            "description": "Optional: Category like 'content_aliases', 'preferences', 'chess_insights'"
+                        }
+                    },
+                    "required": ["information"]
+                }
             },
         ]
     }],
@@ -1195,16 +1214,22 @@ Critical Squares: {', '.join(top_game['key_squares'][:3]) if top_game['key_squar
             "message": "No current position available for hypothetical analysis."
           }
 
-      elif fc.name == "search_and_play_content":
+      elif fc.name == "play_content":
         title = fc.args.get("title", "")
-        print(f"🎬 TV control: searching and playing '{title}'")
-        search_result = self.tv_controller.search_and_play_content(title)
+        print(f"🎬 TV control: playing '{title}'")
         
-        # Store what user requested to watch  
+        # Fire and forget - don't wait for anything
+        self.tv_controller.search_and_play_content(title)
+        
+        # Store memory in background (don't await)
         if self.memory_client and title.strip():
-            await self.tv_controller.store_viewing_request(title)
+            asyncio.create_task(self.tv_controller.store_viewing_request(title))
         
-        result = {"title": title, "result": search_result}
+        # Quick, conversational response
+        result = {
+            "status": "starting", 
+            "message": f"🎬 Bringing up '{title}'"
+        }
 
       elif fc.name == "search_user_history":
         query = fc.args.get("query", "").strip()
@@ -1247,8 +1272,8 @@ Critical Squares: {', '.join(top_game['key_squares'][:3]) if top_game['key_squar
         print("⏸️ Pausing TV playback...")
         pause_result = await self.tv_controller.pause_playback()
         result = {
-            "status": "pause_sent",
-            "message": "Pause command sent to TV" if pause_result else "Failed to pause TV"
+            "status": "paused" if pause_result else "failed",
+            "message": "✅ Paused" if pause_result else "❌ Pause failed"
         }
 
       elif fc.name == "rewind_sequence":
@@ -1364,6 +1389,26 @@ Critical Squares: {', '.join(top_game['key_squares'][:3]) if top_game['key_squar
             "status": "search_error", 
             "error": f"Failed to search related games: {str(e)}"
           }
+
+      elif fc.name == "remember_information":
+        information = fc.args.get("information", "")
+        category = fc.args.get("category", "general")
+        
+        print(f"💾 Storing memory: {information[:100]}{'...' if len(information) > 100 else ''}")
+        
+        if self.memory_client and information.strip():
+            try:
+                await asyncio.to_thread(
+                    self.memory_client.add,
+                    messages=[{"role": "user", "content": information}],
+                    user_id="chess_tv_user",
+                    metadata={"category": category, "timestamp": datetime.now().isoformat()}
+                )
+                result = {"status": "remembered", "information": information, "category": category}
+            except Exception as e:
+                result = {"status": "memory_failed", "error": str(e)}
+        else:
+            result = {"status": "no_memory_system", "message": "Memory system not available"}
 
       else:
         result = {"error": f"Unknown function: {fc.name}"}

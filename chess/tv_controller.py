@@ -96,12 +96,13 @@ class ChessTVController:
             # Format for ADB (replace spaces with %s)
             title_formatted = title.replace(" ", "%s")
 
-            # Universal search sequence - optimized for YouTube
+            # Universal search sequence - go to home first for reliable search
             commands = [
+                (["adb", "shell", "input", "keyevent", "KEYCODE_HOME"], "Go to home screen", 3),
                 (["adb", "shell", "input", "keyevent", "KEYCODE_SEARCH"], "Open search", 3),
                 (["adb", "shell", "input", "text", title_formatted], "Type search", 3), 
                 (["adb", "shell", "input", "keyevent", "KEYCODE_ENTER"], "Submit search", 5),
-                (["adb", "shell", "input", "keyevent", "KEYCODE_DPAD_DOWN"], "Navigate to first result", 2),
+                # (["adb", "shell", "input", "keyevent", "KEYCODE_DPAD_DOWN"], "Navigate to first result", 2),
                 (["adb", "shell", "input", "keyevent", "KEYCODE_ENTER"], "Select first result", 3),
             ]
 
@@ -122,8 +123,25 @@ class ChessTVController:
             print(f"❌ [Background] Search error for '{title}': {e}")
     
     async def pause_playback(self):
-        """Pause current playback"""
-        return await self._send_media_key_async("KEYCODE_MEDIA_PAUSE")
+        """Pause current playback and clear info screen overlay"""
+        try:
+            # Send pause command
+            pause_success = await self._send_media_key_async("KEYCODE_MEDIA_PAUSE")
+            if not pause_success:
+                return False
+            
+            # Small delay to let the info screen appear
+            await asyncio.sleep(1)
+            
+            # Send back to clear the info screen (so chess board stays visible)
+            back_success = await self._send_media_key_async("KEYCODE_BACK")
+            
+            # Return success even if back fails - pause is the main action
+            return pause_success
+            
+        except Exception as e:
+            print(f"❌ Pause error: {e}")
+            return False
     
     async def resume_playback(self):
         """Resume playback"""
