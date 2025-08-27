@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "gemini-workshop-tools"
+version = "0.1.0"
+description = "Documentation generation tools for Gemini workshop projects"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain-google-genai = "*"
+google-generativeai = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

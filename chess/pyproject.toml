@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "llm-chess-companion"
+version = "0.1.0"
+description = "LLM-powered chess companion for live game analysis"
+authors = ["Your Name"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+python-chess = "*"
+pydantic = "*"
+langchain = "*"
+langchain-google-genai = "*"
+langchain-core = "*"
+google-generativeai = "*"
+numpy = "*"
+google-genai = "*"
+pillow = "*"
+opencv-python = "*"
+pyaudio = "*"
+pychromecast = "*"
+google-cloud-speech = "*"
+mem0ai = "*"
+scenedetect = "*"
+themoviedb = "*"
+aiohttp = "*"
+pdfplumber = "*"
+inference-sdk = "*"
+requests = "*"
+huggingface-hub = "*"
+google-cloud-bigquery = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

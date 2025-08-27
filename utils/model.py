@@ -22,7 +22,7 @@ from langchain_google_genai import (
 from . import params
 
 
-def make_gemini(model: str = "gemini-1.5-pro") -> ChatGoogleGenerativeAI:
+def make_gemini(model: str = "gemini-2.5-flash") -> ChatGoogleGenerativeAI:
     """Makes a Gemini model.
 
     Returns:
