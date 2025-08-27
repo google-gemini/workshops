@@ -116,6 +116,7 @@ def load_existing_docs(subdir: str) -> str:
         "TODO.md", "CHANGELOG.md"
     ]
     
+    # Check main directory
     for doc_file in doc_files:
         doc_path = Path(subdir) / doc_file
         if doc_path.exists():
@@ -125,6 +126,17 @@ def load_existing_docs(subdir: str) -> str:
                     docs_content.append(f"=== {doc_file} ===\n{content}\n")
             except Exception as e:
                 print(f"Could not read {doc_path}: {e}")
+    
+    # Also check notes/ subdirectory for additional NOTES files
+    notes_dir = Path(subdir) / "notes"
+    if notes_dir.exists() and notes_dir.is_dir():
+        for notes_file in notes_dir.glob("NOTES*.md"):
+            try:
+                with open(notes_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    docs_content.append(f"=== notes/{notes_file.name} ===\n{content}\n")
+            except Exception as e:
+                print(f"Could not read {notes_file}: {e}")
     
     return "\n".join(docs_content)
 
