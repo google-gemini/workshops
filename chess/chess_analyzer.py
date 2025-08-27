@@ -173,28 +173,45 @@ Examples:
             return "white"  # Safe fallback
     
     async def _get_stockfish_analysis_database_format(self, fen: str, move_context: str) -> dict:
-        """Get Stockfish analysis in database format"""
+        """Get Stockfish analysis with fresh engine each time"""
+        engine = None
         try:
-            engine = self.engine_pool.get_engine()
+            print(f"🔍 DEBUG: Input FEN: '{fen}'")
+            print(f"🔍 DEBUG: Move context: '{move_context}'")
+            
+            # Create fresh engine every time - no pool corruption possible
+            print("🆕 Creating fresh Stockfish engine...")
+            engine = await asyncio.to_thread(
+                chess.engine.SimpleEngine.popen_uci, "stockfish"
+            )
             
             # Build complete FEN with determined turn
             if move_context and move_context in ["white", "black"]:
                 active_color = 'w' if move_context == 'white' else 'b'
-                fen_to_analyze = f"{fen} {active_color} KQkq - 0 1"
-                print(f"🔧 Built FEN for {move_context}: {fen_to_analyze}")
+                fen_to_analyze = f"{fen} {active_color} - - 0 1"  # No castling rights to avoid crashes
+                print(f"🔧 Built FEN for {move_context}: '{fen_to_analyze}'")
             else:
                 # Fallback to white to move
-                fen_to_analyze = f"{fen} w KQkq - 0 1"
-                print(f"🔧 Using fallback FEN (white to move): {fen_to_analyze}")
+                fen_to_analyze = f"{fen} w - - 0 1"  # No castling rights to avoid crashes
+                print(f"🔧 Using fallback FEN (white to move): '{fen_to_analyze}'")
+            
+            # DEBUG: Test FEN validity before sending to Stockfish
+            try:
+                test_board = chess.Board(fen_to_analyze)
+                print(f"✅ FEN validation passed")
+            except Exception as fen_error:
+                print(f"❌ INVALID FEN: {fen_error}")
+                return {"evaluation": 0.0, "evaluation_type": "error", "error": f"Invalid FEN: {fen_error}"}
             
             board = chess.Board(fen_to_analyze)
+            print(f"🔍 DEBUG: About to call engine.analyse with fresh engine")
             
             # Quick analysis (0.5 seconds)
             info = await asyncio.to_thread(
                 engine.analyse, board, chess.engine.Limit(time=0.5)
             )
             
-            self.engine_pool.return_engine(engine)
+            print(f"✅ Fresh engine analysis completed successfully")
             
             # Extract evaluation score (same format as build_database.py)
             score = info["score"].white()
@@ -227,12 +244,20 @@ Examples:
             return analysis
             
         except Exception as e:
-            print(f"❌ Engine analysis failed: {e}")
+            print(f"❌ Fresh engine analysis failed: {e}")
             return {
                 "evaluation": 0.0,
                 "evaluation_type": "error",
                 "error": str(e),
             }
+        finally:
+            # Always clean up the fresh engine
+            if engine:
+                try:
+                    engine.quit()
+                    print("🗑️ Fresh engine cleaned up")
+                except Exception as cleanup_error:
+                    print(f"⚠️ Engine cleanup failed: {cleanup_error}")
     
     async def _get_simple_similar_games(self, fen: str):
         """Get vector search with just game outcomes for passing mention"""
@@ -662,19 +687,22 @@ Return ONLY the move in algebraic notation, nothing else."""
             return None
     
     async def _get_quick_stockfish_evaluation(self, fen: str) -> float:
-        """Get quick Stockfish evaluation (just the number)"""
+        """Get quick Stockfish evaluation with fresh engine"""
+        engine = None
         try:
-            engine = self.engine_pool.get_engine()
+            # Create fresh engine for quick evaluation
+            print("🆕 Creating fresh engine for quick evaluation...")
+            engine = await asyncio.to_thread(
+                chess.engine.SimpleEngine.popen_uci, "stockfish"
+            )
             
             # Build FEN with white to move (simple assumption)
-            board = chess.Board(f"{fen} w KQkq - 0 1")
+            board = chess.Board(f"{fen} w - - 0 1")  # No castling rights
             
             # Very quick analysis (0.2 seconds)
             info = await asyncio.to_thread(
                 engine.analyse, board, chess.engine.Limit(time=0.2)
             )
-            
-            self.engine_pool.return_engine(engine)
             
             # Extract just the evaluation number
             score = info["score"].white()
@@ -684,8 +712,16 @@ Return ONLY the move in algebraic notation, nothing else."""
                 return score.score() / 100.0  # Convert centipawns to pawns
                 
         except Exception as e:
-            print(f"❌ Quick evaluation failed: {e}")
+            print(f"❌ Fresh quick evaluation failed: {e}")
             return 0.0
+        finally:
+            # Always clean up the fresh engine
+            if engine:
+                try:
+                    engine.quit()
+                    print("🗑️ Fresh quick evaluation engine cleaned up")
+                except Exception as cleanup_error:
+                    print(f"⚠️ Quick evaluation cleanup failed: {cleanup_error}")
     
     async def _format_hypothetical_analysis(
         self, 

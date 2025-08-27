@@ -179,6 +179,10 @@ class ChessTVController:
         """Send back key (dismiss overlays, go back in UI)"""
         return await self._send_media_key_async("KEYCODE_BACK")
     
+    async def enter_key(self):
+        """Send enter key (confirm)"""
+        return await self._send_media_key_async("KEYCODE_ENTER")
+    
     async def _send_media_key_async(self, keycode: str) -> bool:
         """Send media key command to TV"""
         try:

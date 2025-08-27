@@ -1285,7 +1285,11 @@ Critical Squares: {', '.join(top_game['key_squares'][:3]) if top_game['key_squar
             await asyncio.sleep(1)
             await self.tv_controller.rewind_playback()
             await asyncio.sleep(1) 
-            await self.tv_controller.back_key()
+            await self.tv_controller.rewind_playback()
+            await asyncio.sleep(1) 
+            await self.tv_controller.enter_key()
+            await asyncio.sleep(1) 
+            await self.tv_controller.pause_playback()
             result = {"status": "rewind_complete", "message": "Rewound ~10 seconds and ready for analysis"}
         except Exception as e:
             result = {"status": "rewind_failed", "error": str(e)}
