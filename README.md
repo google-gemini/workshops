@@ -65,7 +65,7 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 <td width="33%" align="center">
 
 ### [🥊 Smash Bot](./smash/)
-[![Smash Demo](https://img.youtube.com/vi/wz-s7QiiwWo/maxresdefault.jpg)](https://www.youtube.com/watch?v=wz-s7QiiwWo)
+[![Smash Demo](https://img.youtube.com/vi/ajqIn8mWkKY/maxresdefault.jpg)](https://www.youtube.com/watch?v=ajqIn8mWkKY)
 **LLM-powered fighting game agent**
 [📖 Documentation](./smash/)
 
