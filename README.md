@@ -29,7 +29,7 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 <td width="33%" align="center">
 
 ### [🎮 Wind Waker Chat](./waker/)
-[![Waker Demo](https://img.youtube.com/vi/wz-s7QiiwWo/maxresdefault.jpg)](https://www.youtube.com/watch?v=wz-s7QiiwWo)
+[![Waker Demo](https://img.youtube.com/vi/zvOtG8LkDD8/maxresdefault.jpg)](https://www.youtube.com/watch?v=zvOtG8LkDD8)
 **Voice chat with controller support**
 [📖 Documentation](./waker/)
 
