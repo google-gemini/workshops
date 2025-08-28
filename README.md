@@ -6,6 +6,121 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 
 ---
 
+## 🎬 Interactive Demos
+
+<table>
+<tr>
+<td width="33%" align="center">
+
+### [♟️ Chess Companion](./chess/)
+[![Chess Demo](https://img.youtube.com/vi/AE4dd4tgNks/maxresdefault.jpg)](https://www.youtube.com/watch?v=AE4dd4tgNks)
+**Real-time game analysis with voice interaction**
+[📖 Documentation](./chess/)
+
+</td>
+<td width="33%" align="center">
+
+### [🎬 TV Companion](./tv/)
+[![TV Demo](https://img.youtube.com/vi/IzXzDVdPb98/maxresdefault.jpg)](https://www.youtube.com/watch?v=IzXzDVdPb98)
+**AI film critic that controls your TV**
+[📖 Documentation](./tv/)
+
+</td>
+<td width="33%" align="center">
+
+### [🎮 Wind Waker Chat](./waker/)
+[![Waker Demo](https://img.youtube.com/vi/wz-s7QiiwWo/maxresdefault.jpg)](https://www.youtube.com/watch?v=wz-s7QiiwWo)
+**Voice chat with controller support**
+[📖 Documentation](./waker/)
+
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+
+### [🧱 Bricks](./bricks/)
+[![Lego Demo](https://img.youtube.com/vi/JBwPYOdZnGs/maxresdefault.jpg)](https://www.youtube.com/watch?v=JBwPYOdZnGs)
+**Fine-tuning Gemini for brick-building**
+[📖 Documentation](./bricks/)
+
+</td>
+<td width="33%" align="center">
+
+### [🎨 Artifacts](./artifacts/)
+[![Artifacts Demo](https://img.youtube.com/vi/DHIlmG-hP-8/maxresdefault.jpg)](https://www.youtube.com/watch?v=DHIlmG-hP-8)
+**AI-powered interactive content platform**
+[📖 Documentation](./artifacts/)
+
+</td>
+<td width="33%" align="center">
+
+### [🎯 Multi-Agent Games](./games/)
+[![Games Demo](https://img.youtube.com/vi/kUP59cRW9D0/maxresdefault.jpg)](https://www.youtube.com/watch?v=kUP59cRW9D0)
+**Gemini plays games with PettingZoo**
+[📖 Documentation](./games/)
+
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+
+### [🥊 Smash Bot](./smash/)
+[![Smash Demo](https://img.youtube.com/vi/wz-s7QiiwWo/maxresdefault.jpg)](https://www.youtube.com/watch?v=wz-s7QiiwWo)
+**LLM-powered fighting game agent**
+[📖 Documentation](./smash/)
+
+</td>
+<td width="33%" align="center">
+
+### [🍄 Mario Level Generator](./mario/)
+[![Mario Demo](https://img.youtube.com/vi/9WwIZadNiWw/maxresdefault.jpg)](https://www.youtube.com/watch?v=9WwIZadNiWw)
+**AI creates Super Mario Bros levels**
+[📖 Documentation](./mario/) *(Coming Soon)*
+
+</td>
+<td width="33%" align="center">
+
+### [🖥️ Desktop Assistant](./desktop/)
+[![Desktop Demo](https://img.youtube.com/vi/wz-s7QiiwWo/maxresdefault.jpg)](https://www.youtube.com/watch?v=wz-s7QiiwWo)
+**Gemini controls your desktop**
+[📖 Documentation](./desktop/) *(Coming Soon)*
+
+</td>
+</tr>
+</table>
+
+[**View All 18+ Workshops →**](#workshop-directory)
+
+---
+
+## 🎤 Talks & Presentations
+
+Conference talks, interviews, and educational content exploring AI, LLMs, and the future of human-AI interaction:
+
+### 🎓 Academic & Conference Talks
+*   [**Socratic Sparks & Desert Trials: Rethinking Mastery in Age of LLMs**](https://www.youtube.com/watch?v=6uEHXeqi9N8) - IIA @MIT 2025
+*   [**Competence in the Age of LLMs**](https://www.youtube.com/watch?v=NaGTw0qg5Vw) - TEDxCSTU
+*   [**Beyond Automation: Designing AI for Human Flourishing**](https://www.youtube.com/watch?v=5ZhFrzLWkHE) - IIA @MIT 2025
+*   [**Thinking Creatively and Critically in the Age of LLMs**](https://www.youtube.com/watch?v=3ZZdohrcGK4)
+
+### 🔬 Technical Deep Dives
+*   [**What it was like to be one of the first engineers on Gemini**](https://www.youtube.com/watch?v=kLidkwA44QA) - IIA @MIT 2025
+*   [**Google Engineers On Learnings From Building Gemini**](https://www.youtube.com/watch?v=UUsVTEUfJAY)
+*   [**Prompt Engineering with Bard**](https://www.youtube.com/watch?v=i01cizb6Txg) - Google Engineer Talk
+
+### 🎮 AI in Action
+*   [**Playing Super Smash Bros with agentic Gemini**](https://www.youtube.com/watch?v=AR0o9DLF0H0)
+
+### 📺 Interviews & Media
+*   [**AI RISKS with GOOGLE's Peter Dananberg**](https://www.youtube.com/watch?v=S32rx_u3jJ8)
+*   [**Google's Gemini AI: EXCLUSIVE Interview**](https://www.youtube.com/watch?v=By7XnT4MtJI)
+*   [**Google GenAI Virtual Seminar (Ep. 3)**](https://www.youtube.com/watch?v=dT1ZxW7xJBs)
+*   [**LLMs the Language of Creativity, Power and Intelligence**](https://www.youtube.com/watch?v=1i_8824zBO4) - SZA Talk
+
+**Related Coverage:** [Forbes article on AI sentience](https://www.forbes.com/sites/johnwerner/2025/07/01/are-we-speaking-to-sentient-ai-and-is-that-good/)
+
+---
+
 ## 📚 Workshop Directory
 
 Explore the diverse range of projects available in this repository. Each link takes you to a dedicated subdirectory with its own `README.md` containing detailed instructions and code.
