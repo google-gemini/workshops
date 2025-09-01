@@ -1273,9 +1273,9 @@ langchain-community==0.0.38 \
     --hash=sha256:127fc4b75bc67b62fe827c66c02e715a730fef8fe69bd2023d466bab06b5810d \
     --hash=sha256:ecb48660a70a08c90229be46b0cc5f6bc9f38f2833ee44c57dfab9bf3a2c121a
     # via langchain
-langchain-core==0.1.52 \
-    --hash=sha256:084c3fc452f5a6966c28ab3ec5dbc8b8d26fc3f63378073928f4e29d90b6393f \
-    --hash=sha256:62566749c92e8a1181c255c788548dc16dbc319d896cd6b9c95dc17af9b2a6db
+langchain-core==0.1.53 \
+    --hash=sha256:02a88a21e3bd294441b5b741625fa4b53b1c684fd58ba6e5d9028e53cbe8542f \
+    --hash=sha256:df3773a553b5335eb645827b99a61a7018cea4b11dc45efa2613fde156441cec
     # via
     #   langchain
     #   langchain-community
