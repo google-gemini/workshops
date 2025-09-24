@@ -16,9 +16,13 @@ mdc: true
 ---
 
 # Concept to Console
-## AI-Native Game Dev
+<v-clicks>
 
-### Peter Danenberg
+## Vibe-Shipping Games
+
+Peter Danenberg
+
+</v-clicks>
 
 ---
 
