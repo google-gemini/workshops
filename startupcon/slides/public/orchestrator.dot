@@ -1,0 +1,58 @@
+digraph G {
+    layout=fdp;
+    size="8,6";
+    ratio=compress;
+    node [shape=box, style="rounded,filled", fontsize=12];
+    edge [arrowsize=0.8];
+    
+    // Visual & Creative cluster
+    subgraph cluster_visual {
+        label="Visual";
+        style="rounded,dotted";
+        bgcolor="transparent";
+        color="#999999";
+        fontcolor="#999999";
+        fontsize=14;
+        veo [label="Veo 3\nConcept Video", fillcolor="#e3f2fd"];
+        nano [label="Nano-Banana\nCharacter Sheets", fillcolor="#e3f2fd"];
+        meshy [label="Meshy\n3D Models", fillcolor="#e3f2fd"];
+    }
+    
+    // World & Environment cluster
+    subgraph cluster_world {
+        label="World";
+        style="rounded,dotted";
+        bgcolor="transparent";
+        color="#999999";
+        fontcolor="#999999";
+        fontsize=14;
+        genie [label="Genie 3\nEnvironments", fillcolor="#f3e5f5"];
+        gemini_code [label="Gemini\nCode Generation", fillcolor="#ffe0b2"];
+    }
+    
+    // Interactive Elements cluster
+    subgraph cluster_interactive {
+        label="Interactive";
+        style="rounded,dotted";
+        bgcolor="transparent";
+        color="#999999";
+        fontcolor="#999999";
+        fontsize=14;
+        lyria [label="Lyria\nDynamic Music", fillcolor="#e8f5e9"];
+        gemini [label="Gemini Live\nNPC Dialog", fillcolor="#ffe0b2"];
+        director [label="AI Director\nStory & Gameplay", fillcolor="#e8f5e9"];
+    }
+    
+    // Game output - central
+    game [label="Your Game", fillcolor="#51cf66", fontcolor="white", shape=doubleoctagon, fontsize=16];
+    
+    // Edges from services to game
+    veo -> game;
+    nano -> game;
+    meshy -> game;
+    genie -> game;
+    lyria -> game;
+    gemini -> game;
+    gemini_code -> game;
+    director -> game;
+}

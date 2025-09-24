@@ -101,7 +101,8 @@ Conference talks, interviews, and educational content exploring AI, LLMs, and th
 *   [**Socratic Sparks & Desert Trials: Rethinking Mastery in Age of LLMs**](https://www.youtube.com/watch?v=6uEHXeqi9N8) - IIA @MIT 2025
 *   [**Competence in the Age of LLMs**](https://www.youtube.com/watch?v=NaGTw0qg5Vw) - TEDxCSTU
 *   [**Beyond Automation: Designing AI for Human Flourishing**](https://www.youtube.com/watch?v=5ZhFrzLWkHE) - IIA @MIT 2025
-*   [**Thinking Creatively and Critically in the Age of LLMs**](https://www.youtube.com/watch?v=3ZZdohrcGK4)
+*   [**Thinking Creatively and Critically in the Age of LLMs**](https://www.youtube.com/watch?v=3ZZdohrcGK4) - University of Sussex
+*   [**The Future of AI**](https://youtu.be/Ob_HCJ5CaR0) - Magdalen College, Oxford University ([event page](https://www.magd.ox.ac.uk/events/the-future-of-ai-with-googles-peter-danenberg/))
 
 ### 🔬 Technical Deep Dives
 *   [**What it was like to be one of the first engineers on Gemini**](https://www.youtube.com/watch?v=kLidkwA44QA) - IIA @MIT 2025
@@ -117,7 +118,7 @@ Conference talks, interviews, and educational content exploring AI, LLMs, and th
 *   [**Google GenAI Virtual Seminar (Ep. 3)**](https://www.youtube.com/watch?v=dT1ZxW7xJBs)
 *   [**LLMs the Language of Creativity, Power and Intelligence**](https://www.youtube.com/watch?v=1i_8824zBO4) - SZA Talk
 
-**Related Coverage:** [Forbes article on AI sentience](https://www.forbes.com/sites/johnwerner/2025/07/01/are-we-speaking-to-sentient-ai-and-is-that-good/)
+**Related Coverage:** [CFA Society Boston event](https://www.cfaboston.org/iCore/Events/Event_display.aspx?EventKey=060325&WebsiteKey=6e0836e4-c0e5-45a8-9d93-beb2795473a4), [Forbes article on AI sentience](https://www.forbes.com/sites/johnwerner/2025/07/01/are-we-speaking-to-sentient-ai-and-is-that-good/), [Mint article on Gemini](https://www.pressreader.com/india/mint-chennai/20250630/281943138875699?srsltid=AfmBOoo5LFLylqjvY_AXicfVoz-wNQqW9mxq-nkMMKRRbWvbPYQUF4q9), [Margaret Boden Lecture at Sussex](https://digit-research.org/news/digit-co-hosts-first-margaret-boden-annual-lecture-on-interdisciplinary-ai/)
 
 ---
 
