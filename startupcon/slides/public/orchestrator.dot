@@ -7,9 +7,11 @@ digraph G {
     
     // Visual & Creative cluster
     subgraph cluster_visual {
-        label="Visual Creation";
-        style="rounded,filled";
-        fillcolor="#f0f0f0";
+        label="Visual";
+        style="rounded,dotted";
+        bgcolor="transparent";
+        color="#999999";
+        fontcolor="#999999";
         fontsize=14;
         veo [label="Veo 3\nConcept Video", fillcolor="#e3f2fd"];
         nano [label="Nano-Banana\nCharacter Sheets", fillcolor="#e3f2fd"];
@@ -18,21 +20,27 @@ digraph G {
     
     // World & Environment cluster
     subgraph cluster_world {
-        label="World Building";
-        style="rounded,filled";
-        fillcolor="#f0f0f0";
+        label="World";
+        style="rounded,dotted";
+        bgcolor="transparent";
+        color="#999999";
+        fontcolor="#999999";
         fontsize=14;
         genie [label="Genie 3\nEnvironments", fillcolor="#f3e5f5"];
+        gemini_code [label="Gemini\nCode Generation", fillcolor="#ffe0b2"];
     }
     
     // Interactive Elements cluster
     subgraph cluster_interactive {
-        label="Interactive Elements";
-        style="rounded,filled";
-        fillcolor="#f0f0f0";
+        label="Interactive";
+        style="rounded,dotted";
+        bgcolor="transparent";
+        color="#999999";
+        fontcolor="#999999";
         fontsize=14;
         lyria [label="Lyria\nDynamic Music", fillcolor="#e8f5e9"];
         gemini [label="Gemini Live\nNPC Dialog", fillcolor="#ffe0b2"];
+        director [label="AI Director\nStory & Gameplay", fillcolor="#e8f5e9"];
     }
     
     // Game output - central
@@ -45,4 +53,6 @@ digraph G {
     genie -> game;
     lyria -> game;
     gemini -> game;
+    gemini_code -> game;
+    director -> game;
 }

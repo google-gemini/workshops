@@ -124,16 +124,12 @@ mdc: true
 
 ---
 
-# What's missing? The orchestrator.
+# What's missing?
 
 <div class="grid grid-cols-2 gap-8 items-center h-full">
 <div class="flex flex-col gap-4 justify-center">
 
-> Today: Developers integrate 8+ AI services manually.
->
-> Tomorrow: One unified orchestrator manages everything.
->
-> The orchestrator is the missing piece that turns individual AI tools into a cohesive game development pipeline.
+> An orchestrator to orchestrate _n_ AI tools, where _n > ~7_!
 
 </div>
 <div class="flex items-center justify-center">
@@ -152,11 +148,11 @@ mdc: true
 
 > **The opportunity:** Build the middleware that orchestrates AI for game creation.
 >
-> **Why now?** Unity and Roblox are just starting. The race is on.
+> **Why now?** Unity, Roblox, &c. are just starting. The race is on!
 >
-> **The window:** 6-12 months before they ship complete solutions.
+> **The window:** 6-12 months before they ship end-to-end.
 >
-> **Your angle:** Be the Stripe of AI game dev. Simple API. All models unified.
+> **Your angle:** Build the OS for AI-native games!
 
 </div>
 <div class="w-1/2 flex items-center justify-center">
