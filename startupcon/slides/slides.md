@@ -16,22 +16,22 @@ mdc: true
 ---
 
 # Concept to Console
-## AI-Native Game Development
+## AI-Native Game Dev
 
 ### Peter Danenberg
 
 ---
 
-# Let's start with a video.
+# Let's start with a vibe.
 
 <div class="grid grid-cols-2 gap-8 items-center h-full">
-<div class="flex flex-col gap-4 justify-center">
+<div v-click class="flex flex-col gap-4 justify-center">
 
 > **Prompt for Veo 3:**
 > "Cinematic trailer for a game where K-Pop idols hunt demonic spirits in a rain-slicked, neon-drenched Seoul."
 
 </div>
-<div class="flex items-center justify-center">
+<div v-click class="flex items-center justify-center">
 <video src="/jin-concept-movie.mp4" autoplay loop muted class="rounded-lg shadow-lg"></video>
 </div>
 </div>
@@ -43,7 +43,7 @@ mdc: true
 # Nano-Banana creates the character sheet.
 
 <div class="grid grid-cols-2 gap-8 items-center h-full">
-<div class="flex flex-col gap-4 justify-center">
+<div v-click class="flex flex-col gap-4 justify-center">
 
 <img src="/jin-still.png" class="rounded-lg max-h-[16vh] self-center" />
 
@@ -51,7 +51,7 @@ mdc: true
 > "Generate a character sheet based on the attached image of 'Jin'. Provide four full-body orthographic views: front, back, left side, and right side. The background should be solid white, with no shadows or extra elements. Ensure the character's design, clothing, and proportions are consistent across all views."
 
 </div>
-<div class="grid grid-cols-2 gap-4 items-center">
+<div v-click class="grid grid-cols-2 gap-4 items-center">
 <img src="/jin-front.png" class="rounded-lg max-h-[22vh]" />
 <img src="/jin-back.png" class="rounded-lg max-h-[22vh]" />
 <img src="/jin-left.png" class="rounded-lg max-h-[22vh]" />
@@ -66,7 +66,7 @@ mdc: true
 # The character sheet becomes a model.
 
 <div class="grid grid-cols-2 gap-8 items-center h-full">
-<div class="flex flex-col gap-4 justify-center">
+<div v-click class="flex flex-col gap-4 justify-center">
 
 <div class="grid grid-cols-4 gap-2 self-center">
 <img src="/jin-front.png" class="rounded-lg max-h-[20vh]" />
@@ -79,7 +79,7 @@ mdc: true
 > "Generate a stylized 3D model of 'Jin', our main hero, from these reference images, in a modern K-Pop warrior style."
 
 </div>
-<div class="flex items-center justify-center">
+<div v-click class="flex items-center justify-center">
 <video src="/jin-walking.mp4" autoplay loop muted class="rounded-lg shadow-lg max-h-[40vh]"></video>
 </div>
 </div>
@@ -91,13 +91,13 @@ mdc: true
 # The world-model generates a playable world.
 
 <div class="grid grid-cols-2 gap-8 items-center h-full">
-<div class="flex flex-col gap-4 justify-center">
+<div v-click class="flex flex-col gap-4 justify-center">
 
 > **Prompt for the world-model:**
 > "Generate a playable 3d level of a rain-slicked, neon-drenched seoul street at night. The world should be interactive and explorable from a first-person perspective."
 
 </div>
-<div class="flex items-center justify-center">
+<div v-click class="flex items-center justify-center">
 <video src="/jin-first-person.mp4" autoplay loop muted class="rounded-lg shadow-lg max-h-[45vh]"></video>
 </div>
 </div>
@@ -109,13 +109,13 @@ mdc: true
 # Lyria creates the sound-track.
 
 <div class="flex flex-row gap-8 items-center h-full">
-<div class="w-1/2">
+<div v-click class="w-1/2">
 
 > **Prompt for Lyria:**
 > "Generate a chill, lo-fi k-pop track for exploration that seamlessly transitions into a high-energy battle anthem."
 
 </div>
-<div class="w-1/2 flex items-center justify-center">
+<div v-click class="w-1/2 flex items-center justify-center">
 <audio src="/jin.mp3" controls class="w-full max-w-lg"></audio>
 </div>
 </div>
@@ -127,12 +127,12 @@ mdc: true
 # What's missing?
 
 <div class="grid grid-cols-2 gap-8 items-center h-full">
-<div class="flex flex-col gap-4 justify-center">
+<div v-click class="flex flex-col gap-4 justify-center">
 
 > An orchestrator to orchestrate _n_ AI tools, where _n > ~7_!
 
 </div>
-<div class="flex items-center justify-center">
+<div v-click class="flex items-center justify-center">
 <img src="/orchestrator.svg" class="max-h-[45vh]" />
 </div>
 </div>
@@ -144,7 +144,7 @@ mdc: true
 # You have 6-12 months to build this.
 
 <div class="flex flex-row gap-8 items-center h-full">
-<div class="w-1/2">
+<div v-click class="w-1/2">
 
 > **The opportunity:** Build the middleware that orchestrates AI for game creation.
 >
@@ -155,7 +155,7 @@ mdc: true
 > **Your angle:** Build the OS for AI-native games!
 
 </div>
-<div class="w-1/2 flex items-center justify-center">
+<div v-click class="w-1/2 flex items-center justify-center">
 <img src="https://placehold.co/1920x1080/000000/FFFFFF/png?text=Your+Platform+Here" class="rounded-lg shadow-lg max-h-[45vh]">
 </div>
 </div>
