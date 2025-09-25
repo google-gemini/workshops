@@ -2,16 +2,18 @@ digraph G {
     layout=fdp;
     size="8,6";
     ratio=compress;
-    node [shape=box, style="rounded,filled", fontsize=12];
-    edge [arrowsize=0.8];
+    bgcolor="transparent";
+    node [shape=box, style="rounded,filled", fontsize=12, fontcolor="black", color="#cccccc"];
+    edge [arrowsize=0.8, color="#cccccc"];
+    graph [fontcolor="white"];
     
     // Visual & Creative cluster
     subgraph cluster_visual {
         label="Visual";
         style="rounded,dotted";
         bgcolor="transparent";
-        color="#999999";
-        fontcolor="#999999";
+        color="#cccccc";
+        fontcolor="#cccccc";
         fontsize=14;
         veo [label="Veo 3\nConcept Video", fillcolor="#e3f2fd"];
         nano [label="Nano-Banana\nCharacter Sheets", fillcolor="#e3f2fd"];
@@ -23,8 +25,8 @@ digraph G {
         label="World";
         style="rounded,dotted";
         bgcolor="transparent";
-        color="#999999";
-        fontcolor="#999999";
+        color="#cccccc";
+        fontcolor="#cccccc";
         fontsize=14;
         genie [label="Genie 3\nEnvironments", fillcolor="#f3e5f5"];
         gemini_code [label="Gemini\nCode Generation", fillcolor="#ffe0b2"];
@@ -35,8 +37,8 @@ digraph G {
         label="Interactive";
         style="rounded,dotted";
         bgcolor="transparent";
-        color="#999999";
-        fontcolor="#999999";
+        color="#cccccc";
+        fontcolor="#cccccc";
         fontsize=14;
         lyria [label="Lyria\nDynamic Music", fillcolor="#e8f5e9"];
         gemini [label="Gemini Live\nNPC Dialog", fillcolor="#ffe0b2"];
