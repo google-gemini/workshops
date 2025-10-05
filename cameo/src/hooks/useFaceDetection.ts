@@ -124,19 +124,7 @@ export function useFaceDetection() {
           const zone = getZoneFromYaw(yawAngle);
           setCurrentZone(zone);
 
-          // Draw face landmarks
-          ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
-          landmarks.forEach((landmark: any) => {
-            ctx.beginPath();
-            ctx.arc(
-              landmark.x * canvas.width,
-              landmark.y * canvas.height,
-              2,
-              0,
-              2 * Math.PI
-            );
-            ctx.fill();
-          });
+          // Clean capture - no visualization overlay for Veo 3
         } else {
           // No face detected
           setCurrentZone(null);

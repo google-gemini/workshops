@@ -1058,6 +1058,26 @@ Successfully implemented ElevenLabs Instant Voice Cloning (IVC) API integration 
 
 **For Cameo MVP:** Unified approach is better. One video per session, voice training is an implementation detail.
 
+**TODO: Optimization for Multiple Videos**
+- [ ] **Problem:** Currently retraining voice and re-uploading images for each prompt
+  - Each generate call creates a new voiceId (~5-10s, costs credits)
+  - Same photos uploaded repeatedly
+  - Wasteful for users who want to generate multiple videos
+- [ ] **Solution:** Separate training from generation
+  - Step 1: Capture photos (once)
+  - Step 2: Train voice → return voiceId to frontend (once)
+  - Step 3+: Generate videos with same voiceId + photos (multiple times)
+- [ ] **Architecture Change:**
+  - Keep `/api/train-voice` endpoint separate
+  - Frontend stores `voiceId` in state after Step 2
+  - `/api/generate-video` accepts `voiceId` as parameter
+  - If no `voiceId` provided, train internally (backward compatible)
+- [ ] **Benefits:**
+  - Save ElevenLabs credits (don't retrain for each video)
+  - Faster subsequent videos (~5-10s faster)
+  - Users can iterate on prompts without retraining
+  - Voice library feature becomes possible
+
 ### Simplified Workflow
 
 Frontend only tracks images and audio:
@@ -1344,6 +1364,25 @@ const { videoUrl } = await response.json();
 - [ ] Add download button for final video
 
 **Phase 4: Optimization & Polish**
+- [x] Remove green dots from face capture screenshots (clean images for Veo 3) ✅ 2025-01-05
+  - Clean captures without MediaPipe visualization overlay
+  - Veo 3 gets pure face images for better character consistency
+- [x] **RESOLUTION EXPERIMENT: 640x480 vs 1280x720** (2025-01-05)
+  - Attempted 1280x720 (16:9) to match Veo 3 recommendation
+  - **Result:** Caused warping - webcam is native 4:3, browser stretched to 16:9
+  - **Decision:** Stick with 640x480 (4:3 aspect ratio)
+  - Matches webcam's native sensor ratio
+  - No distortion, natural look
+  - Veo 3 handles aspect conversion internally (generates 9:16 portrait from 4:3 input)
+- [x] **EXPERIMENT: Try `referenceImages` with `veo-3.0-generate-001`** (2025-01-05)
+  - Docs say `referenceImages` only for `veo-2.0-generate-exp`
+  - But Google docs sometimes lag - testing empirically!
+  - Code updated to send all 3 face angles (left, center, right)
+  - **Result:** ❌ Model ignored referenceImages - generated different person
+  - **Conclusion:** veo-3.0-generate-001 doesn't support multiple reference images
+  - Sticking with single center image for Veo 3
+- [ ] Craft specific prompts with dialogue for better video generation
+- [ ] Test `veo-3.0-fast-generate-001` for faster generation times
 - [ ] Add webhook support for async completion
 - [ ] Cache voice IDs to avoid retraining
 - [ ] Add video preview before generation

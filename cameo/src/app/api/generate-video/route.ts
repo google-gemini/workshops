@@ -10,7 +10,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const formData = await request.formData();
+    const leftImageFile = formData.get("leftImage") as File | null;
     const centerImageFile = formData.get("centerImage") as File | null;
+    const rightImageFile = formData.get("rightImage") as File | null;
     const voiceAudioFile = formData.get("voiceAudio") as File;
     const videoFile = formData.get("video") as File | null; // Optional: skip Veo 3 generation
     const prompt = formData.get("prompt") as string;
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
     // Validation
     if (!videoFile && !centerImageFile) {
       return NextResponse.json(
-        { error: "Must provide either 'video' file or 'centerImage' for generation" },
+        { error: "Must provide either 'video' file or at least 'centerImage' for generation" },
         { status: 400 }
       );
     }
@@ -43,7 +45,9 @@ export async function POST(request: NextRequest) {
     await fs.mkdir(tempDir, { recursive: true });
 
     const timestamp = Date.now();
+    const leftImagePath = leftImageFile ? path.join(tempDir, `left-${timestamp}.png`) : "";
     const centerImagePath = centerImageFile ? path.join(tempDir, `center-${timestamp}.png`) : "";
+    const rightImagePath = rightImageFile ? path.join(tempDir, `right-${timestamp}.png`) : "";
     const voiceAudioPath = path.join(tempDir, `voice-${timestamp}.webm`);
     const veoVideoPath = path.join(tempDir, `veo-${timestamp}.mp4`);
     const finalVideoPath = path.join(tempDir, `final-${timestamp}.mp4`);
@@ -51,9 +55,19 @@ export async function POST(request: NextRequest) {
     // Write files to disk
     console.log("📝 Writing input files to disk...");
     
+    if (leftImageFile) {
+      const imageBuffer = Buffer.from(await leftImageFile.arrayBuffer());
+      await fs.writeFile(leftImagePath, imageBuffer);
+    }
+    
     if (centerImageFile) {
       const imageBuffer = Buffer.from(await centerImageFile.arrayBuffer());
       await fs.writeFile(centerImagePath, imageBuffer);
+    }
+    
+    if (rightImageFile) {
+      const imageBuffer = Buffer.from(await rightImageFile.arrayBuffer());
+      await fs.writeFile(rightImagePath, imageBuffer);
     }
 
     const audioBuffer = Buffer.from(await voiceAudioFile.arrayBuffer());
@@ -105,6 +119,8 @@ export async function POST(request: NextRequest) {
       const imageFileBuffer = await fs.readFile(centerImagePath);
       const imageBase64 = imageFileBuffer.toString('base64');
 
+      console.log("   Generating video from center image");
+
       let operation = await ai.models.generateVideos({
         model: "veo-3.0-generate-001",
         prompt: prompt,
@@ -115,8 +131,8 @@ export async function POST(request: NextRequest) {
         config: {
           aspectRatio: "9:16", // Portrait for mobile
           resolution: "720p",
+          personGeneration: "allow_adult",
           negativePrompt: "cartoon, drawing, low quality, distorted face, blurry",
-          personGeneration: "allow_adult", // Required for image-to-video
         },
       });
 
