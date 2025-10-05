@@ -1,8 +1,12 @@
 'use client';
 
-import { useFaceDetection } from '@/hooks/useFaceDetection';
+import { useFaceDetection, CapturedImages } from '@/hooks/useFaceDetection';
 
-export function FaceCapture() {
+type FaceCaptureProps = {
+  onComplete: (images: CapturedImages) => void;
+};
+
+export function FaceCapture({ onComplete }: FaceCaptureProps) {
   const { 
     videoRef, 
     canvasRef, 
@@ -195,6 +199,16 @@ export function FaceCapture() {
           </div>
         </div>
       </div>
+
+      {/* Continue button */}
+      {allCaptured && (
+        <button
+          onClick={() => onComplete(capturedImages)}
+          className="mt-4 px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
+        >
+          Continue to Voice Recording →
+        </button>
+      )}
 
       {/* Instructions */}
       <div className="text-sm text-gray-600 max-w-2xl text-center">

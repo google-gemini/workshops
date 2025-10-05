@@ -315,6 +315,218 @@ type StabilityState = {
 - Completion banner appears when all three captured
 - Instructions always visible at bottom
 
+## Multi-Step Workflow Implementation
+
+### Status: ✅ Complete and Working!
+
+Successfully implemented a conditional rendering system for a three-step workflow.
+
+### Architecture Decision: Single Page with Step State
+
+**Chose conditional rendering over separate routes for:**
+1. **Data persistence** - All assets (images + audio) stay in memory
+2. **Smooth UX** - No page reloads between steps
+3. **Simpler state** - Everything in one component hierarchy
+4. **Natural flow** - Wizard/checkout-style pattern
+
+### Step Flow Implementation
+
+**Step Types:**
+```typescript
+type Step = 'capture' | 'voice' | 'generate';
+```
+
+**State Management:**
+```typescript
+const [currentStep, setCurrentStep] = useState<Step>('capture');
+const [capturedImages, setCapturedImages] = useState<CapturedImages | null>(null);
+const [voiceRecording, setVoiceRecording] = useState<Blob | null>(null);
+```
+
+**Conditional Rendering Pattern:**
+```typescript
+{currentStep === 'capture' && (
+  <FaceCapture onComplete={(images) => {
+    setCapturedImages(images);
+    setCurrentStep('voice');
+  }} />
+)}
+
+{currentStep === 'voice' && capturedImages && (
+  <VoiceRecording onComplete={(audio) => {
+    setVoiceRecording(audio);
+    setCurrentStep('generate');
+  }} />
+)}
+```
+
+### UI Components
+
+1. **Progress Indicator**
+   - Sticky header showing all three steps
+   - Visual state: current (blue), completed (green), pending (gray)
+   - Checkmarks for completed steps
+   - Back button for navigation
+
+2. **Step Transitions**
+   - "Continue" buttons appear when step complete
+   - Smooth component mounting/unmounting
+   - No page reloads or route changes
+
+## Voice Recording Implementation
+
+### Status: ✅ Complete and Working!
+
+Successfully implemented browser-based voice recording with 10-second limit.
+
+### Core Features
+
+1. **MediaRecorder API Integration**
+   - Browser native audio recording
+   - WebM audio format (widely supported)
+   - 10-second maximum duration
+   - Auto-stop when time limit reached
+
+2. **Recording States**
+   ```typescript
+   type RecordingState = 'idle' | 'recording' | 'completed';
+   ```
+
+3. **Real-time Countdown**
+   - Updates every 100ms
+   - Shows remaining time during recording
+   - Large, visible countdown display
+
+4. **Audio Playback Preview**
+   - Native HTML5 audio player
+   - Play/pause controls
+   - Waveform visualization (via browser default)
+
+5. **Re-record Capability**
+   - Reset button to start over
+   - Cleans up previous Blob/URL
+   - Returns to idle state
+
+### Hook Architecture: `useVoiceRecording`
+
+**Responsibilities:**
+- Manage MediaRecorder lifecycle
+- Handle audio permissions
+- Track recording state and time
+- Generate audio Blob and URL
+- Cleanup on unmount
+
+**Key Implementation Details:**
+```typescript
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+const chunksRef = useRef<Blob[]>([]);
+const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+// Auto-stop after maxDuration
+timerRef.current = setInterval(() => {
+  const elapsed = Date.now() - startTimeRef.current;
+  const remaining = Math.max(0, maxDuration - elapsed);
+  setTimeRemaining(Math.ceil(remaining / 1000));
+  
+  if (remaining <= 0) {
+    stopRecording();
+  }
+}, 100);
+```
+
+**Cleanup Pattern:**
+```typescript
+useEffect(() => {
+  return () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    if (audioURL) {
+      URL.revokeObjectURL(audioURL);
+    }
+  };
+}, [audioURL]);
+```
+
+### Component: `VoiceRecording`
+
+**Features:**
+1. **Image Preview**
+   - Shows captured photos for context
+   - 3-column grid layout
+   - Labeled with zone names
+
+2. **Recording Interface**
+   - Idle state: Red microphone button
+   - Recording state: Animated pulse + countdown
+   - Completed state: Green checkmark + audio player
+
+3. **Visual States**
+   - Icons: Microphone (idle/recording), Checkmark (completed)
+   - Colors: Red (recording), Green (success)
+   - Animations: Pulse effect during recording
+
+4. **User Controls**
+   - Click to start recording
+   - "Stop Recording" button (manual stop)
+   - "Re-record" button (reset)
+   - "Continue" button (proceed to next step)
+
+### Audio Format Considerations
+
+**Current: WebM Audio**
+```typescript
+const mediaRecorder = new MediaRecorder(stream, {
+  mimeType: 'audio/webm',
+});
+```
+
+**Browser Support:**
+- Chrome/Edge: ✅ Full support
+- Firefox: ✅ Full support
+- Safari: ⚠️ May need fallback (check compatibility)
+
+**Future Enhancement:**
+If Safari compatibility needed, add format detection:
+```typescript
+const getSupportedMimeType = () => {
+  const types = ['audio/webm', 'audio/mp4', 'audio/ogg'];
+  return types.find(type => MediaRecorder.isTypeSupported(type));
+};
+```
+
+### Error Handling
+
+**Microphone Access:**
+```typescript
+try {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  // ... proceed
+} catch (error) {
+  console.error('Error accessing microphone:', error);
+  alert('Could not access microphone. Please grant permission.');
+}
+```
+
+**Common Issues:**
+- User denies permission
+- No microphone available
+- HTTPS required (won't work on HTTP except localhost)
+- Browser doesn't support MediaRecorder
+
+### Data Flow
+
+1. User captures 3 photos in Step 1
+2. Photos passed as props to VoiceRecording component
+3. User records 10-second audio
+4. Audio Blob stored in state
+5. Both images + audio passed to Step 3 (Generate Video)
+
+**Memory Management:**
+- Images: Base64 encoded strings (stored in state)
+- Audio: Blob object (stored in state)
+- All data ready to send to backend API
+
 ## Background Segmentation Considerations
 
 ### Current Implementation: ✅ Keep Background
@@ -510,6 +722,224 @@ const captureImage = async (zone: FaceZone, removeBackground: boolean = false) =
 
 **Current Status:** ✅ Shipping without segmentation. Will revisit after Veo 3 testing.
 
+## AI-Generated Script for Voice Recording
+
+### Goal
+Generate a personalized 10-second sentence for users to read, based on their captured images.
+
+### Use Case
+Instead of users improvising what to say, provide a relevant, contextual script that:
+- References visual elements from their photos
+- Sounds natural and conversational
+- Fits within 10-second speaking time
+- Makes the final video more engaging
+
+### Implementation Approach
+
+#### Option 1: Gemini Vision Analysis (Recommended)
+
+**Workflow:**
+1. User completes photo capture (3 images)
+2. Before showing recording interface, analyze images with Gemini
+3. Generate personalized script based on visual context
+4. Display script prominently in recording UI
+5. User reads script while recording
+
+**Example Prompt:**
+```typescript
+const prompt = `
+You are writing a personalized 10-second Cameo-style video message script.
+
+Analyze these three images (left, center, right angles) of the person and generate 
+a single sentence they should say that:
+- Is conversational and friendly
+- References something visible (clothing, setting, expression, etc.)
+- Can be spoken naturally in 10 seconds or less
+- Sounds like authentic Cameo content
+
+Examples:
+"Hey there! Quick message from my home office - hope this brightens your day!"
+"What's up! Sending you good vibes in my favorite hoodie!"
+"Hello! Just wanted to say hi from the sunny balcony!"
+
+Return only the sentence to read, nothing else.
+`;
+```
+
+**API Call:**
+```typescript
+// In VoiceRecording component
+const [generatedScript, setGeneratedScript] = useState<string | null>(null);
+const [loadingScript, setLoadingScript] = useState(true);
+
+useEffect(() => {
+  async function generateScript() {
+    try {
+      const response = await fetch('/api/generate-script', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          images: [
+            capturedImages.left,
+            capturedImages.center,
+            capturedImages.right
+          ]
+        })
+      });
+      
+      const { script } = await response.json();
+      setGeneratedScript(script);
+    } catch (error) {
+      console.error('Failed to generate script:', error);
+      setGeneratedScript('Hey there! Sending you positive vibes today!');
+    } finally {
+      setLoadingScript(false);
+    }
+  }
+  
+  generateScript();
+}, []);
+```
+
+**API Route (`/api/generate-script/route.ts`):**
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+export async function POST(request: NextRequest) {
+  const { images } = await request.json();
+  
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+  
+  const prompt = `[prompt from above]`;
+  
+  // Convert base64 images to Gemini format
+  const imageParts = images.map((img: string) => ({
+    inlineData: {
+      data: img.split(',')[1], // Remove data:image/png;base64, prefix
+      mimeType: 'image/png'
+    }
+  }));
+  
+  const result = await model.generateContent([prompt, ...imageParts]);
+  const script = result.response.text().trim();
+  
+  return NextResponse.json({ script });
+}
+```
+
+#### Option 2: Simple Template-Based (Fallback)
+
+If AI generation fails or for MVP, use templates:
+
+```typescript
+const templates = [
+  "Hey there! Sending you a quick hello from [location]!",
+  "What's up! Hope you're having an amazing day!",
+  "Hello! Just wanted to drop by and say hi!",
+  "Hey! Sending positive vibes your way today!",
+  "What's going on! Quick message just for you!"
+];
+
+const randomScript = templates[Math.floor(Math.random() * templates.length)];
+```
+
+#### Option 3: User-Customizable (Enhancement)
+
+Allow users to:
+- Accept AI-generated script
+- Edit the script
+- Write their own from scratch
+
+```typescript
+<div className="mb-6">
+  <h3 className="font-semibold mb-2">Your Script</h3>
+  <textarea
+    value={script}
+    onChange={(e) => setScript(e.target.value)}
+    className="w-full p-3 border rounded-lg"
+    rows={3}
+    placeholder="What would you like to say?"
+  />
+  <button onClick={generateNewScript} className="mt-2 text-sm text-blue-500">
+    ✨ Generate new suggestion
+  </button>
+</div>
+```
+
+### UI Display
+
+**Before Recording:**
+```tsx
+<div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-6 mb-6">
+  <div className="flex items-start gap-3">
+    <span className="text-2xl">💬</span>
+    <div>
+      <h3 className="font-semibold text-blue-900 mb-1">
+        Your Script (Read this!)
+      </h3>
+      {loadingScript ? (
+        <p className="text-gray-600 italic">Generating personalized message...</p>
+      ) : (
+        <p className="text-lg text-gray-800 leading-relaxed">
+          "{generatedScript}"
+        </p>
+      )}
+    </div>
+  </div>
+</div>
+```
+
+**During Recording:**
+Show script prominently so user can read it:
+```tsx
+{state === 'recording' && (
+  <div className="fixed inset-x-0 bottom-20 flex justify-center px-4">
+    <div className="bg-white shadow-2xl rounded-xl p-6 max-w-2xl">
+      <p className="text-2xl text-center font-medium">
+        "{generatedScript}"
+      </p>
+    </div>
+  </div>
+)}
+```
+
+### Benefits
+
+1. **Better Content Quality**
+   - Users don't have to think of what to say
+   - More natural, engaging videos
+   - Consistent messaging
+
+2. **Faster Flow**
+   - No awkward pauses thinking of content
+   - Can record immediately
+   - Higher completion rate
+
+3. **Personalization**
+   - AI analyzes actual images
+   - References real visual elements
+   - Feels custom-made
+
+4. **Professional Feel**
+   - Polished script quality
+   - Cameo-like experience
+   - Production value
+
+### TODOs
+
+- [ ] Create `/api/generate-script` API route
+- [ ] Integrate Gemini Vision API for image analysis
+- [ ] Design prompt for 10-second script generation
+- [ ] Add script display UI to VoiceRecording component
+- [ ] Implement loading state during generation
+- [ ] Add fallback templates if API fails
+- [ ] Test script generation with various image types
+- [ ] Add edit capability for generated scripts
+- [ ] Consider regenerate button for new suggestions
+- [ ] Track which scripts lead to best videos (analytics)
+
 ## Next Steps
 
 **Immediate:**
@@ -518,24 +948,42 @@ const captureImage = async (zone: FaceZone, removeBackground: boolean = false) =
 - [x] Auto-detect and capture when face is in position
 - [x] Add visual feedback and progress indicators
 - [x] Implement cooldown and recapture functionality
+- [x] Add multi-step workflow with conditional rendering
+- [x] Implement voice recording with 10-second limit
+- [x] Add audio playback and re-record functionality
 - [ ] Test with Veo 3 (evaluate background handling)
 
-**Phase 2: Voice Recording**
-- [ ] Add 10-second voice recording capability
-- [ ] Integrate with ElevenLabs IVC API
-- [ ] Voice preview and re-record functionality
+**Phase 2: AI Script Generation**
+- [ ] Create Gemini Vision API integration
+- [ ] Generate personalized script from captured images
+- [ ] Display script in voice recording UI
+- [ ] Add script editing capability
+- [ ] Implement fallback templates
+- [ ] Test script quality and timing
 
 **Phase 3: Video Generation**
-- [ ] Connect to Veo 3 API
-- [ ] Generate video from 3 images + voice
-- [ ] Video preview and download
+- [ ] Create backend API for Veo 3 integration
+- [ ] Upload images + audio to backend
+- [ ] Call Veo 3 API with proper parameters
+- [ ] Poll for video generation status
+- [ ] Display generated video preview
+- [ ] Add download functionality
+
+**Phase 4: ElevenLabs Integration**
+- [ ] Integrate ElevenLabs IVC API
+- [ ] Train voice model from recorded audio
+- [ ] Option to use cloned voice for different scripts
+- [ ] Compare original vs cloned voice quality
 
 **Future Enhancements:**
 - [ ] Add pitch and roll calculations for full 3D head orientation
-- [ ] Implement Gemini Live conversational guidance (if needed)
+- [ ] Implement Gemini Live conversational guidance
 - [ ] Add background segmentation (if Veo 3 requires it)
 - [ ] Export functionality for captured assets
 - [ ] Multi-user session management
+- [ ] Save projects for later completion
+- [ ] Video gallery/history
+- [ ] Social sharing features
 - [ ] Build complete Cameo clone workflow
 
 ## Troubleshooting
@@ -544,6 +992,12 @@ const captureImage = async (zone: FaceZone, removeBackground: boolean = false) =
 1. Check browser permissions (camera access required)
 2. Verify browser console for errors (F12)
 3. Ensure HTTPS or localhost (camera API requires secure context)
+
+### Microphone Not Working
+1. Check browser permissions (microphone access required)
+2. Verify browser console for errors (F12)
+3. Ensure HTTPS or localhost (MediaRecorder requires secure context)
+4. Test in different browser (Safari may have issues)
 
 ### Build Errors
 1. Ensure all dependencies installed: `npm install`
@@ -561,6 +1015,12 @@ const captureImage = async (zone: FaceZone, removeBackground: boolean = false) =
 3. Ensure stable hold for full 2.5 seconds
 4. Wait for cooldown period to complete (1.5s)
 
+### Audio Issues
+1. Recording too quiet: Check microphone input levels
+2. Audio not playing: Verify browser supports WebM audio
+3. Recording cuts off early: Check 10-second timer logic
+4. Memory leak: Ensure URL.revokeObjectURL called on cleanup
+
 ## Resources
 
 - [MediaPipe Face Mesh Documentation](https://google.github.io/mediapipe/solutions/face_mesh.html)
@@ -569,5 +1029,8 @@ const captureImage = async (zone: FaceZone, removeBackground: boolean = false) =
 - [MediaPipe CDN Files](https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/)
 - [Google AI Studio Live Audio Example](https://aistudio.google.com/apps/bundled/live_audio)
 - [Gemini API Documentation](https://ai.google.dev/gemini-api/docs)
+- [Gemini Vision API](https://ai.google.dev/gemini-api/docs/vision)
+- [MediaRecorder API](https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder)
+- [Web Audio API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
 - [Veo 3 Documentation](https://deepmind.google/technologies/veo/)
 - [ElevenLabs IVC API](https://elevenlabs.io/docs)
