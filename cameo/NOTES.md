@@ -1026,28 +1026,323 @@ ffplay test-data/test-audio.webm  # Linux
 - [x] Add test data saving endpoint
 - [ ] Test with Veo 3 (evaluate background handling)
 
-**Phase 2: ElevenLabs IVC Integration** (Current Priority)
-- [ ] Create `/api/train-voice` endpoint
-- [ ] Test with saved `test-data/test-audio.webm`
-- [ ] Handle ElevenLabs API authentication
-- [ ] Store voice model ID for later use
-- [ ] Add polling for training completion (if async)
-- [ ] Test voice synthesis with trained model
-- [ ] Display training status in UI
+**Phase 2: ElevenLabs IVC Integration** ✅ Complete
+- [x] Create `/api/train-voice` endpoint
+- [x] Test with saved `test-data/test-audio.webm`
+- [x] Handle ElevenLabs API authentication
+- [x] Successfully trained voice model (voiceId: lO0LTbv7RcyY55eq1aZ6)
+- [x] Verified voice quality in ElevenLabs frontend
 
-**Phase 3: Veo 3 Video Generation**
-- [ ] Create backend API for Veo 3 integration
-- [ ] Upload images + audio to Google Cloud Storage
-- [ ] Call Veo 3 API with proper parameters
-- [ ] Implement job polling for video generation
-- [ ] Display generated video preview
-- [ ] Add download functionality
-- [ ] Handle errors and timeouts
+## Voice Training Implementation
 
-**Phase 4: Audio Swap & Final Assembly**
-- [ ] Create `/api/swap-audio` endpoint
-- [ ] Use ElevenLabs voice model for narration
-- [ ] Replace Veo 3 video audio with cloned voice
+### Status: ✅ Backend Complete
+
+Successfully implemented ElevenLabs Instant Voice Cloning (IVC) API integration with audio conversion pipeline.
+
+### Architecture Decision: Unified Endpoint
+
+**Design Choice:** Use a **single unified endpoint** (`/api/generate-video`) that handles voice training internally, rather than exposing voiceId to the frontend.
+
+**Why Unified Approach:**
+1. ✅ **Simpler frontend** - One API call instead of two, one less state variable
+2. ✅ **Atomic operation** - All-or-nothing, easier error handling  
+3. ✅ **voiceId is implementation detail** - Frontend doesn't need to know
+4. ✅ **Matches user mental model** - "I have images and audio, make my video"
+5. ✅ **Cleaner flow** - No weird intermediate training step
+
+**When to Use Separate Training:**
+- Users save multiple voice clones (voice library feature)
+- Users generate multiple videos from same voice (reuse voiceId)
+- Voice testing/preview before video generation needed
+- Premium subscription with persistent voice models
+
+**For Cameo MVP:** Unified approach is better. One video per session, voice training is an implementation detail.
+
+### Simplified Workflow
+
+Frontend only tracks images and audio:
+
+```typescript
+// In page.tsx - Simple state management
+const [capturedImages, setCapturedImages] = useState<CapturedImages | null>(null);
+const [voiceRecording, setVoiceRecording] = useState<Blob | null>(null);
+// No voiceId needed! Backend handles it internally
+```
+
+**Three-Step Flow:**
+
+1. **Step 1: Capture Photos**
+   - User captures 3 face angles (left, center, right)
+   - Store in `capturedImages` state
+   - → Proceed to Step 2
+
+2. **Step 2: Record Voice**
+   - User records 10-second audio
+   - Store Blob in `voiceRecording` state
+   - → Proceed to Step 3
+
+3. **Step 3: Generate Video**
+   - Send to **single unified endpoint** `/api/generate-video`:
+     - `leftImage`, `centerImage`, `rightImage` (3 photos)
+     - `audio` (voice recording)
+     - `prompt` (optional personalization)
+   - Backend workflow (all internal):
+     - Train voice with ElevenLabs → get voiceId
+     - Upload images to Veo 3
+     - Generate video with images + movement
+     - Extract audio from generated video
+     - Replace audio using Speech-to-Speech API with voiceId
+     - Return final video with cloned voice
+   - Frontend receives: `{ videoUrl: "https://..." }`
+
+### Frontend Integration
+
+**VoiceRecording component stays simple:**
+
+```typescript
+// After recording completes - just pass audio blob
+const handleComplete = () => {
+  onComplete(audioBlob); // That's it! No training here
+};
+```
+
+**Generate video with single API call:**
+
+```typescript
+{currentStep === 'generate' && capturedImages && voiceRecording && (
+  <button onClick={async () => {
+    // Single unified API call with all assets
+    const formData = new FormData();
+    formData.append('leftImage', capturedImages.left);
+    formData.append('centerImage', capturedImages.center);
+    formData.append('rightImage', capturedImages.right);
+    formData.append('audio', voiceRecording);
+    formData.append('prompt', 'A personalized video message...');
+    
+    const response = await fetch('/api/generate-video', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const { videoUrl } = await response.json();
+    setFinalVideoUrl(videoUrl);
+  }}>
+    🎬 Generate My Video
+  </button>
+)}
+```
+
+## Audio Swap Testing
+
+### Status: ✅ Complete and Working!
+
+Successfully implemented and tested the `/api/swap-audio` endpoint for testing voice cloning with pre-existing video.
+
+**Test Date:** 2025-01-05
+
+**Test Command:**
+```bash
+curl -X POST http://localhost:3000/api/swap-audio \
+  -F "video=@cameo/test-data/test-video.mp4" \
+  -F "voiceId=lO0LTbv7RcyY55eq1aZ6"
+```
+
+**Result:** ✅ Success
+```json
+{
+  "success": true,
+  "outputPath": "test-data/final-swapped-video.mp4",
+  "message": "Audio swapped successfully! Check test-data/final-swapped-video.mp4"
+}
+```
+
+**Pipeline Verified:**
+- ✅ Video upload and disk write
+- ✅ Audio extraction from video (ffmpeg)
+- ✅ ElevenLabs Speech-to-Speech API integration
+- ✅ Voice cloning with trained model (voiceId: lO0LTbv7RcyY55eq1aZ6)
+- ✅ Audio stream handling and file write
+- ✅ Video/audio recombination (ffmpeg)
+- ✅ Temp file cleanup
+- ✅ Output saved to test-data/
+
+**Performance:**
+- Total pipeline execution: ~30-60 seconds (estimated)
+- Ready for integration into unified `/api/generate-video` endpoint
+
+**Next:** Test voice quality in final video to validate cloning accuracy.
+
+## Production Architecture: Backend Orchestration
+
+### Clean Architecture Pattern
+
+**Frontend Responsibilities (Minimal):**
+- Capture 3 face photos
+- Record 10-second audio
+- Trigger video generation (single API call)
+- Display progress updates
+- Show/download final video
+
+**Backend Responsibilities (Heavy Lifting):**
+- Train voice clone internally (ElevenLabs IVC)
+- Upload images to Veo 3
+- Generate video with polling
+- Download generated video
+- Extract audio from video
+- Replace audio with cloned voice (Speech-to-Speech)
+- Combine video + cloned audio
+- Upload final video to storage
+- Manage temporary files/cleanup
+- Handle errors and retries
+
+### Full Pipeline Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         FRONTEND                                │
+├─────────────────────────────────────────────────────────────────┤
+│  Step 1: Capture Photos    → capturedImages                    │
+│  Step 2: Record Voice       → voiceRecording                    │
+│  Step 3: Generate Video     → Call /api/generate-video          │
+│                               (send images + audio + prompt)     │
+│                              Display progress                    │
+│                              Show final video                    │
+└─────────────────────────────────────────────────────────────────┘
+                                  ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    BACKEND: /api/generate-video                 │
+│                         (Unified Endpoint)                       │
+├─────────────────────────────────────────────────────────────────┤
+│  Input: { leftImage, centerImage, rightImage, audio, prompt }  │
+│                                                                  │
+│  0. 🎤 Train voice clone (internal)                             │
+│     Status: "Training your voice..."                            │
+│     - Convert audio WebM → MP3                                  │
+│     - POST /v1/voices/ivc/create                                │
+│     - Get voiceId (kept internal)                               │
+│     - Takes ~5 seconds                                          │
+│                                                                  │
+│  1. ✅ Upload images to Veo 3                                   │
+│     Status: "Uploading images..."                               │
+│                                                                  │
+│  2. ⏳ Start Veo 3 video generation                             │
+│     Status: "Generating video..."                               │
+│     - Create operation with prompt + images                      │
+│     - Poll operation.done every 10s                             │
+│     - Can take 2-5 minutes                                      │
+│                                                                  │
+│  3. ✅ Download generated video                                 │
+│     Status: "Downloading video..."                              │
+│     - Save to tmp/job-{uuid}/veo3-video.mp4                    │
+│                                                                  │
+│  4. 🎵 Extract audio from video                                 │
+│     Status: "Extracting audio..."                               │
+│     - ffmpeg -i video.mp4 -vn -acodec copy audio.aac           │
+│                                                                  │
+│  5. 🎤 Replace audio with cloned voice                          │
+│     Status: "Applying your voice..."                            │
+│     - POST /v1/speech-to-speech/{voiceId}                       │
+│     - Send extracted audio                                      │
+│     - Receive audio with cloned voice                           │
+│                                                                  │
+│  6. 🎬 Combine video + cloned audio                             │
+│     Status: "Finalizing video..."                               │
+│     - ffmpeg -i video.mp4 -i cloned-audio.mp3 final.mp4        │
+│                                                                  │
+│  7. ☁️ Upload to storage (GCS/S3)                               │
+│     Status: "Uploading..."                                      │
+│                                                                  │
+│  8. 🧹 Cleanup temporary files                                  │
+│     - Delete tmp/job-{uuid}/ directory                          │
+│     - Optional: Delete voiceId from ElevenLabs                  │
+│                                                                  │
+│  Output: { videoUrl: "https://..." }                            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Frontend State Management
+
+**Maximally simplified state:**
+
+```typescript
+const [capturedImages, setCapturedImages] = useState<CapturedImages | null>(null);
+const [voiceRecording, setVoiceRecording] = useState<Blob | null>(null);
+const [videoStatus, setVideoStatus] = useState<VideoStatus>({
+  status: 'idle' | 'processing' | 'complete' | 'error',
+  currentStep: string,
+  progress: number, // 0-100
+  videoUrl: string | null,
+  error: string | null,
+});
+```
+
+**Single Unified API Call:**
+
+```typescript
+// Create FormData with all assets
+const formData = new FormData();
+formData.append('leftImage', capturedImages.left);   // Base64 or Blob
+formData.append('centerImage', capturedImages.center);
+formData.append('rightImage', capturedImages.right);
+formData.append('audio', voiceRecording);             // Blob
+formData.append('prompt', 'A personalized video message from me to you!');
+
+const response = await fetch('/api/generate-video', {
+  method: 'POST',
+  body: formData,
+});
+
+const { videoUrl } = await response.json();
+// Or use SSE for progress updates (see below)
+```
+
+### Cost Optimization
+
+**ElevenLabs:**
+- Voice training: ~10 credits per clone (happens once per video)
+- Speech-to-Speech: ~1 credit per second (~5-10 seconds typical)
+- Voice cleanup: Can optionally delete voiceId after use (free up quota)
+- Estimate: $0.50-1.00 per video
+
+**Veo 3:**
+- Video generation: TBD (check pricing)
+- Estimate: $1-5 per video
+
+**Total estimated cost: $1.50-6.00 per video**
+
+**Immediate (Testing):**
+- [x] Create `/api/swap-audio` test endpoint
+- [x] Test Speech-to-Speech with test-data/video.mp4
+- [x] Use existing voiceId: `lO0LTbv7RcyY55eq1aZ6`
+- [ ] Validate voice quality in real video context (play final-swapped-video.mp4)
+- [ ] Measure audio extraction/swap latency (add timing logs)
+
+**Phase 3: Unified Video Generation Endpoint** ← CURRENT FOCUS
+- [ ] Create `/api/generate-video` endpoint (unified)
+- [ ] Accept `leftImage`, `centerImage`, `rightImage`, `audio`, `prompt`
+- [ ] Backend pipeline:
+  - [ ] Train voice internally (call ElevenLabs IVC, get voiceId)
+  - [ ] Upload images to Veo 3
+  - [ ] Generate video with Veo 3 SDK
+  - [ ] Extract audio from generated video (ffmpeg)
+  - [ ] Replace audio using Speech-to-Speech with voiceId
+  - [ ] Combine video + cloned audio (ffmpeg)
+  - [ ] Upload to GCS/return URL
+- [ ] Implement progress tracking (SSE or polling)
+- [ ] Handle errors and cleanup temp files
+
+**Frontend (Simpler Now!):**
+- [ ] No changes needed to VoiceRecording component  
+- [ ] Add generate video UI in Step 3
+- [ ] Single API call with FormData (images + audio)
+- [ ] Display progress updates
+- [ ] Show/play final video
+
+**Phase 4: Audio Swap & Final Assembly (Deprecated)**
+- This is now part of the unified /api/generate-video endpoint
+- [ ] ~~Create `/api/swap-audio` endpoint~~
+- [ ] ~~Use ElevenLabs voice model for narration~~
+- [ ] ~~Replace Veo 3 video audio with cloned voice~~
 - [ ] Use ffmpeg or cloud service for audio swap
 - [ ] Generate final downloadable video
 - [ ] Add sharing options
