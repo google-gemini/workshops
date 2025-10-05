@@ -184,15 +184,66 @@ Create-next-app automatically includes a comprehensive .gitignore.
 ✅ Face detection working with real-time yaw calculation
 ✅ Files staged for git commit
 
+## Photo Capture Flow
+
+### Goal
+Capture three photos: left, right, and center face positions for use in Veo 3 video generation.
+
+### Approach Options
+
+#### Option 1: Simple State Machine (Current Focus)
+Build a straightforward state machine with text-based directions:
+- State: 'center' | 'left' | 'right' | 'complete'
+- Detect face position using yaw angle
+- Auto-capture when face is stable in correct position
+- Visual feedback showing current requirement
+
+#### Option 2: Gemini Live Integration (Future Enhancement)
+Originally considered using Gemini Live for conversational guidance, but deferred due to architecture complexity.
+
+**Key Finding about Google AI Studio:**
+When examining the official Gemini Live example from https://aistudio.google.com/apps/bundled/live_audio, noticed:
+- Code uses `process.env.GEMINI_API_KEY` but doesn't expose it
+- Google AI Studio runs in a **controlled/sandboxed environment**
+- The environment injects API keys server-side
+- WebSocket connections are proxied through Google's infrastructure
+- Not a pure client-side application
+
+**Implementation Options for Gemini Live:**
+1. **Client-side with exposed key** (Quick prototype):
+   ```typescript
+   // .env.local
+   NEXT_PUBLIC_GEMINI_API_KEY=your_key_here
+   
+   // In component
+   const client = new GoogleGenAI({
+     apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+   });
+   ```
+   Works but exposes API key in browser bundle.
+
+2. **Server-side proxy** (Production approach):
+   - Create Next.js API route
+   - Browser ↔ Next.js API ↔ Gemini API
+   - API key stays server-side
+   - More secure but adds complexity
+
+**Decision:** Focus on state machine mechanics first. Gemini Live conversational interface is a nice-to-have feature for later.
+
 ## Next Steps
 
-Potential enhancements:
-- Add pitch and roll calculations for full 3D head orientation
-- Implement face gesture recognition
-- Add recording/screenshot capabilities
-- Create different visualization modes
-- Add face landmark selection/filtering
-- Performance optimization for lower-end devices
+**Immediate:**
+- [ ] Implement state machine for photo capture
+- [ ] Add photo storage/preview
+- [ ] Auto-detect and capture when face is in position
+
+**Future Enhancements:**
+- [ ] Add pitch and roll calculations for full 3D head orientation
+- [ ] Implement Gemini Live conversational guidance
+- [ ] Add voice recording (10 seconds for ElevenLabs IVC)
+- [ ] Integrate ElevenLabs voice cloning
+- [ ] Connect to Veo 3 for video generation
+- [ ] Build complete Cameo clone workflow
 
 ## Troubleshooting
 
@@ -216,3 +267,5 @@ Potential enhancements:
 - [MediaPipe Face Mesh Documentation](https://google.github.io/mediapipe/solutions/face_mesh.html)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [MediaPipe CDN Files](https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/)
+- [Google AI Studio Live Audio Example](https://aistudio.google.com/apps/bundled/live_audio)
+- [Gemini API Documentation](https://ai.google.dev/gemini-api/docs)
