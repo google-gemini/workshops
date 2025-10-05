@@ -4,6 +4,9 @@
 test-data/*
 !test-data/.gitkeep
 
+# Temporary audio conversion files
+tmp/
+
 # dependencies
 /node_modules
 /.pnp
