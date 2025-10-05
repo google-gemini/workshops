@@ -177,13 +177,6 @@ npm install @mediapipe/face_mesh @mediapipe/camera_utils
 
 Create-next-app automatically includes a comprehensive .gitignore.
 
-## Current Status
-
-✅ Project successfully created and configured
-✅ MediaPipe SSR issue resolved with dynamic imports
-✅ Face detection working with real-time yaw calculation
-✅ Files staged for git commit
-
 ## Photo Capture Flow
 
 ### Goal
@@ -230,19 +223,319 @@ When examining the official Gemini Live example from https://aistudio.google.com
 
 **Decision:** Focus on state machine mechanics first. Gemini Live conversational interface is a nice-to-have feature for later.
 
+## Auto-Capture State Machine Implementation
+
+### Status: ✅ Complete and Working!
+
+Successfully implemented a flexible auto-capture system for left, right, and center face shots.
+
+### Core Features Implemented
+
+1. **Zone Detection**
+   - Yaw angle thresholds:
+     - Left: yaw < -15°
+     - Right: yaw > 15°
+     - Center: |yaw| < 10°
+   - Flexible capture order (no prescribed sequence)
+
+2. **Stability Tracking**
+   - Monitors how long face stays in a zone
+   - 2.5 second hold required for auto-capture
+   - Visual countdown (3, 2, 1) during stabilization
+   - Resets when face moves to different zone
+
+3. **Cooldown System**
+   - 1.5 second cooldown after each capture
+   - Prevents immediate recapture of same zone
+   - Reduces "jittery" behavior
+   - User can recapture by returning after cooldown
+
+4. **Visual Feedback**
+   - Progress indicator: 3 dots showing capture status
+   - Counter display: (2/3) shows progress
+   - Countdown overlay: "Capturing Center in 2s"
+   - Success flash: Animated "✓ Center Captured!" message
+   - Completion banner: "✓ All Photos Captured!"
+   - Active zone highlighting: Blue border on current zone
+   - Captured zone styling: Green border with shadow + checkmark
+
+5. **User Controls**
+   - Reset All button: Clear all captures and start over
+   - Only appears when at least one photo captured
+   - Recapture capability: Return to any zone to retake
+
+### Implementation Details
+
+**State Management:**
+```typescript
+type CapturedImages = {
+  left: string | null;
+  center: string | null;
+  right: string | null;
+};
+
+type StabilityState = {
+  zone: FaceZone;
+  startTime: number | null;
+};
+```
+
+**Key Constants:**
+- Capture duration: 2500ms (2.5 seconds)
+- Cooldown period: 1500ms (1.5 seconds)
+- Countdown update interval: 100ms
+- Canvas resolution: 640x480
+
+**Capture Process:**
+1. Detect current face zone from yaw angle
+2. Start stability timer when zone detected
+3. Update countdown every 100ms
+4. Capture canvas as base64 PNG after 2.5s
+5. Apply 1.5s cooldown to prevent immediate recapture
+6. Show success animation
+7. User can recapture any position by returning to it
+
+### UX Enhancements
+
+**Animations:**
+- `animate-pulse`: Countdown overlay pulsing effect
+- `animate-ping`: Success flash on capture
+- Smooth transitions on border colors
+- 800ms "just captured" indicator duration
+
+**Color Coding:**
+- Gray: Uncaptured zones (neutral state)
+- Blue: Current active zone (where face is pointing)
+- Green: Captured zones (complete with checkmark)
+- Red: Reset button (clear all)
+
+**Progressive Disclosure:**
+- Reset button only shows when needed
+- Progress indicators update in real-time
+- Completion banner appears when all three captured
+- Instructions always visible at bottom
+
+## Background Segmentation Considerations
+
+### Current Implementation: ✅ Keep Background
+
+**Decision:** Leave the background in captured images (no segmentation).
+
+**Rationale:**
+
+1. **Video Generation Context**
+   - Veo 3 benefits from scene context
+   - Background provides lighting information
+   - Better spatial composition
+   - Scene consistency across angles
+   - More natural-looking generated videos
+
+2. **Simplicity First**
+   - Working system in place
+   - Don't add complexity prematurely
+   - Focus on full pipeline integration first
+
+3. **Voice Cloning Compatibility**
+   - ElevenLabs IVC doesn't require background removal
+   - Only needs clear face/mouth visibility (✓ already have)
+
+4. **Professional Appearance**
+   - Real Cameo videos often include background
+   - Feels more authentic and less "floating head"
+   - Users expect natural-looking videos
+
+### When to Consider Segmentation
+
+Add background removal if:
+
+- ✗ Veo 3 generates weird background artifacts
+- ✗ You want custom background compositing
+- ✗ Face-swapping or advanced effects needed
+- ✗ "Studio" or "green screen" aesthetic desired
+- ✗ User explicitly requests background removal
+
+### Implementation Options (If Needed Later)
+
+#### Option 1: MediaPipe Selfie Segmentation
+**Pros:**
+- Already using MediaPipe ecosystem
+- Fast browser-based processing
+- Good quality for real-time use
+- No server-side processing needed
+
+**Cons:**
+- Less accurate than ML models
+- May struggle with complex backgrounds
+
+**Implementation:**
+```typescript
+import { SelfieSegmentation } from '@mediapipe/selfie_segmentation';
+
+const selfieSegmentation = new SelfieSegmentation({
+  locateFile: (file) => {
+    return `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`;
+  }
+});
+
+selfieSegmentation.setOptions({
+  modelSelection: 1, // 0 = general, 1 = landscape
+});
+```
+
+#### Option 2: rembg (Python-based)
+**Pros:**
+- Excellent quality (U²-Net model)
+- Very reliable segmentation
+- Good edge detection
+
+**Cons:**
+- Requires Python backend
+- Server-side processing
+- Slower than browser-based
+
+**Implementation:**
+```bash
+pip install rembg
+```
+
+```python
+from rembg import remove
+from PIL import Image
+
+input_image = Image.open('input.png')
+output_image = remove(input_image)
+output_image.save('output.png')
+```
+
+#### Option 3: BackgroundRemover.js
+**Pros:**
+- Pure JavaScript
+- Works in browser
+- Good balance of speed/quality
+
+**Cons:**
+- Larger bundle size
+- Requires TensorFlow.js
+
+**Implementation:**
+```bash
+npm install @imgly/background-removal
+```
+
+```typescript
+import removeBackground from '@imgly/background-removal';
+
+async function segmentBackground(imageUrl: string) {
+  const blob = await removeBackground(imageUrl);
+  return URL.createObjectURL(blob);
+}
+```
+
+#### Option 4: Server-Side API Route
+**Pros:**
+- Keeps client bundle small
+- Can use any segmentation model
+- Secure API key management
+
+**Cons:**
+- Requires backend infrastructure
+- Adds latency
+- Server costs
+
+**Implementation:**
+```typescript
+// app/api/segment/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function POST(request: NextRequest) {
+  const { image } = await request.json();
+  
+  // Call segmentation service
+  const segmentedImage = await removeBackground(image);
+  
+  return NextResponse.json({ segmentedImage });
+}
+```
+
+### Recommended Approach (If Implementing)
+
+**Phase 1: Test Without Segmentation**
+1. Ship current implementation
+2. Test with Veo 3
+3. Gather user feedback
+4. Evaluate if background causes issues
+
+**Phase 2: Add Segmentation (If Needed)**
+1. Start with MediaPipe Selfie Segmentation (easiest integration)
+2. Make it optional: Toggle button "Remove Background"
+3. Show side-by-side preview before capture
+4. Let user choose which version to save
+
+**Phase 3: Optimize (If Users Want It)**
+1. Add better segmentation model if quality issues
+2. Consider edge refinement
+3. Add background blur as alternative to removal
+4. Support custom background replacement
+
+### Integration Example (If Implemented)
+
+```typescript
+// In useFaceDetection.ts
+const captureImage = async (zone: FaceZone, removeBackground: boolean = false) => {
+  if (!zone || !canvasRef.current) return;
+  
+  const canvas = canvasRef.current;
+  let dataUrl = canvas.toDataURL('image/png');
+  
+  // Optional segmentation
+  if (removeBackground) {
+    dataUrl = await segmentBackground(dataUrl);
+  }
+  
+  setCapturedImages(prev => ({
+    ...prev,
+    [zone]: dataUrl,
+  }));
+};
+```
+
+### Current Decision Matrix
+
+| Scenario | Action | Reason |
+|----------|--------|--------|
+| Veo 3 handles backgrounds well | Keep as-is | No need to add complexity |
+| Veo 3 has background artifacts | Add MediaPipe segmentation | Fast, easy integration |
+| Users request feature | Add as optional toggle | Let user choose |
+| Professional production use | Implement rembg backend | Best quality |
+
+**Current Status:** ✅ Shipping without segmentation. Will revisit after Veo 3 testing.
+
 ## Next Steps
 
 **Immediate:**
-- [ ] Implement state machine for photo capture
-- [ ] Add photo storage/preview
-- [ ] Auto-detect and capture when face is in position
+- [x] Implement state machine for photo capture
+- [x] Add photo storage/preview
+- [x] Auto-detect and capture when face is in position
+- [x] Add visual feedback and progress indicators
+- [x] Implement cooldown and recapture functionality
+- [ ] Test with Veo 3 (evaluate background handling)
+
+**Phase 2: Voice Recording**
+- [ ] Add 10-second voice recording capability
+- [ ] Integrate with ElevenLabs IVC API
+- [ ] Voice preview and re-record functionality
+
+**Phase 3: Video Generation**
+- [ ] Connect to Veo 3 API
+- [ ] Generate video from 3 images + voice
+- [ ] Video preview and download
 
 **Future Enhancements:**
 - [ ] Add pitch and roll calculations for full 3D head orientation
-- [ ] Implement Gemini Live conversational guidance
-- [ ] Add voice recording (10 seconds for ElevenLabs IVC)
-- [ ] Integrate ElevenLabs voice cloning
-- [ ] Connect to Veo 3 for video generation
+- [ ] Implement Gemini Live conversational guidance (if needed)
+- [ ] Add background segmentation (if Veo 3 requires it)
+- [ ] Export functionality for captured assets
+- [ ] Multi-user session management
 - [ ] Build complete Cameo clone workflow
 
 ## Troubleshooting
@@ -262,10 +555,19 @@ When examining the official Gemini Live example from https://aistudio.google.com
 2. Lower MediaPipe confidence thresholds
 3. Reduce landmark visualization (draw fewer points)
 
+### Capture Not Triggering
+1. Check yaw angle thresholds (may need adjustment)
+2. Verify face is fully visible (all landmarks detected)
+3. Ensure stable hold for full 2.5 seconds
+4. Wait for cooldown period to complete (1.5s)
+
 ## Resources
 
 - [MediaPipe Face Mesh Documentation](https://google.github.io/mediapipe/solutions/face_mesh.html)
+- [MediaPipe Selfie Segmentation](https://google.github.io/mediapipe/solutions/selfie_segmentation.html)
 - [Next.js Documentation](https://nextjs.org/docs)
 - [MediaPipe CDN Files](https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/)
 - [Google AI Studio Live Audio Example](https://aistudio.google.com/apps/bundled/live_audio)
 - [Gemini API Documentation](https://ai.google.dev/gemini-api/docs)
+- [Veo 3 Documentation](https://deepmind.google/technologies/veo/)
+- [ElevenLabs IVC API](https://elevenlabs.io/docs)
