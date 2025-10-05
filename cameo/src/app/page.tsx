@@ -118,6 +118,57 @@ export default function Home() {
         {currentStep === 'generate' && capturedImages && voiceRecording && (
           <div className="flex flex-col items-center gap-6 p-8">
             <h1 className="text-3xl font-bold">Generate Video</h1>
+            
+            {/* Test Data Saver */}
+            <div className="w-full max-w-4xl mb-8 p-6 bg-yellow-50 border-2 border-yellow-300 rounded-xl">
+              <h3 className="font-semibold text-yellow-900 mb-2">
+                🧪 Development Tool
+              </h3>
+              <p className="text-sm text-yellow-800 mb-4">
+                Save captured data to disk for backend testing. Files will be saved to <code className="bg-yellow-200 px-1 rounded">test-data/</code> directory.
+              </p>
+              <button
+                onClick={async () => {
+                  try {
+                    // Convert audio Blob to base64
+                    const audioBase64 = await new Promise<string>((resolve) => {
+                      const reader = new FileReader();
+                      reader.onloadend = () => resolve(reader.result as string);
+                      reader.readAsDataURL(voiceRecording);
+                    });
+                    
+                    const response = await fetch('/api/save-test-data', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        images: capturedImages,
+                        audio: audioBase64,
+                      }),
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                      alert(
+                        `✅ Test data saved successfully!\n\n` +
+                        `Location: ${result.location}\n\n` +
+                        `Files saved:\n${result.files.map((f: string) => `  • ${f}`).join('\n')}\n\n` +
+                        `Saved at: ${new Date(result.savedAt).toLocaleString()}`
+                      );
+                    } else {
+                      alert(`❌ Failed to save: ${result.error}\n\nDetails: ${result.details || 'Unknown error'}`);
+                    }
+                  } catch (error) {
+                    alert(`❌ Error: ${error instanceof Error ? error.message : String(error)}`);
+                    console.error('Save test data error:', error);
+                  }
+                }}
+                className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+              >
+                💾 Save Test Data to Disk
+              </button>
+            </div>
+
             <p className="text-gray-600">Coming soon: Veo 3 integration</p>
             
             {/* Preview assets */}

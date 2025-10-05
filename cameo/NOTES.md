@@ -940,6 +940,78 @@ Show script prominently so user can read it:
 - [ ] Consider regenerate button for new suggestions
 - [ ] Track which scripts lead to best videos (analytics)
 
+## Test Data Management
+
+### Status: ✅ Implemented
+
+**Purpose:** Save captured images and audio to disk for backend testing in isolation.
+
+**Location:** `test-data/` directory (git-ignored except for `.gitkeep`)
+
+**API Endpoints:**
+1. `POST /api/save-test-data` - Save images and audio from browser
+2. `GET /api/verify-test-data` - Check what's currently saved
+
+**Usage:**
+1. Capture photos and record voice in browser
+2. Navigate to "Generate Video" step
+3. Click "💾 Save Test Data to Disk" button
+4. Files saved to `test-data/`:
+   - `test-left.png`
+   - `test-center.png`
+   - `test-right.png`
+   - `test-audio.webm`
+   - `metadata.json`
+
+**Backend Testing:**
+```bash
+# Verify saved files
+curl http://localhost:3000/api/verify-test-data
+
+# Use saved files for backend development
+curl -X POST http://localhost:3000/api/train-voice \
+  -F "audio=@test-data/test-audio.webm"
+```
+
+### Verification: ✅ Tested and Working
+
+**Test Date:** 2025-01-05
+
+**Verified Output:**
+```json
+{
+  "fileCount": 6,
+  "files": [
+    "test-left.png (600 KB)",
+    "test-center.png (610 KB)", 
+    "test-right.png (601 KB)",
+    "test-audio.webm (120 KB)",
+    "metadata.json (0.21 KB)",
+    ".gitkeep"
+  ]
+}
+```
+
+**Confirmed:**
+- ✅ Base64 → PNG conversion working
+- ✅ Base64 → WebM audio conversion working
+- ✅ Metadata generation working
+- ✅ Files are valid and playable
+- ✅ Ready for backend integration testing
+
+**File Inspection:**
+```bash
+# View files
+ls -lh test-data/
+
+# Verify formats
+file test-data/test-audio.webm  # WebM
+file test-data/test-*.png       # PNG image data
+
+# Test playback
+ffplay test-data/test-audio.webm  # Linux
+```
+
 ## Next Steps
 
 **Immediate:**
@@ -951,29 +1023,42 @@ Show script prominently so user can read it:
 - [x] Add multi-step workflow with conditional rendering
 - [x] Implement voice recording with 10-second limit
 - [x] Add audio playback and re-record functionality
+- [x] Add test data saving endpoint
 - [ ] Test with Veo 3 (evaluate background handling)
 
-**Phase 2: AI Script Generation**
+**Phase 2: ElevenLabs IVC Integration** (Current Priority)
+- [ ] Create `/api/train-voice` endpoint
+- [ ] Test with saved `test-data/test-audio.webm`
+- [ ] Handle ElevenLabs API authentication
+- [ ] Store voice model ID for later use
+- [ ] Add polling for training completion (if async)
+- [ ] Test voice synthesis with trained model
+- [ ] Display training status in UI
+
+**Phase 3: Veo 3 Video Generation**
+- [ ] Create backend API for Veo 3 integration
+- [ ] Upload images + audio to Google Cloud Storage
+- [ ] Call Veo 3 API with proper parameters
+- [ ] Implement job polling for video generation
+- [ ] Display generated video preview
+- [ ] Add download functionality
+- [ ] Handle errors and timeouts
+
+**Phase 4: Audio Swap & Final Assembly**
+- [ ] Create `/api/swap-audio` endpoint
+- [ ] Use ElevenLabs voice model for narration
+- [ ] Replace Veo 3 video audio with cloned voice
+- [ ] Use ffmpeg or cloud service for audio swap
+- [ ] Generate final downloadable video
+- [ ] Add sharing options
+
+**Phase 5: AI Script Generation** (Enhancement)
 - [ ] Create Gemini Vision API integration
 - [ ] Generate personalized script from captured images
 - [ ] Display script in voice recording UI
 - [ ] Add script editing capability
 - [ ] Implement fallback templates
 - [ ] Test script quality and timing
-
-**Phase 3: Video Generation**
-- [ ] Create backend API for Veo 3 integration
-- [ ] Upload images + audio to backend
-- [ ] Call Veo 3 API with proper parameters
-- [ ] Poll for video generation status
-- [ ] Display generated video preview
-- [ ] Add download functionality
-
-**Phase 4: ElevenLabs Integration**
-- [ ] Integrate ElevenLabs IVC API
-- [ ] Train voice model from recorded audio
-- [ ] Option to use cloned voice for different scripts
-- [ ] Compare original vs cloned voice quality
 
 **Future Enhancements:**
 - [ ] Add pitch and roll calculations for full 3D head orientation
