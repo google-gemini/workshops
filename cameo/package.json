@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.17.0",
+    "@google/genai": "^1.22.0",
     "@mediapipe/camera_utils": "^0.3.1675466862",
     "@mediapipe/face_mesh": "^0.4.1633559619",
     "@types/fluent-ffmpeg": "^2.1.27",
