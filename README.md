@@ -12,6 +12,14 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 <tr>
 <td width="33%" align="center">
 
+### [🎬 Cameo](./cameo/)
+[![Cameo Demo](https://img.youtube.com/vi/yKMFeKnoJuk/maxresdefault.jpg)](https://www.youtube.com/watch?v=yKMFeKnoJuk)
+**AI-powered personalized video generator**
+[📖 Documentation](./cameo/)
+
+</td>
+<td width="33%" align="center">
+
 ### [♟️ Chess Companion](./chess/)
 [![Chess Demo](https://img.youtube.com/vi/AE4dd4tgNks/maxresdefault.jpg)](https://www.youtube.com/watch?v=AE4dd4tgNks)
 **Real-time game analysis with voice interaction**
@@ -26,6 +34,8 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 [📖 Documentation](./tv/)
 
 </td>
+</tr>
+<tr>
 <td width="33%" align="center">
 
 ### [🎮 Wind Waker Chat](./waker/)
@@ -34,8 +44,6 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 [📖 Documentation](./waker/)
 
 </td>
-</tr>
-<tr>
 <td width="33%" align="center">
 
 ### [🧱 Bricks](./bricks/)
@@ -52,6 +60,8 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 [📖 Documentation](./artifacts/)
 
 </td>
+</tr>
+<tr>
 <td width="33%" align="center">
 
 ### [🎯 Multi-Agent Games](./games/)
@@ -60,8 +70,6 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 [📖 Documentation](./games/)
 
 </td>
-</tr>
-<tr>
 <td width="33%" align="center">
 
 ### [🥊 Smash Bot](./smash/)
@@ -78,12 +86,20 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 [📖 Documentation](./mario/) *(Coming Soon)*
 
 </td>
+</tr>
+<tr>
 <td width="33%" align="center">
 
 ### [🖥️ Desktop Assistant](./desktop/)
 [![Desktop Demo](https://img.youtube.com/vi/wz-s7QiiwWo/maxresdefault.jpg)](https://www.youtube.com/watch?v=wz-s7QiiwWo)
 **Gemini controls your desktop**
 [📖 Documentation](./desktop/) *(Coming Soon)*
+
+</td>
+<td width="33%" align="center">
+
+</td>
+<td width="33%" align="center">
 
 </td>
 </tr>
@@ -126,27 +142,27 @@ Conference talks, interviews, and educational content exploring AI, LLMs, and th
 
 Explore the diverse range of projects available in this repository. Each link takes you to a dedicated subdirectory with its own `README.md` containing detailed instructions and code.
 
-*   [`adventure/`](./adventure/README.md) - **Dungeon Adventure using CrewAI and Gemini:** A text-based adventure game leveraging CrewAI and Gemini to create dynamic, agent-driven storytelling with a persistent Dungeon Master and multiple player agents.
-*   [`artifacts/`](./artifacts/README.md) - **Unveiling Artifacts: AI-Powered Interactive Content Platform:** Explores AI-driven content creation, demonstrating how LLMs can dynamically generate and refine interactive web experiences (HTML, CSS, JS) through an iterative, conversational workflow.
-*   [`bricks/`](./bricks/README.md) - **Bricks: Fine-tuning Gemini for Brick-Building:** An end-to-end pipeline for fine-tuning Gemini 1.5 Pro to understand natural language descriptions and generate precise LDraw (MPD) brick-building instructions.
-*   [`cameo/`](./cameo/README.md) - **Cameo: AI-Powered Personalized Video Generator:** Creates personalized videos using your face and voice, combining MediaPipe face detection, Google Veo 3 video generation, and ElevenLabs voice cloning for fully customized AI-generated video content.
-*   [`chess/`](./chess/README.md) - **Chess Companion:** An AI-powered assistant providing real-time analysis, voice interaction, and TV control for live chess games, combining expert insights with historical context and engine analysis.
-*   [`cost/`](./cost/README.md) - **LLM Cost Comparison:** A hypothetical cost-comparison analysis of Gemini, GPT, and Llama 3 for a high-traffic app scenario, presented in a workshop slide format.
-*   [`doodles/`](./doodles/README.md) - **Dynamic SVG Storytelling & Visualization:** A powerful pipeline for converting static bitmap images into dynamic, interactive, and animatable SVGs for engaging visual storytelling and presentations.
-*   [`factuality/`](./factuality/README.md) - **Factuality: News Summarization & Redaction:** A Perplexity-style clone built with CrewAI that summarizes, cites, and redacts news articles, focusing on factual accuracy and source verification.
-*   [`games/`](./games/README.md) - **Gemini Plays Games: Multi-Agent Game Simulation:** Demonstrates how to play multi-agent games with Gemini using PettingZoo and CrewAI, exploring AI interaction and strategy in simulated game environments.
-*   [`history/`](./history/README.md) - **Interactive LLM History & Concepts Visualizer:** Provides dynamic, animated visualizations to explain the historical development, growth patterns, and conceptual challenges (like "model collapse") of Large Language Models.
-*   [`kundali/`](./kundali/README.md) - **Kundali Milan: AI Jyotish Guru:** Implements a Jyotish guru as a CrewAI agent to perform Kundali Milan (Vedic astrology compatibility analysis) based on provided birth details.
-*   [`podcast/`](./podcast/README.md) - **AI Podcast Generator:** An innovative, AI-driven pipeline for automatically generating engaging podcast-style video content, from dynamic scripting and voice-overs to music integration and final video assembly.
-*   [`prisoner/`](./prisoner/README.md) - **LLM Agents in Game Theory: Prisoner's Dilemma Simulator:** A fascinating exploration into AI strategy, simulating the classic Prisoner's Dilemma with two distinct LLM agents strategizing and interacting in an evolving, turn-based game.
-*   [`recap/`](./recap/README.md) - **Workshop Recap:** A summary of key learnings and advancements made since the inception of the Gemini workshops, presented as a slide deck.
-*   [`roast/`](./roast/README.md) - **AI Roast Battle Arena: Uncensored Wit with LLMs:** Showcases a dynamic, multi-agent AI system designed to host uncensored roast battles between different LLMs, with an independent third LLM acting as an impartial judge.
-*   [`scripts/`](./scripts/README.md) - **LLM-Powered Content Generation & Developer Experience:** A robust framework for generating various content types, including presentation slides and factual summaries, powered by LLMs, emphasizing efficient developer workflows.
-*   [`smash/`](./smash/README.md) - **Smash Bot: An LLM-Powered Fighting Game Agent:** A cutting-edge AI agent capable of playing a fighting game (like Super Smash Bros.) by observing the game state and controlling a virtual gamepad, powered by a multimodal LLM.
-*   [`tv/`](./tv/README.md) - **TV Companion: Your AI Film Critic and Controller:** An advanced LLM-powered assistant that "watches" movies and shows in real-time, offering insightful commentary, deep-diving into film trivia, and controlling your TV through natural voice commands.
-*   [`utils/`](./utils/README.md) - **LLM Demonstration Workshop Project:** A practical demonstration of integrating LLMs into applications, showcasing advanced capabilities through automated content generation, such as real-time news summaries and LLM cost comparisons.
-*   [`waker/`](./waker/README.md) - **Wind Waker Voice Chat with Controller Support:** A real-time AI gaming companion for The Legend of Zelda: Wind Waker, combining native audio voice chat, visual game understanding, direct controller actuation, and episodic memory.
-*   [`wearable/`](./wearable/README.md) - **Wearable Gemini:** Demonstrates how to embed Gemini on a Raspberry Pi Zero W with an Adafruit Voice Bonnet, utilizing Google's speech-to-text and text-to-speech for an on-device AI assistant.
+*   [`adventure/`](./adventure/) - **Dungeon Adventure using CrewAI and Gemini:** A text-based adventure game leveraging CrewAI and Gemini to create dynamic, agent-driven storytelling with a persistent Dungeon Master and multiple player agents.
+*   [`artifacts/`](./artifacts/) - **Unveiling Artifacts: AI-Powered Interactive Content Platform:** Explores AI-driven content creation, demonstrating how LLMs can dynamically generate and refine interactive web experiences (HTML, CSS, JS) through an iterative, conversational workflow.
+*   [`bricks/`](./bricks/) - **Bricks: Fine-tuning Gemini for Brick-Building:** An end-to-end pipeline for fine-tuning Gemini 1.5 Pro to understand natural language descriptions and generate precise LDraw (MPD) brick-building instructions.
+*   [`cameo/`](./cameo/) - **Cameo: AI-Powered Personalized Video Generator:** Creates personalized videos using your face and voice, combining MediaPipe face detection, Google Veo 3 video generation, and ElevenLabs voice cloning for fully customized AI-generated video content.
+*   [`chess/`](./chess/) - **Chess Companion:** An AI-powered assistant providing real-time analysis, voice interaction, and TV control for live chess games, combining expert insights with historical context and engine analysis.
+*   [`cost/`](./cost/) - **LLM Cost Comparison:** A hypothetical cost-comparison analysis of Gemini, GPT, and Llama 3 for a high-traffic app scenario, presented in a workshop slide format.
+*   [`doodles/`](./doodles/) - **Dynamic SVG Storytelling & Visualization:** A powerful pipeline for converting static bitmap images into dynamic, interactive, and animatable SVGs for engaging visual storytelling and presentations.
+*   [`factuality/`](./factuality/) - **Factuality: News Summarization & Redaction:** A Perplexity-style clone built with CrewAI that summarizes, cites, and redacts news articles, focusing on factual accuracy and source verification.
+*   [`games/`](./games/) - **Gemini Plays Games: Multi-Agent Game Simulation:** Demonstrates how to play multi-agent games with Gemini using PettingZoo and CrewAI, exploring AI interaction and strategy in simulated game environments.
+*   [`history/`](./history/) - **Interactive LLM History & Concepts Visualizer:** Provides dynamic, animated visualizations to explain the historical development, growth patterns, and conceptual challenges (like "model collapse") of Large Language Models.
+*   [`kundali/`](./kundali/) - **Kundali Milan: AI Jyotish Guru:** Implements a Jyotish guru as a CrewAI agent to perform Kundali Milan (Vedic astrology compatibility analysis) based on provided birth details.
+*   [`podcast/`](./podcast/) - **AI Podcast Generator:** An innovative, AI-driven pipeline for automatically generating engaging podcast-style video content, from dynamic scripting and voice-overs to music integration and final video assembly.
+*   [`prisoner/`](./prisoner/) - **LLM Agents in Game Theory: Prisoner's Dilemma Simulator:** A fascinating exploration into AI strategy, simulating the classic Prisoner's Dilemma with two distinct LLM agents strategizing and interacting in an evolving, turn-based game.
+*   [`recap/`](./recap/) - **Workshop Recap:** A summary of key learnings and advancements made since the inception of the Gemini workshops, presented as a slide deck.
+*   [`roast/`](./roast/) - **AI Roast Battle Arena: Uncensored Wit with LLMs:** Showcases a dynamic, multi-agent AI system designed to host uncensored roast battles between different LLMs, with an independent third LLM acting as an impartial judge.
+*   [`scripts/`](./scripts/) - **LLM-Powered Content Generation & Developer Experience:** A robust framework for generating various content types, including presentation slides and factual summaries, powered by LLMs, emphasizing efficient developer workflows.
+*   [`smash/`](./smash/) - **Smash Bot: An LLM-Powered Fighting Game Agent:** A cutting-edge AI agent capable of playing a fighting game (like Super Smash Bros.) by observing the game state and controlling a virtual gamepad, powered by a multimodal LLM.
+*   [`tv/`](./tv/) - **TV Companion: Your AI Film Critic and Controller:** An advanced LLM-powered assistant that "watches" movies and shows in real-time, offering insightful commentary, deep-diving into film trivia, and controlling your TV through natural voice commands.
+*   [`utils/`](./utils/) - **LLM Demonstration Workshop Project:** A practical demonstration of integrating LLMs into applications, showcasing advanced capabilities through automated content generation, such as real-time news summaries and LLM cost comparisons.
+*   [`waker/`](./waker/) - **Wind Waker Voice Chat with Controller Support:** A real-time AI gaming companion for The Legend of Zelda: Wind Waker, combining native audio voice chat, visual game understanding, direct controller actuation, and episodic memory.
+*   [`wearable/`](./wearable/) - **Wearable Gemini:** Demonstrates how to embed Gemini on a Raspberry Pi Zero W with an Adafruit Voice Bonnet, utilizing Google's speech-to-text and text-to-speech for an on-device AI assistant.
 
 ---
 
@@ -172,45 +188,45 @@ To help you find projects of interest, we've grouped them into thematic categori
 
 ### AI/ML Applications & Agents
 Projects focusing on practical applications of LLMs, multi-agent systems, and real-world problem-solving.
-*   [`adventure/`](./adventure/README.md) - Dungeon Adventure using CrewAI and Gemini
-*   [`artifacts/`](./artifacts/README.md) - Unveiling Artifacts: AI-Powered Interactive Content Platform
-*   [`bricks/`](./bricks/README.md) - Bricks: Fine-tuning Gemini for Brick-Building
-*   [`factuality/`](./factuality/README.md) - Factuality: News Summarization & Redaction
-*   [`kundali/`](./kundali/README.md) - Kundali Milan: AI Jyotish Guru
-*   [`roast/`](./roast/README.md) - AI Roast Battle Arena: Uncensored Wit with LLMs
-*   [`tv/`](./tv/README.md) - TV Companion: Your AI Film Critic and Controller
-*   [`utils/`](./utils/README.md) - LLM Demonstration Workshop Project
+*   [`adventure/`](./adventure/) - Dungeon Adventure using CrewAI and Gemini
+*   [`artifacts/`](./artifacts/) - Unveiling Artifacts: AI-Powered Interactive Content Platform
+*   [`bricks/`](./bricks/) - Bricks: Fine-tuning Gemini for Brick-Building
+*   [`factuality/`](./factuality/) - Factuality: News Summarization & Redaction
+*   [`kundali/`](./kundali/) - Kundali Milan: AI Jyotish Guru
+*   [`roast/`](./roast/) - AI Roast Battle Arena: Uncensored Wit with LLMs
+*   [`tv/`](./tv/) - TV Companion: Your AI Film Critic and Controller
+*   [`utils/`](./utils/) - LLM Demonstration Workshop Project
 
 ### Games & Interactive Entertainment
 Projects where AI interacts within game environments, provides interactive entertainment, or simulates game theory scenarios.
-*   [`chess/`](./chess/README.md) - Chess Companion
-*   [`games/`](./games/README.md) - Gemini Plays Games: Multi-Agent Game Simulation
-*   [`prisoner/`](./prisoner/README.md) - LLM Agents in Game Theory: Prisoner's Dilemma Simulator
-*   [`smash/`](./smash/README.md) - Smash Bot: An LLM-Powered Fighting Game Agent
-*   [`waker/`](./waker/README.md) - Wind Waker Voice Chat with Controller Support
+*   [`chess/`](./chess/) - Chess Companion
+*   [`games/`](./games/) - Gemini Plays Games: Multi-Agent Game Simulation
+*   [`prisoner/`](./prisoner/) - LLM Agents in Game Theory: Prisoner's Dilemma Simulator
+*   [`smash/`](./smash/) - Smash Bot: An LLM-Powered Fighting Game Agent
+*   [`waker/`](./waker/) - Wind Waker Voice Chat with Controller Support
 
 ### Content & Media Generation
 Projects focused on generating various forms of content, including text, visual, audio, and video, using AI.
-*   [`artifacts/`](./artifacts/README.md) - Unveiling Artifacts: AI-Powered Interactive Content Platform
-*   [`bricks/`](./bricks/README.md) - Bricks: Fine-tuning Gemini for Brick-Building
-*   [`cameo/`](./cameo/README.md) - Cameo: AI-Powered Personalized Video Generator
-*   [`doodles/`](./doodles/README.md) - Dynamic SVG Storytelling & Visualization
-*   [`factuality/`](./factuality/README.md) - Factuality: News Summarization & Redaction
-*   [`podcast/`](./podcast/README.md) - AI Podcast Generator
-*   [`scripts/`](./scripts/README.md) - LLM-Powered Content Generation & Developer Experience
-*   [`utils/`](./utils/README.md) - LLM Demonstration Workshop Project
+*   [`artifacts/`](./artifacts/) - Unveiling Artifacts: AI-Powered Interactive Content Platform
+*   [`bricks/`](./bricks/) - Bricks: Fine-tuning Gemini for Brick-Building
+*   [`cameo/`](./cameo/) - Cameo: AI-Powered Personalized Video Generator
+*   [`doodles/`](./doodles/) - Dynamic SVG Storytelling & Visualization
+*   [`factuality/`](./factuality/) - Factuality: News Summarization & Redaction
+*   [`podcast/`](./podcast/) - AI Podcast Generator
+*   [`scripts/`](./scripts/) - LLM-Powered Content Generation & Developer Experience
+*   [`utils/`](./utils/) - LLM Demonstration Workshop Project
 
 ### Tools, Utilities & Core Concepts
 Projects that build development tools, illustrate fundamental AI concepts, provide analytical insights, or enhance developer experience.
-*   [`cost/`](./cost/README.md) - LLM Cost Comparison
-*   [`history/`](./history/README.md) - Interactive LLM History & Concepts Visualizer
-*   [`recap/`](./recap/README.md) - Workshop Recap
-*   [`scripts/`](./scripts/README.md) - LLM-Powered Content Generation & Developer Experience
-*   [`utils/`](./utils/README.md) - LLM Demonstration Workshop Project
+*   [`cost/`](./cost/) - LLM Cost Comparison
+*   [`history/`](./history/) - Interactive LLM History & Concepts Visualizer
+*   [`recap/`](./recap/) - Workshop Recap
+*   [`scripts/`](./scripts/) - LLM-Powered Content Generation & Developer Experience
+*   [`utils/`](./utils/) - LLM Demonstration Workshop Project
 
 ### Hardware & Edge AI
 Projects demonstrating the integration of AI capabilities on physical hardware or embedded systems.
-*   [`wearable/`](./wearable/README.md) - Wearable Gemini
+*   [`wearable/`](./wearable/) - Wearable Gemini
 
 ---
 
