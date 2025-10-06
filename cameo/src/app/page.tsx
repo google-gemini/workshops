@@ -7,10 +7,20 @@ import { CapturedImages } from '@/hooks/useFaceDetection';
 
 type Step = 'capture' | 'voice' | 'generate';
 
+type GeneratedVideo = {
+  url: string;
+  voiceId: string;
+  stats: any;
+};
+
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<Step>('capture');
   const [capturedImages, setCapturedImages] = useState<CapturedImages | null>(null);
   const [voiceRecording, setVoiceRecording] = useState<Blob | null>(null);
+  const [prompt, setPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedVideo, setGeneratedVideo] = useState<GeneratedVideo | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -117,87 +127,192 @@ export default function Home() {
         
         {currentStep === 'generate' && capturedImages && voiceRecording && (
           <div className="flex flex-col items-center gap-6 p-8">
-            <h1 className="text-3xl font-bold">Generate Video</h1>
+            <h1 className="text-3xl font-bold">🎬 Generate Your Video</h1>
             
-            {/* Test Data Saver */}
-            <div className="w-full max-w-4xl mb-8 p-6 bg-yellow-50 border-2 border-yellow-300 rounded-xl">
-              <h3 className="font-semibold text-yellow-900 mb-2">
-                🧪 Development Tool
-              </h3>
-              <p className="text-sm text-yellow-800 mb-4">
-                Save captured data to disk for backend testing. Files will be saved to <code className="bg-yellow-200 px-1 rounded">test-data/</code> directory.
-              </p>
-              <button
-                onClick={async () => {
-                  try {
-                    // Convert audio Blob to base64
-                    const audioBase64 = await new Promise<string>((resolve) => {
-                      const reader = new FileReader();
-                      reader.onloadend = () => resolve(reader.result as string);
-                      reader.readAsDataURL(voiceRecording);
-                    });
-                    
-                    const response = await fetch('/api/save-test-data', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        images: capturedImages,
-                        audio: audioBase64,
-                      }),
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                      alert(
-                        `✅ Test data saved successfully!\n\n` +
-                        `Location: ${result.location}\n\n` +
-                        `Files saved:\n${result.files.map((f: string) => `  • ${f}`).join('\n')}\n\n` +
-                        `Saved at: ${new Date(result.savedAt).toLocaleString()}`
-                      );
-                    } else {
-                      alert(`❌ Failed to save: ${result.error}\n\nDetails: ${result.details || 'Unknown error'}`);
-                    }
-                  } catch (error) {
-                    alert(`❌ Error: ${error instanceof Error ? error.message : String(error)}`);
-                    console.error('Save test data error:', error);
-                  }
-                }}
-                className="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
-              >
-                💾 Save Test Data to Disk
-              </button>
-            </div>
-
-            <p className="text-gray-600">Coming soon: Veo 3 integration</p>
-            
-            {/* Preview assets */}
-            <div className="w-full max-w-4xl space-y-6">
-              <div>
-                <h3 className="font-semibold mb-2">Captured Images:</h3>
-                <div className="grid grid-cols-3 gap-4">
-                  {Object.entries(capturedImages).map(([zone, image]) => (
-                    image && (
-                      <img 
-                        key={zone}
-                        src={image} 
-                        alt={zone}
-                        className="w-full rounded-lg border-2 border-gray-300"
-                      />
-                    )
-                  ))}
+            {!generatedVideo && (
+              <>
+                {/* Prompt Input */}
+                <div className="w-full max-w-2xl">
+                  <label className="block text-lg font-semibold mb-2">Video Prompt</label>
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    disabled={isGenerating}
+                    className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-base"
+                    rows={5}
+                    placeholder="Example: I'm a medieval knight delivering an inspiring speech to my troops before battle. I speak with passion and determination, gesturing dramatically with my sword."
+                  />
+                  <p className="text-sm text-gray-600 mt-2">
+                    💡 <strong>Tip:</strong> Describe the scene, dialogue, emotions, and gestures. Be specific and vivid!
+                  </p>
                 </div>
-              </div>
-              
-              <div>
-                <h3 className="font-semibold mb-2">Voice Recording:</h3>
-                <audio 
-                  controls 
-                  src={URL.createObjectURL(voiceRecording)}
-                  className="w-full"
+
+                {/* Generate Button */}
+                <button
+                  onClick={async () => {
+                    if (!prompt.trim()) {
+                      alert('Please enter a prompt!');
+                      return;
+                    }
+                    
+                    setIsGenerating(true);
+                    setError(null);
+                    
+                    try {
+                      // Convert base64 images to Blobs
+                      const centerBlob = await fetch(capturedImages.center!).then(r => r.blob());
+                      
+                      const formData = new FormData();
+                      formData.append('centerImage', centerBlob, 'center.png');
+                      formData.append('voiceAudio', voiceRecording!, 'voice.webm');
+                      formData.append('voiceName', 'My Voice Clone');
+                      formData.append('prompt', prompt);
+
+                      console.log('🎬 Starting video generation...');
+                      
+                      const response = await fetch('/api/generate-video', {
+                        method: 'POST',
+                        body: formData,
+                      });
+
+                      if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || 'Video generation failed');
+                      }
+
+                      const data = await response.json();
+                      console.log('✅ Video generated!', data);
+                      
+                      setGeneratedVideo({
+                        url: `/${data.outputPath}`,
+                        voiceId: data.voiceId,
+                        stats: data.stats,
+                      });
+                    } catch (err) {
+                      console.error('Generation error:', err);
+                      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+                    } finally {
+                      setIsGenerating(false);
+                    }
+                  }}
+                  disabled={isGenerating || !prompt.trim()}
+                  className="px-8 py-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white rounded-lg text-lg font-bold shadow-lg hover:shadow-xl transition-all disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? '⏳ Generating...' : '🎬 Generate Video'}
+                </button>
+
+                {/* Error Display */}
+                {error && (
+                  <div className="w-full max-w-2xl bg-red-50 border-2 border-red-300 rounded-xl p-6">
+                    <h3 className="font-semibold text-red-900 mb-2">❌ Error</h3>
+                    <p className="text-red-800">{error}</p>
+                  </div>
+                )}
+
+                {/* Loading State */}
+                {isGenerating && (
+                  <div className="w-full max-w-2xl bg-blue-50 border-2 border-blue-300 rounded-xl p-6">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+                      <div>
+                        <p className="text-lg font-semibold text-blue-900">Creating your video...</p>
+                        <p className="text-sm text-blue-700">This takes 1-2 minutes. Hang tight! 🚀</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm text-blue-800">
+                      <p>🎤 Training voice model with ElevenLabs...</p>
+                      <p>🎨 Generating video with Veo 3...</p>
+                      <p>🔊 Syncing audio to video...</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview assets (collapsed) */}
+                {!isGenerating && (
+                  <details className="w-full max-w-4xl">
+                    <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-900 font-medium">
+                      👀 Show captured images and voice recording
+                    </summary>
+                    <div className="mt-4 space-y-6">
+                      <div>
+                        <h3 className="font-semibold mb-2 text-sm">Captured Images:</h3>
+                        <div className="grid grid-cols-3 gap-4">
+                          {Object.entries(capturedImages).map(([zone, image]) => (
+                            image && (
+                              <img 
+                                key={zone}
+                                src={image} 
+                                alt={zone}
+                                className="w-full rounded-lg border-2 border-gray-300"
+                              />
+                            )
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-semibold mb-2 text-sm">Voice Recording:</h3>
+                        <audio 
+                          controls 
+                          src={URL.createObjectURL(voiceRecording)}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                  </details>
+                )}
+              </>
+            )}
+
+            {/* Video Display */}
+            {generatedVideo && (
+              <div className="w-full max-w-3xl space-y-6">
+                <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 rounded-xl text-center">
+                  <h2 className="text-2xl font-bold mb-2">🎉 Your Video is Ready!</h2>
+                  <p className="text-purple-100">Generation time: {(generatedVideo.stats.totalTimeMs / 1000).toFixed(1)}s</p>
+                </div>
+                
+                <video
+                  controls
+                  autoPlay
+                  src={generatedVideo.url}
+                  className="w-full rounded-xl shadow-2xl border-4 border-purple-500"
                 />
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <a
+                    href={generatedVideo.url}
+                    download
+                    className="px-6 py-4 bg-green-600 hover:bg-green-700 text-white rounded-lg text-center font-bold shadow-lg hover:shadow-xl transition-all"
+                  >
+                    📥 Download Video
+                  </a>
+                  <button
+                    onClick={() => {
+                      setGeneratedVideo(null);
+                      setPrompt('');
+                      setError(null);
+                    }}
+                    className="px-6 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg hover:shadow-xl transition-all"
+                  >
+                    🔄 Generate Another
+                  </button>
+                </div>
+
+                {/* Stats */}
+                <details className="text-sm text-gray-600">
+                  <summary className="cursor-pointer hover:text-gray-900 font-medium">
+                    📊 Generation Stats
+                  </summary>
+                  <div className="mt-2 p-4 bg-gray-50 rounded-lg space-y-1">
+                    <p>Voice Training: {(generatedVideo.stats.voiceTrainingMs / 1000).toFixed(1)}s</p>
+                    <p>Veo 3 Generation: {(generatedVideo.stats.veoGenerationMs / 1000).toFixed(1)}s</p>
+                    <p>Audio Swap: {(generatedVideo.stats.audioSwapMs / 1000).toFixed(1)}s</p>
+                    <p>Voice ID: <code className="bg-gray-200 px-1 rounded">{generatedVideo.voiceId}</code></p>
+                  </div>
+                </details>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

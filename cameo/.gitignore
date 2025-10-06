@@ -46,3 +46,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Cameo generated videos (too large for git)
+public/generated/
+tmp/
+
+# EXCEPT: Documentation examples in /assets
+!assets/**

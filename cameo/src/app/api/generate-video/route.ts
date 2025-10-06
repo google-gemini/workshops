@@ -2,6 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
+import sizeOf from "image-size";
 import { trainVoice, swapAudioWithVoice } from "@/lib/video-pipeline";
 
 export async function POST(request: NextRequest) {
@@ -40,8 +41,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create temp directory
+    // Create directories for generated videos (public) and temp files
+    const publicDir = path.join(process.cwd(), "public", "generated");
     const tempDir = path.join(process.cwd(), "tmp");
+    await fs.mkdir(publicDir, { recursive: true });
     await fs.mkdir(tempDir, { recursive: true });
 
     const timestamp = Date.now();
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
     const rightImagePath = rightImageFile ? path.join(tempDir, `right-${timestamp}.png`) : "";
     const voiceAudioPath = path.join(tempDir, `voice-${timestamp}.webm`);
     const veoVideoPath = path.join(tempDir, `veo-${timestamp}.mp4`);
-    const finalVideoPath = path.join(tempDir, `final-${timestamp}.mp4`);
+    const finalVideoPath = path.join(publicDir, `generated-video-${timestamp}.mp4`);
 
     // Write files to disk
     console.log("📝 Writing input files to disk...");
@@ -119,6 +122,20 @@ export async function POST(request: NextRequest) {
       const imageFileBuffer = await fs.readFile(centerImagePath);
       const imageBase64 = imageFileBuffer.toString('base64');
 
+      // Detect image aspect ratio to choose video format
+      const dimensions = sizeOf(imageFileBuffer);
+      const aspectRatio = dimensions.width! / dimensions.height!;
+      
+      // Choose video aspect ratio based on source image
+      let videoAspectRatio: "16:9" | "9:16";
+      if (aspectRatio > 1) {
+        videoAspectRatio = "16:9"; // Landscape source → landscape video
+        console.log(`   Source is landscape (${dimensions.width}x${dimensions.height}) → using 16:9`);
+      } else {
+        videoAspectRatio = "9:16"; // Portrait source → portrait video
+        console.log(`   Source is portrait (${dimensions.width}x${dimensions.height}) → using 9:16`);
+      }
+
       console.log("   Generating video from center image");
 
       let operation = await ai.models.generateVideos({
@@ -129,7 +146,7 @@ export async function POST(request: NextRequest) {
           mimeType: "image/png",
         },
         config: {
-          aspectRatio: "9:16", // Portrait for mobile
+          aspectRatio: videoAspectRatio, // Match source image
           resolution: "720p",
           personGeneration: "allow_adult",
           negativePrompt: "cartoon, drawing, low quality, distorted face, blurry",
@@ -193,32 +210,53 @@ export async function POST(request: NextRequest) {
         downloadPath: veoVideoPath,
       });
 
-      // Poll for file to appear on disk with timeout
-      console.log("   Waiting for file to be written to disk...");
+      // Poll for file to appear on disk AND stabilize
+      console.log("   Waiting for file download to complete...");
       let stats;
-      const maxRetries = 20; // 20 retries
-      const retryDelay = 500; // 500ms between retries = 10s total timeout
+      let previousSize = 0;
+      let stableCount = 0;
+      const maxRetries = 30; // 30 retries
+      const retryDelay = 500; // 500ms between retries
+      const requiredStableChecks = 3; // File size must be stable for 3 consecutive checks
 
       for (let i = 0; i < maxRetries; i++) {
         try {
           stats = await fs.stat(veoVideoPath);
-          // Verify file has content
+          
           if (stats.size > 0) {
-            break; // File exists and has content!
+            // Check if size has stabilized
+            if (stats.size === previousSize) {
+              stableCount++;
+              console.log(`   File size stable: ${(stats.size / 1024 / 1024).toFixed(2)} MB (${stableCount}/${requiredStableChecks})`);
+              
+              if (stableCount >= requiredStableChecks) {
+                console.log("   ✅ Download complete - file size stabilized");
+                break; // File is stable!
+              }
+            } else {
+              // Size changed - reset stability counter
+              console.log(`   Downloading... ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
+              stableCount = 0;
+              previousSize = stats.size;
+            }
           }
         } catch (error: any) {
           if (error.code !== 'ENOENT') {
             throw error; // Unexpected error, re-throw
           }
+          console.log(`   File not created yet... (attempt ${i + 1}/${maxRetries})`);
         }
         
         if (i === maxRetries - 1) {
-          throw new Error(`Video file not found after ${(maxRetries * retryDelay) / 1000}s: ${veoVideoPath}`);
+          throw new Error(`Video file did not stabilize after ${(maxRetries * retryDelay) / 1000}s: ${veoVideoPath}`);
         }
         
-        console.log(`   File not ready yet... (attempt ${i + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
+
+      // Extra safety: wait a bit more to ensure OS has flushed buffers
+      console.log("   Waiting for OS buffer flush...");
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       console.log(`✅ Video downloaded: ${(stats!.size / 1024 / 1024).toFixed(2)} MB (${Date.now() - step4Start}ms)`);
       
@@ -268,9 +306,12 @@ export async function POST(request: NextRequest) {
     const totalTime = Date.now() - startTime;
     console.log(`🎉 SUCCESS! Total pipeline time: ${Math.floor(totalTime / 1000)}s`);
 
+    // Return relative path from public directory
+    const relativePath = `generated/generated-video-${timestamp}.mp4`;
+    
     return NextResponse.json({
       success: true,
-      outputPath: `test-data/generated-video-${timestamp}.mp4`,
+      outputPath: relativePath,
       voiceId: voiceId,
       stats: {
         totalTimeMs: totalTime,
@@ -280,7 +321,7 @@ export async function POST(request: NextRequest) {
         pollCount: pollCount,
         skippedVeo3: !!videoFile,
       },
-      message: `Video generated successfully! Check test-data/generated-video-${timestamp}.mp4`,
+      message: `Video generated successfully!`,
     });
   } catch (error: any) {
     console.error("❌ Pipeline error:", error);
