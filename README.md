@@ -129,6 +129,7 @@ Explore the diverse range of projects available in this repository. Each link ta
 *   [`adventure/`](./adventure/README.md) - **Dungeon Adventure using CrewAI and Gemini:** A text-based adventure game leveraging CrewAI and Gemini to create dynamic, agent-driven storytelling with a persistent Dungeon Master and multiple player agents.
 *   [`artifacts/`](./artifacts/README.md) - **Unveiling Artifacts: AI-Powered Interactive Content Platform:** Explores AI-driven content creation, demonstrating how LLMs can dynamically generate and refine interactive web experiences (HTML, CSS, JS) through an iterative, conversational workflow.
 *   [`bricks/`](./bricks/README.md) - **Bricks: Fine-tuning Gemini for Brick-Building:** An end-to-end pipeline for fine-tuning Gemini 1.5 Pro to understand natural language descriptions and generate precise LDraw (MPD) brick-building instructions.
+*   [`cameo/`](./cameo/README.md) - **Cameo: AI-Powered Personalized Video Generator:** Creates personalized videos using your face and voice, combining MediaPipe face detection, Google Veo 3 video generation, and ElevenLabs voice cloning for fully customized AI-generated video content.
 *   [`chess/`](./chess/README.md) - **Chess Companion:** An AI-powered assistant providing real-time analysis, voice interaction, and TV control for live chess games, combining expert insights with historical context and engine analysis.
 *   [`cost/`](./cost/README.md) - **LLM Cost Comparison:** A hypothetical cost-comparison analysis of Gemini, GPT, and Llama 3 for a high-traffic app scenario, presented in a workshop slide format.
 *   [`doodles/`](./doodles/README.md) - **Dynamic SVG Storytelling & Visualization:** A powerful pipeline for converting static bitmap images into dynamic, interactive, and animatable SVGs for engaging visual storytelling and presentations.
@@ -192,6 +193,7 @@ Projects where AI interacts within game environments, provides interactive enter
 Projects focused on generating various forms of content, including text, visual, audio, and video, using AI.
 *   [`artifacts/`](./artifacts/README.md) - Unveiling Artifacts: AI-Powered Interactive Content Platform
 *   [`bricks/`](./bricks/README.md) - Bricks: Fine-tuning Gemini for Brick-Building
+*   [`cameo/`](./cameo/README.md) - Cameo: AI-Powered Personalized Video Generator
 *   [`doodles/`](./doodles/README.md) - Dynamic SVG Storytelling & Visualization
 *   [`factuality/`](./factuality/README.md) - Factuality: News Summarization & Redaction
 *   [`podcast/`](./podcast/README.md) - AI Podcast Generator
