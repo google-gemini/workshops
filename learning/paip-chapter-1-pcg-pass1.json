@@ -1,0 +1,341 @@
+{
+  "metadata": {
+    "title": "PAIP Chapter 1: Introduction to Lisp",
+    "source": "Paradigms of Artificial Intelligence Programming",
+    "author": "Peter Norvig",
+    "pass": 1,
+    "description": "Structure extraction - concepts and prerequisite relationships",
+    "roots": ["interactive_repl"],
+    "assumed_knowledge": []
+  },
+  
+  "nodes": [
+    {
+      "id": "interactive_repl",
+      "name": "Interactive REPL",
+      "description": "Read-eval-print loop for entering expressions and seeing immediate results",
+      "prerequisites": [],
+      "difficulty": "basic",
+      "section": "1.0"
+    },
+    {
+      "id": "prefix_notation",
+      "name": "Prefix Notation",
+      "description": "Arithmetic expressions with operator first: (+ 2 2) instead of 2 + 2",
+      "prerequisites": ["interactive_repl"],
+      "difficulty": "basic",
+      "section": "1.0"
+    },
+    {
+      "id": "function_application",
+      "name": "Function Application",
+      "description": "Evaluating arguments then applying function to results",
+      "prerequisites": ["prefix_notation"],
+      "difficulty": "basic",
+      "section": "1.0"
+    },
+    {
+      "id": "nested_expressions",
+      "name": "Nested Expressions",
+      "description": "Using expressions as arguments to other expressions",
+      "prerequisites": ["function_application"],
+      "difficulty": "basic",
+      "section": "1.0"
+    },
+    {
+      "id": "symbols",
+      "name": "Symbols",
+      "description": "Non-numeric atoms like John, Robin, append",
+      "prerequisites": ["interactive_repl"],
+      "difficulty": "basic",
+      "section": "1.1"
+    },
+    {
+      "id": "lists",
+      "name": "Lists",
+      "description": "Sequences of elements enclosed in parentheses: (Pat Kim)",
+      "prerequisites": ["symbols"],
+      "difficulty": "basic",
+      "section": "1.1"
+    },
+    {
+      "id": "nil",
+      "name": "NIL",
+      "description": "Empty list and false value, equivalent to ()",
+      "prerequisites": ["lists"],
+      "difficulty": "basic",
+      "section": "1.4"
+    },
+    {
+      "id": "quote",
+      "name": "Quote",
+      "description": "Blocking evaluation with ' to treat expressions as data",
+      "prerequisites": ["lists", "symbols", "function_application"],
+      "difficulty": "intermediate",
+      "section": "1.1"
+    },
+    {
+      "id": "quoted_vs_unquoted",
+      "name": "Quoted vs Unquoted",
+      "description": "Difference between 'x (symbol) and x (variable lookup)",
+      "prerequisites": ["quote"],
+      "difficulty": "intermediate",
+      "section": "1.1"
+    },
+    {
+      "id": "variables",
+      "name": "Variables",
+      "description": "Named storage locations that can hold values",
+      "prerequisites": ["symbols", "function_application"],
+      "difficulty": "basic",
+      "section": "1.2"
+    },
+    {
+      "id": "assignment_setf",
+      "name": "Assignment with setf",
+      "description": "Giving values to variables using the setf special form",
+      "prerequisites": ["variables"],
+      "difficulty": "basic",
+      "section": "1.2"
+    },
+    {
+      "id": "special_forms",
+      "name": "Special Forms",
+      "description": "Syntactic expressions that don't follow normal evaluation rules",
+      "prerequisites": ["function_application"],
+      "difficulty": "intermediate",
+      "section": "1.3"
+    },
+    {
+      "id": "special_form_vs_function",
+      "name": "Special Form vs Function",
+      "description": "Why some operations (like setf) can't be regular functions",
+      "prerequisites": ["special_forms", "assignment_setf"],
+      "difficulty": "intermediate",
+      "section": "1.3"
+    },
+    {
+      "id": "list_accessors",
+      "name": "List Accessors",
+      "description": "Functions to extract elements: first, rest, second, third, etc.",
+      "prerequisites": ["lists"],
+      "difficulty": "basic",
+      "section": "1.4"
+    },
+    {
+      "id": "list_constructors",
+      "name": "List Constructors",
+      "description": "Functions to build lists: cons, list, append",
+      "prerequisites": ["lists"],
+      "difficulty": "basic",
+      "section": "1.4"
+    },
+    {
+      "id": "sublists",
+      "name": "Sublists",
+      "description": "Lists containing other lists as elements",
+      "prerequisites": ["lists", "list_accessors"],
+      "difficulty": "intermediate",
+      "section": "1.4"
+    },
+    {
+      "id": "defun",
+      "name": "Defun",
+      "description": "Special form for defining named functions",
+      "prerequisites": ["function_application", "special_forms"],
+      "difficulty": "intermediate",
+      "section": "1.5"
+    },
+    {
+      "id": "parameters",
+      "name": "Function Parameters",
+      "description": "Variables that represent function inputs",
+      "prerequisites": ["defun"],
+      "difficulty": "intermediate",
+      "section": "1.5"
+    },
+    {
+      "id": "function_body",
+      "name": "Function Body",
+      "description": "Expressions that compute the function's result",
+      "prerequisites": ["defun"],
+      "difficulty": "intermediate",
+      "section": "1.5"
+    },
+    {
+      "id": "documentation_strings",
+      "name": "Documentation Strings",
+      "description": "Optional strings describing what functions do",
+      "prerequisites": ["defun"],
+      "difficulty": "basic",
+      "section": "1.5"
+    },
+    {
+      "id": "recursion",
+      "name": "Recursion",
+      "description": "Functions calling themselves to solve problems",
+      "prerequisites": ["defun", "function_application", "list_accessors"],
+      "difficulty": "advanced",
+      "section": "1.6"
+    },
+    {
+      "id": "base_case",
+      "name": "Base Case",
+      "description": "Stopping condition for recursive functions",
+      "prerequisites": ["recursion"],
+      "difficulty": "advanced",
+      "section": "1.6"
+    },
+    {
+      "id": "recursive_case",
+      "name": "Recursive Case",
+      "description": "Self-referential part of recursive function",
+      "prerequisites": ["recursion"],
+      "difficulty": "advanced",
+      "section": "1.6"
+    },
+    {
+      "id": "function_reference_syntax",
+      "name": "Function Reference Syntax (#')",
+      "description": "Using #' to refer to functions as objects",
+      "prerequisites": ["defun", "symbols"],
+      "difficulty": "intermediate",
+      "section": "1.6"
+    },
+    {
+      "id": "mapcar",
+      "name": "Mapcar",
+      "description": "Apply a function to each element of a list",
+      "prerequisites": ["defun", "lists", "function_reference_syntax"],
+      "difficulty": "intermediate",
+      "section": "1.6"
+    },
+    {
+      "id": "higher_order_functions",
+      "name": "Higher-Order Functions",
+      "description": "Functions that take other functions as arguments",
+      "prerequisites": ["mapcar", "defun"],
+      "difficulty": "advanced",
+      "section": "1.7"
+    },
+    {
+      "id": "trace_untrace",
+      "name": "Trace and Untrace",
+      "description": "Debugging tools to watch recursive function execution",
+      "prerequisites": ["recursion"],
+      "difficulty": "intermediate",
+      "section": "1.6"
+    },
+    {
+      "id": "lambda",
+      "name": "Lambda Expressions",
+      "description": "Anonymous functions without names",
+      "prerequisites": ["defun", "function_reference_syntax"],
+      "difficulty": "advanced",
+      "section": "1.7"
+    },
+    {
+      "id": "apply",
+      "name": "Apply",
+      "description": "Applying a function to a list of arguments",
+      "prerequisites": ["function_application", "lists"],
+      "difficulty": "intermediate",
+      "section": "1.7"
+    },
+    {
+      "id": "funcall",
+      "name": "Funcall",
+      "description": "Applying a function to individual arguments",
+      "prerequisites": ["function_application"],
+      "difficulty": "intermediate",
+      "section": "1.7"
+    },
+    {
+      "id": "closures",
+      "name": "Closures",
+      "description": "Functions that capture their lexical environment",
+      "prerequisites": ["lambda"],
+      "difficulty": "advanced",
+      "section": "1.7"
+    },
+    {
+      "id": "evaluation_rules",
+      "name": "Evaluation Rules",
+      "description": "Formal rules for how Lisp evaluates expressions",
+      "prerequisites": ["function_application", "special_forms", "symbols", "lists"],
+      "difficulty": "advanced",
+      "section": "1.9"
+    },
+    {
+      "id": "reading_vs_evaluating",
+      "name": "Reading vs Evaluating",
+      "description": "Two-phase process: read text into data structures, then evaluate",
+      "prerequisites": ["evaluation_rules"],
+      "difficulty": "advanced",
+      "section": "1.9"
+    }
+  ],
+  
+  "edges": [
+    {"from": "prefix_notation", "to": "interactive_repl", "type": "requires"},
+    {"from": "function_application", "to": "prefix_notation", "type": "requires"},
+    {"from": "nested_expressions", "to": "function_application", "type": "requires"},
+    {"from": "lists", "to": "symbols", "type": "requires"},
+    {"from": "nil", "to": "lists", "type": "requires"},
+    {"from": "quote", "to": "lists", "type": "requires"},
+    {"from": "quote", "to": "symbols", "type": "requires"},
+    {"from": "quote", "to": "function_application", "type": "requires"},
+    {"from": "quoted_vs_unquoted", "to": "quote", "type": "requires"},
+    {"from": "variables", "to": "symbols", "type": "requires"},
+    {"from": "variables", "to": "function_application", "type": "requires"},
+    {"from": "assignment_setf", "to": "variables", "type": "requires"},
+    {"from": "special_forms", "to": "function_application", "type": "requires"},
+    {"from": "special_form_vs_function", "to": "special_forms", "type": "requires"},
+    {"from": "special_form_vs_function", "to": "assignment_setf", "type": "requires"},
+    {"from": "list_accessors", "to": "lists", "type": "requires"},
+    {"from": "list_constructors", "to": "lists", "type": "requires"},
+    {"from": "sublists", "to": "lists", "type": "requires"},
+    {"from": "sublists", "to": "list_accessors", "type": "requires"},
+    {"from": "defun", "to": "function_application", "type": "requires"},
+    {"from": "defun", "to": "special_forms", "type": "requires"},
+    {"from": "parameters", "to": "defun", "type": "requires"},
+    {"from": "function_body", "to": "defun", "type": "requires"},
+    {"from": "documentation_strings", "to": "defun", "type": "requires"},
+    {"from": "recursion", "to": "defun", "type": "requires"},
+    {"from": "recursion", "to": "function_application", "type": "requires"},
+    {"from": "recursion", "to": "list_accessors", "type": "requires"},
+    {"from": "base_case", "to": "recursion", "type": "requires"},
+    {"from": "recursive_case", "to": "recursion", "type": "requires"},
+    {"from": "function_reference_syntax", "to": "defun", "type": "requires"},
+    {"from": "function_reference_syntax", "to": "symbols", "type": "requires"},
+    {"from": "mapcar", "to": "defun", "type": "requires"},
+    {"from": "mapcar", "to": "lists", "type": "requires"},
+    {"from": "mapcar", "to": "function_reference_syntax", "type": "requires"},
+    {"from": "higher_order_functions", "to": "mapcar", "type": "requires"},
+    {"from": "higher_order_functions", "to": "defun", "type": "requires"},
+    {"from": "trace_untrace", "to": "recursion", "type": "requires"},
+    {"from": "lambda", "to": "defun", "type": "requires"},
+    {"from": "lambda", "to": "function_reference_syntax", "type": "requires"},
+    {"from": "apply", "to": "function_application", "type": "requires"},
+    {"from": "apply", "to": "lists", "type": "requires"},
+    {"from": "funcall", "to": "function_application", "type": "requires"},
+    {"from": "closures", "to": "lambda", "type": "requires"},
+    {"from": "evaluation_rules", "to": "function_application", "type": "requires"},
+    {"from": "evaluation_rules", "to": "special_forms", "type": "requires"},
+    {"from": "evaluation_rules", "to": "symbols", "type": "requires"},
+    {"from": "evaluation_rules", "to": "lists", "type": "requires"},
+    {"from": "reading_vs_evaluating", "to": "evaluation_rules", "type": "requires"}
+  ],
+  
+  "statistics": {
+    "total_concepts": 33,
+    "total_edges": 45,
+    "difficulty_breakdown": {
+      "basic": 12,
+      "intermediate": 13,
+      "advanced": 8
+    },
+    "roots": 1,
+    "max_depth": 6
+  }
+}

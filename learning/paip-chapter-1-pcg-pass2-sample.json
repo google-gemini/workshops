@@ -1,0 +1,376 @@
+{
+  "metadata": {
+    "title": "PAIP Chapter 1: Introduction to Lisp - Pass 2 Sample",
+    "source": "Paradigms of Artificial Intelligence Programming",
+    "author": "Peter Norvig",
+    "pass": 2,
+    "description": "Mastery criteria extraction - sample of 3 concepts at different difficulty levels",
+    "note": "These 3 concepts fully enriched to validate Pass 2 structure"
+  },
+  
+  "concepts_enriched": [
+    {
+      "id": "recursion",
+      "name": "Recursion",
+      "description": "Functions calling themselves to solve problems",
+      "prerequisites": ["defun", "function_application", "list_accessors"],
+      "difficulty": "advanced",
+      "section": "1.6",
+      
+      "learning_objectives": [
+        "Identify the base case and recursive case in a recursive function",
+        "Trace the execution of a simple recursive function mentally",
+        "Explain why a recursive function terminates (doesn't run forever)",
+        "Write a recursive function that processes lists element by element",
+        "Apply the 'leap of faith' reasoning to understand recursion"
+      ],
+      
+      "mastery_indicators": [
+        {
+          "skill": "base_case_identification",
+          "description": "Can identify which part of a recursive function stops the recursion",
+          "difficulty": "basic",
+          "test_method": "Show recursive function, ask student to point out base case"
+        },
+        {
+          "skill": "recursive_case_identification",
+          "description": "Can identify which part calls the function recursively",
+          "difficulty": "basic",
+          "test_method": "Show recursive function, ask student to point out recursive call"
+        },
+        {
+          "skill": "execution_tracing",
+          "description": "Can manually trace recursive calls with small input",
+          "difficulty": "intermediate",
+          "test_method": "Give recursive function and input, ask to show call sequence"
+        },
+        {
+          "skill": "termination_reasoning",
+          "description": "Can explain why recursion eventually stops",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'Why doesn't this function recurse forever?'"
+        },
+        {
+          "skill": "recursive_writing",
+          "description": "Can write correct recursive function for novel problem",
+          "difficulty": "advanced",
+          "test_method": "Give problem: 'Write function to do X recursively'"
+        },
+        {
+          "skill": "leap_of_faith",
+          "description": "Can reason about correctness without tracing all calls",
+          "difficulty": "advanced",
+          "test_method": "Ask student to prove correctness using inductive reasoning"
+        }
+      ],
+      
+      "examples": [
+        {
+          "content": "(defun first-name (name)\n  \"Select the first name from a name represented as a list.\"\n  (if (member (first name) *titles*)\n      (first-name (rest name))\n      (first name)))",
+          "explanation": "Recursive function that strips titles from names. Base case: first element is not a title. Recursive case: skip first element and recurse on rest.",
+          "when_to_show": "first_introduction",
+          "demonstrates": ["base_case", "recursive_case", "list_processing"]
+        },
+        {
+          "content": "> (first-name '(Madam Major General Paula Jones))\n(1 ENTER FIRST-NAME: (MADAM MAJOR GENERAL PAULA JONES))\n  (2 ENTER FIRST-NAME: (MAJOR GENERAL PAULA JONES))\n    (3 ENTER FIRST-NAME: (GENERAL PAULA JONES))\n      (4 ENTER FIRST-NAME: (PAULA JONES))\n      (4 EXIT FIRST-NAME: PAULA)\n    (3 EXIT FIRST-NAME: PAULA)\n  (2 EXIT FIRST-NAME: PAULA)\n(1 EXIT FIRST-NAME: PAULA)\nPAULA",
+          "explanation": "Trace output showing four recursive calls, each stripping one title until reaching the base case",
+          "when_to_show": "demonstrating_execution",
+          "demonstrates": ["execution_tracing", "multiple_recursive_calls"]
+        },
+        {
+          "content": "function first-name(name):\n    if the first element of name is a title\n        then return the first-name of the rest of the name\n        else return the first element of the name",
+          "explanation": "Abstract pattern showing the two-part structure: test condition, then either recurse or return base value",
+          "when_to_show": "teaching_pattern",
+          "demonstrates": ["recursive_pattern", "leap_of_faith"]
+        }
+      ],
+      
+      "misconceptions": [
+        {
+          "misconception": "Recursion is mysterious or magical",
+          "reality": "It's just a function call - the same function happens to call itself",
+          "correction_strategy": "Show that recursive call is identical to any other function call"
+        },
+        {
+          "misconception": "Recursive functions run forever",
+          "reality": "Base case stops recursion, and each call makes progress toward it",
+          "correction_strategy": "Trace execution showing finite number of calls, emphasize base case"
+        },
+        {
+          "misconception": "You need to mentally track all recursive calls",
+          "reality": "Use 'leap of faith' - trust that recursive call works, verify base case and progress",
+          "correction_strategy": "Teach two-part correctness: (1) base case correct, (2) recursive case makes progress"
+        },
+        {
+          "misconception": "Recursion only works on lists",
+          "reality": "Works on any recursive data structure (trees, numbers, etc.)",
+          "correction_strategy": "Show example on numbers: factorial, fibonacci"
+        }
+      ],
+      
+      "key_insights": [
+        "Every recursive function has at least one base case (stopping condition)",
+        "Every recursive call must make progress toward the base case",
+        "Recursive functions can be proven correct without tracing all calls",
+        "The 'leap of faith': assume recursive call works, verify you use it correctly"
+      ]
+    },
+    
+    {
+      "id": "quote",
+      "name": "Quote",
+      "description": "Blocking evaluation with ' to treat expressions as data",
+      "prerequisites": ["lists", "symbols", "function_application"],
+      "difficulty": "intermediate",
+      "section": "1.1",
+      
+      "learning_objectives": [
+        "Use single quote (') to prevent evaluation of expressions",
+        "Understand the distinction between data and code in Lisp",
+        "Recognize when quote is necessary vs. when it's not",
+        "Convert between 'x shorthand and (quote x) full form",
+        "Predict the result of quoted vs. unquoted expressions"
+      ],
+      
+      "mastery_indicators": [
+        {
+          "skill": "quote_syntax",
+          "description": "Can correctly place single quote before expression",
+          "difficulty": "basic",
+          "test_method": "Ask: 'How do you write the list (a b c) as data?'"
+        },
+        {
+          "skill": "evaluation_blocking",
+          "description": "Understands that quote prevents evaluation",
+          "difficulty": "basic",
+          "test_method": "Compare: What does '(+ 2 2) return vs (+ 2 2)?"
+        },
+        {
+          "skill": "when_to_quote",
+          "description": "Can determine which expressions need quotes",
+          "difficulty": "intermediate",
+          "test_method": "Show expressions, ask which need quotes and why"
+        },
+        {
+          "skill": "quoted_vs_unquoted",
+          "description": "Can predict and explain results of quoted/unquoted forms",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'What happens if you evaluate John vs 'John and why?'"
+        },
+        {
+          "skill": "quote_expansion",
+          "description": "Understands that 'x is syntactic sugar for (quote x)",
+          "difficulty": "advanced",
+          "test_method": "Ask: 'What special form does 'John expand to?'"
+        }
+      ],
+      
+      "examples": [
+        {
+          "content": "> 'John => JOHN\n> '(John Q Public) => (JOHN Q PUBLIC)",
+          "explanation": "Quote returns its argument unevaluated. Works on both symbols and lists.",
+          "when_to_show": "first_introduction",
+          "demonstrates": ["quote_syntax", "preventing_evaluation"]
+        },
+        {
+          "content": "> '2 => 2\n> 2 => 2",
+          "explanation": "Numbers evaluate to themselves, so quote makes no difference. Same result, different reason.",
+          "when_to_show": "self_evaluating_objects",
+          "demonstrates": ["self_evaluation", "when_quote_unnecessary"]
+        },
+        {
+          "content": "> '(+ 2 2) => (+ 2 2)\n> (+ 2 2) => 4",
+          "explanation": "Without quote, list is evaluated as function call. With quote, returned as data structure.",
+          "when_to_show": "data_vs_code",
+          "demonstrates": ["code_as_data", "evaluation_blocking"]
+        },
+        {
+          "content": "> John => *Error: JOHN is not a bound variable*\n> (John Q Public) => *Error: JOHN is not a function*",
+          "explanation": "Without quotes, symbols are looked up as variables, lists as function calls. These fail because undefined.",
+          "when_to_show": "common_errors",
+          "demonstrates": ["evaluation_errors", "why_quote_needed"]
+        },
+        {
+          "content": "'x ≡ (quote x)",
+          "explanation": "Single quote is abbreviation for the quote special form",
+          "when_to_show": "advanced_understanding",
+          "demonstrates": ["syntactic_sugar", "special_form"]
+        }
+      ],
+      
+      "misconceptions": [
+        {
+          "misconception": "Numbers need to be quoted",
+          "reality": "Numbers are self-evaluating; quote is optional but redundant",
+          "correction_strategy": "Show that 2 and '2 both return 2"
+        },
+        {
+          "misconception": "Quote is only for symbols",
+          "reality": "Quote works on any expression: symbols, lists, numbers, etc.",
+          "correction_strategy": "Show examples: '(a b c), '(+ 1 2), 'John"
+        },
+        {
+          "misconception": "Quote changes or modifies the value",
+          "reality": "Quote doesn't change anything; it prevents evaluation",
+          "correction_strategy": "Emphasize: quote returns argument literally, unevaluated"
+        },
+        {
+          "misconception": "Quotes come in pairs like strings",
+          "reality": "Single quote in Lisp marks beginning; end is determined by expression structure",
+          "correction_strategy": "Explain: Lisp knows where expression ends (atom boundary or matching paren)"
+        },
+        {
+          "misconception": "Quote is the same as a string",
+          "reality": "Strings use double quotes and are different data type",
+          "correction_strategy": "Compare: 'John returns symbol JOHN, \"John\" returns string \"John\""
+        }
+      ],
+      
+      "key_insights": [
+        "In Lisp, the same notation represents both code and data",
+        "Quote is the switch: turns off evaluation, treats expression as data",
+        "Self-evaluating objects (numbers, strings) don't need quotes",
+        "Quote is a special form because it must NOT evaluate its argument"
+      ]
+    },
+    
+    {
+      "id": "list_accessors",
+      "name": "List Accessors",
+      "description": "Functions to extract elements: first, rest, second, third, etc.",
+      "prerequisites": ["lists"],
+      "difficulty": "basic",
+      "section": "1.4",
+      
+      "learning_objectives": [
+        "Use first to extract the first element of a list",
+        "Use rest to get all elements after the first",
+        "Use second, third, fourth for specific positions",
+        "Understand that rest returns a list, not an atom",
+        "Chain accessors to navigate nested list structures",
+        "Recognize that accessing beyond list end returns NIL"
+      ],
+      
+      "mastery_indicators": [
+        {
+          "skill": "first_usage",
+          "description": "Can use first to get first element",
+          "difficulty": "basic",
+          "test_method": "Ask: 'How do you get the first element of (a b c)?'"
+        },
+        {
+          "skill": "rest_usage",
+          "description": "Can use rest to get remaining elements",
+          "difficulty": "basic",
+          "test_method": "Ask: 'What does (rest '(a b c)) return?'"
+        },
+        {
+          "skill": "rest_returns_list",
+          "description": "Understands rest always returns a list (even with one element)",
+          "difficulty": "basic",
+          "test_method": "Ask: 'What's the difference between (first (rest x)) and (rest x)?'"
+        },
+        {
+          "skill": "positional_accessors",
+          "description": "Can use second, third, fourth, etc.",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'Get the third element of this list'"
+        },
+        {
+          "skill": "accessor_chaining",
+          "description": "Can chain multiple accessors to reach nested elements",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'How do you get Z from ((a b) (x y z))?'"
+        },
+        {
+          "skill": "nil_understanding",
+          "description": "Knows that accessing beyond list returns NIL",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'What does (fourth '(a b c)) return?'"
+        },
+        {
+          "skill": "nested_navigation",
+          "description": "Can navigate complex nested list structures",
+          "difficulty": "advanced",
+          "test_method": "Give nested list, ask to extract deeply nested element"
+        }
+      ],
+      
+      "examples": [
+        {
+          "content": "> p => (JOHN Q PUBLIC)\n> (first p) => JOHN\n> (rest p) => (Q PUBLIC)\n> (second p) => Q\n> (third p) => PUBLIC\n> (fourth p) => NIL\n> (length p) => 3",
+          "explanation": "Basic accessor usage on a simple list. Note fourth returns NIL because list has only 3 elements.",
+          "when_to_show": "first_introduction",
+          "demonstrates": ["basic_accessors", "nil_result", "list_length"]
+        },
+        {
+          "content": "> (setf x '((1st element) 2 (element 3) ((4)) 5))\n> (length x) => 5\n> (first x) => (1ST ELEMENT)\n> (second x) => 2\n> (third x) => (ELEMENT 3)\n> (fourth x) => ((4))",
+          "explanation": "List with mixed atom and list elements. Accessors return whatever is at that position, whether atom or list.",
+          "when_to_show": "heterogeneous_lists",
+          "demonstrates": ["mixed_elements", "lists_as_elements"]
+        },
+        {
+          "content": "> (first (fourth x)) => (4)\n> (first (first (fourth x))) => 4\n> (second (first x)) => ELEMENT",
+          "explanation": "Chaining accessors to reach nested elements. Read from inside out: (fourth x) gets ((4)), then (first ...) gets (4), then (first ...) gets 4.",
+          "when_to_show": "nested_access",
+          "demonstrates": ["accessor_chaining", "nested_lists", "inside_out_reading"]
+        },
+        {
+          "content": "> (cons 'Mr p) => (MR JOHN Q PUBLIC)\n> (cons (first p) (rest p)) => (JOHN Q PUBLIC)",
+          "explanation": "Shows relationship between first/rest and cons: cons is the inverse operation",
+          "when_to_show": "relationship_to_constructors",
+          "demonstrates": ["first_rest_identity", "constructor_accessor_relationship"]
+        }
+      ],
+      
+      "misconceptions": [
+        {
+          "misconception": "rest returns the last element",
+          "reality": "rest returns everything EXCEPT the first element (as a list)",
+          "correction_strategy": "Show: (rest '(a b c)) => (B C), not C"
+        },
+        {
+          "misconception": "rest returns atoms when there's one element left",
+          "reality": "rest ALWAYS returns a list, even (rest '(a b)) => (B) not B",
+          "correction_strategy": "Compare: (rest '(a b)) vs (second '(a b))"
+        },
+        {
+          "misconception": "Accessing beyond list length causes an error",
+          "reality": "Returns NIL, not an error",
+          "correction_strategy": "Show: (fourth '(a b c)) => NIL, this is valid"
+        },
+        {
+          "misconception": "Can't access nested elements",
+          "reality": "Can chain accessors: (first (third x))",
+          "correction_strategy": "Show step-by-step evaluation of chained accessors"
+        },
+        {
+          "misconception": "second means (rest (rest ...))",
+          "reality": "second means (first (rest ...)), gets second element",
+          "correction_strategy": "Show that (second x) ≡ (first (rest x))"
+        }
+      ],
+      
+      "key_insights": [
+        "first and rest are the fundamental list accessors (second, third are built from them)",
+        "rest always returns a list, making it safe for recursion",
+        "Accessors can be chained to navigate nested structures",
+        "NIL is returned when accessing beyond list bounds (not an error)",
+        "List accessors work on any list, regardless of what elements contain"
+      ]
+    }
+  ],
+  
+  "statistics": {
+    "concepts_enriched": 3,
+    "total_learning_objectives": 17,
+    "total_mastery_indicators": 18,
+    "total_examples": 12,
+    "total_misconceptions": 13,
+    "difficulty_coverage": {
+      "basic": 1,
+      "intermediate": 1,
+      "advanced": 1
+    }
+  }
+}

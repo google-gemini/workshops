@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAIP Chapter 1 - Pedagogical Concept Graph</title>
+  <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f5f5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #2c3e50;
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      overflow: hidden;
+    }
+
+    #cy {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    aside {
+      width: 300px;
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
+
+    .legend {
+      margin-bottom: 2rem;
+    }
+
+    .legend h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #ecf0f1;
+    }
+
+    .stats {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #ecf0f1;
+    }
+
+    .stats h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .stat-label {
+      color: #7f8c8d;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .node-info {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #ecf0f1;
+    }
+
+    .node-info h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .node-info p {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+
+    .node-info .label {
+      font-weight: 600;
+      color: #7f8c8d;
+      display: inline-block;
+      min-width: 90px;
+    }
+
+    .empty-state {
+      color: #95a5a6;
+      font-style: italic;
+      font-size: 0.85rem;
+    }
+
+    .controls {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    .controls h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .control-group {
+      margin-bottom: 1rem;
+    }
+
+    .control-label {
+      display: block;
+      font-size: 0.85rem;
+      color: #7f8c8d;
+      margin-bottom: 0.5rem;
+    }
+
+    select {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      background: white;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.5rem;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📚 PAIP Chapter 1: Pedagogical Concept Graph</h1>
+    <div class="subtitle">Interactive visualization of prerequisite dependencies</div>
+  </header>
+
+  <main>
+    <div id="cy"></div>
+    
+    <aside>
+      <div class="controls">
+        <h2>🎛️ Controls</h2>
+        <div class="control-group">
+          <label class="control-label">Layout</label>
+          <select id="layoutSelect">
+            <option value="breadthfirst">Hierarchical (Breadthfirst)</option>
+            <option value="dagre">Hierarchical (Dagre)</option>
+            <option value="cose">Force-Directed</option>
+            <option value="circle">Circle</option>
+            <option value="grid">Grid</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="control-label">Filter by Difficulty</label>
+          <select id="difficultyFilter">
+            <option value="all">All Concepts</option>
+            <option value="basic">Basic Only</option>
+            <option value="intermediate">Intermediate Only</option>
+            <option value="advanced">Advanced Only</option>
+          </select>
+        </div>
+        <button id="resetBtn">Reset View</button>
+      </div>
+
+      <div class="legend">
+        <h2>🎨 Legend</h2>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #2ecc71;"></div>
+          <span>Basic</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #3498db;"></div>
+          <span>Intermediate</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #e74c3c;"></div>
+          <span>Advanced</span>
+        </div>
+      </div>
+
+      <div class="stats">
+        <h2>📊 Statistics</h2>
+        <div class="stat-item">
+          <span class="stat-label">Total Concepts:</span>
+          <span class="stat-value" id="statTotal">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Basic:</span>
+          <span class="stat-value" id="statBasic">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Intermediate:</span>
+          <span class="stat-value" id="statIntermediate">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Advanced:</span>
+          <span class="stat-value" id="statAdvanced">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Dependencies:</span>
+          <span class="stat-value" id="statEdges">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Max Depth:</span>
+          <span class="stat-value" id="statDepth">-</span>
+        </div>
+      </div>
+
+      <div class="node-info" id="nodeInfo">
+        <h2>ℹ️ Node Details</h2>
+        <p class="empty-state">Click a node to see details</p>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    let cy;
+    let pcgData;
+
+    // Load PCG data
+    fetch('paip-chapter-1-pcg-pass1.json')
+      .then(response => response.json())
+      .then(data => {
+        pcgData = data;
+        initializeGraph(data);
+        updateStats(data);
+      })
+      .catch(error => {
+        console.error('Error loading PCG data:', error);
+        alert('Error loading PCG data. Make sure paip-chapter-1-pcg-pass1.json is in the same directory.');
+      });
+
+    function initializeGraph(data) {
+      cy = cytoscape({
+        container: document.getElementById('cy'),
+        
+        elements: [
+          // Convert nodes
+          ...data.nodes.map(n => ({
+            data: { 
+              id: n.id, 
+              label: n.name,
+              difficulty: n.difficulty,
+              section: n.section,
+              description: n.description,
+              prerequisites: n.prerequisites
+            }
+          })),
+          // Convert edges - FLIP: data says "X requires Y", we visualize as "Y → X" (learning flow)
+          ...data.edges.map(e => ({
+            data: { 
+              source: e.to,    // FLIP: prerequisite becomes source
+              target: e.from,  // FLIP: dependent concept becomes target
+              type: e.type
+            }
+          }))
+        ],
+        
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'text-wrap': 'wrap',
+              'text-max-width': '80px',
+              'font-size': '10px',
+              'font-weight': '600',
+              'color': '#2c3e50',
+              'width': '70px',
+              'height': '70px',
+              'border-width': '3px',
+              'border-color': '#ecf0f1',
+              'transition-property': 'background-color, border-color, width, height',
+              'transition-duration': '0.2s'
+            }
+          },
+          {
+            selector: 'node[difficulty="basic"]',
+            style: { 
+              'background-color': '#2ecc71',
+              'border-color': '#27ae60'
+            }
+          },
+          {
+            selector: 'node[difficulty="intermediate"]',
+            style: { 
+              'background-color': '#3498db',
+              'border-color': '#2980b9'
+            }
+          },
+          {
+            selector: 'node[difficulty="advanced"]',
+            style: { 
+              'background-color': '#e74c3c',
+              'border-color': '#c0392b'
+            }
+          },
+          {
+            selector: 'node:selected',
+            style: {
+              'border-width': '5px',
+              'border-color': '#f39c12',
+              'width': '80px',
+              'height': '80px'
+            }
+          },
+          {
+            selector: 'node.highlighted',
+            style: {
+              'border-width': '5px',
+              'border-color': '#9b59b6'
+            }
+          },
+          {
+            selector: 'node.faded',
+            style: {
+              'opacity': 0.2
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 2,
+              'line-color': '#95a5a6',
+              'target-arrow-color': '#95a5a6',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'arrow-scale': 1.5,
+              'transition-property': 'line-color, target-arrow-color, width',
+              'transition-duration': '0.2s'
+            }
+          },
+          {
+            selector: 'edge.highlighted',
+            style: {
+              'line-color': '#9b59b6',
+              'target-arrow-color': '#9b59b6',
+              'width': 3
+            }
+          },
+          {
+            selector: 'edge.faded',
+            style: {
+              'opacity': 0.1
+            }
+          }
+        ],
+        
+        layout: {
+          name: 'breadthfirst',
+          directed: true,
+          spacingFactor: 1.5,
+          animate: true,
+          animationDuration: 500
+        }
+      });
+
+      // Event handlers
+      cy.on('tap', 'node', function(evt) {
+        const node = evt.target;
+        showNodeDetails(node.data());
+        highlightDependencies(node);
+      });
+
+      cy.on('tap', function(evt) {
+        if (evt.target === cy) {
+          clearHighlights();
+          showEmptyState();
+        }
+      });
+
+      // Controls
+      document.getElementById('layoutSelect').addEventListener('change', (e) => {
+        const layoutName = e.target.value;
+        cy.layout({
+          name: layoutName,
+          directed: true,
+          spacingFactor: 1.5,
+          animate: true,
+          animationDuration: 500
+        }).run();
+      });
+
+      document.getElementById('difficultyFilter').addEventListener('change', (e) => {
+        const filter = e.target.value;
+        filterByDifficulty(filter);
+      });
+
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        cy.fit();
+        clearHighlights();
+        showEmptyState();
+        document.getElementById('difficultyFilter').value = 'all';
+        cy.nodes().style('display', 'element');
+        cy.edges().style('display', 'element');
+      });
+    }
+
+    function showNodeDetails(nodeData) {
+      const infoDiv = document.getElementById('nodeInfo');
+      infoDiv.innerHTML = `
+        <h2>ℹ️ ${nodeData.label}</h2>
+        <p><span class="label">ID:</span> ${nodeData.id}</p>
+        <p><span class="label">Section:</span> ${nodeData.section}</p>
+        <p><span class="label">Difficulty:</span> ${nodeData.difficulty}</p>
+        <p><span class="label">Prerequisites:</span> ${nodeData.prerequisites.length || 'None'}</p>
+        <p style="margin-top: 1rem;"><span class="label">Description:</span><br>${nodeData.description}</p>
+      `;
+    }
+
+    function showEmptyState() {
+      const infoDiv = document.getElementById('nodeInfo');
+      infoDiv.innerHTML = `
+        <h2>ℹ️ Node Details</h2>
+        <p class="empty-state">Click a node to see details</p>
+      `;
+    }
+
+    function highlightDependencies(node) {
+      clearHighlights();
+      
+      // Get all predecessors (concepts this depends on)
+      const predecessors = node.predecessors();
+      
+      // Get all successors (concepts that depend on this)
+      const successors = node.successors();
+      
+      // Fade everything
+      cy.elements().addClass('faded');
+      
+      // Highlight the selected node and its dependencies
+      node.removeClass('faded').addClass('highlighted');
+      predecessors.removeClass('faded').addClass('highlighted');
+      successors.removeClass('faded');
+    }
+
+    function clearHighlights() {
+      cy.elements().removeClass('faded highlighted');
+    }
+
+    function filterByDifficulty(difficulty) {
+      if (difficulty === 'all') {
+        cy.nodes().style('display', 'element');
+        cy.edges().style('display', 'element');
+      } else {
+        cy.nodes().style('display', 'none');
+        cy.nodes(`[difficulty="${difficulty}"]`).style('display', 'element');
+        
+        // Show edges between visible nodes
+        cy.edges().style('display', 'none');
+        cy.nodes(`[difficulty="${difficulty}"]`).connectedEdges().style('display', 'element');
+      }
+      cy.fit();
+    }
+
+    function updateStats(data) {
+      document.getElementById('statTotal').textContent = data.statistics.total_concepts;
+      document.getElementById('statBasic').textContent = data.statistics.difficulty_breakdown.basic;
+      document.getElementById('statIntermediate').textContent = data.statistics.difficulty_breakdown.intermediate;
+      document.getElementById('statAdvanced').textContent = data.statistics.difficulty_breakdown.advanced;
+      document.getElementById('statEdges').textContent = data.statistics.total_edges;
+      document.getElementById('statDepth').textContent = data.statistics.max_depth;
+    }
+  </script>
+</body>
+</html>
