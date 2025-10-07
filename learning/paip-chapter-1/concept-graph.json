@@ -1,0 +1,1555 @@
+{
+  "metadata": {
+    "title": "PAIP Chapter 1: Introduction to Lisp - Pass 2 Sample",
+    "source": "Paradigms of Artificial Intelligence Programming",
+    "author": "Peter Norvig",
+    "description": "Complete concept graph with 33 concepts and 5 exercises",
+    "roots": [
+      "interactive_repl"
+    ],
+    "statistics": {
+      "total_concepts": 33,
+      "total_exercises": 5,
+      "difficulty_breakdown": {
+        "basic": 12,
+        "intermediate": 13,
+        "advanced": 8
+      },
+      "concepts_with_pedagogy": 3
+    }
+  },
+  "concepts": [
+    {
+      "id": "interactive_repl",
+      "name": "Interactive REPL",
+      "description": "Read-eval-print loop for entering expressions and seeing immediate results",
+      "prerequisites": [],
+      "difficulty": "basic",
+      "section": "1.0"
+    },
+    {
+      "id": "prefix_notation",
+      "name": "Prefix Notation",
+      "description": "Arithmetic expressions with operator first: (+ 2 2) instead of 2 + 2",
+      "prerequisites": [
+        "interactive_repl"
+      ],
+      "difficulty": "basic",
+      "section": "1.0"
+    },
+    {
+      "id": "function_application",
+      "name": "Function Application",
+      "description": "Evaluating arguments then applying function to results",
+      "prerequisites": [
+        "prefix_notation"
+      ],
+      "difficulty": "basic",
+      "section": "1.0"
+    },
+    {
+      "id": "nested_expressions",
+      "name": "Nested Expressions",
+      "description": "Using expressions as arguments to other expressions",
+      "prerequisites": [
+        "function_application"
+      ],
+      "difficulty": "basic",
+      "section": "1.0"
+    },
+    {
+      "id": "symbols",
+      "name": "Symbols",
+      "description": "Non-numeric atoms like John, Robin, append",
+      "prerequisites": [
+        "interactive_repl"
+      ],
+      "difficulty": "basic",
+      "section": "1.1"
+    },
+    {
+      "id": "lists",
+      "name": "Lists",
+      "description": "Sequences of elements enclosed in parentheses: (Pat Kim)",
+      "prerequisites": [
+        "symbols"
+      ],
+      "difficulty": "basic",
+      "section": "1.1"
+    },
+    {
+      "id": "nil",
+      "name": "NIL",
+      "description": "Empty list and false value, equivalent to ()",
+      "prerequisites": [
+        "lists"
+      ],
+      "difficulty": "basic",
+      "section": "1.4"
+    },
+    {
+      "id": "quote",
+      "name": "Quote",
+      "description": "Blocking evaluation with ' to treat expressions as data",
+      "prerequisites": [
+        "lists",
+        "symbols",
+        "function_application"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.1",
+      "learning_objectives": [
+        "Use single quote (') to prevent evaluation of expressions",
+        "Understand the distinction between data and code in Lisp",
+        "Recognize when quote is necessary vs. when it's not",
+        "Convert between 'x shorthand and (quote x) full form",
+        "Predict the result of quoted vs. unquoted expressions"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "quote_syntax",
+          "description": "Can correctly place single quote before expression",
+          "difficulty": "basic",
+          "test_method": "Ask: 'How do you write the list (a b c) as data?'"
+        },
+        {
+          "skill": "evaluation_blocking",
+          "description": "Understands that quote prevents evaluation",
+          "difficulty": "basic",
+          "test_method": "Compare: What does '(+ 2 2) return vs (+ 2 2)?"
+        },
+        {
+          "skill": "when_to_quote",
+          "description": "Can determine which expressions need quotes",
+          "difficulty": "intermediate",
+          "test_method": "Show expressions, ask which need quotes and why"
+        },
+        {
+          "skill": "quoted_vs_unquoted",
+          "description": "Can predict and explain results of quoted/unquoted forms",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'What happens if you evaluate John vs 'John and why?'"
+        },
+        {
+          "skill": "quote_expansion",
+          "description": "Understands that 'x is syntactic sugar for (quote x)",
+          "difficulty": "advanced",
+          "test_method": "Ask: 'What special form does 'John expand to?'"
+        }
+      ],
+      "examples": [
+        {
+          "content": "> 'John => JOHN\n> '(John Q Public) => (JOHN Q PUBLIC)",
+          "explanation": "Quote returns its argument unevaluated. Works on both symbols and lists.",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "quote_syntax",
+            "preventing_evaluation"
+          ]
+        },
+        {
+          "content": "> '2 => 2\n> 2 => 2",
+          "explanation": "Numbers evaluate to themselves, so quote makes no difference. Same result, different reason.",
+          "when_to_show": "self_evaluating_objects",
+          "demonstrates": [
+            "self_evaluation",
+            "when_quote_unnecessary"
+          ]
+        },
+        {
+          "content": "> '(+ 2 2) => (+ 2 2)\n> (+ 2 2) => 4",
+          "explanation": "Without quote, list is evaluated as function call. With quote, returned as data structure.",
+          "when_to_show": "data_vs_code",
+          "demonstrates": [
+            "code_as_data",
+            "evaluation_blocking"
+          ]
+        },
+        {
+          "content": "> John => *Error: JOHN is not a bound variable*\n> (John Q Public) => *Error: JOHN is not a function*",
+          "explanation": "Without quotes, symbols are looked up as variables, lists as function calls. These fail because undefined.",
+          "when_to_show": "common_errors",
+          "demonstrates": [
+            "evaluation_errors",
+            "why_quote_needed"
+          ]
+        },
+        {
+          "content": "'x ≡ (quote x)",
+          "explanation": "Single quote is abbreviation for the quote special form",
+          "when_to_show": "advanced_understanding",
+          "demonstrates": [
+            "syntactic_sugar",
+            "special_form"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "Numbers need to be quoted",
+          "reality": "Numbers are self-evaluating; quote is optional but redundant",
+          "correction_strategy": "Show that 2 and '2 both return 2"
+        },
+        {
+          "misconception": "Quote is only for symbols",
+          "reality": "Quote works on any expression: symbols, lists, numbers, etc.",
+          "correction_strategy": "Show examples: '(a b c), '(+ 1 2), 'John"
+        },
+        {
+          "misconception": "Quote changes or modifies the value",
+          "reality": "Quote doesn't change anything; it prevents evaluation",
+          "correction_strategy": "Emphasize: quote returns argument literally, unevaluated"
+        },
+        {
+          "misconception": "Quotes come in pairs like strings",
+          "reality": "Single quote in Lisp marks beginning; end is determined by expression structure",
+          "correction_strategy": "Explain: Lisp knows where expression ends (atom boundary or matching paren)"
+        },
+        {
+          "misconception": "Quote is the same as a string",
+          "reality": "Strings use double quotes and are different data type",
+          "correction_strategy": "Compare: 'John returns symbol JOHN, \"John\" returns string \"John\""
+        }
+      ],
+      "key_insights": [
+        "In Lisp, the same notation represents both code and data",
+        "Quote is the switch: turns off evaluation, treats expression as data",
+        "Self-evaluating objects (numbers, strings) don't need quotes",
+        "Quote is a special form because it must NOT evaluate its argument"
+      ]
+    },
+    {
+      "id": "quoted_vs_unquoted",
+      "name": "Quoted vs Unquoted",
+      "description": "Difference between 'x (symbol) and x (variable lookup)",
+      "prerequisites": [
+        "quote"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.1"
+    },
+    {
+      "id": "variables",
+      "name": "Variables",
+      "description": "Named storage locations that can hold values",
+      "prerequisites": [
+        "symbols",
+        "function_application"
+      ],
+      "difficulty": "basic",
+      "section": "1.2"
+    },
+    {
+      "id": "assignment_setf",
+      "name": "Assignment with setf",
+      "description": "Giving values to variables using the setf special form",
+      "prerequisites": [
+        "variables"
+      ],
+      "difficulty": "basic",
+      "section": "1.2"
+    },
+    {
+      "id": "special_forms",
+      "name": "Special Forms",
+      "description": "Syntactic expressions that don't follow normal evaluation rules",
+      "prerequisites": [
+        "function_application"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.3"
+    },
+    {
+      "id": "special_form_vs_function",
+      "name": "Special Form vs Function",
+      "description": "Why some operations (like setf) can't be regular functions",
+      "prerequisites": [
+        "special_forms",
+        "assignment_setf"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.3"
+    },
+    {
+      "id": "list_accessors",
+      "name": "List Accessors",
+      "description": "Functions to extract elements: first, rest, second, third, etc.",
+      "prerequisites": [
+        "lists"
+      ],
+      "difficulty": "basic",
+      "section": "1.4",
+      "learning_objectives": [
+        "Use first to extract the first element of a list",
+        "Use rest to get all elements after the first",
+        "Use second, third, fourth for specific positions",
+        "Understand that rest returns a list, not an atom",
+        "Chain accessors to navigate nested list structures",
+        "Recognize that accessing beyond list end returns NIL"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "first_usage",
+          "description": "Can use first to get first element",
+          "difficulty": "basic",
+          "test_method": "Ask: 'How do you get the first element of (a b c)?'"
+        },
+        {
+          "skill": "rest_usage",
+          "description": "Can use rest to get remaining elements",
+          "difficulty": "basic",
+          "test_method": "Ask: 'What does (rest '(a b c)) return?'"
+        },
+        {
+          "skill": "rest_returns_list",
+          "description": "Understands rest always returns a list (even with one element)",
+          "difficulty": "basic",
+          "test_method": "Ask: 'What's the difference between (first (rest x)) and (rest x)?'"
+        },
+        {
+          "skill": "positional_accessors",
+          "description": "Can use second, third, fourth, etc.",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'Get the third element of this list'"
+        },
+        {
+          "skill": "accessor_chaining",
+          "description": "Can chain multiple accessors to reach nested elements",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'How do you get Z from ((a b) (x y z))?'"
+        },
+        {
+          "skill": "nil_understanding",
+          "description": "Knows that accessing beyond list returns NIL",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'What does (fourth '(a b c)) return?'"
+        },
+        {
+          "skill": "nested_navigation",
+          "description": "Can navigate complex nested list structures",
+          "difficulty": "advanced",
+          "test_method": "Give nested list, ask to extract deeply nested element"
+        }
+      ],
+      "examples": [
+        {
+          "content": "> p => (JOHN Q PUBLIC)\n> (first p) => JOHN\n> (rest p) => (Q PUBLIC)\n> (second p) => Q\n> (third p) => PUBLIC\n> (fourth p) => NIL\n> (length p) => 3",
+          "explanation": "Basic accessor usage on a simple list. Note fourth returns NIL because list has only 3 elements.",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "basic_accessors",
+            "nil_result",
+            "list_length"
+          ]
+        },
+        {
+          "content": "> (setf x '((1st element) 2 (element 3) ((4)) 5))\n> (length x) => 5\n> (first x) => (1ST ELEMENT)\n> (second x) => 2\n> (third x) => (ELEMENT 3)\n> (fourth x) => ((4))",
+          "explanation": "List with mixed atom and list elements. Accessors return whatever is at that position, whether atom or list.",
+          "when_to_show": "heterogeneous_lists",
+          "demonstrates": [
+            "mixed_elements",
+            "lists_as_elements"
+          ]
+        },
+        {
+          "content": "> (first (fourth x)) => (4)\n> (first (first (fourth x))) => 4\n> (second (first x)) => ELEMENT",
+          "explanation": "Chaining accessors to reach nested elements. Read from inside out: (fourth x) gets ((4)), then (first ...) gets (4), then (first ...) gets 4.",
+          "when_to_show": "nested_access",
+          "demonstrates": [
+            "accessor_chaining",
+            "nested_lists",
+            "inside_out_reading"
+          ]
+        },
+        {
+          "content": "> (cons 'Mr p) => (MR JOHN Q PUBLIC)\n> (cons (first p) (rest p)) => (JOHN Q PUBLIC)",
+          "explanation": "Shows relationship between first/rest and cons: cons is the inverse operation",
+          "when_to_show": "relationship_to_constructors",
+          "demonstrates": [
+            "first_rest_identity",
+            "constructor_accessor_relationship"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "rest returns the last element",
+          "reality": "rest returns everything EXCEPT the first element (as a list)",
+          "correction_strategy": "Show: (rest '(a b c)) => (B C), not C"
+        },
+        {
+          "misconception": "rest returns atoms when there's one element left",
+          "reality": "rest ALWAYS returns a list, even (rest '(a b)) => (B) not B",
+          "correction_strategy": "Compare: (rest '(a b)) vs (second '(a b))"
+        },
+        {
+          "misconception": "Accessing beyond list length causes an error",
+          "reality": "Returns NIL, not an error",
+          "correction_strategy": "Show: (fourth '(a b c)) => NIL, this is valid"
+        },
+        {
+          "misconception": "Can't access nested elements",
+          "reality": "Can chain accessors: (first (third x))",
+          "correction_strategy": "Show step-by-step evaluation of chained accessors"
+        },
+        {
+          "misconception": "second means (rest (rest ...))",
+          "reality": "second means (first (rest ...)), gets second element",
+          "correction_strategy": "Show that (second x) ≡ (first (rest x))"
+        }
+      ],
+      "key_insights": [
+        "first and rest are the fundamental list accessors (second, third are built from them)",
+        "rest always returns a list, making it safe for recursion",
+        "Accessors can be chained to navigate nested structures",
+        "NIL is returned when accessing beyond list bounds (not an error)",
+        "List accessors work on any list, regardless of what elements contain"
+      ]
+    },
+    {
+      "id": "list_constructors",
+      "name": "List Constructors",
+      "description": "Functions to build lists: cons, list, append",
+      "prerequisites": [
+        "lists"
+      ],
+      "difficulty": "basic",
+      "section": "1.4"
+    },
+    {
+      "id": "sublists",
+      "name": "Sublists",
+      "description": "Lists containing other lists as elements",
+      "prerequisites": [
+        "lists",
+        "list_accessors"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.4"
+    },
+    {
+      "id": "defun",
+      "name": "Defun",
+      "description": "Special form for defining named functions",
+      "prerequisites": [
+        "function_application",
+        "special_forms"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.5"
+    },
+    {
+      "id": "parameters",
+      "name": "Function Parameters",
+      "description": "Variables that represent function inputs",
+      "prerequisites": [
+        "defun"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.5"
+    },
+    {
+      "id": "function_body",
+      "name": "Function Body",
+      "description": "Expressions that compute the function's result",
+      "prerequisites": [
+        "defun"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.5"
+    },
+    {
+      "id": "documentation_strings",
+      "name": "Documentation Strings",
+      "description": "Optional strings describing what functions do",
+      "prerequisites": [
+        "defun"
+      ],
+      "difficulty": "basic",
+      "section": "1.5"
+    },
+    {
+      "id": "recursion",
+      "name": "Recursion",
+      "description": "Functions calling themselves to solve problems",
+      "prerequisites": [
+        "defun",
+        "function_application",
+        "list_accessors"
+      ],
+      "difficulty": "advanced",
+      "section": "1.6",
+      "learning_objectives": [
+        "Identify the base case and recursive case in a recursive function",
+        "Trace the execution of a simple recursive function mentally",
+        "Explain why a recursive function terminates (doesn't run forever)",
+        "Write a recursive function that processes lists element by element",
+        "Apply the 'leap of faith' reasoning to understand recursion"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "base_case_identification",
+          "description": "Can identify which part of a recursive function stops the recursion",
+          "difficulty": "basic",
+          "test_method": "Show recursive function, ask student to point out base case"
+        },
+        {
+          "skill": "recursive_case_identification",
+          "description": "Can identify which part calls the function recursively",
+          "difficulty": "basic",
+          "test_method": "Show recursive function, ask student to point out recursive call"
+        },
+        {
+          "skill": "execution_tracing",
+          "description": "Can manually trace recursive calls with small input",
+          "difficulty": "intermediate",
+          "test_method": "Give recursive function and input, ask to show call sequence"
+        },
+        {
+          "skill": "termination_reasoning",
+          "description": "Can explain why recursion eventually stops",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'Why doesn't this function recurse forever?'"
+        },
+        {
+          "skill": "recursive_writing",
+          "description": "Can write correct recursive function for novel problem",
+          "difficulty": "advanced",
+          "test_method": "Give problem: 'Write function to do X recursively'"
+        },
+        {
+          "skill": "leap_of_faith",
+          "description": "Can reason about correctness without tracing all calls",
+          "difficulty": "advanced",
+          "test_method": "Ask student to prove correctness using inductive reasoning"
+        }
+      ],
+      "examples": [
+        {
+          "content": "(defun first-name (name)\n  \"Select the first name from a name represented as a list.\"\n  (if (member (first name) *titles*)\n      (first-name (rest name))\n      (first name)))",
+          "explanation": "Recursive function that strips titles from names. Base case: first element is not a title. Recursive case: skip first element and recurse on rest.",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "base_case",
+            "recursive_case",
+            "list_processing"
+          ]
+        },
+        {
+          "content": "> (first-name '(Madam Major General Paula Jones))\n(1 ENTER FIRST-NAME: (MADAM MAJOR GENERAL PAULA JONES))\n  (2 ENTER FIRST-NAME: (MAJOR GENERAL PAULA JONES))\n    (3 ENTER FIRST-NAME: (GENERAL PAULA JONES))\n      (4 ENTER FIRST-NAME: (PAULA JONES))\n      (4 EXIT FIRST-NAME: PAULA)\n    (3 EXIT FIRST-NAME: PAULA)\n  (2 EXIT FIRST-NAME: PAULA)\n(1 EXIT FIRST-NAME: PAULA)\nPAULA",
+          "explanation": "Trace output showing four recursive calls, each stripping one title until reaching the base case",
+          "when_to_show": "demonstrating_execution",
+          "demonstrates": [
+            "execution_tracing",
+            "multiple_recursive_calls"
+          ]
+        },
+        {
+          "content": "function first-name(name):\n    if the first element of name is a title\n        then return the first-name of the rest of the name\n        else return the first element of the name",
+          "explanation": "Abstract pattern showing the two-part structure: test condition, then either recurse or return base value",
+          "when_to_show": "teaching_pattern",
+          "demonstrates": [
+            "recursive_pattern",
+            "leap_of_faith"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "Recursion is mysterious or magical",
+          "reality": "It's just a function call - the same function happens to call itself",
+          "correction_strategy": "Show that recursive call is identical to any other function call"
+        },
+        {
+          "misconception": "Recursive functions run forever",
+          "reality": "Base case stops recursion, and each call makes progress toward it",
+          "correction_strategy": "Trace execution showing finite number of calls, emphasize base case"
+        },
+        {
+          "misconception": "You need to mentally track all recursive calls",
+          "reality": "Use 'leap of faith' - trust that recursive call works, verify base case and progress",
+          "correction_strategy": "Teach two-part correctness: (1) base case correct, (2) recursive case makes progress"
+        },
+        {
+          "misconception": "Recursion only works on lists",
+          "reality": "Works on any recursive data structure (trees, numbers, etc.)",
+          "correction_strategy": "Show example on numbers: factorial, fibonacci"
+        }
+      ],
+      "key_insights": [
+        "Every recursive function has at least one base case (stopping condition)",
+        "Every recursive call must make progress toward the base case",
+        "Recursive functions can be proven correct without tracing all calls",
+        "The 'leap of faith': assume recursive call works, verify you use it correctly"
+      ]
+    },
+    {
+      "id": "base_case",
+      "name": "Base Case",
+      "description": "Stopping condition for recursive functions",
+      "prerequisites": [
+        "recursion"
+      ],
+      "difficulty": "advanced",
+      "section": "1.6"
+    },
+    {
+      "id": "recursive_case",
+      "name": "Recursive Case",
+      "description": "Self-referential part of recursive function",
+      "prerequisites": [
+        "recursion"
+      ],
+      "difficulty": "advanced",
+      "section": "1.6"
+    },
+    {
+      "id": "function_reference_syntax",
+      "name": "Function Reference Syntax (#')",
+      "description": "Using #' to refer to functions as objects",
+      "prerequisites": [
+        "defun",
+        "symbols"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.6"
+    },
+    {
+      "id": "mapcar",
+      "name": "Mapcar",
+      "description": "Apply a function to each element of a list",
+      "prerequisites": [
+        "defun",
+        "lists",
+        "function_reference_syntax"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.6"
+    },
+    {
+      "id": "higher_order_functions",
+      "name": "Higher-Order Functions",
+      "description": "Functions that take other functions as arguments",
+      "prerequisites": [
+        "mapcar",
+        "defun"
+      ],
+      "difficulty": "advanced",
+      "section": "1.7"
+    },
+    {
+      "id": "trace_untrace",
+      "name": "Trace and Untrace",
+      "description": "Debugging tools to watch recursive function execution",
+      "prerequisites": [
+        "recursion"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.6"
+    },
+    {
+      "id": "lambda",
+      "name": "Lambda Expressions",
+      "description": "Anonymous functions without names",
+      "prerequisites": [
+        "defun",
+        "function_reference_syntax"
+      ],
+      "difficulty": "advanced",
+      "section": "1.7"
+    },
+    {
+      "id": "apply",
+      "name": "Apply",
+      "description": "Applying a function to a list of arguments",
+      "prerequisites": [
+        "function_application",
+        "lists"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.7"
+    },
+    {
+      "id": "funcall",
+      "name": "Funcall",
+      "description": "Applying a function to individual arguments",
+      "prerequisites": [
+        "function_application"
+      ],
+      "difficulty": "intermediate",
+      "section": "1.7"
+    },
+    {
+      "id": "closures",
+      "name": "Closures",
+      "description": "Functions that capture their lexical environment",
+      "prerequisites": [
+        "lambda"
+      ],
+      "difficulty": "advanced",
+      "section": "1.7"
+    },
+    {
+      "id": "evaluation_rules",
+      "name": "Evaluation Rules",
+      "description": "Formal rules for how Lisp evaluates expressions",
+      "prerequisites": [
+        "function_application",
+        "special_forms",
+        "symbols",
+        "lists"
+      ],
+      "difficulty": "advanced",
+      "section": "1.9"
+    },
+    {
+      "id": "reading_vs_evaluating",
+      "name": "Reading vs Evaluating",
+      "description": "Two-phase process: read text into data structures, then evaluate",
+      "prerequisites": [
+        "evaluation_rules"
+      ],
+      "difficulty": "advanced",
+      "section": "1.9"
+    }
+  ],
+  "edges": [
+    {
+      "from": "prefix_notation",
+      "to": "interactive_repl",
+      "type": "requires"
+    },
+    {
+      "from": "function_application",
+      "to": "prefix_notation",
+      "type": "requires"
+    },
+    {
+      "from": "nested_expressions",
+      "to": "function_application",
+      "type": "requires"
+    },
+    {
+      "from": "symbols",
+      "to": "interactive_repl",
+      "type": "requires"
+    },
+    {
+      "from": "lists",
+      "to": "symbols",
+      "type": "requires"
+    },
+    {
+      "from": "nil",
+      "to": "lists",
+      "type": "requires"
+    },
+    {
+      "from": "quote",
+      "to": "lists",
+      "type": "requires"
+    },
+    {
+      "from": "quote",
+      "to": "symbols",
+      "type": "requires"
+    },
+    {
+      "from": "quote",
+      "to": "function_application",
+      "type": "requires"
+    },
+    {
+      "from": "quoted_vs_unquoted",
+      "to": "quote",
+      "type": "requires"
+    },
+    {
+      "from": "variables",
+      "to": "symbols",
+      "type": "requires"
+    },
+    {
+      "from": "variables",
+      "to": "function_application",
+      "type": "requires"
+    },
+    {
+      "from": "assignment_setf",
+      "to": "variables",
+      "type": "requires"
+    },
+    {
+      "from": "special_forms",
+      "to": "function_application",
+      "type": "requires"
+    },
+    {
+      "from": "special_form_vs_function",
+      "to": "special_forms",
+      "type": "requires"
+    },
+    {
+      "from": "special_form_vs_function",
+      "to": "assignment_setf",
+      "type": "requires"
+    },
+    {
+      "from": "list_accessors",
+      "to": "lists",
+      "type": "requires"
+    },
+    {
+      "from": "list_constructors",
+      "to": "lists",
+      "type": "requires"
+    },
+    {
+      "from": "sublists",
+      "to": "lists",
+      "type": "requires"
+    },
+    {
+      "from": "sublists",
+      "to": "list_accessors",
+      "type": "requires"
+    },
+    {
+      "from": "defun",
+      "to": "function_application",
+      "type": "requires"
+    },
+    {
+      "from": "defun",
+      "to": "special_forms",
+      "type": "requires"
+    },
+    {
+      "from": "parameters",
+      "to": "defun",
+      "type": "requires"
+    },
+    {
+      "from": "function_body",
+      "to": "defun",
+      "type": "requires"
+    },
+    {
+      "from": "documentation_strings",
+      "to": "defun",
+      "type": "requires"
+    },
+    {
+      "from": "recursion",
+      "to": "defun",
+      "type": "requires"
+    },
+    {
+      "from": "recursion",
+      "to": "function_application",
+      "type": "requires"
+    },
+    {
+      "from": "recursion",
+      "to": "list_accessors",
+      "type": "requires"
+    },
+    {
+      "from": "base_case",
+      "to": "recursion",
+      "type": "requires"
+    },
+    {
+      "from": "recursive_case",
+      "to": "recursion",
+      "type": "requires"
+    },
+    {
+      "from": "function_reference_syntax",
+      "to": "defun",
+      "type": "requires"
+    },
+    {
+      "from": "function_reference_syntax",
+      "to": "symbols",
+      "type": "requires"
+    },
+    {
+      "from": "mapcar",
+      "to": "defun",
+      "type": "requires"
+    },
+    {
+      "from": "mapcar",
+      "to": "lists",
+      "type": "requires"
+    },
+    {
+      "from": "mapcar",
+      "to": "function_reference_syntax",
+      "type": "requires"
+    },
+    {
+      "from": "higher_order_functions",
+      "to": "mapcar",
+      "type": "requires"
+    },
+    {
+      "from": "higher_order_functions",
+      "to": "defun",
+      "type": "requires"
+    },
+    {
+      "from": "trace_untrace",
+      "to": "recursion",
+      "type": "requires"
+    },
+    {
+      "from": "lambda",
+      "to": "defun",
+      "type": "requires"
+    },
+    {
+      "from": "lambda",
+      "to": "function_reference_syntax",
+      "type": "requires"
+    },
+    {
+      "from": "apply",
+      "to": "function_application",
+      "type": "requires"
+    },
+    {
+      "from": "apply",
+      "to": "lists",
+      "type": "requires"
+    },
+    {
+      "from": "funcall",
+      "to": "function_application",
+      "type": "requires"
+    },
+    {
+      "from": "closures",
+      "to": "lambda",
+      "type": "requires"
+    },
+    {
+      "from": "evaluation_rules",
+      "to": "function_application",
+      "type": "requires"
+    },
+    {
+      "from": "evaluation_rules",
+      "to": "special_forms",
+      "type": "requires"
+    },
+    {
+      "from": "evaluation_rules",
+      "to": "symbols",
+      "type": "requires"
+    },
+    {
+      "from": "evaluation_rules",
+      "to": "lists",
+      "type": "requires"
+    },
+    {
+      "from": "reading_vs_evaluating",
+      "to": "evaluation_rules",
+      "type": "requires"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "ex_1_1",
+      "title": "Robust last-name function",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 20,
+      "prompt": "Define a version of last-name that handles \"Rex Morgan MD,\" \"Morton Downey, Jr.,\" and whatever other cases you can think of.",
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": [
+            "recursive_writing",
+            "base_case_identification",
+            "termination_reasoning"
+          ],
+          "weight": "primary",
+          "rationale": "Requires recursive thinking to handle variable-length names with titles/suffixes"
+        },
+        {
+          "concept_id": "list_accessors",
+          "mastery_indicators": [
+            "first_usage",
+            "rest_usage",
+            "accessor_chaining"
+          ],
+          "weight": "primary",
+          "rationale": "Must navigate list structure to examine and skip elements"
+        },
+        {
+          "concept_id": "defun",
+          "mastery_indicators": [
+            "function_definition",
+            "parameter_usage"
+          ],
+          "weight": "supporting",
+          "rationale": "Must define a named function with proper structure"
+        },
+        {
+          "concept_id": "list_constructors",
+          "mastery_indicators": [
+            "filtering_lists"
+          ],
+          "weight": "alternative_approach",
+          "rationale": "Could use filtering approach instead of recursion"
+        }
+      ],
+      "prerequisites": [
+        "recursion",
+        "list_accessors",
+        "defun",
+        "variables"
+      ],
+      "learning_opportunities": [
+        "Design decisions: what counts as a 'title' vs 'suffix'?",
+        "Edge cases: single-name persons, all-title lists",
+        "Data structure choice: hardcode patterns or use data?",
+        "Multiple valid solutions with different tradeoffs"
+      ],
+      "common_mistakes": [
+        "Only handling prefixes (Mr, Dr) but forgetting suffixes (Jr, MD)",
+        "Not handling edge case of single-word names",
+        "Hardcoding specific titles instead of using a pattern",
+        "Forgetting to use defparameter for extensible title list"
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "hint": "Think about what patterns indicate it's NOT the last name - both at the start AND end"
+        },
+        {
+          "level": 2,
+          "hint": "You might need to check both first and last elements of the name"
+        },
+        {
+          "level": 3,
+          "hint": "Consider using remove-if or filtering to clean the list before selecting the last name"
+        }
+      ],
+      "example_solutions": [
+        {
+          "approach": "recursive_with_suffix_check",
+          "difficulty": "intermediate",
+          "code": "(defparameter *suffixes* '(Jr Sr MD PhD III IV)\n  \"Common name suffixes\")\n\n(defun last-name (name)\n  \"Select the last name, handling titles and suffixes.\"\n  (let ((last-element (first (last name))))\n    (if (member last-element *suffixes*)\n        (last-name (butlast name))  ; Remove suffix, recurse\n        (if (member (first name) *titles*)\n            (last-name (rest name))  ; Remove title, recurse\n            last-element))))  ; Found it!",
+          "explanation": "Recursive approach: check last element for suffixes, first element for titles, recurse until clean.",
+          "demonstrates": [
+            "recursion",
+            "base_case",
+            "list_accessors",
+            "defparameter"
+          ]
+        },
+        {
+          "approach": "filter_then_select",
+          "difficulty": "intermediate",
+          "code": "(defun last-name (name)\n  \"Select the last name after removing titles and suffixes.\"\n  (let ((cleaned (remove-if \n                   #'(lambda (word) \n                       (or (member word *titles*)\n                           (member word *suffixes*)))\n                   name)))\n    (if cleaned\n        (first (last cleaned))\n        (first (last name)))))  ; Fallback if everything removed",
+          "explanation": "Functional approach: filter out titles/suffixes, then select last remaining element.",
+          "demonstrates": [
+            "higher_order_functions",
+            "lambda",
+            "list_constructors"
+          ]
+        }
+      ],
+      "followup_questions": [
+        "How would you handle hyphenated names like 'Mary-Beth'?",
+        "What if someone has multiple titles: 'Dr Prof John Smith'?",
+        "Could you extend this to extract middle names?"
+      ]
+    },
+    {
+      "id": "ex_1_2",
+      "title": "Exponentiation function",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 15,
+      "prompt": "Write a function to exponentiate, or raise a number to an integer power. For example: (power 3 2) = 3² = 9.",
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": [
+            "recursive_writing",
+            "base_case",
+            "recursive_case",
+            "termination_reasoning"
+          ],
+          "weight": "primary",
+          "rationale": "Classic recursive problem: x^n = x * x^(n-1)"
+        },
+        {
+          "concept_id": "defun",
+          "mastery_indicators": [
+            "function_definition",
+            "parameter_usage",
+            "documentation_strings"
+          ],
+          "weight": "supporting",
+          "rationale": "Must define function with two parameters"
+        },
+        {
+          "concept_id": "function_application",
+          "mastery_indicators": [
+            "arithmetic_operations",
+            "nested_expressions"
+          ],
+          "weight": "supporting",
+          "rationale": "Uses multiplication and recursive calls"
+        }
+      ],
+      "prerequisites": [
+        "recursion",
+        "defun",
+        "function_application",
+        "nested_expressions"
+      ],
+      "learning_opportunities": [
+        "Understanding mathematical induction in code",
+        "Base case: x^0 = 1",
+        "Optimization: using x^(n/2) for even exponents",
+        "Complexity analysis: O(n) vs O(log n)"
+      ],
+      "common_mistakes": [
+        "Forgetting base case (infinite recursion)",
+        "Wrong base case: returning 0 or x instead of 1",
+        "Not handling n=1 case explicitly (works but inefficient)",
+        "Off-by-one errors in recursive case"
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "hint": "What's the base case? What's the value of any number raised to the power of 0?"
+        },
+        {
+          "level": 2,
+          "hint": "How can you express 3^5 in terms of 3^4? What operation connects them?"
+        },
+        {
+          "level": 3,
+          "hint": "Advanced optimization: For even exponents, you can compute x^(n/2) once and square it. This reduces complexity from O(n) to O(log n)."
+        }
+      ],
+      "example_solutions": [
+        {
+          "approach": "simple_recursive",
+          "difficulty": "basic",
+          "code": "(defun power (x n)\n  \"Raise x to the nth power. N must be an integer >= 0.\"\n  (if (= n 0)\n      1\n      (* x (power x (- n 1)))))",
+          "explanation": "Simple recursive: base case n=0 returns 1, otherwise multiply x by x^(n-1). O(n) time.",
+          "demonstrates": [
+            "recursion",
+            "base_case",
+            "recursive_case"
+          ]
+        },
+        {
+          "approach": "optimized_recursive",
+          "difficulty": "advanced",
+          "code": "(defun power (x n)\n  \"Power raises x to the nth power. N must be an integer >= 0.\n   This executes in log n time, because of the check for even n.\"\n  (cond ((= n 0) 1)\n        ((evenp n) (expt (power x (/ n 2)) 2))\n        (t (* x (power x (- n 1))))))",
+          "explanation": "Optimized: for even n, compute x^(n/2) once and square it. Reduces complexity to O(log n).",
+          "demonstrates": [
+            "recursion",
+            "optimization",
+            "cond",
+            "multiple_cases"
+          ]
+        }
+      ],
+      "followup_questions": [
+        "How would you extend this to handle negative exponents?",
+        "What if x is 0 and n is 0? (0^0 is undefined)",
+        "Can you trace the optimized version on (power 2 8)? How many multiplications?"
+      ]
+    },
+    {
+      "id": "ex_1_3",
+      "title": "Count atoms in expression",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 20,
+      "prompt": "Write a function that counts the number of atoms in an expression. For example: (count-atoms '(a (b) c)) = 3. Notice that there is something of an ambiguity in this: should (a nil c) count as three atoms, or as two, because it is equivalent to (a () c)?",
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": [
+            "recursive_writing",
+            "multiple_recursive_calls",
+            "tree_recursion"
+          ],
+          "weight": "primary",
+          "rationale": "Requires recursion on BOTH first and rest - tree structure"
+        },
+        {
+          "concept_id": "sublists",
+          "mastery_indicators": [
+            "nested_navigation",
+            "tree_traversal"
+          ],
+          "weight": "primary",
+          "rationale": "Must recursively descend into nested list structure"
+        },
+        {
+          "concept_id": "list_accessors",
+          "mastery_indicators": [
+            "first_usage",
+            "rest_usage"
+          ],
+          "weight": "supporting",
+          "rationale": "Uses first/rest to decompose list"
+        },
+        {
+          "concept_id": "nil",
+          "mastery_indicators": [
+            "nil_as_empty_list",
+            "nil_handling"
+          ],
+          "weight": "secondary",
+          "rationale": "Exercise explicitly asks about nil treatment - design decision"
+        }
+      ],
+      "prerequisites": [
+        "recursion",
+        "sublists",
+        "list_accessors",
+        "nil"
+      ],
+      "learning_opportunities": [
+        "Tree recursion pattern: recurse on BOTH parts",
+        "Design decisions: nil as atom or not?",
+        "Understanding list internal structure",
+        "Multiple valid interpretations of problem"
+      ],
+      "conceptual_challenge": "The nil ambiguity is intentional - teaches that specifications matter. Is nil an atom? Depends on context!",
+      "common_mistakes": [
+        "Only recursing on rest, not first (misses nested atoms)",
+        "Counting empty lists as atoms",
+        "Not handling nil properly in base case",
+        "Confusion between (atom x) and (not (listp x))"
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "hint": "This is different from simple list recursion - you need to look inside sublists too"
+        },
+        {
+          "level": 2,
+          "hint": "You need TWO recursive calls: one on (first exp) to count atoms inside, one on (rest exp) to count the rest"
+        },
+        {
+          "level": 3,
+          "hint": "Think about your base cases: What if exp is nil? What if exp is an atom? What if exp is a list?"
+        }
+      ],
+      "example_solutions": [
+        {
+          "approach": "ignore_nil",
+          "difficulty": "intermediate",
+          "code": "(defun count-atoms (exp)\n  \"Return the total number of non-nil atoms in the expression.\"\n  (cond ((null exp) 0)\n        ((atom exp) 1)\n        (t (+ (count-atoms (first exp))\n              (count-atoms (rest exp))))))",
+          "explanation": "Treats nil as 0 atoms. Clean interpretation: empty list contributes nothing.",
+          "demonstrates": [
+            "tree_recursion",
+            "cond",
+            "multiple_cases"
+          ]
+        },
+        {
+          "approach": "count_nil_in_non_tail",
+          "difficulty": "advanced",
+          "code": "(defun count-all-atoms (exp &optional (if-null 1))\n  \"Return the total number of atoms in the expression,\n  counting nil as an atom only in non-tail position.\"\n  (cond ((null exp) if-null)\n        ((atom exp) 1)\n        (t (+ (count-all-atoms (first exp) 1)\n              (count-all-atoms (rest exp) 0)))))",
+          "explanation": "Sophisticated: nil counts as atom in non-tail position (explicit nil), but not at end of list.",
+          "demonstrates": [
+            "optional_parameters",
+            "context_dependent_logic",
+            "tree_recursion"
+          ]
+        }
+      ],
+      "followup_questions": [
+        "Which interpretation (count nil or not) is more useful? Why?",
+        "How would you count only symbols, excluding numbers?",
+        "Can you write this using mapcar and apply instead of explicit recursion?"
+      ]
+    },
+    {
+      "id": "ex_1_4",
+      "title": "Count occurrences anywhere",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 15,
+      "prompt": "Write a function that counts the number of times an expression occurs anywhere within another expression. Example: (count-anywhere 'a '(a ((a) b) a)) => 3.",
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": [
+            "recursive_writing",
+            "tree_recursion",
+            "multiple_recursive_calls"
+          ],
+          "weight": "primary",
+          "rationale": "Tree recursion pattern similar to count-atoms"
+        },
+        {
+          "concept_id": "sublists",
+          "mastery_indicators": [
+            "nested_navigation",
+            "tree_traversal"
+          ],
+          "weight": "primary",
+          "rationale": "Must search through nested structure"
+        },
+        {
+          "concept_id": "list_accessors",
+          "mastery_indicators": [
+            "first_usage",
+            "rest_usage"
+          ],
+          "weight": "supporting",
+          "rationale": "Decompose structure with first/rest"
+        }
+      ],
+      "prerequisites": [
+        "recursion",
+        "sublists",
+        "list_accessors"
+      ],
+      "learning_opportunities": [
+        "Similar structure to count-atoms but with matching condition",
+        "Understanding eql vs equal for matching",
+        "Three-case logic: found, not-found-atom, recurse-into-list"
+      ],
+      "common_mistakes": [
+        "Only checking if item is first element (missing nested occurrences)",
+        "Using equal instead of eql (works but slower)",
+        "Not handling the case where tree itself equals item",
+        "Forgetting to add results from both recursive calls"
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "hint": "This is very similar to count-atoms, but you're looking for a specific item"
+        },
+        {
+          "level": 2,
+          "hint": "Three cases: (1) tree itself equals item, (2) tree is an atom but doesn't match, (3) tree is a list, recurse"
+        },
+        {
+          "level": 3,
+          "hint": "Use eql to test equality between item and tree"
+        }
+      ],
+      "example_solutions": [
+        {
+          "approach": "tree_recursion",
+          "difficulty": "intermediate",
+          "code": "(defun count-anywhere (item tree)\n  \"Count the times item appears anywhere within tree.\"\n  (cond ((eql item tree) 1)\n        ((atom tree) 0)\n        (t (+ (count-anywhere item (first tree))\n              (count-anywhere item (rest tree))))))",
+          "explanation": "Three-case cond: found it (1), not in atom (0), or recurse into structure adding results.",
+          "demonstrates": [
+            "tree_recursion",
+            "eql_test",
+            "three_case_logic"
+          ]
+        }
+      ],
+      "followup_questions": [
+        "What's the difference between eql and equal? When would equal be necessary?",
+        "How would you find the POSITIONS of all occurrences (not just count)?",
+        "Can you modify this to find the first occurrence and return the path to it?"
+      ],
+      "comparison_to": "ex_1_3",
+      "comparison_note": "Same recursive structure as count-atoms, but with item matching instead of universal counting"
+    },
+    {
+      "id": "ex_1_5",
+      "title": "Dot product",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 20,
+      "prompt": "Write a function to compute the dot product of two sequences of numbers, represented as lists. The dot product is computed by multiplying corresponding elements and then adding up the resulting products. Example: (dot-product '(10 20) '(3 4)) = 10 × 3 + 20 × 4 = 110",
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": [
+            "recursive_writing",
+            "parallel_recursion",
+            "termination_reasoning"
+          ],
+          "weight": "primary",
+          "rationale": "Can solve with recursion on two lists in parallel"
+        },
+        {
+          "concept_id": "list_accessors",
+          "mastery_indicators": [
+            "first_usage",
+            "rest_usage"
+          ],
+          "weight": "supporting",
+          "rationale": "Decompose both lists simultaneously"
+        },
+        {
+          "concept_id": "mapcar",
+          "mastery_indicators": [
+            "mapcar_usage",
+            "binary_functions",
+            "parallel_mapping"
+          ],
+          "weight": "alternative_primary",
+          "rationale": "Elegant solution using mapcar to multiply pairs"
+        },
+        {
+          "concept_id": "apply",
+          "mastery_indicators": [
+            "apply_usage",
+            "function_to_list"
+          ],
+          "weight": "alternative_primary",
+          "rationale": "Use apply to sum the mapped results"
+        },
+        {
+          "concept_id": "higher_order_functions",
+          "mastery_indicators": [
+            "functional_composition",
+            "higher_order_thinking"
+          ],
+          "weight": "alternative_primary",
+          "rationale": "Demonstrates power of higher-order functions"
+        }
+      ],
+      "prerequisites": [
+        "recursion",
+        "list_accessors"
+      ],
+      "optional_prerequisites": [
+        "mapcar",
+        "apply",
+        "higher_order_functions"
+      ],
+      "learning_opportunities": [
+        "Multiple valid approaches: recursive vs functional",
+        "Parallel iteration over two lists",
+        "Composition: mapcar → apply",
+        "Comparing approaches: clarity vs conciseness"
+      ],
+      "multiple_approaches": true,
+      "approach_comparison": "Recursive version is more explicit, functional version is more elegant. Both are correct.",
+      "common_mistakes": [
+        "Forgetting base case (both lists empty)",
+        "Not handling lists of different lengths",
+        "In functional approach: forgetting #' before function names",
+        "Confusing apply and funcall"
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "hint": "Think about the structure: multiply first elements, add to result of rest"
+        },
+        {
+          "level": 2,
+          "hint": "What's your base case? When should recursion stop?"
+        },
+        {
+          "level": 3,
+          "hint": "Alternative approach: Can you use mapcar to multiply corresponding pairs? Then how would you sum the results?"
+        },
+        {
+          "level": 4,
+          "hint": "The apply function can apply + to a list of numbers: (apply #'+ '(1 2 3)) => 6"
+        }
+      ],
+      "example_solutions": [
+        {
+          "approach": "simple_recursive",
+          "difficulty": "basic",
+          "code": "(defun dot-product (a b)\n  \"Compute the mathematical dot product of two vectors.\"\n  (if (or (null a) (null b))\n      0\n      (+ (* (first a) (first b))\n         (dot-product (rest a) (rest b)))))",
+          "explanation": "Recursive: multiply first elements, add to recursive call on rest. Stops when either list is empty.",
+          "demonstrates": [
+            "recursion",
+            "parallel_iteration",
+            "base_case"
+          ]
+        },
+        {
+          "approach": "iterative_with_loop",
+          "difficulty": "intermediate",
+          "code": "(defun dot-product (a b)\n  \"Compute the mathematical dot product of two vectors.\"\n  (let ((sum 0))\n    (dotimes (i (length a))\n      (incf sum (* (elt a i) (elt b i))))\n    sum))",
+          "explanation": "Iterative: use loop to accumulate sum. Uses indexed access with elt.",
+          "demonstrates": [
+            "iteration",
+            "dotimes",
+            "accumulation",
+            "let"
+          ]
+        },
+        {
+          "approach": "functional_mapcar_apply",
+          "difficulty": "advanced",
+          "code": "(defun dot-product (a b)\n  \"Compute the mathematical dot product of two vectors.\"\n  (apply #'+ (mapcar #'* a b)))",
+          "explanation": "Elegant functional: mapcar multiplies pairs element-wise, apply sums them all. Most concise!",
+          "demonstrates": [
+            "mapcar",
+            "apply",
+            "higher_order_functions",
+            "functional_composition"
+          ]
+        }
+      ],
+      "pedagogical_value": "This exercise beautifully demonstrates that functional programming can be more expressive than imperative/recursive approaches. The mapcar/apply solution is 1 line vs 4-5 for recursive.",
+      "followup_questions": [
+        "What happens if the lists have different lengths?",
+        "How would you modify this to compute the cross product instead?",
+        "Can you use reduce instead of apply to sum the products?"
+      ]
+    }
+  ],
+  "concept_to_exercises": {
+    "recursion": [
+      "ex_1_1",
+      "ex_1_2",
+      "ex_1_3",
+      "ex_1_4",
+      "ex_1_5"
+    ],
+    "list_accessors": [
+      "ex_1_1",
+      "ex_1_3",
+      "ex_1_4",
+      "ex_1_5"
+    ],
+    "defun": [
+      "ex_1_1",
+      "ex_1_2"
+    ],
+    "list_constructors": [
+      "ex_1_1"
+    ],
+    "function_application": [
+      "ex_1_2"
+    ],
+    "sublists": [
+      "ex_1_3",
+      "ex_1_4"
+    ],
+    "nil": [
+      "ex_1_3"
+    ],
+    "mapcar": [
+      "ex_1_5"
+    ],
+    "apply": [
+      "ex_1_5"
+    ],
+    "higher_order_functions": [
+      "ex_1_5"
+    ]
+  }
+}

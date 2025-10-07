@@ -409,6 +409,347 @@ If the textbook author believes one path is strictly superior:
 
 ---
 
+## Learning Path Progression: Design Decisions
+
+### The Core Challenge
+
+Once a learner starts at a root concept (e.g., "Interactive REPL" or "Symbols"), **how should they progress through the graph?**
+
+Key questions:
+1. What order should concepts be learned?
+2. How do we respect both **prerequisites** and **difficulty levels**?
+3. How do we provide guidance without forcing a single path?
+4. How do we visually communicate progress and next steps?
+
+---
+
+### Progression Strategy Options
+
+#### Option 1: "Greedy Ready" ⭐ *Recommended*
+
+**Algorithm:**
+```javascript
+function getRecommendedNext(masteredConcepts) {
+  // Find all concepts whose prerequisites are satisfied
+  const ready = concepts.filter(c => 
+    !masteredConcepts.includes(c.id) &&
+    c.prerequisites.every(p => masteredConcepts.includes(p))
+  );
+  
+  // Sort by difficulty (basic → intermediate → advanced)
+  // Tie-breaker: which unlocks more concepts?
+  return ready.sort((a, b) => {
+    if (a.difficulty !== b.difficulty) {
+      return difficultyRank[a.difficulty] - difficultyRank[b.difficulty];
+    }
+    return countUnlocks(b) - countUnlocks(a);
+  }).slice(0, 5); // Top 5 recommendations
+}
+```
+
+**How it works:**
+1. At any moment, identify all concepts whose prerequisites are **satisfied**
+2. Among "ready to learn" concepts, **prioritize by difficulty**: Basic → Intermediate → Advanced
+3. Within same difficulty, prefer concepts that unlock more downstream concepts
+4. Present top 3-5 as recommendations; user chooses
+
+**Example progression from Symbols:**
+```
+Symbols ✓ (mastered)
+  ↓
+Ready: Lists, Quote, Variables, FunctionRefSyntax, Assignment (all Basic)
+User picks: Lists ✓
+  ↓
+Ready: ListAccessors, ListConstructors, NIL, Sublists, Quote, Variables, ... (all Basic)
+User picks: NIL ✓
+  ↓
+Ready: [previous] + NestedExpressions (newly unlocked)
+  ↓
+... continues ...
+```
+
+**Pros:**
+- ✅ Respects dependencies (never suggests something you're not ready for)
+- ✅ Natural difficulty progression (build foundation before tackling hard concepts)
+- ✅ Always shows forward progress
+- ✅ User retains choice among ready concepts
+- ✅ Optimizes for unlocking (prefers concepts that open up more paths)
+
+**Cons:**
+- ⚠️ May jump between branches (not strict depth-first within one subtree)
+- ⚠️ Requires computing "ready set" on each state change
+
+---
+
+#### Option 2: Depth-First by Difficulty
+
+**Algorithm:**
+1. Start at root (e.g., Symbols)
+2. Follow one path, learning ALL basic concepts until hitting intermediate/advanced
+3. Backtrack, try next basic path
+4. Once all reachable basics are exhausted, tackle intermediates
+5. Finally tackle advanced concepts
+
+**Pros:**
+- ✅ Master all easy material before harder concepts
+- ✅ Builds solid foundation systematically
+
+**Cons:**
+- ❌ May get "stuck" - a basic concept deep in a branch might be blocked by intermediate concepts
+- ❌ Less natural flow (why learn one branch completely before touching another?)
+- ❌ Arbitrary which branch to follow first
+
+**Verdict:** Too rigid; doesn't respect natural learning curiosity
+
+---
+
+#### Option 3: Breadth-First (Level-by-Level)
+
+**Algorithm:**
+1. Master root (Symbols)
+2. Master ALL direct children (Lists, Quote, Variables, etc.)
+3. Master all grandchildren
+4. Continue level-by-level down the DAG
+
+**Pros:**
+- ✅ Systematic coverage
+- ✅ Clear sense of progress (depth levels)
+
+**Cons:**
+- ❌ Ignores difficulty - might attempt advanced concepts before having sufficient foundation
+- ❌ Can feel forced (why must I learn ALL siblings before any children?)
+- ❌ Doesn't optimize for learning efficiency
+
+**Verdict:** Too mechanical; treats all concepts equally regardless of difficulty
+
+---
+
+#### Option 4: Interest-Driven with Smart Suggestions
+
+**Algorithm:**
+1. User can click ANY node at any time to inspect status
+2. System shows clear visual states (locked/ready/mastered)
+3. System highlights "recommended next" using Greedy Ready algorithm
+4. User can follow recommendations OR jump to any ready concept
+
+**Pros:**
+- ✅ Maximum learner autonomy
+- ✅ System provides guidance without forcing
+- ✅ Respects intrinsic motivation ("I'm curious about recursion!")
+- ✅ Learner can optimize for their own goals
+
+**Cons:**
+- ⚠️ User might make suboptimal choices (attempting concepts before ready)
+- ⚠️ Requires excellent UI to communicate locked vs. ready states
+- ⚠️ Some learners prefer more structure/direction
+
+**Verdict:** Good for advanced learners; might overwhelm beginners
+
+---
+
+### Our Design: Hybrid "Guided Greedy Ready"
+
+**Approach:** Combine the structure of Greedy Ready (Option 1) with the autonomy of Interest-Driven (Option 4)
+
+**Key principles:**
+1. **Guide, don't force:** Highlight recommended next steps, but allow exploration
+2. **Make readiness obvious:** Clear visual distinction between locked, ready, and mastered
+3. **Provide context:** When user clicks locked concept, show prerequisite chain
+4. **Celebrate progress:** Visual feedback when concepts are mastered and new concepts unlock
+
+---
+
+### Visual State Design
+
+The graph uses five distinct visual states to communicate learning status:
+
+#### 👑 Mastered (Completed)
+- **Background:** Gold/yellow gradient
+- **Icon:** ✓ checkmark badge
+- **Border:** Solid gold (3px)
+- **Opacity:** 100% (stay visible)
+- **Interaction:** Click → "What this unlocked" + review learning objectives
+
+**Why gold?** Positive reinforcement; achievement; valuable progress
+
+#### ✨ Recommended Next (Top 3-5 ready concepts)
+- **Background:** Original difficulty color (green/blue/red)
+- **Glow:** Pulsing green animation (subtle, 1.5s cycle)
+- **Border:** Bright green (2px)
+- **Icon:** ⭐ star or sparkles
+- **Interaction:** Click → "Start Learning" modal
+
+**Why pulse?** Draws attention without being distracting; suggests "this is active/available"
+
+#### ✅ Ready to Learn (Prerequisites met, but not top recommendation)
+- **Background:** Original difficulty color
+- **Brightness:** +10% brighter than locked
+- **Border:** Normal
+- **Opacity:** 100%
+- **Interaction:** Click → "Start Learning" modal
+
+**Why brighter?** Distinguishable from locked, but less attention-grabbing than recommended
+
+#### 🔓 Almost Ready (Missing 1-2 prerequisites)
+- **Background:** Original difficulty color
+- **Opacity:** 60%
+- **Border:** Dashed gray
+- **Badge:** "1 away" or "2 away"
+- **Interaction:** Click → Show what's blocking + shortest path
+
+**Why show this?** Motivates learners to see they're close; helps planning
+
+#### 🔒 Locked (Missing 3+ prerequisites)
+- **Background:** Original difficulty color
+- **Opacity:** 30%
+- **Icon:** 🔒 padlock overlay
+- **Border:** None
+- **Interaction:** Click → Show prerequisite tree + shortest path to unlock
+
+**Why locked?** Clear visual signal that this is not accessible yet
+
+---
+
+### Example User Journey
+
+```
+=== START ===
+User lands on visualizer
+Graph shows: Interactive REPL and Symbols glowing as roots
+Welcome modal: "Start with Interactive REPL or Symbols!"
+
+User clicks: Symbols
+Modal displays:
+  - Description
+  - Learning objectives
+  - Examples
+  - [Start Learning] button
+
+=== AFTER MASTERING SYMBOLS ===
+Graph updates:
+  ✓ Symbols → gold with checkmark
+  ✨ 5 concepts start pulsing: Lists, Quote, Variables, FunctionRefSyntax, Assignment
+  📊 Stats panel: "5 new concepts unlocked!"
+  🎉 Subtle confetti animation (optional)
+
+User hovers: Lists (recommended)
+Tooltip: "⭐ Recommended • Basic • Unlocks 4 concepts"
+
+User clicks: Lists
+Modal: Learning objectives + [Start Learning]
+
+=== USER GETS CURIOUS ===
+User clicks: Recursion (locked, advanced, needs 5 prerequisites)
+Modal shows:
+  "🔒 Not ready yet! You need:
+   ✓ Symbols (done!)
+   🔒 Defun
+   🔒 Function Application
+   🔒 List Accessors
+   
+   📍 Shortest path:
+   You → Defun → List Accessors → Function Application → Recursion
+   (Estimated 3 concepts away)
+   
+   [Show Path on Graph] button"
+
+User clicks: [Show Path on Graph]
+Graph highlights: recommended path with animated arrows
+
+User: "Ah, I see!" Follows the path
+```
+
+---
+
+### Implementation Roadmap
+
+#### Phase 1: Basic Progress Tracking ✅ *Complete*
+- [x] Track masteredConcepts in localStorage
+- [x] Visual distinction for mastered (gold + checkmark)
+- [x] Stats panel showing mastered/in-progress/ready/locked counts
+- [x] Click concept to mark as mastered/in-progress
+
+#### Phase 2: Smart Recommendations 🚧 *Next*
+- [ ] Implement `getReadyConcepts(mastered)` algorithm
+- [ ] Add "Recommended Next" visual state (pulsing glow)
+- [ ] Sort recommendations by difficulty + unlock potential
+- [ ] Display recommended concepts in sidebar
+
+#### Phase 3: Dependency Visualization
+- [ ] Implement `getLockedReasons(conceptId, mastered)`
+- [ ] Show prerequisite tree when clicking locked concept
+- [ ] Calculate and display "shortest path to unlock"
+- [ ] Highlight paths on graph with animated flow
+
+#### Phase 4: Enhanced Learning Flow
+- [ ] Add "Start Learning" modal with objectives
+- [ ] Track "in-progress" state (started but not mastered)
+- [ ] Show "What this unlocked" when completing a concept
+- [ ] Add celebration animations for milestones
+
+#### Phase 5: Pedagogical Integration
+- [ ] Display learning objectives from Pass 2 data
+- [ ] Show examples and misconceptions
+- [ ] Link to exercises that test this concept (Pass 3)
+- [ ] Track time spent per concept
+
+---
+
+### Design Tradeoffs
+
+#### Autonomy vs. Guidance
+**Tension:** Some learners want clear prescribed paths; others want freedom to explore
+
+**Our choice:** Guide with recommendations, but allow clicking any ready concept
+- Beginners can follow the glowing path
+- Advanced learners can explore based on interest
+- System always prevents tackling concepts before prerequisites are met
+
+#### Visual Clutter vs. Information Richness
+**Tension:** More visual states = more information, but also more complexity
+
+**Our choice:** Five states is the maximum before it becomes overwhelming
+- We group concepts with 3+ missing prerequisites into single "locked" state
+- "Almost ready" (1-2 away) gets special treatment because it's actionable
+
+#### Optimizing for Speed vs. Depth
+**Tension:** Fastest path through graph vs. deepest understanding
+
+**Our choice:** Recommend easiest-first, but don't prevent tackling harder concepts
+- Default path builds solid foundation
+- Advanced learners can skip ahead if prerequisites are met
+- System never lies about readiness
+
+---
+
+### Future Enhancements
+
+#### Adaptive Recommendations
+Use learning history to personalize recommendations:
+- If user consistently chooses advanced concepts, suggest those more
+- If user struggles with a difficulty level, recommend more prerequisites
+- Track time-to-mastery and adjust pace
+
+#### Multiple Learning Styles
+Offer different progression presets:
+- "Breadth-first explorer" - level-by-level
+- "Depth-first specialist" - one subtree at a time
+- "Efficient speedrunner" - shortest path to advanced concepts
+- "Thorough scholar" - revisit and reinforce frequently
+
+#### Social Features
+- Share your learning path with others
+- See what path other learners took
+- "Racing" mode - compete to master concepts fastest
+- Collaborative learning - discuss concepts with peers
+
+#### Spaced Repetition
+- Mark mastered concepts for review after 1 week, 1 month, 3 months
+- Periodic "knowledge checks" on previously mastered material
+- Adjust visual state if review is needed ("needs refresh")
+
+---
+
 *Last updated: 2025-01-06*
 *See CONTEXT.md for complete project design document*
 # Pedagogical Concept Graph (PCG) - Visualization Notes
