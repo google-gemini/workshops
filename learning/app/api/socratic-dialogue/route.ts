@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // Gemini doesn't support system role, so we prepend it to the first user message
     const geminiContents = convertToGeminiFormat(systemPrompt, conversationHistory);
 
-    // Call Google Gemini API
+    // Call Google Gemini API with structured output
     const model = 'gemini-2.5-flash'; // Fast and intelligent model with best price-performance
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -39,7 +39,41 @@ export async function POST(request: NextRequest) {
           contents: geminiContents,
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 500,
+            maxOutputTokens: 800,
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: 'object',
+              properties: {
+                message: {
+                  type: 'string',
+                  description: 'The Socratic dialogue response to the student',
+                },
+                mastery_assessment: {
+                  type: 'object',
+                  properties: {
+                    indicators_demonstrated: {
+                      type: 'array',
+                      items: { type: 'string' },
+                      description: 'Array of skill IDs that the student demonstrated in this exchange',
+                    },
+                    confidence: {
+                      type: 'number',
+                      description: 'Confidence level (0-1) in the assessment',
+                    },
+                    ready_for_mastery: {
+                      type: 'boolean',
+                      description: 'True if student has demonstrated sufficient mastery to complete the concept',
+                    },
+                    next_focus: {
+                      type: 'string',
+                      description: 'Which skill or area to focus on next',
+                    },
+                  },
+                  required: ['indicators_demonstrated', 'confidence', 'ready_for_mastery'],
+                },
+              },
+              required: ['message', 'mastery_assessment'],
+            },
           },
         }),
       }
@@ -55,10 +89,29 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    const aiMessage = data.candidates[0].content.parts[0].text;
+    const responseText = data.candidates[0].content.parts[0].text;
+    
+    // Parse the JSON response
+    let parsedResponse;
+    try {
+      parsedResponse = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse JSON response:', responseText);
+      // Fallback: treat as plain text
+      parsedResponse = {
+        message: responseText,
+        mastery_assessment: {
+          indicators_demonstrated: [],
+          confidence: 0,
+          ready_for_mastery: false,
+          next_focus: 'Continue the dialogue',
+        },
+      };
+    }
 
     return NextResponse.json({
-      message: aiMessage,
+      message: parsedResponse.message,
+      mastery_assessment: parsedResponse.mastery_assessment,
       usage: data.usageMetadata,
     });
 
@@ -135,6 +188,25 @@ ${misconceptions?.map((m: any) => `- "${m.misconception}" → Reality: ${m.reali
 6. Be encouraging and patient
 7. Keep responses concise (2-3 sentences with one focused question)
 8. When the student demonstrates mastery of the core skills, conclude with encouragement
+
+**Mastery Assessment Instructions:**
+After each student response, evaluate which mastery indicators they demonstrated:
+- Set "indicators_demonstrated" to array of skill IDs (e.g., ["quote_syntax", "evaluation_blocking"])
+- Set "confidence" between 0-1 based on how clearly they showed understanding
+- Set "ready_for_mastery" to true only when student has demonstrated ALL critical basic indicators and most intermediate ones
+- Set "next_focus" to suggest which skill to probe next, or congratulate if mastery achieved
+
+**Response Format:**
+Return JSON with:
+{
+  "message": "Your Socratic response here",
+  "mastery_assessment": {
+    "indicators_demonstrated": ["skill_id1", "skill_id2"],
+    "confidence": 0.85,
+    "ready_for_mastery": false,
+    "next_focus": "Let's explore X next..."
+  }
+}
 
 **Example Interaction Pattern:**
 - Start with an open question about their understanding

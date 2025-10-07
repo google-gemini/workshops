@@ -2084,6 +2084,168 @@ useEffect(() => {
 
 ---
 
+### Structured Mastery Assessment: Tracking Learning Progress (2025-01-07)
+
+**Problem:** After implementing the Socratic dialogue system, we realized there was no automated way to determine when a learner had actually mastered a concept. The LLM would say "Great job!" but:
+- We couldn't track which specific mastery indicators were demonstrated
+- We didn't know when ALL indicators were satisfied
+- We couldn't automatically mark concepts as mastered in the UI
+- Progress couldn't be saved or visualized
+
+**The Question:** How can we programmatically evaluate mastery during a Socratic dialogue?
+
+**Options Considered:**
+
+1. **Structured JSON Output** ⭐ *Selected*
+   - LLM returns both message and mastery assessment in JSON
+   - Single API call per exchange
+   - Gemini supports JSON schema natively
+   - Progressive skill tracking across conversation
+   
+2. **Function Calling / Tool Use**
+   - LLM calls `mark_indicator_demonstrated` function
+   - More flexible, incremental tracking
+   - But more complex implementation
+   
+3. **Separate Evaluation API Call**
+   - Second API call to evaluate after each student response
+   - Clean separation of concerns
+   - But 2x API calls (cost + latency)
+
+**Solution Implemented:** Structured JSON Output with JSON Schema
+
+**Implementation Details:**
+
+Modified `/api/socratic-dialogue/route.ts` to request structured evaluation:
+
+```typescript
+body: JSON.stringify({
+  contents: geminiContents,
+  generationConfig: {
+    temperature: 0.7,
+    maxOutputTokens: 800,
+    responseMimeType: 'application/json',
+    responseSchema: {
+      type: 'object',
+      properties: {
+        message: {
+          type: 'string',
+          description: 'The Socratic dialogue response'
+        },
+        mastery_assessment: {
+          type: 'object',
+          properties: {
+            indicators_demonstrated: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Array of skill IDs demonstrated in this exchange'
+            },
+            confidence: {
+              type: 'number',
+              description: 'Confidence level (0-1) in the assessment'
+            },
+            ready_for_mastery: {
+              type: 'boolean',
+              description: 'True if student has demonstrated sufficient mastery'
+            },
+            next_focus: {
+              type: 'string',
+              description: 'Which skill or area to focus on next'
+            }
+          },
+          required: ['indicators_demonstrated', 'confidence', 'ready_for_mastery']
+        }
+      },
+      required: ['message', 'mastery_assessment']
+    }
+  }
+})
+```
+
+**Example LLM Response:**
+```json
+{
+  "message": "Excellent reasoning! You clearly understand how quote prevents evaluation...",
+  "mastery_assessment": {
+    "indicators_demonstrated": ["quote_syntax", "evaluation_blocking"],
+    "confidence": 0.9,
+    "ready_for_mastery": false,
+    "next_focus": "Let's explore when to use quote in practice..."
+  }
+}
+```
+
+**Component Integration:**
+
+Updated `SocraticDialogue.tsx` to:
+1. Track `demonstratedSkills` as a Set (accumulates across conversation)
+2. Track `readyForMastery` boolean state
+3. Show progress bar: "X / Y skills demonstrated"
+4. Display green progress bar that fills as skills are demonstrated
+5. Show "Mark as Mastered" button when `ready_for_mastery: true`
+
+**Progress Visualization:**
+```
+Progress: 2 / 5 skills demonstrated
+[████████░░░░░░░░░░░░░░░] 40%
+
+✨ Ready for mastery!  [Mark as Mastered]
+```
+
+**Bug Fix: Concepts Without Mastery Indicators**
+
+**Issue discovered:** "Interactive REPL" concept has no `mastery_indicators` defined (only 3 concepts in concept-graph.json have full pedagogical enrichment). When testing with this concept:
+- The LLM correctly returned `ready_for_mastery: true`
+- But the "Mark as Mastered" button didn't appear
+- Reason: UI condition was `{totalIndicators > 0 && ...}`
+- Result: Progress UI was hidden entirely for basic concepts
+
+**Solution:** Modified `SocraticDialogue.tsx` to show two UI modes:
+
+1. **Concepts WITH mastery indicators** (Quote, List Accessors, Recursion):
+   - Show progress bar: "2 / 5 skills demonstrated"
+   - Track and display individual skills
+   - Show "Mark as Mastered" when ready
+
+2. **Concepts WITHOUT mastery indicators** (Interactive REPL, Symbols, etc.):
+   - Skip progress bar (no skills to track)
+   - Still show "Mark as Mastered" button when LLM determines readiness
+   - Fallback UI mode for basic concepts
+
+**Code change:**
+```typescript
+{totalIndicators > 0 ? (
+  // Full progress tracking UI
+  <div className="progress-bar">...</div>
+) : (
+  // Fallback: Just show button when ready
+  readyForMastery && (
+    <Button onClick={handleMarkAsMastered}>
+      Mark as Mastered
+    </Button>
+  )
+)}
+```
+
+**Impact:**
+- ✅ Works with both enriched and basic concepts
+- ✅ Progressive skill tracking for detailed concepts
+- ✅ LLM-driven mastery assessment for basic concepts
+- ✅ Visual feedback motivates learners
+- ✅ Graceful degradation for incomplete pedagogy data
+
+**Next Steps:**
+1. Complete Pass 2 enrichment for all 33 concepts (add mastery indicators)
+2. Save mastered concepts to localStorage (persist progress)
+3. Update graph visualization to show mastered nodes in gold
+4. Unlock dependent concepts when mastery achieved
+5. Implement spaced repetition for review
+
+**Design Philosophy:**
+> Mastery must be **demonstrated**, not claimed. The LLM evaluates understanding through Socratic questioning, tracking specific skills as they're revealed in conversation. The system provides guidance and structure while respecting learner autonomy.
+
+---
+
 ## Critical TODOs & Future Directions
 
 ### 🎙️ Voice Interface: Gemini Live Integration
