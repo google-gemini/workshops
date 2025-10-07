@@ -2248,6 +2248,212 @@ Progress: 2 / 5 skills demonstrated
 
 ## Critical TODOs & Future Directions
 
+### 🚨 Immediate Issues
+
+#### 1. Mastery Not Reflected in Graph Visualization
+**Problem:** When a user masters a concept through Socratic dialogue, the graph visualization doesn't update to show this progress.
+
+**Current behavior:**
+- User completes dialogue session
+- Clicks "Mark as Mastered"
+- Modal closes... but graph looks identical
+- No visual indication of achievement
+- Dependent concepts don't appear "unlocked"
+
+**Impact:**
+- No sense of progression
+- Can't see which concepts are now available to learn
+- Undermines the entire prerequisite system
+
+**Proposed solutions:**
+1. **Visual state update:** Change mastered nodes to gold/yellow color
+2. **Unlock animation:** Flash or pulse newly-unlocked concepts
+3. **Update ready state:** Recalculate which concepts are now "ready to learn"
+4. **Stats panel:** Show "X / 33 concepts mastered" counter
+
+**Implementation:**
+- Pass `onMasteryAchieved(conceptId)` callback from graph to dialogue
+- Update graph state when mastery confirmed
+- Re-render Cytoscape with new node styles
+- Trigger unlock detection algorithm
+
+**Priority:** 🔴 Critical - Core feature gap
+
+---
+
+#### 2. No Persistence for Mastery Progress
+**Problem:** Refresh the page, lose all your progress. Users can't build knowledge over multiple sessions.
+
+**Current behavior:**
+- All progress stored only in component state
+- Refreshing page resets everything to "unlearned"
+- No way to resume learning journey
+
+**Impact:**
+- Discourages long-term learning
+- Forces completing entire chapter in one sitting
+- Can't track learning over days/weeks
+
+**Options:**
+
+**A. Browser localStorage** ⭐ *Simplest*
+```typescript
+// Save on mastery
+localStorage.setItem('pcg-mastery', JSON.stringify({
+  conceptId: timestamp,
+  ...
+}));
+
+// Load on mount
+const savedMastery = JSON.parse(localStorage.getItem('pcg-mastery') || '{}');
+```
+
+**Pros:**
+- No backend required
+- Works immediately
+- Fast read/write
+- ~5-10MB storage (plenty for our data)
+
+**Cons:**
+- Lost if user clears browser data
+- Can't sync across devices
+- No backup/recovery
+
+**B. Backend Database** (Firebase, Supabase, etc.)
+**Pros:**
+- Persistent across devices
+- Can add user accounts
+- Analytics on learning patterns
+- Backup/restore capability
+
+**Cons:**
+- Requires backend setup
+- Auth complexity
+- Hosting costs
+- Slower (network latency)
+
+**Recommendation:** Start with localStorage (A), migrate to DB later if needed
+
+**Priority:** 🟡 High - Quality-of-life feature
+
+---
+
+#### 3. LLM Not Grounding in Textbook Content
+**Problem:** The LLM appears to be answering from its general training knowledge, not the specific PAIP Chapter 1 text.
+
+**Observed behavior:**
+- Teaching "Interactive REPL" and "Symbols" uses generic Lisp knowledge
+- Doesn't reference specific examples from Norvig's text
+- Misses book's unique pedagogical style and examples
+- May contradict or miss nuances from the original material
+
+**Impact:**
+- Dialogue diverges from textbook's teaching approach
+- Students learning different examples/terminology than in book
+- Loses value of Norvig's carefully crafted pedagogy
+- Can't answer "Where can I read more about this?"
+
+**Root cause:** Our prompt doesn't include the actual textbook content, only the metadata we extracted (concept names, learning objectives, etc.)
+
+**Proposed solutions:**
+
+**Option A: Quote Relevant Sections in Prompt** 🔸 *Simpler*
+```typescript
+// In buildSocraticPrompt():
+const relevantText = getTextbookSection(conceptData.section); // e.g., "1.1"
+
+return `You are teaching from "Paradigms of AI Programming" by Peter Norvig.
+
+**Concept:** ${conceptData.name}
+**Section:** ${conceptData.section}
+
+**Relevant excerpt from the textbook:**
+---
+${relevantText}
+---
+
+Use examples and terminology FROM THIS TEXT when teaching.
+Reference page numbers when appropriate.
+...`
+```
+
+**Pros:**
+- Simple to implement
+- Works with existing infrastructure
+- LLM has full context in prompt
+
+**Cons:**
+- Large token usage (PAIP sections can be long)
+- May exceed context window for complex concepts
+- Manual extraction of section text needed
+
+**Option B: RAG (Retrieval-Augmented Generation)** 🔹 *More Robust*
+
+1. **Pre-process:** Chunk PAIP Chapter 1 into semantic sections
+2. **Embed:** Convert chunks to vectors (e.g., OpenAI embeddings)
+3. **Store:** Vector database (Pinecone, Weaviate, or simple in-memory)
+4. **Query-time:** When teaching a concept:
+   - Embed the concept + current dialogue
+   - Retrieve top-K most relevant textbook chunks
+   - Include in LLM prompt
+
+```typescript
+async function getRelevantTextbookChunks(concept, conversationHistory) {
+  const query = `${concept.name} ${concept.description} ${getLastUserMessage(conversationHistory)}`;
+  
+  const results = await vectorDB.query({
+    vector: await embed(query),
+    topK: 3,
+    filter: { chapter: 1, section: concept.section }
+  });
+  
+  return results.map(r => r.text).join('\n---\n');
+}
+```
+
+**Pros:**
+- Only retrieves relevant content (efficient tokens)
+- Handles long textbooks (not limited by context window)
+- More accurate grounding (semantic search finds best examples)
+- Can reference specific passages with citations
+
+**Cons:**
+- Requires vector database setup
+- Embedding API costs (one-time for textbook, ongoing for queries)
+- More complex architecture
+- Chunking strategy matters (need to experiment)
+
+**Option C: Hybrid Approach** ⭐ *Recommended*
+- Start with **Option A** for immediate improvement
+- Manually extract key sections for each concept
+- Store in `concept-graph.json` as `textbook_excerpt` field
+- Later migrate to **Option B** (RAG) when scaling to multiple chapters
+
+**Implementation Plan:**
+
+**Phase 1 (Quick win):**
+1. Extract relevant passages from `paip-chapter-1.md` for each concept
+2. Add `textbook_excerpt` field to concept-graph.json
+3. Include excerpt in Socratic dialogue prompt
+4. Test that LLM uses book's examples
+
+**Phase 2 (Scalable):**
+1. Chunk entire PAIP book (all chapters)
+2. Generate embeddings (OpenAI or open-source)
+3. Set up vector store (start with in-memory, move to Pinecone/Weaviate later)
+4. Implement RAG retrieval in API route
+5. Compare quality vs. Phase 1 approach
+
+**Success metrics:**
+- LLM references specific examples from book
+- Uses Norvig's terminology consistently
+- Can point users to relevant pages/sections
+- Student feedback: "This feels like the book is teaching me"
+
+**Priority:** 🟡 High - Quality and authenticity of learning content
+
+---
+
 ### 🎙️ Voice Interface: Gemini Live Integration
 
 **Problem:** Typing back-and-forth in Socratic dialogue can feel tedious, especially for longer learning sessions.
