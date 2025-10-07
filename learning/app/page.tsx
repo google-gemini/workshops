@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ConceptGraph from './components/ConceptGraph';
 import ConceptDetails from './components/ConceptDetails';
 import SocraticDialogue from './components/SocraticDialogue';
@@ -9,6 +9,27 @@ import conceptGraphData from '../paip-chapter-1/concept-graph.json';
 export default function Home() {
   const [selectedConceptId, setSelectedConceptId] = useState<string | null>(null);
   const [dialogueOpen, setDialogueOpen] = useState(false);
+  const [masteredConcepts, setMasteredConcepts] = useState<Set<string>>(new Set());
+
+  // Load mastered concepts from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('pcg-mastery');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setMasteredConcepts(new Set(parsed));
+      } catch (e) {
+        console.error('Failed to load mastery data:', e);
+      }
+    }
+  }, []);
+
+  // Save mastered concepts to localStorage whenever it changes
+  useEffect(() => {
+    if (masteredConcepts.size > 0) {
+      localStorage.setItem('pcg-mastery', JSON.stringify([...masteredConcepts]));
+    }
+  }, [masteredConcepts]);
 
   const selectedConcept = selectedConceptId
     ? conceptGraphData.concepts.find((c) => c.id === selectedConceptId) || null
@@ -16,6 +37,14 @@ export default function Home() {
 
   const handleStartLearning = (conceptId: string) => {
     setDialogueOpen(true);
+  };
+
+  const handleMasteryAchieved = (conceptId: string) => {
+    setMasteredConcepts(prev => {
+      const next = new Set(prev);
+      next.add(conceptId);
+      return next;
+    });
   };
 
   return (
@@ -30,7 +59,11 @@ export default function Home() {
       <div className="flex-1 flex overflow-hidden">
         {/* Graph (70%) */}
         <div className="flex-[7] border-r">
-          <ConceptGraph data={conceptGraphData} onNodeClick={setSelectedConceptId} />
+          <ConceptGraph 
+            data={conceptGraphData} 
+            onNodeClick={setSelectedConceptId}
+            masteredConcepts={masteredConcepts}
+          />
         </div>
 
         {/* Details sidebar (30%) */}
@@ -45,6 +78,7 @@ export default function Home() {
           open={dialogueOpen}
           onOpenChange={setDialogueOpen}
           conceptData={selectedConcept}
+          onMasteryAchieved={handleMasteryAchieved}
         />
       )}
     </div>

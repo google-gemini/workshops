@@ -32,9 +32,10 @@ type ConceptGraphData = {
 type ConceptGraphProps = {
   data: ConceptGraphData;
   onNodeClick?: (conceptId: string) => void;
+  masteredConcepts?: Set<string>;
 };
 
-export default function ConceptGraph({ data, onNodeClick }: ConceptGraphProps) {
+export default function ConceptGraph({ data, onNodeClick, masteredConcepts }: ConceptGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -51,15 +52,19 @@ export default function ConceptGraph({ data, onNodeClick }: ConceptGraphProps) {
     };
 
     // Transform data for Cytoscape
-    const nodes: NodeDefinition[] = data.concepts.map((concept) => ({
-      data: {
-        id: concept.id,
-        label: concept.name,
-        difficulty: concept.difficulty,
-        description: concept.description,
-        prerequisites: concept.prerequisites,
-      },
-    }));
+    const nodes: NodeDefinition[] = data.concepts.map((concept) => {
+      const isMastered = masteredConcepts?.has(concept.id) || false;
+      return {
+        data: {
+          id: concept.id,
+          label: concept.name,
+          difficulty: concept.difficulty,
+          description: concept.description,
+          prerequisites: concept.prerequisites,
+        },
+        classes: isMastered ? 'mastered' : '',
+      };
+    });
 
     // FLIP arrow direction for visual learning flow
     const edges: EdgeDefinition[] = data.edges.map((edge) => ({
@@ -89,6 +94,15 @@ export default function ConceptGraph({ data, onNodeClick }: ConceptGraphProps) {
             height: '60px',
             'text-wrap': 'wrap',
             'text-max-width': '55px',
+          },
+        },
+        {
+          selector: 'node.mastered',
+          style: {
+            'background-color': '#FFD700', // Gold for mastered concepts
+            'border-width': '3px',
+            'border-color': '#FFA500', // Orange border
+            'color': '#000', // Black text for better contrast on gold
           },
         },
         {
@@ -179,7 +193,7 @@ export default function ConceptGraph({ data, onNodeClick }: ConceptGraphProps) {
     return () => {
       cy.destroy();
     };
-  }, [data, layout, onNodeClick]);
+  }, [data, layout, onNodeClick, masteredConcepts]);
 
   const handleLayoutChange = (newLayout: string) => {
     setLayout(newLayout);

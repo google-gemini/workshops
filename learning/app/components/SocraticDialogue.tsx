@@ -28,12 +28,14 @@ type SocraticDialogueProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   conceptData: any;
+  onMasteryAchieved?: (conceptId: string) => void;
 };
 
 export default function SocraticDialogue({
   open,
   onOpenChange,
   conceptData,
+  onMasteryAchieved,
 }: SocraticDialogueProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -195,9 +197,15 @@ export default function SocraticDialogue({
   };
 
   const handleMarkAsMastered = () => {
-    // TODO: Save to localStorage and update graph state
     console.log('Concept mastered:', conceptData.id);
-    alert(`🎉 Concept "${conceptData.name}" marked as mastered!\n\nThis will update the graph and unlock dependent concepts.`);
+    
+    // Call the parent callback to update mastery state
+    if (onMasteryAchieved) {
+      onMasteryAchieved(conceptData.id);
+    }
+    
+    // Show success message and close dialogue
+    alert(`🎉 Concept "${conceptData.name}" marked as mastered!\n\nThe graph has been updated!`);
     onOpenChange(false);
   };
 
