@@ -3,19 +3,19 @@
 import { useState } from 'react';
 import ConceptGraph from './components/ConceptGraph';
 import ConceptDetails from './components/ConceptDetails';
+import SocraticDialogue from './components/SocraticDialogue';
 import conceptGraphData from '../paip-chapter-1/concept-graph.json';
 
 export default function Home() {
   const [selectedConceptId, setSelectedConceptId] = useState<string | null>(null);
+  const [dialogueOpen, setDialogueOpen] = useState(false);
 
   const selectedConcept = selectedConceptId
     ? conceptGraphData.concepts.find((c) => c.id === selectedConceptId) || null
     : null;
 
   const handleStartLearning = (conceptId: string) => {
-    console.log('Starting learning session for:', conceptId);
-    // TODO: Open dialogue modal
-    alert(`Learning session for ${conceptId} coming soon!`);
+    setDialogueOpen(true);
   };
 
   return (
@@ -38,6 +38,15 @@ export default function Home() {
           <ConceptDetails concept={selectedConcept} onStartLearning={handleStartLearning} />
         </div>
       </div>
+
+      {/* Socratic Dialogue Modal */}
+      {selectedConcept && (
+        <SocraticDialogue
+          open={dialogueOpen}
+          onOpenChange={setDialogueOpen}
+          conceptData={selectedConcept}
+        />
+      )}
     </div>
   );
 }

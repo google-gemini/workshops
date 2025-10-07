@@ -2026,6 +2026,278 @@ Currently, graph just appears. Should show:
 
 ---
 
+## Recent Improvements & Implementation Log
+
+### Model Upgrade: Gemini 2.5 Flash (2025-01-07)
+
+**Change:** Upgraded the Socratic dialogue LLM from `gemini-2.0-flash-exp` to `gemini-2.5-flash`
+
+**File modified:** `learning/app/api/socratic-dialogue/route.ts`
+
+**Rationale:**
+- Gemini 2.5 Flash is described as "fast and intelligent model with best price-performance"
+- Better reasoning capabilities for Socratic questioning
+- Improved response quality while maintaining low latency
+
+**Implementation:**
+```typescript
+model: genAI.getGenerativeModel({ 
+  model: "gemini-2.5-flash"  // Previously: gemini-2.0-flash-exp
+})
+```
+
+**Impact:**
+- Users should experience higher quality Socratic dialogue
+- Better misconception detection and correction
+- More natural, context-aware responses
+
+---
+
+### UX Improvement: Auto-Focus Textarea After LLM Response
+
+**Problem:** Users had to manually click the textarea after each LLM response to continue typing, breaking the conversational flow.
+
+**Solution:** Implemented auto-focus using React refs and useEffect
+
+**File modified:** `learning/app/components/SocraticDialogue.tsx`
+
+**Implementation:**
+1. Added `textareaRef` using `useRef<HTMLTextAreaElement>(null)`
+2. Created `useEffect` that triggers on `isLoading` state change
+3. Automatically focuses textarea when loading completes
+
+```typescript
+// Auto-focus textarea when loading completes
+useEffect(() => {
+  if (!isLoading && textareaRef.current) {
+    textareaRef.current.focus();
+  }
+}, [isLoading]);
+```
+
+**Impact:**
+- Seamless conversation flow
+- No manual clicking required between exchanges
+- Cursor ready immediately after LLM responds
+
+**User feedback:** "Fucking amazing!"
+
+---
+
+## Critical TODOs & Future Directions
+
+### 🎙️ Voice Interface: Gemini Live Integration
+
+**Problem:** Typing back-and-forth in Socratic dialogue can feel tedious, especially for longer learning sessions.
+
+**Proposed solution:** Integrate Gemini Live API for voice-based learning
+
+**Benefits:**
+- **Natural conversation:** Speak your answers instead of typing
+- **Lower friction:** Faster response times
+- **More engaging:** Feels like talking to a real tutor
+- **Accessibility:** Better for learners with typing difficulties
+- **Multimodal:** Can discuss code while looking at screen
+
+**Implementation considerations:**
+1. **Audio capture:** Use Web Audio API to record user speech
+2. **Streaming:** Send audio chunks to Gemini Live in real-time
+3. **Audio playback:** Stream LLM voice responses back to user
+4. **Fallback:** Keep text interface as alternative
+5. **Controls:** Push-to-talk vs continuous listening
+6. **Privacy:** Clear user consent for audio recording
+
+**Architecture sketch:**
+```typescript
+class VoiceEnabledDialogue {
+  audioStream: MediaStream;
+  geminiLiveSession: GeminiLiveSession;
+  
+  async startVoiceMode() {
+    // Request microphone permission
+    this.audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    
+    // Initialize Gemini Live session
+    this.geminiLiveSession = await geminiLive.connect({
+      model: "gemini-2.5-flash",
+      config: {
+        responseModality: "audio",
+        speechConfig: {
+          voiceConfig: { prebuiltVoiceConfig: { voiceName: "tutor-voice" } }
+        }
+      }
+    });
+    
+    // Stream audio bidirectionally
+    this.geminiLiveSession.sendAudio(this.audioStream);
+    this.geminiLiveSession.onAudio(audio => this.playback(audio));
+  }
+}
+```
+
+**UI design:**
+- Toggle between text/voice mode
+- Visual indicator when listening
+- Waveform visualization during speech
+- Option to see text transcript
+- "Repeat that?" button if user misses something
+
+**Challenges:**
+- Handling ambient noise and interruptions
+- Managing conversation state across modalities
+- Cost implications (voice API usage)
+- Network latency for real-time streaming
+
+**Priority:** Medium-high (could be game-changing for UX)
+
+**Estimated effort:** 2-3 weeks (including testing and refinement)
+
+---
+
+### 🎛️ Model Selector: Optimize Experience Per Use Case
+
+**Problem:** Different Gemini models have vastly different characteristics:
+- **Speed:** Flash vs Pro vs Ultra
+- **Cost:** Varies 10-100x
+- **Capabilities:** Reasoning depth, context window, multimodal support
+- **Response style:** Concise vs verbose, formal vs casual
+
+**Issue:** One-size-fits-all model selection doesn't serve all learners equally well.
+
+**Proposed solution:** Allow users to choose LLM model based on their needs
+
+**Use cases:**
+1. **Beginner mode** - Gemini 2.0 Flash Thinking
+   - Patient, detailed explanations
+   - More scaffolding
+   - Slower pace acceptable
+   
+2. **Quick review mode** - Gemini 2.5 Flash
+   - Fast, concise responses
+   - Skip obvious questions
+   - Efficient for spaced repetition
+   
+3. **Deep learning mode** - Gemini 2.0 Pro
+   - Complex reasoning traces
+   - Detailed misconception analysis
+   - Multi-step problem decomposition
+   
+4. **Experimental mode** - Latest experimental models
+   - Cutting-edge capabilities
+   - Users opt-in to instability
+
+**Implementation:**
+
+```typescript
+// Add model selector to SocraticDialogue component
+const AVAILABLE_MODELS = [
+  { 
+    id: "gemini-2.5-flash",
+    name: "Fast & Efficient",
+    description: "Quick responses, great for review",
+    icon: "⚡"
+  },
+  {
+    id: "gemini-2.0-flash-thinking-exp",
+    name: "Patient Tutor",
+    description: "Detailed explanations, best for beginners",
+    icon: "🧠"
+  },
+  {
+    id: "gemini-2.0-pro",
+    name: "Deep Reasoning",
+    description: "Complex problem solving",
+    icon: "🎓"
+  }
+] as const;
+
+function ModelSelector({ selected, onChange }) {
+  return (
+    <div className="model-selector">
+      {AVAILABLE_MODELS.map(model => (
+        <button
+          key={model.id}
+          onClick={() => onChange(model.id)}
+          className={selected === model.id ? 'active' : ''}
+        >
+          <span className="icon">{model.icon}</span>
+          <span className="name">{model.name}</span>
+          <span className="description">{model.description}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+```
+
+**API changes:**
+```typescript
+// POST /api/socratic-dialogue
+{
+  conceptId: string,
+  conversationHistory: Message[],
+  conceptData: any,
+  model?: string  // NEW: optional model override
+}
+```
+
+**Persistence:**
+- Save user's preferred model in localStorage
+- Allow per-session overrides
+- Track which models users find most effective
+
+**Analytics opportunities:**
+- Which models lead to better mastery outcomes?
+- Do beginners actually prefer slower, detailed models?
+- Cost vs. effectiveness tradeoffs
+
+**UI placement:**
+- Settings menu in dialogue header
+- Tooltip explaining differences
+- Show estimated response time per model
+
+**Challenges:**
+- API key management (different models, different quotas)
+- Cost control (prevent abuse of expensive models)
+- Prompt adaptation (different models may need different prompting styles)
+- Consistency (switching mid-session could be jarring)
+
+**Priority:** Medium (nice-to-have, not blocking core functionality)
+
+**Estimated effort:** 1 week (UI + API + testing)
+
+---
+
+### Other TODOs (Carried Forward)
+
+From earlier sections, still pending:
+
+#### Progress Tracking (Phase 1)
+- [ ] Track masteredConcepts in localStorage
+- [ ] Visual distinction for mastered (gold + checkmark)
+- [ ] Stats panel showing mastered/in-progress/ready/locked counts
+- [ ] Click concept to mark as mastered/in-progress
+
+#### Smart Recommendations (Phase 2)
+- [ ] Implement `getReadyConcepts(mastered)` algorithm
+- [ ] Add "Recommended Next" visual state (pulsing glow)
+- [ ] Sort recommendations by difficulty + unlock potential
+- [ ] Display recommended concepts in sidebar
+
+#### Complete Pass 2 Data
+- [ ] Enrich remaining 30 concepts with pedagogy
+- [ ] Validate mastery indicators for all concepts
+- [ ] Add examples and misconceptions
+- [ ] Update concept-graph.json
+
+#### Exercise Integration (Phase 4)
+- [ ] Display exercises in concept details
+- [ ] Show which concepts each exercise tests
+- [ ] Link exercises to mastery indicators
+- [ ] Provide exercise session flow
+
+---
+
 ### Appendix: Package Versions
 
 ```json
