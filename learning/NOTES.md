@@ -750,6 +750,1307 @@ Offer different progression presets:
 
 ---
 
+## Peirastic AI: Active Mastery Through Socratic Dialogue
+
+### The Core Problem with Passive Learning
+
+Simply clicking "I learned this" is **not learning**. Real mastery requires:
+1. **Active demonstration** of understanding
+2. **Socratic questioning** to reveal gaps
+3. **Adaptive scaffolding** when struggling
+4. **Celebration** of genuine insight
+
+**Inspiration:** *The Little Schemer* dialectical style (see attached image) - learning through guided discovery, not lecture.
+
+### Design Philosophy: Earned Progression
+
+**Current flow (passive):**
+```
+User clicks concept → reads description → clicks "Mark as mastered" → unlocks next concepts
+```
+
+**Proposed flow (active):**
+```
+User clicks "Start Learning" 
+  ↓
+Enters Socratic dialogue session with LLM tutor
+  ↓
+For each mastery indicator:
+  - Answer probing questions
+  - Work through examples
+  - Demonstrate understanding (not just recognition)
+  ↓
+System evaluates: Have all critical indicators been demonstrated?
+  ↓
+If YES: Grant mastery ✓ → Unlock dependents → Celebrate progress
+If NO: Provide scaffolding → Continue dialogue → Build understanding
+```
+
+**Key insight:** Progression is **earned**, not claimed.
+
+---
+
+### Leveraging Existing Pedagogical Data
+
+Our `concept-graph.json` already has **perfect structure** for generating dialogues:
+
+#### Mastery Indicators = Test Instructions
+
+```json
+{
+  "mastery_indicators": [
+    {
+      "skill": "quote_syntax",
+      "difficulty": "basic",
+      "test_method": "Ask: 'How do you write the list (a b c) as data?'"
+    },
+    {
+      "skill": "evaluation_blocking",
+      "difficulty": "basic",
+      "test_method": "Compare: What does '(+ 2 2) return vs (+ 2 2)?"
+    }
+  ]
+}
+```
+
+The `test_method` field is **literally instructions for the LLM** on how to test understanding!
+
+#### Examples Provide Teaching Sequence
+
+```json
+{
+  "examples": [
+    {
+      "content": "> 'John => JOHN",
+      "when_to_show": "first_introduction",
+      "demonstrates": ["quote_syntax"]
+    },
+    {
+      "content": "> '(+ 2 2) => (+ 2 2) vs (+ 2 2) => 4",
+      "when_to_show": "data_vs_code",
+      "demonstrates": ["evaluation_blocking"]
+    }
+  ]
+}
+```
+
+Use `when_to_show` to sequence examples appropriately during dialogue.
+
+#### Misconceptions = Error Detection
+
+```json
+{
+  "misconceptions": [
+    {
+      "misconception": "Numbers need to be quoted",
+      "reality": "Numbers are self-evaluating",
+      "correction_strategy": "Show that 2 and '2 both return 2"
+    }
+  ]
+}
+```
+
+LLM watches for these patterns in student responses and provides **targeted corrections**.
+
+---
+
+### System Architecture
+
+#### Core Component: ConceptMasterySession
+
+```javascript
+class ConceptMasterySession {
+  constructor(conceptId, conceptData) {
+    this.conceptId = conceptId;
+    this.data = conceptData;  // From concept-graph.json
+    this.indicatorStatus = {};  // Track which skills demonstrated
+    this.conversationHistory = [];
+    this.misconceptionsDetected = [];
+  }
+  
+  async start() {
+    // 1. Welcome and context
+    const intro = await this.generateIntroduction();
+    this.display(intro);
+    
+    // 2. Test each mastery indicator
+    for (const indicator of this.data.mastery_indicators) {
+      const passed = await this.testIndicator(indicator);
+      this.indicatorStatus[indicator.skill] = passed;
+      
+      // If struggling, provide scaffolding
+      if (!passed) {
+        await this.provideScaffolding(indicator);
+      }
+    }
+    
+    // 3. Final evaluation
+    return this.evaluateMastery();
+  }
+  
+  async testIndicator(indicator) {
+    // Build prompt using our pedagogical data
+    const prompt = this.buildPromptForIndicator(indicator);
+    
+    // LLM generates Socratic question
+    const llmQuestion = await this.queryLLM(prompt);
+    this.display(llmQuestion);
+    
+    // Get student response
+    const studentAnswer = await this.getUserInput();
+    this.conversationHistory.push({
+      role: 'student',
+      content: studentAnswer
+    });
+    
+    // Evaluate response
+    const evaluation = await this.evaluateResponse(
+      indicator,
+      studentAnswer,
+      llmQuestion
+    );
+    
+    // Provide feedback
+    this.display(evaluation.feedback);
+    
+    return evaluation.passed;
+  }
+  
+  buildPromptForIndicator(indicator) {
+    return {
+      system: `You are a Socratic tutor for Lisp programming, inspired by 
+The Little Schemer. Your role:
+
+1. Ask probing questions to test understanding
+2. Use concrete examples, not abstract explanations
+3. Provide hints when the student struggles
+4. Celebrate insights with enthusiasm
+5. Gently correct misconceptions with counterexamples
+6. Make learning feel like discovery, not drilling
+7. Ask ONE question at a time, wait for response
+
+Be encouraging, patient, and dialectical.`,
+      
+      context: {
+        concept_name: this.data.name,
+        description: this.data.description,
+        skill_to_test: indicator.skill,
+        skill_description: indicator.description,
+        test_method: indicator.test_method,
+        examples: this.data.examples,
+        misconceptions: this.data.misconceptions,
+        conversation_so_far: this.conversationHistory
+      },
+      
+      instruction: `Test the student's understanding of: "${indicator.description}"
+
+Suggested test approach: ${indicator.test_method}
+
+Generate a Socratic question that reveals whether they truly understand this skill.
+Use examples from the concept data. Be specific and concrete.`
+    };
+  }
+  
+  async evaluateResponse(indicator, studentAnswer, question) {
+    // LLM evaluates whether student demonstrated understanding
+    const evalPrompt = {
+      system: `You are evaluating a student's response in a Socratic dialogue.
+Determine if they demonstrated the required skill.`,
+      
+      context: {
+        skill: indicator.description,
+        question_asked: question,
+        student_answer: studentAnswer,
+        known_misconceptions: this.data.misconceptions
+      },
+      
+      instruction: `Did the student demonstrate understanding?
+      
+Return JSON:
+{
+  "passed": true/false,
+  "confidence": 0-1,
+  "feedback": "Brief encouraging response",
+  "misconceptions_detected": ["list of any misconceptions shown"],
+  "should_scaffold": true/false
+}`
+    };
+    
+    const evaluation = await this.queryLLM(evalPrompt);
+    
+    // Track misconceptions for later correction
+    if (evaluation.misconceptions_detected) {
+      this.misconceptionsDetected.push(...evaluation.misconceptions_detected);
+    }
+    
+    return evaluation;
+  }
+  
+  async provideScaffolding(indicator) {
+    // Break down into simpler questions
+    // Show relevant examples
+    // Provide hints without giving away answer
+    const scaffoldPrompt = {
+      system: `Student is struggling with "${indicator.description}".
+Provide gentle scaffolding - a simpler related question or a helpful hint.
+Don't give away the answer directly.`,
+      
+      context: {
+        concept: this.data.name,
+        struggling_with: indicator.skill,
+        examples: this.data.examples,
+        conversation: this.conversationHistory
+      }
+    };
+    
+    const hint = await this.queryLLM(scaffoldPrompt);
+    this.display(hint);
+    
+    // Ask a simpler version of the question
+    return await this.testIndicator(indicator);  // Retry
+  }
+  
+  evaluateMastery() {
+    // Classify by difficulty
+    const basicIndicators = this.data.mastery_indicators.filter(
+      i => i.difficulty === 'basic'
+    );
+    const intermediateIndicators = this.data.mastery_indicators.filter(
+      i => i.difficulty === 'intermediate'
+    );
+    const advancedIndicators = this.data.mastery_indicators.filter(
+      i => i.difficulty === 'advanced'
+    );
+    
+    // Calculate pass rates
+    const basicPassRate = basicIndicators.filter(
+      i => this.indicatorStatus[i.skill]
+    ).length / basicIndicators.length;
+    
+    const intermediatePassRate = intermediateIndicators.filter(
+      i => this.indicatorStatus[i.skill]
+    ).length / intermediateIndicators.length;
+    
+    const advancedPassRate = advancedIndicators.length > 0
+      ? advancedIndicators.filter(i => this.indicatorStatus[i.skill]).length / advancedIndicators.length
+      : 1;  // No advanced indicators = pass by default
+    
+    // Mastery criteria:
+    // - Must pass ALL basic indicators (100%)
+    // - Must pass MOST intermediate indicators (≥75%)
+    // - Should pass SOME advanced indicators (≥50%)
+    const mastered = 
+      basicPassRate === 1.0 &&
+      intermediatePassRate >= 0.75 &&
+      advancedPassRate >= 0.5;
+    
+    return {
+      mastered,
+      basicPassRate,
+      intermediatePassRate,
+      advancedPassRate,
+      indicatorsPassed: this.indicatorStatus,
+      misconceptionsDetected: this.misconceptionsDetected,
+      recommendation: mastered
+        ? "🎉 Concept mastered! You're ready to move forward."
+        : "Keep practicing - you're making good progress! Let's review a few more things."
+    };
+  }
+}
+```
+
+---
+
+### Example Dialogue Flow
+
+**Teaching Quote concept:**
+
+```
+=== SESSION START ===
+
+LLM: "Welcome! Today we're exploring the Quote special form in Lisp.
+
+Let's start with a quick experiment. What do you think this returns?
+    (+ 2 2)
+
+Try to predict before checking the REPL!"
+
+Student: "4"
+
+LLM: "Exactly! ✓ The addition evaluates to 4.
+
+Now, what about this one?
+    '(+ 2 2)
+
+Notice the single quote mark at the front. What do you predict?"
+
+Student: "Maybe... it returns the list (+ 2 2)?"
+
+LLM: "Perfect! 🎉 That's exactly right!
+
+The quote prevents evaluation - it says 'treat this as data, 
+not code to run.'
+
+So what happens when we evaluate these?
+    John        vs    'John
+    
+One will cause an error. Which one, and why?"
+
+Student: "John will error because it's not defined?"
+
+LLM: "Excellent reasoning! ✓ 
+
+Without the quote, Lisp tries to look up John as a variable.
+With the quote, it's just the symbol JOHN itself.
+
+✓ You understand evaluation blocking!
+
+Now let's test your ability to apply this...
+
+I want to create a list containing the symbols A, B, and C.
+How would you write that expression?"
+
+Student: "(list a b c)"
+
+LLM: "Hmm, think carefully - what would Lisp do with a, b, and c 
+if they're not quoted?
+
+Try running that in your REPL. What error do you get?"
+
+Student: "Oh! It says A is unbound. I need: (list 'a 'b 'c)"
+
+LLM: "Yes! 🎉 Or even simpler: '(a b c)
+
+When you quote the whole list, everything inside is data.
+
+✓ You know when to use quote!
+
+=== MASTERY EVALUATION ===
+✓ quote_syntax: Passed
+✓ evaluation_blocking: Passed  
+✓ when_to_quote: Passed
+
+🎉 Concept mastered! Quote unlocked 2 new concepts:
+   - Quoted vs Unquoted
+   - Special Forms
+   
+Ready to continue your journey?"
+```
+
+---
+
+### UI Integration
+
+#### Concept Node Interactions
+
+**When user clicks a concept node:**
+
+```javascript
+function onConceptClick(conceptId) {
+  const concept = getConceptById(conceptId);
+  const state = getConceptState(conceptId);
+  
+  if (state === 'locked') {
+    showPrerequisiteModal(concept);
+  } else if (state === 'ready' || state === 'recommended') {
+    showLearningSessionOption(concept);
+  } else if (state === 'in-progress') {
+    showResumeSessionOption(concept);
+  } else if (state === 'mastered') {
+    showReviewOption(concept);
+  }
+}
+```
+
+#### Learning Session UI
+
+```html
+<div class="mastery-session-container">
+  <!-- Header with progress -->
+  <div class="session-header">
+    <h2>Learning: <span id="concept-name">Quote</span></h2>
+    <button class="close-btn">✕</button>
+    
+    <!-- Progress indicators -->
+    <div class="mastery-progress">
+      <div class="indicator passed" title="Quote syntax">
+        <span class="icon">✓</span>
+        <span class="label">Syntax</span>
+      </div>
+      <div class="indicator current" title="Evaluation blocking">
+        <span class="icon">⟳</span>
+        <span class="label">Blocking</span>
+      </div>
+      <div class="indicator pending" title="When to quote">
+        <span class="icon">○</span>
+        <span class="label">Usage</span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Dialogue area (scrollable) -->
+  <div class="dialogue-area">
+    <div class="message tutor">
+      <div class="avatar">🧙</div>
+      <div class="content">
+        Welcome! Today we're exploring the Quote special form...
+      </div>
+    </div>
+    
+    <div class="message student">
+      <div class="avatar">👤</div>
+      <div class="content">
+        It prevents evaluation?
+      </div>
+    </div>
+    
+    <div class="message tutor celebration">
+      <div class="avatar">🧙</div>
+      <div class="content">
+        Exactly! ✨ You've got it!
+      </div>
+    </div>
+  </div>
+  
+  <!-- Input area -->
+  <div class="input-area">
+    <textarea 
+      placeholder="Type your answer here..."
+      id="student-input"
+    ></textarea>
+    <button id="submit-btn">Submit</button>
+  </div>
+  
+  <!-- Optional: REPL integration -->
+  <div class="repl-pane collapsible">
+    <h3>Try it yourself <button>▼</button></h3>
+    <div class="repl-content">
+      <!-- Embedded REPL for experimentation -->
+    </div>
+  </div>
+</div>
+```
+
+#### Visual States During Learning
+
+**Update graph visualization to show learning state:**
+
+```css
+/* Concept node during active learning session */
+.cy-node.learning-active {
+  border: 3px solid #4CAF50;
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+  animation: pulse-learning 2s infinite;
+}
+
+/* Indicator badges on nodes */
+.cy-node.learning-active::after {
+  content: "📖";
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 20px;
+}
+```
+
+---
+
+### Adaptive Difficulty
+
+#### Smart Sequencing
+
+```javascript
+async selectNextIndicator(concept, results) {
+  const remaining = concept.mastery_indicators.filter(
+    i => !results[i.skill]
+  );
+  
+  // If breezing through basics, jump to intermediate/advanced
+  const basicPassed = results.filter(
+    r => r.difficulty === 'basic' && r.passed
+  ).length;
+  
+  if (basicPassed >= 2) {
+    // Skip remaining basics, go straight to intermediate
+    return remaining.find(i => i.difficulty === 'intermediate')
+      || remaining.find(i => i.difficulty === 'advanced')
+      || remaining[0];
+  }
+  
+  // Otherwise, progress through difficulty levels
+  return remaining.find(i => i.difficulty === 'basic')
+    || remaining.find(i => i.difficulty === 'intermediate')
+    || remaining.find(i => i.difficulty === 'advanced');
+}
+```
+
+#### Misconception-Driven Remediation
+
+```javascript
+async correctMisconception(misconceptionKey) {
+  const misconception = this.data.misconceptions.find(
+    m => m.misconception === misconceptionKey
+  );
+  
+  if (!misconception) return;
+  
+  const correctionPrompt = {
+    system: "Gently correct this misconception using the provided strategy.",
+    context: {
+      misconception: misconception.misconception,
+      reality: misconception.reality,
+      strategy: misconception.correction_strategy,
+      conversation: this.conversationHistory
+    },
+    instruction: `The student showed this misconception: "${misconception.misconception}"
+    
+The reality is: "${misconception.reality}"
+
+Use this strategy: "${misconception.correction_strategy}"
+
+Generate a Socratic exchange that leads them to discover the correct understanding.
+Don't just tell them - help them figure it out.`
+  };
+  
+  const correction = await this.queryLLM(correctionPrompt);
+  this.display(correction);
+}
+```
+
+---
+
+### Multi-Concept Integration
+
+#### Referencing Prerequisites
+
+When teaching a concept, **connect to prerequisites**:
+
+```javascript
+buildContextualPrompt(concept) {
+  const prerequisites = getPrerequisites(concept.id);
+  const masteredPrereqs = prerequisites.filter(p => isMastered(p.id));
+  
+  return {
+    system: "...",
+    context: {
+      current_concept: concept,
+      mastered_prerequisites: masteredPrereqs,
+      // LLM can reference these in dialogue
+      instruction: `You can reference these concepts the student already knows:
+${masteredPrereqs.map(p => `- ${p.name}: ${p.description}`).join('\n')}
+
+Build on this foundation when explaining ${concept.name}.`
+    }
+  };
+}
+```
+
+**Example dialogue with prerequisite integration:**
+
+```
+LLM: "Remember when we learned about function application? 
+When you evaluated (+ 2 2), Lisp:
+  1. Evaluated each argument (2, 2)
+  2. Applied + to the results
+  3. Returned 4
+
+Now, what's different when we write '(+ 2 2)?"
+
+Student: "The quote prevents step 1?"
+
+LLM: "Exactly! The quote stops the entire evaluation process.
+It's like pressing pause before Lisp even looks at the arguments."
+```
+
+---
+
+### Exercise Integration
+
+#### After Mastering Concept
+
+```javascript
+async completeMastery(conceptId, results) {
+  // Grant mastery
+  markAsMastered(conceptId);
+  unlockDependents(conceptId);
+  
+  // Celebrate
+  showCelebration(conceptId);
+  
+  // Offer related exercises
+  const exercises = getExercisesForConcept(conceptId);
+  
+  if (exercises.length > 0) {
+    showExercisePrompt({
+      message: `Great work mastering ${getConceptName(conceptId)}! 
+      
+Ready to apply your knowledge?
+${exercises.length} exercise(s) await:
+${exercises.map(e => `- ${e.title}`).join('\n')}`,
+      options: ['Start Exercises', 'Continue Learning', 'Take a Break']
+    });
+  }
+}
+```
+
+#### Exercise-Specific Dialogue
+
+For exercises like "Write a robust last-name function":
+
+```javascript
+async conductExerciseSession(exerciseId) {
+  const exercise = getExerciseById(exerciseId);
+  
+  // Show problem statement
+  this.display(`Exercise: ${exercise.title}\n\n${exercise.prompt}`);
+  
+  // Guide through solution
+  // - Clarifying requirements
+  // - Identifying edge cases
+  // - Testing implementation
+  // - Comparing to example solutions
+  
+  // Use exercise.common_mistakes to provide targeted hints
+  // Use exercise.hints for progressive scaffolding
+}
+```
+
+---
+
+### Advanced Features
+
+#### Trace Visualization for Recursion
+
+When teaching recursion, generate **step-by-step execution traces**:
+
+```javascript
+async teachRecursion(concept) {
+  // Show example recursive function
+  this.display(concept.examples.find(e => e.demonstrates.includes('base_case')));
+  
+  // Interactive tracing
+  const tracePrompt = `Let's trace this execution together.
+  
+(first-name '(Dr John Smith))
+
+What happens first? Does 'Dr' match the base case?`;
+  
+  // Build trace collaboratively with student
+  // Visualize call stack
+  // Highlight base case vs recursive case
+}
+```
+
+#### Spaced Repetition Review
+
+Even mastered concepts need **periodic review**:
+
+```javascript
+class SpacedRepetitionScheduler {
+  getReviewSchedule(conceptId, masteryDate) {
+    return {
+      first_review: masteryDate + 1 * DAY,
+      second_review: masteryDate + 3 * DAYS,
+      third_review: masteryDate + 7 * DAYS,
+      fourth_review: masteryDate + 14 * DAYS,
+      fifth_review: masteryDate + 30 * DAYS
+    };
+  }
+  
+  async conductReview(conceptId) {
+    // Lighter dialogue than initial learning
+    // Focus on 1-2 key mastery indicators
+    // If passed: extend next review interval
+    // If failed: mark for re-learning
+  }
+}
+```
+
+---
+
+### Implementation Roadmap
+
+#### Phase 1: Dialogue Engine Prototype (Week 1-2)
+- [ ] Build `ConceptMasterySession` class
+- [ ] Implement basic prompt construction
+- [ ] Test LLM dialogue generation with one concept (Quote)
+- [ ] Tune prompts for Schemer-style questioning
+- [ ] Implement simple mastery evaluation logic
+
+#### Phase 2: UI Integration (Week 3)
+- [ ] Design and build session UI component
+- [ ] Connect to graph visualizer
+- [ ] Implement "Start Learning" flow
+- [ ] Add progress indicators
+- [ ] Test end-to-end with real user
+
+#### Phase 3: Adaptive Logic (Week 4)
+- [ ] Implement difficulty adaptation
+- [ ] Add misconception detection
+- [ ] Build scaffolding system
+- [ ] Test on multiple concepts
+
+#### Phase 4: Multi-Concept Integration (Week 5)
+- [ ] Prerequisite referencing in dialogue
+- [ ] Exercise integration after mastery
+- [ ] Unlocking and celebration animations
+- [ ] Full graph progression testing
+
+#### Phase 5: Advanced Features (Week 6+)
+- [ ] Trace visualization for recursion
+- [ ] Spaced repetition scheduling
+- [ ] Progress analytics and insights
+- [ ] Mobile responsive design
+
+---
+
+### Success Metrics
+
+**How do we know this works?**
+
+1. **Completion rate:** % of learners who master concepts vs. give up
+2. **Time to mastery:** How long does it take to demonstrate understanding?
+3. **Retention:** Do learners remember after 1 week? 1 month?
+4. **Misconception correction:** Are common errors detected and fixed?
+5. **User feedback:** Do learners feel they truly understand vs. just memorized?
+
+**Comparison baseline:** Traditional "read and click" approach
+
+**Target:** 
+- 80%+ completion rate
+- 90%+ retention after 1 week
+- 75%+ learners report "genuine understanding"
+
+---
+
+### Key Design Principles
+
+1. **Socratic, not lecturing** - Ask questions, don't give answers
+2. **Concrete, not abstract** - Show examples, not definitions
+3. **Adaptive, not rigid** - Adjust to learner's level
+4. **Encouraging, not judgmental** - Celebrate insights, scaffold struggles
+5. **Earned, not claimed** - Mastery must be demonstrated
+6. **Connected, not isolated** - Reference prerequisites, link to exercises
+7. **Spaced, not crammed** - Review over time to build lasting understanding
+
+---
+
+### Open Questions
+
+**1. LLM reliability:** Can we trust LLM evaluation of correctness?
+- **Mitigation:** Use multiple evaluations, confidence thresholds, human review of edge cases
+
+**2. Gaming the system:** What if learners just guess until they pass?
+- **Mitigation:** Track attempt patterns, require explanations not just answers
+
+**3. Scope of dialogue:** How long should a session be?
+- **Mitigation:** Start with 10-15 minute sessions, allow "save and resume"
+
+**4. Accessibility:** How do we support learners with different backgrounds?
+- **Mitigation:** Adaptive difficulty, optional prerequisite review, multiple explanation styles
+
+**5. Cost:** LLM API calls for every interaction?
+- **Mitigation:** Cache common question-answer pairs, use smaller models for evaluation, optimize prompt length
+
+---
+
+## Next.js Implementation: Interactive Graph Visualizer
+
+### Migration Decision
+
+After evaluating visualization approaches, we decided to build a modern web application using **Next.js 15** with the App Router. This provides:
+
+1. **Modern React patterns** - Server and client components
+2. **TypeScript support** - Type safety throughout
+3. **Component architecture** - Reusable, testable UI components
+4. **Fast development** - Hot module reloading, built-in dev server
+5. **Production ready** - Optimized builds, static export capability
+
+**Alternative considered:** Static HTML + vanilla JavaScript (as prototyped in `pcg-visualizer.html`)
+- **Pros:** Simple, no build step, works anywhere
+- **Cons:** Hard to maintain as features grow, no component reusability, manual DOM manipulation
+
+**Decision:** Next.js provides better foundation for the rich interactive features we're planning (Socratic dialogue, progress tracking, exercise integration).
+
+---
+
+### Technology Stack
+
+#### Core Framework
+- **Next.js 15.1.6** - React framework with App Router
+- **React 19** - Latest React features
+- **TypeScript** - Type safety and better DX
+
+#### Visualization
+- **Cytoscape.js 3.32.1** - Graph visualization library
+- **cytoscape-dagre 2.5.0** - Hierarchical layout algorithm
+
+**Why Cytoscape.js?** (Re-evaluation in React context)
+- Excellent API for graph manipulation
+- Works well with React (ref-based initialization)
+- Rich styling and interaction capabilities
+- Built-in support for DAG layouts
+- Performance suitable for our 33-node graph
+
+#### UI Components
+- **shadcn/ui** - High-quality React components
+  - Card, Badge, Button components
+- **Tailwind CSS 3** - Utility-first styling
+- **Radix UI** - Headless component primitives (via shadcn)
+
+---
+
+### Application Structure
+
+```
+learning/
+├── app/
+│   ├── components/
+│   │   ├── ConceptGraph.tsx        # Cytoscape graph visualization
+│   │   └── ConceptDetails.tsx      # Sidebar with concept details
+│   ├── layout.tsx                   # Root layout with fonts
+│   ├── page.tsx                     # Main page (graph + sidebar)
+│   └── globals.css                  # Global styles
+├── paip-chapter-1/
+│   └── concept-graph.json          # PCG data source
+├── components/
+│   └── ui/                          # shadcn components
+│       ├── badge.tsx
+│       ├── button.tsx
+│       └── card.tsx
+└── NOTES.md                         # This file
+```
+
+---
+
+### Component Architecture
+
+#### 1. ConceptGraph.tsx
+
+**Purpose:** Renders the interactive graph visualization using Cytoscape.js
+
+**Key features:**
+- Client-side component (`'use client'`)
+- Initializes Cytoscape with ref-based mounting
+- Maps concept data to Cytoscape nodes/edges
+- Handles layout switching (breadthfirst, dagre, cose, circle, grid)
+- Implements interaction logic:
+  - Click node → highlight full prerequisite chain
+  - Click background → clear selection
+  - Predecessor highlighting (all ancestors, not just immediate)
+  
+**Visual design:**
+- Color coding by difficulty:
+  - 🟢 Green (#4CAF50) - Basic
+  - 🔵 Blue (#2196F3) - Intermediate  
+  - 🔴 Red (#F44336) - Advanced
+- Selected node: Orange border
+- Prerequisites: Purple highlights on nodes and edges
+- Unrelated nodes: Faded to 20% opacity
+
+**Graph direction:** Edges are **semantically stored** as `{from: "dependent", to: "prerequisite"}` but **visually reversed** to show learning flow (arrows point from prerequisites to dependents).
+
+**Props:**
+```typescript
+{
+  data: ConceptGraphData,      // PCG JSON data
+  onNodeClick?: (id: string) => void  // Callback when node clicked
+}
+```
+
+#### 2. ConceptDetails.tsx
+
+**Purpose:** Displays detailed information about the selected concept in the sidebar
+
+**Key features:**
+- Shows concept name, description, difficulty badge
+- Lists prerequisites with badges
+- Displays learning objectives (from Pass 2 data)
+- Shows key insights (from Pass 2 data)
+- "Start Learning" button (placeholder for future Socratic dialogue)
+
+**States handled:**
+- No selection: "Select a Concept" prompt
+- Concept selected: Full details display
+
+**Props:**
+```typescript
+{
+  concept: Concept | null,
+  onStartLearning?: (id: string) => void
+}
+```
+
+#### 3. page.tsx (Main Application)
+
+**Purpose:** Orchestrates the graph and sidebar components
+
+**Key features:**
+- State management for selected concept ID
+- 70/30 split layout (graph : sidebar)
+- Header with title and chapter info
+- Passes concept data from JSON to components
+- Handles "Start Learning" callback (currently shows alert)
+
+**Layout structure:**
+```
+┌─────────────────────────────────────────┐
+│ Header: Pedagogical Concept Graph      │
+├───────────────────────┬─────────────────┤
+│                       │                 │
+│  ConceptGraph (70%)   │  Details (30%)  │
+│                       │                 │
+│  [Interactive graph]  │  [Concept info] │
+│                       │  [Prerequisites]│
+│                       │  [Objectives]   │
+│                       │  [Start button] │
+└───────────────────────┴─────────────────┘
+```
+
+---
+
+### Data Flow
+
+```
+concept-graph.json
+  ↓
+page.tsx (loads JSON)
+  ↓
+  ├→ ConceptGraph.tsx (renders graph)
+  │    ↓
+  │    User clicks node
+  │    ↓
+  │    onNodeClick(conceptId)
+  │    ↓
+  └→ page.tsx (updates selectedConceptId state)
+       ↓
+       ConceptDetails.tsx (displays selected concept)
+```
+
+---
+
+### Key Implementation Decisions
+
+#### 1. Predecessor Highlighting (Full Path to Root)
+
+**Problem:** Initially, clicking a node only highlighted immediate prerequisites, not the full learning path.
+
+**Solution:** Use Cytoscape's `node.predecessors()` method to get ALL ancestors:
+
+```typescript
+const allPrerequisites = node.predecessors('node');  // All ancestor nodes
+const allEdges = node.predecessors('edge');           // All edges in path
+```
+
+**Result:** Clicking "Variables" now highlights the complete chain: Symbols → Function Application → Variables, all the way back to root concepts.
+
+#### 2. Dagre Layout Integration
+
+**Problem:** Initial attempt to use dagre layout failed with "No such layout `dagre` found"
+
+**Solution:** Import and register the dagre extension:
+
+```typescript
+import dagre from 'cytoscape-dagre';
+
+if (typeof cytoscape !== 'undefined') {
+  cytoscape.use(dagre);
+}
+```
+
+**Why the check?** Prevents errors during SSR (server-side rendering) where `window` doesn't exist.
+
+#### 3. Client vs Server Components
+
+**Decision:** ConceptGraph must be a client component (`'use client'`) because:
+- Cytoscape requires DOM access (browser-only)
+- Uses React hooks (useState, useEffect, useRef)
+- Handles user interactions
+
+**Implication:** Can't use Next.js server-side data fetching in this component. Instead, data is loaded in parent (page.tsx) and passed as props.
+
+#### 4. Layout Switching
+
+Users can choose between 5 layout algorithms:
+
+1. **Breadthfirst** - Classic tree layout, shows hierarchy clearly
+2. **Dagre** ⭐ - Best for DAGs, good spacing, respects direction
+3. **COSE (Force-directed)** - Physics-based, organic look
+4. **Circle** - All nodes in circle, shows connections
+5. **Grid** - Orderly grid, less semantic meaning
+
+**Default:** Breadthfirst (most intuitive for learning paths)
+
+**Most recommended:** Dagre (specifically designed for directed acyclic graphs)
+
+---
+
+### Current Features ✅
+
+**Graph Visualization:**
+- [x] Render all 33 concepts as nodes
+- [x] Show 45 prerequisite relationships as directed edges
+- [x] Color-code by difficulty level
+- [x] Multiple layout algorithms
+- [x] Smooth animations between layouts
+
+**Interactions:**
+- [x] Click node to select
+- [x] Highlight full prerequisite chain (all ancestors)
+- [x] Highlight prerequisite edges in path
+- [x] Fade unrelated nodes
+- [x] Click background to deselect
+
+**Details Sidebar:**
+- [x] Show concept name and description
+- [x] Display difficulty badge with color
+- [x] List prerequisites
+- [x] Show learning objectives (when available)
+- [x] Show key insights (when available)
+- [x] "Start Learning" button (placeholder)
+
+**Data Integration:**
+- [x] Load from concept-graph.json
+- [x] Support Pass 1 data (structure)
+- [x] Support Pass 2 data (pedagogy) for concepts that have it
+- [x] TypeScript type definitions for data shape
+
+---
+
+### Known Issues & Limitations
+
+#### 1. Pass 2 Data Incomplete
+**Issue:** Only 3 of 33 concepts have full pedagogical enrichment (learning objectives, mastery indicators, examples)
+
+**Impact:** Most concepts show basic info only
+
+**Solution:** Complete Pass 2 enrichment for remaining 30 concepts (future work)
+
+#### 2. No Progress Tracking
+**Issue:** Can't mark concepts as "mastered" or "in progress"
+
+**Impact:** Users can't track their learning journey
+
+**Solution:** Implement progress tracking with localStorage (planned - see "Learning Path Progression" section above)
+
+#### 3. No Socratic Dialogue
+**Issue:** "Start Learning" button just shows an alert
+
+**Impact:** No active learning experience yet
+
+**Solution:** Implement Peirastic AI dialogue system (planned - see "Peirastic AI" section above)
+
+#### 4. No Exercise Integration
+**Issue:** Pass 3 exercise data not displayed anywhere
+
+**Impact:** Can't see which exercises test which concepts
+
+**Solution:** Add exercise panel/modal showing related exercises (future work)
+
+#### 5. Mobile Responsiveness
+**Issue:** Fixed 70/30 split doesn't work well on small screens
+
+**Impact:** Poor mobile experience
+
+**Solution:** Add responsive breakpoints, collapsible sidebar
+
+---
+
+### Development Workflow
+
+#### Setup
+```bash
+cd learning
+npm install
+```
+
+#### Run Development Server
+```bash
+npm run dev
+```
+
+Then open: http://localhost:3000
+
+#### Build for Production
+```bash
+npm run build
+npm start
+```
+
+#### Type Checking
+```bash
+npx tsc --noEmit
+```
+
+---
+
+### Performance Considerations
+
+#### Current Performance
+- **Graph rendering:** ~100-200ms for 33 nodes (fast)
+- **Layout calculation:** 
+  - Breadthfirst: ~50ms
+  - Dagre: ~100-150ms (more complex algorithm)
+  - COSE: ~500ms+ (iterative physics simulation)
+- **Interaction latency:** <16ms (60 FPS)
+
+#### Scaling Concerns
+- Current graph (33 nodes, 45 edges) performs well
+- If expanding to full PAIP book (all chapters):
+  - Estimated: 300-500 concepts
+  - May need virtualization or clustering
+  - Consider graph database for queries
+
+#### Optimization Strategies (if needed)
+1. **Lazy loading:** Only load visible subgraph
+2. **Memoization:** Cache layout calculations
+3. **Web Workers:** Offload layout computation
+4. **Canvas fallback:** Switch from SVG for larger graphs
+
+---
+
+### Next Steps (Implementation Roadmap)
+
+#### Phase 1: Progress Tracking 🎯 *Next Priority*
+- [ ] Add localStorage-based progress tracking
+- [ ] Implement visual states (locked, ready, in-progress, mastered)
+- [ ] Show statistics (X/33 concepts mastered)
+- [ ] Highlight "recommended next" concepts
+- [ ] Celebrate unlocking new concepts
+
+#### Phase 2: Complete Pass 2 Data
+- [ ] Enrich remaining 30 concepts with pedagogy
+- [ ] Validate mastery indicators for all concepts
+- [ ] Add examples and misconceptions
+- [ ] Update concept-graph.json
+
+#### Phase 3: Socratic Dialogue Integration
+- [ ] Design ConceptMasterySession component
+- [ ] Integrate LLM API (Gemini or GPT-4)
+- [ ] Build dialogue UI modal
+- [ ] Implement mastery evaluation logic
+- [ ] Connect to progress tracking
+
+#### Phase 4: Exercise Integration
+- [ ] Display exercises in concept details
+- [ ] Show which concepts each exercise tests
+- [ ] Link exercises to mastery indicators
+- [ ] Provide exercise session flow
+
+#### Phase 5: Polish & Production
+- [ ] Mobile responsive design
+- [ ] Accessibility improvements (keyboard nav, screen readers)
+- [ ] Performance optimization
+- [ ] User testing and feedback
+- [ ] Deploy to production
+
+---
+
+### Lessons Learned (Next.js Implementation)
+
+#### 1. Cytoscape + React = Ref-based Initialization
+Can't treat Cytoscape like a React component. Must use `useRef` for container and manual initialization in `useEffect`.
+
+#### 2. 'use client' is Necessary for Interactive Components
+Any component using browser APIs, event handlers, or React hooks needs `'use client'` directive in Next.js App Router.
+
+#### 3. Import Registration Timing Matters
+Register Cytoscape extensions (like dagre) immediately after import, before trying to use them in layouts.
+
+#### 4. TypeScript Catches Data Shape Mismatches
+Strongly typing the PCG data structure helped catch inconsistencies between Pass 1/2/3 data formats.
+
+#### 5. Incremental Migration Works Well
+Starting with a simple HTML prototype (pcg-visualizer.html), then migrating to React components, allowed us to validate the visualization approach before committing to the full framework.
+
+#### 6. shadcn/ui Accelerates UI Development
+Pre-built, customizable components (Card, Badge, Button) saved significant time compared to building from scratch.
+
+---
+
+### Comparison: HTML Prototype vs Next.js Implementation
+
+| Aspect | HTML Prototype | Next.js Implementation |
+|--------|----------------|------------------------|
+| **Setup time** | 0 (just open in browser) | 15 min (install deps) |
+| **Code organization** | Single file, mixed concerns | Modular components |
+| **Maintainability** | Difficult (no structure) | Easy (clear separation) |
+| **Type safety** | None | Full TypeScript |
+| **State management** | Global vars + DOM queries | React state + props |
+| **UI components** | Manual HTML + CSS | shadcn/ui + Tailwind |
+| **Extensibility** | Hard (tightly coupled) | Easy (component props) |
+| **Production ready** | No (prototype only) | Yes (build + deploy) |
+
+**Verdict:** HTML prototype was perfect for rapid validation. Next.js is the right choice for the production application.
+
+---
+
+### Technical Debt & Future Refactoring
+
+#### 1. Consolidate Graph Data Structure
+Currently have three separate JSON files (pass1, pass2-sample, pass3). Should:
+- Create `merge_pcg.py` utility (as discussed in earlier sections)
+- Generate single `paip-chapter-1-complete.json`
+- Update components to use merged structure
+
+#### 2. Extract Graph Logic into Custom Hook
+ConceptGraph.tsx is getting large. Consider:
+```typescript
+function useConceptGraph(data, containerRef, options) {
+  // Initialize Cytoscape
+  // Handle interactions
+  // Manage selection state
+  return { cy, selectedNode, ... }
+}
+```
+
+#### 3. Centralize Difficulty Colors
+Currently hardcoded in multiple places. Create:
+```typescript
+// utils/theme.ts
+export const DIFFICULTY_COLORS = {
+  basic: '#4CAF50',
+  intermediate: '#2196F3',
+  advanced: '#F44336',
+} as const;
+```
+
+#### 4. Add Error Boundaries
+Cytoscape can throw errors (invalid data, layout failures). Wrap components in error boundaries for better UX.
+
+#### 5. Implement Proper Loading States
+Currently, graph just appears. Should show:
+- Loading spinner while Cytoscape initializes
+- Skeleton UI while data loads
+- Error message if data fetch fails
+
+---
+
+### Appendix: Package Versions
+
+```json
+{
+  "dependencies": {
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "cytoscape": "^3.32.1",
+    "cytoscape-dagre": "^2.5.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.6",
+    "@types/react-dom": "^19.0.2",
+    "tailwindcss": "^3.4.17",
+    "postcss": "^8.4.49",
+    "autoprefixer": "^10.4.20"
+  }
+}
+```
+
+---
+
 *Last updated: 2025-01-06*
 *See CONTEXT.md for complete project design document*
 # Pedagogical Concept Graph (PCG) - Visualization Notes
