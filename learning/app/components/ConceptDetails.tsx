@@ -25,9 +25,59 @@ type ConceptDetailsProps = {
   onStartLearning?: (conceptId: string) => void;
   masteryRecord?: MasteryRecord | null;
   conceptStatus?: 'mastered' | 'recommended' | 'ready' | 'locked' | null;
+  allConcepts?: Concept[];
+  masteredConcepts?: Map<string, MasteryRecord>;
+  recommendedConcepts?: Set<string>;
+  readyConcepts?: Set<string>;
+  lockedConcepts?: Set<string>;
+  onConceptClick?: (conceptId: string) => void;
 };
 
-export default function ConceptDetails({ concept, onStartLearning, masteryRecord, conceptStatus }: ConceptDetailsProps) {
+// Compute full prerequisite chain with topological sort
+function computePrerequisiteChain(
+  conceptId: string,
+  allConcepts: Concept[],
+  masteredConcepts: Map<string, MasteryRecord>
+): string[] {
+  const conceptMap = new Map(allConcepts.map(c => [c.id, c]));
+  const visited = new Set<string>();
+  const chain: string[] = [];
+
+  function dfs(id: string) {
+    if (visited.has(id)) return;
+    if (masteredConcepts.has(id)) return; // Stop at mastered concepts
+    
+    visited.add(id);
+    const concept = conceptMap.get(id);
+    if (!concept) return;
+
+    // Visit prerequisites first (DFS post-order gives us topological sort)
+    for (const prereqId of concept.prerequisites) {
+      dfs(prereqId);
+    }
+
+    // Don't include the target concept itself
+    if (id !== conceptId) {
+      chain.push(id);
+    }
+  }
+
+  dfs(conceptId);
+  return chain;
+}
+
+export default function ConceptDetails({ 
+  concept, 
+  onStartLearning, 
+  masteryRecord, 
+  conceptStatus,
+  allConcepts = [],
+  masteredConcepts = new Map(),
+  recommendedConcepts = new Set(),
+  readyConcepts = new Set(),
+  lockedConcepts = new Set(),
+  onConceptClick,
+}: ConceptDetailsProps) {
   if (!concept) {
     return (
       <Card className="h-full">
@@ -82,19 +132,70 @@ export default function ConceptDetails({ concept, onStartLearning, masteryRecord
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Prerequisites */}
-        {concept.prerequisites.length > 0 && (
-          <div>
-            <h3 className="font-semibold text-sm mb-2">Prerequisites:</h3>
-            <div className="flex flex-wrap gap-2">
-              {concept.prerequisites.map((prereq) => (
-                <Badge key={prereq} variant="outline">
-                  {prereq}
-                </Badge>
-              ))}
+        {/* Prerequisites - Full Learning Path */}
+        {(() => {
+          const prereqChain = computePrerequisiteChain(concept.id, allConcepts, masteredConcepts);
+          if (prereqChain.length === 0) return null; // Suppress if empty
+          
+          return (
+            <div>
+              <h3 className="font-semibold text-sm mb-2">
+                Learning Path to {concept.name}:
+              </h3>
+              <p className="text-xs text-slate-500 mb-3">
+                Complete these concepts in order (from foundation to advanced)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {prereqChain
+                  .map((prereqId) => {
+                    const prereqConcept = allConcepts.find(c => c.id === prereqId);
+                    if (!prereqConcept) return null;
+
+                    const isMastered = masteredConcepts.has(prereqId);
+                    const isReady = readyConcepts.has(prereqId) || recommendedConcepts.has(prereqId);
+                    const isLocked = lockedConcepts.has(prereqId);
+
+                    return {
+                      prereqId,
+                      prereqConcept,
+                      isMastered,
+                      isReady,
+                      isLocked,
+                      // Priority: mastered=1, ready=2, locked=3
+                      priority: isMastered ? 1 : isReady ? 2 : 3,
+                    };
+                  })
+                  .filter(item => item !== null)
+                  .sort((a, b) => a!.priority - b!.priority) // Sort by status priority
+                  .map(({ prereqId, prereqConcept, isMastered, isReady, isLocked }) => {
+                    let badgeClass = 'cursor-pointer hover:opacity-80 transition-opacity';
+                    let icon = '';
+                    
+                    if (isMastered) {
+                      badgeClass += ' bg-yellow-400 text-black border-orange-400';
+                      icon = '✓ ';
+                    } else if (isReady) {
+                      badgeClass += ' bg-green-500 text-white border-green-600 font-semibold';
+                      icon = '→ ';
+                    } else if (isLocked) {
+                      badgeClass += ' bg-slate-300 text-slate-600 opacity-60';
+                      icon = '🔒 ';
+                    }
+
+                    return (
+                      <Badge
+                        key={prereqId}
+                        className={badgeClass}
+                        onClick={() => onConceptClick?.(prereqId)}
+                      >
+                        {icon}{prereqConcept.name}
+                      </Badge>
+                    );
+                  })}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Learning Objectives */}
         {concept.learning_objectives && concept.learning_objectives.length > 0 && (

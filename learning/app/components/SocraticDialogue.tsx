@@ -1,6 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import 'katex/dist/katex.min.css';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +50,7 @@ export default function SocraticDialogue({
   const [hasStarted, setHasStarted] = useState(false);
   const [demonstratedSkills, setDemonstratedSkills] = useState<Set<string>>(new Set());
   const [readyForMastery, setReadyForMastery] = useState(false);
+  const [textbookContext, setTextbookContext] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -73,6 +81,7 @@ export default function SocraticDialogue({
       setInput('');
       setDemonstratedSkills(new Set());
       setReadyForMastery(false);
+      setTextbookContext(null); // Clear cached context
     }
   }, [open]);
 
@@ -88,6 +97,7 @@ export default function SocraticDialogue({
           conceptId: conceptData.id,
           conversationHistory: [],
           conceptData,
+          textbookContext: null, // Signal: please do semantic search
         }),
       });
 
@@ -97,6 +107,12 @@ export default function SocraticDialogue({
       }
 
       const data = await response.json();
+      
+      // Cache the textbook context for subsequent turns
+      if (data.textbookContext) {
+        setTextbookContext(data.textbookContext);
+        console.log('📦 Cached textbook context:', data.textbookContext.length, 'characters');
+      }
       
       // Update demonstrated skills if assessment provided
       if (data.mastery_assessment) {
@@ -151,6 +167,7 @@ export default function SocraticDialogue({
           conceptId: conceptData.id,
           conversationHistory,
           conceptData,
+          textbookContext, // Reuse cached context from first turn
         }),
       });
 
@@ -290,7 +307,42 @@ export default function SocraticDialogue({
                     : 'bg-slate-100 text-slate-900'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                <div className={`text-sm prose prose-sm max-w-none prose-p:my-2 prose-pre:my-2 ${
+                  msg.role === 'user' ? 'prose-invert' : 'prose-slate'
+                }`}>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={{
+                      code({ node, inline, className, children, ...props }: any) {
+                        const match = /language-(\w+)/.exec(className || '');
+                        return !inline && match ? (
+                          <SyntaxHighlighter
+                            style={oneDark}
+                            language={match[1]}
+                            PreTag="div"
+                            {...props}
+                          >
+                            {String(children).replace(/\n$/, '')}
+                          </SyntaxHighlighter>
+                        ) : (
+                          <code 
+                            className={`${className} px-1 py-0.5 rounded text-xs ${
+                              msg.role === 'user' 
+                                ? 'bg-blue-600 text-white' 
+                                : 'bg-slate-200 text-slate-900'
+                            }`} 
+                            {...props}
+                          >
+                            {children}
+                          </code>
+                        );
+                      },
+                    }}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
               </div>
             </div>
           ))}

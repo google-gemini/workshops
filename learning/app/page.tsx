@@ -120,8 +120,7 @@ export default function Home() {
     <div className="h-screen flex flex-col">
       {/* Header */}
       <header className="bg-slate-900 text-white p-4">
-        <h1 className="text-2xl font-bold">Pedagogical Concept Graph</h1>
-        <p className="text-sm text-slate-300">PAIP Chapter 1: Introduction to Lisp</p>
+        <h1 className="text-2xl font-bold">PAIP Chapter 1: Introduction to Lisp</h1>
       </header>
 
       {/* Main content */}
@@ -195,6 +194,12 @@ export default function Home() {
             onStartLearning={handleStartLearning}
             masteryRecord={selectedConceptId ? masteredConcepts.get(selectedConceptId) || null : null}
             conceptStatus={getConceptStatus(selectedConceptId)}
+            allConcepts={conceptGraphData.concepts}
+            masteredConcepts={masteredConcepts}
+            recommendedConcepts={recommendedConceptIds}
+            readyConcepts={new Set(readyConcepts.map(c => c.id))}
+            lockedConcepts={new Set(lockedConcepts.map(c => c.id))}
+            onConceptClick={setSelectedConceptId}
           />
         </div>
       </div>

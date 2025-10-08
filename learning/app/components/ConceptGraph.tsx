@@ -3,10 +3,16 @@
 import { useEffect, useRef, useState } from 'react';
 import cytoscape, { Core, EdgeDefinition, NodeDefinition } from 'cytoscape';
 import dagre from 'cytoscape-dagre';
+import fcose from 'cytoscape-fcose';
+import coseBilkent from 'cytoscape-cose-bilkent';
+import cola from 'cytoscape-cola';
 
-// Register the dagre layout
+// Register the layout plugins
 if (typeof cytoscape !== 'undefined') {
   cytoscape.use(dagre);
+  cytoscape.use(fcose);
+  cytoscape.use(coseBilkent);
+  cytoscape.use(cola);
 }
 
 type Concept = {
@@ -53,6 +59,7 @@ export default function ConceptGraph({
 }: ConceptGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [layout, setLayout] = useState('breadthfirst');
 
@@ -110,15 +117,19 @@ export default function ConceptGraph({
           style: {
             'background-color': (ele) => difficultyColors[ele.data('difficulty')] || '#999',
             label: 'data(label)',
-            color: '#fff',
-            'text-valign': 'center',
+            color: '#000',
+            'text-valign': 'bottom',
             'text-halign': 'center',
-            'font-size': '10px',
+            'text-margin-y': '5px',
+            'font-size': '20px',
             'font-weight': 'bold',
-            width: '60px',
-            height: '60px',
+            'text-background-color': '#ffffff',
+            'text-background-opacity': 0.85,
+            'text-background-padding': '3px',
+            width: '25px',
+            height: '25px',
             'text-wrap': 'wrap',
-            'text-max-width': '55px',
+            'text-max-width': '120px',
           },
         },
         {
@@ -133,9 +144,11 @@ export default function ConceptGraph({
         {
           selector: 'node.recommended',
           style: {
-            'border-width': '3px',
+            width: '35px', // Larger than regular nodes
+            height: '35px',
+            'border-width': '4px',
             'border-color': '#4CAF50', // Bright green border
-            'box-shadow': '0 0 20px rgba(76, 175, 80, 0.6)',
+            'box-shadow': '0 0 30px rgba(76, 175, 80, 0.8)',
           },
         },
         {
@@ -147,7 +160,7 @@ export default function ConceptGraph({
         {
           selector: 'node.locked',
           style: {
-            opacity: 0.4,
+            opacity: 0.25, // More faded to show they're not available
           },
         },
         {
@@ -197,17 +210,12 @@ export default function ConceptGraph({
       },
     });
 
-    // Node click handler
-    cy.on('tap', 'node', (event) => {
-      const node = event.target;
-      const nodeId = node.id();
-      setSelectedNode(nodeId);
-
+    // Helper function to highlight prerequisite path
+    const highlightPath = (node: any) => {
       // Reset styles
       cy.elements().removeClass('highlighted faded');
 
       // Get ALL ancestors (full prerequisite chain to root)
-      // Using breadth-first search to traverse all incoming edges
       const allPrerequisites = node.predecessors('node');
       allPrerequisites.addClass('highlighted');
 
@@ -218,14 +226,53 @@ export default function ConceptGraph({
       // Fade unrelated nodes
       const related = node.union(allPrerequisites).union(allEdges);
       cy.elements().difference(related).addClass('faded');
+    };
 
-      // Callback
+    // Hover handler - preview mode (only if nothing is locked)
+    cy.on('mouseover', 'node', (event) => {
+      if (selectedNode) return; // Don't interfere with locked selection
+
+      // Clear any existing hover timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+
+      // Add slight delay to reduce jitter (200ms)
+      hoverTimeoutRef.current = setTimeout(() => {
+        highlightPath(event.target);
+      }, 200);
+    });
+
+    // Mouse out handler - clear preview
+    cy.on('mouseout', 'node', () => {
+      if (selectedNode) return; // Don't interfere with locked selection
+
+      // Clear timeout if user moves away before delay completes
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
+      }
+
+      // Clear highlights
+      cy.elements().removeClass('highlighted faded');
+    });
+
+    // Click handler - locked mode (persistent + details panel)
+    cy.on('tap', 'node', (event) => {
+      const node = event.target;
+      const nodeId = node.id();
+      setSelectedNode(nodeId);
+
+      // Highlight path
+      highlightPath(node);
+
+      // Callback to show details in right panel
       if (onNodeClick) {
         onNodeClick(nodeId);
       }
     });
 
-    // Background click handler
+    // Background click handler - unlock selection
     cy.on('tap', (event) => {
       if (event.target === cy) {
         cy.elements().removeClass('highlighted faded');
@@ -233,11 +280,15 @@ export default function ConceptGraph({
       }
     });
 
-    cyRef.current = cy;
-
+    // Cleanup hover timeout on unmount
     return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
       cy.destroy();
     };
+
+    cyRef.current = cy;
   }, [data, layout, onNodeClick, masteredConcepts]);
 
   const handleLayoutChange = (newLayout: string) => {
@@ -250,19 +301,47 @@ export default function ConceptGraph({
   return (
     <div className="w-full h-full flex flex-col">
       {/* Controls */}
-      <div className="p-4 bg-slate-100 border-b flex gap-2 items-center">
-        <span className="text-sm font-medium">Layout:</span>
-        <select
-          value={layout}
-          onChange={(e) => handleLayoutChange(e.target.value)}
-          className="px-3 py-1 border rounded text-sm"
-        >
-          <option value="breadthfirst">Breadthfirst</option>
-          <option value="dagre">Dagre</option>
-          <option value="cose">Force-directed</option>
-          <option value="circle">Circle</option>
-          <option value="grid">Grid</option>
-        </select>
+      <div className="p-4 bg-slate-100 border-b flex gap-4 items-center">
+        <div className="flex gap-2 items-center">
+          <span className="text-sm font-medium">Layout:</span>
+          <select
+            value={layout}
+            onChange={(e) => handleLayoutChange(e.target.value)}
+            className="px-3 py-1 border rounded text-sm"
+          >
+            <optgroup label="Hierarchical">
+              <option value="breadthfirst">Breadthfirst</option>
+              <option value="dagre">Dagre</option>
+            </optgroup>
+            <optgroup label="Force-Directed">
+              <option value="cose">COSE</option>
+              <option value="fcose">fCOSE</option>
+              <option value="cose-bilkent">COSE-Bilkent</option>
+              <option value="cola">Cola</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option value="circle">Circle</option>
+              <option value="concentric">Concentric</option>
+              <option value="grid">Grid</option>
+            </optgroup>
+          </select>
+        </div>
+
+        {/* Legend */}
+        <div className="ml-auto flex gap-4 items-center text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-yellow-400 border-2 border-orange-400"></div>
+            <span className="text-slate-700">Mastered</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-green-500 border-4 border-green-500 shadow-lg"></div>
+            <span className="text-slate-700 font-semibold">Ready to Learn</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-slate-400 opacity-25"></div>
+            <span className="text-slate-500">Locked</span>
+          </div>
+        </div>
       </div>
 
       {/* Graph container */}

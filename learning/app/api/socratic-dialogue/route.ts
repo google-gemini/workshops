@@ -5,9 +5,116 @@ type Message = {
   content: string;
 };
 
+// Compute cosine similarity between two vectors
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length) {
+    throw new Error(`Vector dimension mismatch: ${a.length} vs ${b.length}`);
+  }
+  
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+  
+  for (let i = 0; i < a.length; i++) {
+    dotProduct += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+// Generate embedding for a concept query
+async function embedConceptQuery(conceptName: string, apiKey: string): Promise<number[]> {
+  // Use just the concept name - cast a wide net and let semantic search do its magic
+  const queryText = conceptName;
+  
+  console.log('   🔍 Embedding query:', queryText);
+  
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'gemini-embedding-001',
+        content: {
+          parts: [{ text: queryText }]
+        }
+      })
+    }
+  );
+  
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Embedding API failed: ${error}`);
+  }
+  
+  const data = await response.json();
+  return data.embedding.values;
+}
+
+// Load textbook sections using semantic search
+async function loadConceptContext(
+  conceptId: string, 
+  conceptData: any,
+  apiKey: string,
+  topK: number = 5
+): Promise<string> {
+  try {
+    const embeddings = require('../../../paip-chapter-1/embeddings.json');
+    
+    console.log(`   📊 Searching ${embeddings.chunks.length} chunks using semantic similarity...`);
+    
+    // Get embedding for the concept query
+    const conceptEmbedding = await embedConceptQuery(conceptData.name, apiKey);
+    
+    console.log(`   🧮 Computing similarities (embedding dims: ${conceptEmbedding.length})...`);
+    
+    // Compute similarity scores for all chunks
+    const rankedChunks = embeddings.chunks
+      .map((chunk: any) => ({
+        chunk,
+        similarity: cosineSimilarity(conceptEmbedding, chunk.embedding)
+      }))
+      .sort((a: any, b: any) => b.similarity - a.similarity)
+      .slice(0, topK);
+    
+    if (rankedChunks.length === 0) {
+      return '(No textbook sections found for this concept)';
+    }
+    
+    console.log(`   ✅ Top ${rankedChunks.length} chunks by similarity:`);
+    rankedChunks.forEach((item: any, i: number) => {
+      console.log(`      ${i + 1}. [${item.similarity.toFixed(3)}] ${item.chunk.topic}`);
+      console.log(`         Tags: ${item.chunk.concepts.join(', ')}`);
+    });
+    
+    // Format the most relevant chunks
+    return rankedChunks
+      .map((item: any) => {
+        const chunk = item.chunk;
+        return `**[${chunk.chunk_type.toUpperCase()}] ${chunk.topic}** (similarity: ${(item.similarity * 100).toFixed(1)}%)\n${chunk.text}`;
+      })
+      .join('\n\n---\n\n');
+      
+  } catch (error) {
+    console.error('   ❌ Error loading concept context:', error);
+    return '(Textbook context unavailable)';
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { conceptId, conversationHistory, conceptData } = await request.json();
+    const { conceptId, conversationHistory, conceptData, textbookContext } = await request.json();
+
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🎓 NEW SOCRATIC DIALOGUE REQUEST');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📌 Concept ID:', conceptId);
+    console.log('📌 Concept Name:', conceptData.name);
+    console.log('📌 Conversation turns:', conversationHistory.length);
+    console.log('📌 Textbook context:', textbookContext ? 'CACHED ✅' : 'NEEDS SEARCH 🔍');
 
     // Get API key from environment (prefer GOOGLE_API_KEY)
     const apiKey = process.env.GOOGLE_API_KEY;
@@ -19,12 +126,53 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Build system prompt using concept's pedagogical data
-    const systemPrompt = buildSocraticPrompt(conceptData);
+    // Use cached textbook context or perform semantic search
+    let textbookSections = textbookContext;
+    
+    if (!textbookSections) {
+      console.log('\n📚 SEMANTIC SEARCH (first turn):');
+      textbookSections = await loadConceptContext(conceptId, conceptData, apiKey, 5);
+    } else {
+      console.log('\n📚 REUSING CACHED CONTEXT:');
+    }
+    
+    const chunksLoaded = textbookSections === '(No textbook sections found for this concept)' 
+      ? 0 
+      : textbookSections.split('---').length;
+    
+    console.log('\n📚 TEXTBOOK CONTEXT:');
+    console.log(`   - Source: ${textbookContext ? 'CLIENT CACHE ✅' : 'SEMANTIC SEARCH 🔍'}`);
+    console.log(`   - Chunks: ${chunksLoaded}`);
+    console.log(`   - Characters: ${textbookSections.length}`);
+    console.log(`   - Estimated tokens: ~${Math.ceil(textbookSections.length / 4)}`);
+    if (chunksLoaded > 0 && chunksLoaded <= 3) {
+      console.log('\n📖 Textbook sections preview:');
+      console.log(textbookSections.substring(0, 500) + '...\n');
+    }
+
+    // Build system prompt with textbook grounding
+    const systemPrompt = buildSocraticPrompt(conceptData, textbookSections);
+    
+    console.log('\n📝 SYSTEM PROMPT CONSTRUCTED:');
+    console.log(`   - Total length: ${systemPrompt.length} characters`);
+    console.log(`   - Estimated tokens: ~${Math.ceil(systemPrompt.length / 4)}`);
+    console.log(`   - Learning objectives: ${conceptData.learning_objectives?.length || 0}`);
+    console.log(`   - Mastery indicators: ${conceptData.mastery_indicators?.length || 0}`);
 
     // Convert conversation history to Gemini format
     // Gemini doesn't support system role, so we prepend it to the first user message
     const geminiContents = convertToGeminiFormat(systemPrompt, conversationHistory);
+    
+    console.log('\n📤 SENDING TO GEMINI:');
+    console.log(`   - Total messages: ${geminiContents.length}`);
+    const payload = JSON.stringify(geminiContents, null, 2);
+    if (payload.length > 4000) {
+      console.log(`   - Payload preview (${payload.length} chars total):`);
+      console.log(payload.substring(0, 2000) + '\n...\n' + payload.substring(payload.length - 500));
+    } else {
+      console.log('   - Full payload:');
+      console.log(payload);
+    }
 
     // Call Google Gemini API with structured output
     const model = 'gemini-2.5-flash'; // Fast and intelligent model with best price-performance
@@ -81,7 +229,9 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Gemini API error:', error);
+      console.error('\n❌ GEMINI API ERROR:');
+      console.error(error);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
       return NextResponse.json(
         { error: 'Failed to get response from Gemini' },
         { status: response.status }
@@ -89,14 +239,27 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+    
+    console.log('\n📥 RECEIVED FROM GEMINI:');
+    console.log('   - Usage metadata:', JSON.stringify(data.usageMetadata, null, 2));
+    console.log('   - Candidates:', data.candidates.length);
+    
     const responseText = data.candidates[0].content.parts[0].text;
+    console.log('\n📄 RAW RESPONSE TEXT:');
+    console.log(responseText.substring(0, 500) + (responseText.length > 500 ? '...' : ''));
     
     // Parse the JSON response
     let parsedResponse;
     try {
       parsedResponse = JSON.parse(responseText);
+      console.log('\n✅ PARSED RESPONSE:');
+      console.log('   - Message length:', parsedResponse.message.length);
+      console.log('   - Indicators demonstrated:', parsedResponse.mastery_assessment.indicators_demonstrated);
+      console.log('   - Confidence:', parsedResponse.mastery_assessment.confidence);
+      console.log('   - Ready for mastery:', parsedResponse.mastery_assessment.ready_for_mastery);
     } catch (e) {
-      console.error('Failed to parse JSON response:', responseText);
+      console.error('\n❌ JSON PARSE ERROR:', e);
+      console.error('   - Raw response:', responseText);
       // Fallback: treat as plain text
       parsedResponse = {
         message: responseText,
@@ -109,14 +272,19 @@ export async function POST(request: NextRequest) {
       };
     }
 
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
     return NextResponse.json({
       message: parsedResponse.message,
       mastery_assessment: parsedResponse.mastery_assessment,
+      textbookContext: textbookSections, // Return for client to cache
       usage: data.usageMetadata,
     });
 
   } catch (error) {
-    console.error('Socratic dialogue error:', error);
+    console.error('\n💥 UNEXPECTED ERROR:');
+    console.error(error);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -163,12 +331,28 @@ function convertToGeminiFormat(systemPrompt: string, conversationHistory: Messag
 }
 
 // Build a Socratic teaching prompt using the concept's pedagogical data
-function buildSocraticPrompt(conceptData: any): string {
+function buildSocraticPrompt(conceptData: any, textbookSections?: string): string {
   const { name, description, learning_objectives, mastery_indicators, examples, misconceptions } = conceptData;
 
   return `You are a Socratic tutor teaching the concept: "${name}".
 
 **Concept Description:** ${description}
+
+${textbookSections ? `
+**YOUR TEACHING MATERIAL (internalize this as your own knowledge):**
+
+${textbookSections}
+
+**CRITICAL INSTRUCTIONS FOR USING THIS MATERIAL:**
+1. This is YOUR expert knowledge - teach from it naturally, never say "the textbook says..." or "based on the textbook..."
+2. When referencing examples, SHOW them directly: "Consider this Lisp expression: (+ 2 3)..." not "based on the examples..."
+3. Quote relevant passages when helpful: "In Lisp, parentheses indicate..." 
+4. Use the specific terminology and concepts from above, but present them as your own teaching
+5. If asking about an example, either show it inline or reference one you already discussed with the student
+6. Never expect the student to have access to material you haven't explicitly shown them in this conversation
+
+---
+` : ''}
 
 **Learning Objectives:**
 ${learning_objectives?.map((obj: string, i: number) => `${i + 1}. ${obj}`).join('\n') || 'Not specified'}
@@ -181,10 +365,10 @@ ${misconceptions?.map((m: any) => `- "${m.misconception}" → Reality: ${m.reali
 
 **Teaching Approach:**
 1. Use the Socratic method: ask probing questions rather than lecturing
-2. Guide the student to discover answers themselves
+2. Guide the student to discover answers themselves using the textbook examples above
 3. Check understanding of each learning objective through dialogue
 4. Gently correct misconceptions when they arise
-5. Use examples from the concept data when helpful
+5. Reference specific passages from the textbook content when helpful
 6. Be encouraging and patient
 7. Keep responses concise (2-3 sentences with one focused question)
 8. When the student demonstrates mastery of the core skills, conclude with encouragement
