@@ -15,12 +15,19 @@ type Concept = {
   key_insights?: any[];
 };
 
+type MasteryRecord = {
+  conceptId: string;
+  masteredAt: number;
+};
+
 type ConceptDetailsProps = {
   concept: Concept | null;
   onStartLearning?: (conceptId: string) => void;
+  masteryRecord?: MasteryRecord | null;
+  conceptStatus?: 'mastered' | 'recommended' | 'ready' | 'locked' | null;
 };
 
-export default function ConceptDetails({ concept, onStartLearning }: ConceptDetailsProps) {
+export default function ConceptDetails({ concept, onStartLearning, masteryRecord, conceptStatus }: ConceptDetailsProps) {
   if (!concept) {
     return (
       <Card className="h-full">
@@ -38,13 +45,37 @@ export default function ConceptDetails({ concept, onStartLearning }: ConceptDeta
     advanced: 'bg-red-500',
   };
 
+  const statusConfig: Record<string, { label: string; color: string; icon: string }> = {
+    mastered: { label: 'Mastered', color: 'bg-yellow-500', icon: '✓' },
+    recommended: { label: 'Recommended Next', color: 'bg-green-500', icon: '⭐' },
+    ready: { label: 'Ready to Learn', color: 'bg-blue-500', icon: '✅' },
+    locked: { label: 'Locked', color: 'bg-gray-400', icon: '🔒' },
+  };
+
   return (
     <Card className="h-full overflow-auto">
       <CardHeader>
         <div className="flex items-start justify-between">
-          <div>
-            <CardTitle>{concept.name}</CardTitle>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <CardTitle>{concept.name}</CardTitle>
+              {conceptStatus && statusConfig[conceptStatus] && (
+                <Badge className={`${statusConfig[conceptStatus].color} text-white`}>
+                  {statusConfig[conceptStatus].icon} {statusConfig[conceptStatus].label}
+                </Badge>
+              )}
+            </div>
             <CardDescription className="mt-2">{concept.description}</CardDescription>
+            {masteryRecord && (
+              <div className="mt-2 text-xs text-green-600 font-medium">
+                ✓ Mastered {new Date(masteryRecord.masteredAt).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </div>
+            )}
           </div>
           <Badge className={difficultyColors[concept.difficulty]}>{concept.difficulty}</Badge>
         </div>

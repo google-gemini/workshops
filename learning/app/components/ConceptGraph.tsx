@@ -29,13 +29,28 @@ type ConceptGraphData = {
   edges: Edge[];
 };
 
+type MasteryRecord = {
+  conceptId: string;
+  masteredAt: number;
+};
+
 type ConceptGraphProps = {
   data: ConceptGraphData;
   onNodeClick?: (conceptId: string) => void;
-  masteredConcepts?: Set<string>;
+  masteredConcepts?: Map<string, MasteryRecord>;
+  recommendedConcepts?: Set<string>;
+  readyConcepts?: Set<string>;
+  lockedConcepts?: Set<string>;
 };
 
-export default function ConceptGraph({ data, onNodeClick, masteredConcepts }: ConceptGraphProps) {
+export default function ConceptGraph({ 
+  data, 
+  onNodeClick, 
+  masteredConcepts,
+  recommendedConcepts,
+  readyConcepts,
+  lockedConcepts,
+}: ConceptGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
@@ -54,6 +69,16 @@ export default function ConceptGraph({ data, onNodeClick, masteredConcepts }: Co
     // Transform data for Cytoscape
     const nodes: NodeDefinition[] = data.concepts.map((concept) => {
       const isMastered = masteredConcepts?.has(concept.id) || false;
+      const isRecommended = recommendedConcepts?.has(concept.id) || false;
+      const isReady = readyConcepts?.has(concept.id) || false;
+      const isLocked = lockedConcepts?.has(concept.id) || false;
+
+      let classes = '';
+      if (isMastered) classes = 'mastered';
+      else if (isRecommended) classes = 'recommended';
+      else if (isReady) classes = 'ready';
+      else if (isLocked) classes = 'locked';
+
       return {
         data: {
           id: concept.id,
@@ -62,7 +87,7 @@ export default function ConceptGraph({ data, onNodeClick, masteredConcepts }: Co
           description: concept.description,
           prerequisites: concept.prerequisites,
         },
-        classes: isMastered ? 'mastered' : '',
+        classes,
       };
     });
 
@@ -103,6 +128,26 @@ export default function ConceptGraph({ data, onNodeClick, masteredConcepts }: Co
             'border-width': '3px',
             'border-color': '#FFA500', // Orange border
             'color': '#000', // Black text for better contrast on gold
+          },
+        },
+        {
+          selector: 'node.recommended',
+          style: {
+            'border-width': '3px',
+            'border-color': '#4CAF50', // Bright green border
+            'box-shadow': '0 0 20px rgba(76, 175, 80, 0.6)',
+          },
+        },
+        {
+          selector: 'node.ready',
+          style: {
+            opacity: 1.0,
+          },
+        },
+        {
+          selector: 'node.locked',
+          style: {
+            opacity: 0.4,
           },
         },
         {
