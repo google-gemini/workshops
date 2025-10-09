@@ -20,19 +20,13 @@ import { useEffect, useRef, useState } from 'react';
 import cytoscape, { Core, EdgeDefinition, NodeDefinition } from 'cytoscape';
 import dagre from 'cytoscape-dagre';
 import fcose from 'cytoscape-fcose';
-import coseBilkent from 'cytoscape-cose-bilkent';
 import cola from 'cytoscape-cola';
-import euler from 'cytoscape-euler';
-import spread from 'cytoscape-spread';
 
 // Register the layout plugins
 if (typeof cytoscape !== 'undefined') {
   cytoscape.use(dagre);
   cytoscape.use(fcose);
-  cytoscape.use(coseBilkent);
   cytoscape.use(cola);
-  cytoscape.use(euler);
-  cytoscape.use(spread);
 }
 
 type Concept = {
@@ -81,7 +75,15 @@ export default function ConceptGraph({
   const cyRef = useRef<Core | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [layout, setLayout] = useState('breadthfirst');
+  const [layout, setLayout] = useState('grid');
+
+  // Load saved layout preference from localStorage
+  useEffect(() => {
+    const savedLayout = localStorage.getItem('concept-graph-layout');
+    if (savedLayout) {
+      setLayout(savedLayout);
+    }
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -311,6 +313,8 @@ export default function ConceptGraph({
 
   const handleLayoutChange = (newLayout: string) => {
     setLayout(newLayout);
+    // Save layout preference to localStorage
+    localStorage.setItem('concept-graph-layout', newLayout);
     if (cyRef.current) {
       cyRef.current.layout({ name: newLayout, padding: 50 } as any).run();
     }
@@ -332,12 +336,8 @@ export default function ConceptGraph({
               <option value="dagre">Dagre</option>
             </optgroup>
             <optgroup label="Force-Directed">
-              <option value="cola">Cola</option>
-              <option value="cose">COSE</option>
-              <option value="cose-bilkent">COSE-Bilkent</option>
-              <option value="euler">Euler</option>
               <option value="fcose">fCOSE</option>
-              <option value="spread">Spread</option>
+              <option value="cola">Cola</option>
             </optgroup>
             <optgroup label="Other">
               <option value="circle">Circle</option>

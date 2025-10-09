@@ -3701,6 +3701,200 @@ Complete these concepts in order (from foundation to advanced)
 
 ---
 
+### 🎨 Layout Selection & Persistence (2025-01-07)
+
+**Problem:** Users had to re-select their preferred graph layout every time they reloaded the page.
+
+**Solution:** LocalStorage persistence + better default
+
+#### 1. Grid as Default Layout
+
+**Change:** Default layout changed from `'breadthfirst'` to `'grid'`
+
+**Rationale:**
+- Grid provides clean, organized overview
+- All nodes equally visible (no hierarchy bias)
+- Easy to scan for specific concepts
+- Good starting point for exploration
+
+**Code:**
+```typescript
+const [layout, setLayout] = useState('grid');  // Previously: 'breadthfirst'
+```
+
+#### 2. Layout Preference Persistence
+
+**Implementation:**
+```typescript
+// Load saved layout on mount
+useEffect(() => {
+  const savedLayout = localStorage.getItem('concept-graph-layout');
+  if (savedLayout) {
+    setLayout(savedLayout);
+  }
+}, []);
+
+// Save layout whenever it changes
+const handleLayoutChange = (newLayout: string) => {
+  setLayout(newLayout);
+  localStorage.setItem('concept-graph-layout', newLayout);
+  if (cyRef.current) {
+    cyRef.current.layout({ name: newLayout, padding: 50 } as any).run();
+  }
+};
+```
+
+**Impact:**
+- ✅ User's layout choice remembered across sessions
+- ✅ No need to re-select preferred layout every visit
+- ✅ Personalized experience (some prefer hierarchical, others grid)
+- ✅ Survives page refresh and browser restart
+
+**Storage:**
+- **Key:** `'concept-graph-layout'`
+- **Value:** Layout name string (e.g., `'grid'`, `'dagre'`, `'fcose'`)
+- **Persistence:** Until user clears browser data
+
+---
+
+### 🧹 Force-Directed Layout Cleanup (2025-01-07)
+
+**Problem:** We had 6 force-directed layouts that all produced similar "ball of nodes" visualizations, making the choice overwhelming and confusing.
+
+**User feedback:**
+> "We have a shitload (6) force-directed layouts; all of which, as far as I can tell, are more-or-less equally shitty: result in 'ball of nodes.'"
+
+**Solution:** Reduce to 2 most distinguishable options
+
+#### Layout Consolidation
+
+**Removed:**
+- ❌ COSE (original, slower)
+- ❌ Euler (similar to COSE)
+- ❌ Spread (minimal differentiation)
+- ❌ COSE-Bilkent (nearly identical to fCOSE)
+
+**Kept:**
+- ✅ **fCOSE** - Fast, modern, tight clustering
+- ✅ **Cola** - Distinctive spread-out style, different physics
+
+**Rationale:**
+- fCOSE and Cola have noticeably different behaviors
+- Cola provides more spacing between nodes
+- Users can meaningfully choose between them
+- Reduces decision paralysis (2 options vs 6)
+
+#### Code Changes
+
+**Imports:**
+```typescript
+// Before: 6 plugins
+import dagre from 'cytoscape-dagre';
+import fcose from 'cytoscape-fcose';
+import coseBilkent from 'cytoscape-cose-bilkent';
+import cola from 'cytoscape-cola';
+import euler from 'cytoscape-euler';
+import spread from 'cytoscape-spread';
+
+// After: 3 plugins
+import dagre from 'cytoscape-dagre';
+import fcose from 'cytoscape-fcose';
+import cola from 'cytoscape-cola';
+```
+
+**Layout selector:**
+```typescript
+<optgroup label="Force-Directed">
+  <option value="fcose">fCOSE</option>
+  <option value="cola">Cola</option>
+</optgroup>
+```
+
+**Type declarations:**
+```typescript
+// learning/types/cytoscape-plugins.d.ts
+declare module 'cytoscape-dagre';
+declare module 'cytoscape-fcose';
+declare module 'cytoscape-cola';
+```
+
+#### Dependency Cleanup
+
+**Commands run:**
+```bash
+cd learning
+npm uninstall cytoscape-cose-bilkent cytoscape-euler cytoscape-spread
+```
+
+**Bundle size reduction:** ~200KB (3 fewer dependencies)
+
+#### Final Layout Options
+
+**Hierarchical (2):**
+- Breadthfirst - Classic tree layout
+- Dagre - Best for DAGs ⭐ Recommended
+
+**Force-Directed (2):**
+- fCOSE - Tight, efficient
+- Cola - Spread out, different physics
+
+**Other (3):**
+- Circle - All nodes in circle
+- Concentric - Nested circles by depth
+- Grid - Orderly grid ⭐ Default
+
+**Total:** 7 layouts (down from 9)
+
+**Impact:**
+- ✅ Clearer choices for users
+- ✅ Each layout serves distinct purpose
+- ✅ Smaller bundle size
+- ✅ Easier maintenance (fewer dependencies)
+
+**User feedback:**
+> "Much better!"
+
+---
+
+### 📝 App Naming: "Little PAIPer" (2025-01-07)
+
+**Problem:** The app was titled "PCG Learning Platform" which:
+- Was too formal/academic
+- Didn't reflect the friendly, interactive nature
+- PCG acronym not meaningful to learners
+
+**Inspiration:** *The Little Schemer* book series - playful, approachable teaching style
+
+**Solution:** Rename to "Little PAIPer"
+
+**Change:**
+```typescript
+// learning/app/layout.tsx
+export const metadata: Metadata = {
+  title: "Little PAIPer",  // Previously: "PCG Learning Platform"
+  description: "An interactive learning platform for PAIP Chapter 1",
+};
+```
+
+**Design consideration:**
+> "Sort of like Facebook, let's drop the 'the,' it's cleaner."
+
+**Naming evolution:**
+1. "PCG Learning Platform" (too formal)
+2. "The Little PAIPer" (good, but article unnecessary)
+3. "Little PAIPer" (final) ✅
+
+**Impact:**
+- ✅ More approachable, friendly tone
+- ✅ References PAIP directly in the name
+- ✅ Playful nod to *The Little Schemer*
+- ✅ Memorable brand identity
+- ✅ Matches the Socratic, dialogue-driven pedagogy
+
+**Browser tab title:** "Little PAIPer"
+
+---
+
 ### 🎙️ Voice Interface: Gemini Live Integration
 
 **Problem:** Typing back-and-forth in Socratic dialogue can feel tedious, especially for longer learning sessions.

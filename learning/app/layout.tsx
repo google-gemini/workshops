@@ -29,8 +29,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PCG Learning Platform",
-  description: "Pedagogical Concept Graph for PAIP Chapter 1",
+  title: "Little PAIPer",
+  description: "An interactive learning platform for PAIP Chapter 1",
 };
 
 export default function RootLayout({
