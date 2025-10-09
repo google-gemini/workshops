@@ -1,0 +1,2 @@
+# This file ensures the test-data directory is tracked by git
+# Actual test data files (*.png, *.webm, *.json) are ignored

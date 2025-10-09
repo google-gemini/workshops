@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<!--
+ Copyright 2025 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAIP Chapter 1 - Pedagogical Concept Graph</title>
+  <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f5f5f5;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #2c3e50;
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      overflow: hidden;
+    }
+
+    #cy {
+      flex: 1;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    aside {
+      width: 320px;
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      overflow-y: auto;
+    }
+
+    .legend {
+      margin-bottom: 2rem;
+    }
+
+    .legend h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #ecf0f1;
+    }
+
+    .stats {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #ecf0f1;
+    }
+
+    .stats h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .stat-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .stat-label {
+      color: #7f8c8d;
+    }
+
+    .stat-value {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    .node-info {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #ecf0f1;
+    }
+
+    .node-info h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .node-info p {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #555;
+      margin-bottom: 0.5rem;
+    }
+
+    .node-info .label {
+      font-weight: 600;
+      color: #7f8c8d;
+      display: inline-block;
+      min-width: 90px;
+    }
+
+    .empty-state {
+      color: #95a5a6;
+      font-style: italic;
+      font-size: 0.85rem;
+    }
+
+    .controls {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid #ecf0f1;
+    }
+
+    .controls h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .control-group {
+      margin-bottom: 1rem;
+    }
+
+    .control-label {
+      display: block;
+      font-size: 0.85rem;
+      color: #7f8c8d;
+      margin-bottom: 0.5rem;
+    }
+
+    select {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      background: white;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.5rem;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 0.5rem;
+    }
+
+    button:hover {
+      background: #2980b9;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button.danger {
+      background: #e74c3c;
+    }
+
+    button.danger:hover {
+      background: #c0392b;
+    }
+
+    button.success {
+      background: #2ecc71;
+    }
+
+    button.success:hover {
+      background: #27ae60;
+    }
+
+    button.small {
+      padding: 0.3rem 0.6rem;
+      font-size: 0.8rem;
+      width: auto;
+      display: inline-block;
+      margin: 0.2rem;
+    }
+
+    .node-state-info {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background: #f8f9fa;
+      border-radius: 5px;
+      border-left: 4px solid #3498db;
+    }
+
+    .node-state-info.locked {
+      border-color: #95a5a6;
+      background: #ecf0f1;
+    }
+
+    .node-state-info.ready {
+      border-color: #f39c12;
+      background: #fef5e7;
+    }
+
+    .node-state-info.in-progress {
+      border-color: #e67e22;
+      background: #fdebd0;
+    }
+
+    .node-state-info.mastered {
+      border-color: #2ecc71;
+      background: #d5f4e6;
+    }
+
+    .unlock-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      z-index: 10000;
+      max-width: 300px;
+      transition: opacity 0.5s;
+      animation: slideIn 0.5s;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .progress-section {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #ecf0f1;
+    }
+
+    .progress-section h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2c3e50;
+    }
+
+    .progress-stats {
+      font-size: 0.9rem;
+      line-height: 1.8;
+    }
+
+    .faded {
+      opacity: 0.2;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📚 PAIP Chapter 1: Pedagogical Concept Graph</h1>
+    <div class="subtitle">Interactive visualization with progress tracking</div>
+  </header>
+
+  <main>
+    <div id="cy"></div>
+    
+    <aside>
+      <div class="controls">
+        <h2>🎛️ Controls</h2>
+        <div class="control-group">
+          <label class="control-label">Layout</label>
+          <select id="layoutSelect">
+            <option value="breadthfirst">Hierarchical (Breadthfirst)</option>
+            <option value="dagre">Hierarchical (Dagre)</option>
+            <option value="cose">Force-Directed</option>
+            <option value="circle">Circle</option>
+            <option value="grid">Grid</option>
+          </select>
+        </div>
+        <div class="control-group">
+          <label class="control-label">Filter by Difficulty</label>
+          <select id="difficultyFilter">
+            <option value="all">All Concepts</option>
+            <option value="basic">Basic Only</option>
+            <option value="intermediate">Intermediate Only</option>
+            <option value="advanced">Advanced Only</option>
+          </select>
+        </div>
+        <button id="resetBtn">Reset View</button>
+      </div>
+
+      <div class="legend">
+        <h2>🎨 Difficulty Colors</h2>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #2ecc71;"></div>
+          <span>Basic</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #3498db;"></div>
+          <span>Intermediate</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-color" style="background: #e74c3c;"></div>
+          <span>Advanced</span>
+        </div>
+        <hr style="margin: 1rem 0; border: none; border-top: 1px solid #ecf0f1;">
+        <h2 style="font-size: 1rem; margin-top: 1rem; margin-bottom: 0.5rem;">Learning Status</h2>
+        <div style="font-size: 0.85rem; line-height: 1.8;">
+          🔒 Locked (faded)<br>
+          ✅ Ready (gold border)<br>
+          ⭐ Recommended (glowing)<br>
+          ⏳ In Progress (dashed)<br>
+          👑 Mastered (double border)
+        </div>
+      </div>
+
+      <div class="stats">
+        <h2>📊 Graph Statistics</h2>
+        <div class="stat-item">
+          <span class="stat-label">Total Concepts:</span>
+          <span class="stat-value" id="statTotal">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Basic:</span>
+          <span class="stat-value" id="statBasic">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Intermediate:</span>
+          <span class="stat-value" id="statIntermediate">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Advanced:</span>
+          <span class="stat-value" id="statAdvanced">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Dependencies:</span>
+          <span class="stat-value" id="statEdges">-</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Max Depth:</span>
+          <span class="stat-value" id="statDepth">-</span>
+        </div>
+      </div>
+
+      <div class="progress-section">
+        <h2>🎯 Your Progress</h2>
+        <div class="progress-stats" id="progressStats">
+          <div class="stat-item">
+            <span class="stat-label">👑 Mastered:</span>
+            <span class="stat-value" id="statMastered">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">⏳ In Progress:</span>
+            <span class="stat-value" id="statInProgress">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">✅ Ready:</span>
+            <span class="stat-value" id="statReady">2</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">🔒 Locked:</span>
+            <span class="stat-value" id="statLocked">31</span>
+          </div>
+        </div>
+        <button id="resetProgressBtn" class="danger" style="margin-top: 1rem;">Reset All Progress</button>
+      </div>
+
+      <div class="node-info" id="nodeInfo">
+        <h2>ℹ️ Node Details</h2>
+        <p class="empty-state">Click a node to see details</p>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    let cy;
+    let pcgData;
+    let conceptStates = {}; // Track state of each concept
+
+    // State constants
+    const STATE = {
+      LOCKED: 'locked',
+      READY: 'ready',
+      IN_PROGRESS: 'in_progress',
+      MASTERED: 'mastered'
+    };
+
+    // Load saved progress from localStorage
+    function loadProgress() {
+      const saved = localStorage.getItem('paip-ch1-progress');
+      if (saved) {
+        try {
+          conceptStates = JSON.parse(saved);
+        } catch (e) {
+          console.error('Error loading progress:', e);
+          conceptStates = {};
+        }
+      } else {
+        conceptStates = {};
+      }
+    }
+
+    // Save progress to localStorage
+    function saveProgress() {
+      localStorage.setItem('paip-ch1-progress', JSON.stringify(conceptStates));
+    }
+
+    // Get concept data by ID
+    function getConceptData(conceptId) {
+      return pcgData.concepts.find(c => c.id === conceptId);
+    }
+
+    // Get state of a concept
+    function getConceptState(conceptId) {
+      if (conceptStates[conceptId]) {
+        return conceptStates[conceptId];
+      }
+      
+      // Check if it's a root (no prerequisites)
+      const concept = getConceptData(conceptId);
+      if (concept && concept.prerequisites.length === 0) {
+        return STATE.READY;
+      }
+      
+      // Check if prerequisites are met
+      if (concept && arePrerequisitesMet(conceptId)) {
+        return STATE.READY;
+      }
+      
+      return STATE.LOCKED;
+    }
+
+    // Check if all prerequisites are mastered
+    function arePrerequisitesMet(conceptId) {
+      const concept = getConceptData(conceptId);
+      if (!concept) return false;
+      
+      return concept.prerequisites.every(prereqId => 
+        conceptStates[prereqId] === STATE.MASTERED
+      );
+    }
+
+    // Get all concepts that are currently ready to learn
+    function getReadyConcepts() {
+      return pcgData.concepts
+        .filter(c => getConceptState(c.id) === STATE.READY)
+        .sort((a, b) => {
+          // Sort by difficulty: basic < intermediate < advanced
+          const difficultyOrder = { basic: 0, intermediate: 1, advanced: 2 };
+          return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty];
+        });
+    }
+
+    // Get top recommended concepts (top 5 easiest ready concepts)
+    function getRecommendedConcepts() {
+      return getReadyConcepts().slice(0, 5);
+    }
+
+    // Update visual state of all nodes
+    function updateNodeStates() {
+      if (!cy) return;
+      
+      cy.nodes().forEach(node => {
+        const conceptId = node.id();
+        const state = getConceptState(conceptId);
+        const isRecommended = getRecommendedConcepts().some(c => c.id === conceptId);
+        
+        // Remove all state classes
+        node.removeClass('locked ready in-progress mastered recommended');
+        
+        // Add current state class
+        node.addClass(state);
+        
+        // Add recommended class if applicable
+        if (state === STATE.READY && isRecommended) {
+          node.addClass('recommended');
+        }
+      });
+      
+      updateProgressStats();
+    }
+
+    function updateProgressStats() {
+      if (!pcgData || !pcgData.metadata) return;
+      
+      const stats = pcgData.metadata.statistics;
+      const mastered = Object.values(conceptStates).filter(s => s === STATE.MASTERED).length;
+      const inProgress = Object.values(conceptStates).filter(s => s === STATE.IN_PROGRESS).length;
+      const ready = getReadyConcepts().length;
+      const locked = stats.total_concepts - mastered - inProgress - ready;
+      
+      document.getElementById('statMastered').textContent = mastered;
+      document.getElementById('statInProgress').textContent = inProgress;
+      document.getElementById('statReady').textContent = ready;
+      document.getElementById('statLocked').textContent = locked;
+    }
+
+    // Mark concept as mastered
+    function markAsMastered(conceptId) {
+      const previousState = getConceptState(conceptId);
+      conceptStates[conceptId] = STATE.MASTERED;
+      saveProgress();
+      
+      // Find newly unlocked concepts
+      const unlocked = pcgData.concepts.filter(c => {
+        return getConceptState(c.id) === STATE.READY &&
+               c.prerequisites.includes(conceptId) &&
+               (previousState !== STATE.MASTERED);
+      });
+      
+      updateNodeStates();
+      
+      if (unlocked.length > 0) {
+        showUnlockedNotification(conceptId, unlocked);
+      }
+      
+      // Refresh node details if this node is selected
+      const selectedNode = cy.$(':selected');
+      if (selectedNode.length > 0 && selectedNode.id() === conceptId) {
+        showNodeDetails(selectedNode.data());
+      }
+    }
+
+    // Mark concept as in progress
+    function markAsInProgress(conceptId) {
+      if (getConceptState(conceptId) === STATE.READY) {
+        conceptStates[conceptId] = STATE.IN_PROGRESS;
+        saveProgress();
+        updateNodeStates();
+        
+        // Refresh node details
+        const selectedNode = cy.$(':selected');
+        if (selectedNode.length > 0 && selectedNode.id() === conceptId) {
+          showNodeDetails(selectedNode.data());
+        }
+      }
+    }
+
+    // Reset concept state
+    function resetConcept(conceptId) {
+      delete conceptStates[conceptId];
+      saveProgress();
+      updateNodeStates();
+      
+      // Refresh node details
+      const selectedNode = cy.$(':selected');
+      if (selectedNode.length > 0 && selectedNode.id() === conceptId) {
+        showNodeDetails(selectedNode.data());
+      }
+    }
+
+    // Reset all progress
+    function resetAllProgress() {
+      if (confirm('Reset all learning progress? This cannot be undone.')) {
+        conceptStates = {};
+        saveProgress();
+        updateNodeStates();
+        showEmptyState();
+      }
+    }
+
+    // Show notification when concepts are unlocked
+    function showUnlockedNotification(masteredId, unlockedConcepts) {
+      const concept = getConceptData(masteredId);
+      const names = unlockedConcepts.map(c => c.name).join(', ');
+      
+      const notification = document.createElement('div');
+      notification.className = 'unlock-notification';
+      notification.innerHTML = `
+        <strong>🎉 Progress!</strong><br>
+        <strong>Mastered:</strong> ${concept.name}<br>
+        <strong>${unlockedConcepts.length} concept${unlockedConcepts.length > 1 ? 's' : ''} unlocked:</strong><br>
+        ${names}
+      `;
+      
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 500);
+      }, 4000);
+    }
+
+
+    // Load PCG data
+    loadProgress();
+    
+    fetch('paip-chapter-1/concept-graph.json')
+      .then(response => response.json())
+      .then(data => {
+        pcgData = data;
+        
+        initializeGraph(data);
+        updateStats(data);
+        updateNodeStates();
+        
+        // Show welcome message for first-time users
+        if (Object.keys(conceptStates).length === 0) {
+          setTimeout(() => {
+            alert('Welcome to PAIP Chapter 1!\n\n' +
+                  'This graph shows how Lisp concepts build on each other.\n\n' +
+                  'Notice the glowing ROOT concept:\n' +
+                  '• Interactive REPL - The foundation of learning Lisp!\n\n' +
+                  'Click a concept to see details and track your progress.\n\n' +
+                  'As you master concepts, new ones will unlock! 🎯');
+          }, 500);
+        }
+      })
+      .catch(error => {
+        console.error('Error loading PCG data:', error);
+        alert('Error loading PCG data. Make sure paip-chapter-1-pcg-pass1.json is in the same directory.');
+      });
+
+    function initializeGraph(data) {
+      cy = cytoscape({
+        container: document.getElementById('cy'),
+        
+        elements: [
+          // Convert nodes
+          ...data.concepts.map(n => ({
+            data: { 
+              id: n.id, 
+              label: n.name,
+              difficulty: n.difficulty,
+              section: n.section,
+              description: n.description,
+              prerequisites: n.prerequisites
+            }
+          })),
+          // Convert edges - FLIP: data says "X requires Y", we visualize as "Y → X" (learning flow)
+          ...data.edges.map(e => ({
+            data: { 
+              source: e.to,    // FLIP: prerequisite becomes source
+              target: e.from,  // FLIP: dependent concept becomes target
+              type: e.type
+            }
+          }))
+        ],
+        
+        style: [
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'text-wrap': 'wrap',
+              'text-max-width': '80px',
+              'font-size': '10px',
+              'font-weight': '600',
+              'color': '#2c3e50',
+              'width': '70px',
+              'height': '70px',
+              'border-width': '3px',
+              'border-color': '#bdc3c7',
+              'transition-property': 'background-color, border-color, width, height, opacity',
+              'transition-duration': '0.3s'
+            }
+          },
+          {
+            selector: 'node[difficulty="basic"]',
+            style: { 
+              'background-color': '#2ecc71'
+            }
+          },
+          {
+            selector: 'node[difficulty="intermediate"]',
+            style: { 
+              'background-color': '#3498db'
+            }
+          },
+          {
+            selector: 'node[difficulty="advanced"]',
+            style: { 
+              'background-color': '#e74c3c'
+            }
+          },
+          // Locked state - faded
+          {
+            selector: 'node.locked',
+            style: {
+              'opacity': 0.3,
+              'border-color': '#95a5a6',
+              'border-width': '2px'
+            }
+          },
+          // Ready state - gold border
+          {
+            selector: 'node.ready',
+            style: {
+              'opacity': 1,
+              'border-color': '#f39c12',
+              'border-width': '4px'
+            }
+          },
+          // Recommended (ready + top priority) - glowing
+          {
+            selector: 'node.recommended',
+            style: {
+              'border-color': '#f39c12',
+              'border-width': '5px',
+              'box-shadow': '0 0 20px #f39c12'
+            }
+          },
+          // In Progress state - dashed orange border
+          {
+            selector: 'node.in-progress',
+            style: {
+              'opacity': 1,
+              'border-color': '#e67e22',
+              'border-width': '4px',
+              'border-style': 'dashed'
+            }
+          },
+          // Mastered state - double gold border
+          {
+            selector: 'node.mastered',
+            style: {
+              'opacity': 1,
+              'border-color': '#f39c12',
+              'border-width': '5px',
+              'border-style': 'double'
+            }
+          },
+          {
+            selector: 'node:selected',
+            style: {
+              'border-color': '#9b59b6',
+              'width': '80px',
+              'height': '80px'
+            }
+          },
+          {
+            selector: 'node.highlighted',
+            style: {
+              'border-color': '#9b59b6',
+              'border-width': '5px'
+            }
+          },
+          {
+            selector: 'node.faded',
+            style: {
+              'opacity': 0.15
+            }
+          },
+          {
+            selector: 'edge',
+            style: {
+              'width': 2,
+              'line-color': '#95a5a6',
+              'target-arrow-color': '#95a5a6',
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'arrow-scale': 1.5,
+              'transition-property': 'line-color, target-arrow-color, width',
+              'transition-duration': '0.2s'
+            }
+          },
+          {
+            selector: 'edge.highlighted',
+            style: {
+              'line-color': '#9b59b6',
+              'target-arrow-color': '#9b59b6',
+              'width': 3
+            }
+          },
+          {
+            selector: 'edge.faded',
+            style: {
+              'opacity': 0.1
+            }
+          }
+        ],
+        
+        layout: {
+          name: 'breadthfirst',
+          directed: true,
+          spacingFactor: 1.5,
+          animate: true,
+          animationDuration: 500
+        }
+      });
+
+      // Event handlers
+      cy.on('tap', 'node', function(evt) {
+        const node = evt.target;
+        showNodeDetails(node.data());
+        highlightDependencies(node);
+      });
+
+      cy.on('tap', function(evt) {
+        if (evt.target === cy) {
+          clearHighlights();
+          showEmptyState();
+        }
+      });
+
+      // Controls
+      document.getElementById('layoutSelect').addEventListener('change', (e) => {
+        const layoutName = e.target.value;
+        cy.layout({
+          name: layoutName,
+          directed: true,
+          spacingFactor: 1.5,
+          animate: true,
+          animationDuration: 500
+        }).run();
+      });
+
+      document.getElementById('difficultyFilter').addEventListener('change', (e) => {
+        const filter = e.target.value;
+        filterByDifficulty(filter);
+      });
+
+      document.getElementById('resetBtn').addEventListener('click', () => {
+        cy.fit();
+        clearHighlights();
+        showEmptyState();
+        document.getElementById('difficultyFilter').value = 'all';
+        cy.nodes().style('display', 'element');
+        cy.edges().style('display', 'element');
+      });
+
+      document.getElementById('resetProgressBtn').addEventListener('click', resetAllProgress);
+    }
+
+    function showNodeDetails(nodeData) {
+      const conceptId = nodeData.id;
+      const state = getConceptState(conceptId);
+      const isRecommended = getRecommendedConcepts().some(c => c.id === conceptId);
+      
+      let stateHTML = '';
+      let stateClass = state;
+      
+      switch(state) {
+        case STATE.LOCKED:
+          stateHTML = `
+            <strong>🔒 Locked</strong><br>
+            <small>Prerequisites not yet met</small>
+          `;
+          break;
+        case STATE.READY:
+          stateHTML = `
+            <strong>✅ Ready to Learn${isRecommended ? ' ⭐' : ''}</strong><br>
+            ${isRecommended ? '<small><strong>Recommended next step!</strong></small><br>' : ''}
+            <button class="small success" onclick="markAsInProgress('${conceptId}')">Start Learning</button>
+          `;
+          break;
+        case STATE.IN_PROGRESS:
+          stateHTML = `
+            <strong>⏳ In Progress</strong><br>
+            <button class="small success" onclick="markAsMastered('${conceptId}')">Mark as Mastered</button>
+            <button class="small" onclick="resetConcept('${conceptId}')">Reset</button>
+          `;
+          break;
+        case STATE.MASTERED:
+          stateHTML = `
+            <strong>👑 Mastered!</strong><br>
+            <button class="small" onclick="resetConcept('${conceptId}')">Reset</button>
+          `;
+          break;
+      }
+      
+      const infoDiv = document.getElementById('nodeInfo');
+      infoDiv.innerHTML = `
+        <h2>ℹ️ ${nodeData.label}</h2>
+        <p><span class="label">ID:</span> ${nodeData.id}</p>
+        <p><span class="label">Section:</span> ${nodeData.section}</p>
+        <p><span class="label">Difficulty:</span> ${nodeData.difficulty}</p>
+        <p><span class="label">Prerequisites:</span> ${nodeData.prerequisites.length > 0 ? nodeData.prerequisites.length : 'None (Root)'}</p>
+        <p style="margin-top: 1rem;"><span class="label">Description:</span><br>${nodeData.description}</p>
+        <div class="node-state-info ${stateClass}" style="margin-top: 1rem;">
+          ${stateHTML}
+        </div>
+      `;
+    }
+
+    function showEmptyState() {
+      const infoDiv = document.getElementById('nodeInfo');
+      infoDiv.innerHTML = `
+        <h2>ℹ️ Node Details</h2>
+        <p class="empty-state">Click a node to see details and manage progress</p>
+      `;
+    }
+
+    function highlightDependencies(node) {
+      clearHighlights();
+      
+      // Get all predecessors (concepts this depends on)
+      const predecessors = node.predecessors();
+      
+      // Fade everything
+      cy.elements().addClass('faded');
+      
+      // Highlight the selected node and its dependencies
+      node.removeClass('faded').addClass('highlighted');
+      predecessors.removeClass('faded').addClass('highlighted');
+    }
+
+    function clearHighlights() {
+      cy.elements().removeClass('faded highlighted');
+    }
+
+    function filterByDifficulty(difficulty) {
+      if (difficulty === 'all') {
+        cy.nodes().style('display', 'element');
+        cy.edges().style('display', 'element');
+      } else {
+        cy.nodes().style('display', 'none');
+        cy.nodes(`[difficulty="${difficulty}"]`).style('display', 'element');
+        
+        // Show edges between visible nodes
+        cy.edges().style('display', 'none');
+        cy.nodes(`[difficulty="${difficulty}"]`).connectedEdges().style('display', 'element');
+      }
+      cy.fit();
+    }
+
+    function updateStats(data) {
+      const stats = data.metadata.statistics;
+      document.getElementById('statTotal').textContent = stats.total_concepts;
+      document.getElementById('statBasic').textContent = stats.difficulty_breakdown.basic;
+      document.getElementById('statIntermediate').textContent = stats.difficulty_breakdown.intermediate;
+      document.getElementById('statAdvanced').textContent = stats.difficulty_breakdown.advanced;
+      document.getElementById('statEdges').textContent = data.edges.length;
+      document.getElementById('statDepth').textContent = calculateMaxDepth(data.concepts, data.edges);
+    }
+
+    function calculateMaxDepth(concepts, edges) {
+      // Calculate max depth from roots
+      const depths = {};
+      const roots = concepts.filter(c => c.prerequisites.length === 0);
+      
+      // BFS to calculate depths
+      const queue = roots.map(r => ({ id: r.id, depth: 0 }));
+      roots.forEach(r => depths[r.id] = 0);
+      
+      while (queue.length > 0) {
+        const { id, depth } = queue.shift();
+        
+        // Find concepts that depend on this one
+        const dependents = edges
+          .filter(e => e.to === id)
+          .map(e => e.from);
+        
+        dependents.forEach(depId => {
+          const newDepth = depth + 1;
+          if (!(depId in depths) || depths[depId] < newDepth) {
+            depths[depId] = newDepth;
+            queue.push({ id: depId, depth: newDepth });
+          }
+        });
+      }
+      
+      return Math.max(...Object.values(depths), 0);
+    }
+
+    // Make functions globally accessible for onclick handlers
+    window.markAsMastered = markAsMastered;
+    window.markAsInProgress = markAsInProgress;
+    window.resetConcept = resetConcept;
+    window.resetAllProgress = resetAllProgress;
+  </script>
+</body>
+</html>

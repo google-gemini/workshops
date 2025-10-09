@@ -1,0 +1,601 @@
+{
+  "metadata": {
+    "title": "PAIP Chapter 1: Exercise Mapping",
+    "source": "Paradigms of Artificial Intelligence Programming",
+    "author": "Peter Norvig",
+    "pass": 3,
+    "description": "Exercise-to-concept mapping with mastery assessment",
+    "exercises_mapped": 5
+  },
+  
+  "exercises": [
+    {
+      "id": "ex_1_1",
+      "title": "Robust last-name function",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 20,
+      
+      "prompt": "Define a version of last-name that handles \"Rex Morgan MD,\" \"Morton Downey, Jr.,\" and whatever other cases you can think of.",
+      
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": ["recursive_writing", "base_case_identification", "termination_reasoning"],
+          "weight": "primary",
+          "rationale": "Requires recursive thinking to handle variable-length names with titles/suffixes"
+        },
+        {
+          "concept_id": "list_accessors",
+          "mastery_indicators": ["first_usage", "rest_usage", "accessor_chaining"],
+          "weight": "primary",
+          "rationale": "Must navigate list structure to examine and skip elements"
+        },
+        {
+          "concept_id": "defun",
+          "mastery_indicators": ["function_definition", "parameter_usage"],
+          "weight": "supporting",
+          "rationale": "Must define a named function with proper structure"
+        },
+        {
+          "concept_id": "list_constructors",
+          "mastery_indicators": ["filtering_lists"],
+          "weight": "alternative_approach",
+          "rationale": "Could use filtering approach instead of recursion"
+        }
+      ],
+      
+      "prerequisites": ["recursion", "list_accessors", "defun", "variables"],
+      
+      "learning_opportunities": [
+        "Design decisions: what counts as a 'title' vs 'suffix'?",
+        "Edge cases: single-name persons, all-title lists",
+        "Data structure choice: hardcode patterns or use data?",
+        "Multiple valid solutions with different tradeoffs"
+      ],
+      
+      "common_mistakes": [
+        "Only handling prefixes (Mr, Dr) but forgetting suffixes (Jr, MD)",
+        "Not handling edge case of single-word names",
+        "Hardcoding specific titles instead of using a pattern",
+        "Forgetting to use defparameter for extensible title list"
+      ],
+      
+      "hints": [
+        {
+          "level": 1,
+          "hint": "Think about what patterns indicate it's NOT the last name - both at the start AND end"
+        },
+        {
+          "level": 2,
+          "hint": "You might need to check both first and last elements of the name"
+        },
+        {
+          "level": 3,
+          "hint": "Consider using remove-if or filtering to clean the list before selecting the last name"
+        }
+      ],
+      
+      "example_solutions": [
+        {
+          "approach": "recursive_with_suffix_check",
+          "difficulty": "intermediate",
+          "code": "(defparameter *suffixes* '(Jr Sr MD PhD III IV)\n  \"Common name suffixes\")\n\n(defun last-name (name)\n  \"Select the last name, handling titles and suffixes.\"\n  (let ((last-element (first (last name))))\n    (if (member last-element *suffixes*)\n        (last-name (butlast name))  ; Remove suffix, recurse\n        (if (member (first name) *titles*)\n            (last-name (rest name))  ; Remove title, recurse\n            last-element))))  ; Found it!",
+          "explanation": "Recursive approach: check last element for suffixes, first element for titles, recurse until clean.",
+          "demonstrates": ["recursion", "base_case", "list_accessors", "defparameter"]
+        },
+        {
+          "approach": "filter_then_select",
+          "difficulty": "intermediate",
+          "code": "(defun last-name (name)\n  \"Select the last name after removing titles and suffixes.\"\n  (let ((cleaned (remove-if \n                   #'(lambda (word) \n                       (or (member word *titles*)\n                           (member word *suffixes*)))\n                   name)))\n    (if cleaned\n        (first (last cleaned))\n        (first (last name)))))  ; Fallback if everything removed",
+          "explanation": "Functional approach: filter out titles/suffixes, then select last remaining element.",
+          "demonstrates": ["higher_order_functions", "lambda", "list_constructors"]
+        }
+      ],
+      
+      "followup_questions": [
+        "How would you handle hyphenated names like 'Mary-Beth'?",
+        "What if someone has multiple titles: 'Dr Prof John Smith'?",
+        "Could you extend this to extract middle names?"
+      ]
+    },
+    
+    {
+      "id": "ex_1_2",
+      "title": "Exponentiation function",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 15,
+      
+      "prompt": "Write a function to exponentiate, or raise a number to an integer power. For example: (power 3 2) = 3² = 9.",
+      
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": ["recursive_writing", "base_case", "recursive_case", "termination_reasoning"],
+          "weight": "primary",
+          "rationale": "Classic recursive problem: x^n = x * x^(n-1)"
+        },
+        {
+          "concept_id": "defun",
+          "mastery_indicators": ["function_definition", "parameter_usage", "documentation_strings"],
+          "weight": "supporting",
+          "rationale": "Must define function with two parameters"
+        },
+        {
+          "concept_id": "function_application",
+          "mastery_indicators": ["arithmetic_operations", "nested_expressions"],
+          "weight": "supporting",
+          "rationale": "Uses multiplication and recursive calls"
+        }
+      ],
+      
+      "prerequisites": ["recursion", "defun", "function_application", "nested_expressions"],
+      
+      "learning_opportunities": [
+        "Understanding mathematical induction in code",
+        "Base case: x^0 = 1",
+        "Optimization: using x^(n/2) for even exponents",
+        "Complexity analysis: O(n) vs O(log n)"
+      ],
+      
+      "common_mistakes": [
+        "Forgetting base case (infinite recursion)",
+        "Wrong base case: returning 0 or x instead of 1",
+        "Not handling n=1 case explicitly (works but inefficient)",
+        "Off-by-one errors in recursive case"
+      ],
+      
+      "hints": [
+        {
+          "level": 1,
+          "hint": "What's the base case? What's the value of any number raised to the power of 0?"
+        },
+        {
+          "level": 2,
+          "hint": "How can you express 3^5 in terms of 3^4? What operation connects them?"
+        },
+        {
+          "level": 3,
+          "hint": "Advanced optimization: For even exponents, you can compute x^(n/2) once and square it. This reduces complexity from O(n) to O(log n)."
+        }
+      ],
+      
+      "example_solutions": [
+        {
+          "approach": "simple_recursive",
+          "difficulty": "basic",
+          "code": "(defun power (x n)\n  \"Raise x to the nth power. N must be an integer >= 0.\"\n  (if (= n 0)\n      1\n      (* x (power x (- n 1)))))",
+          "explanation": "Simple recursive: base case n=0 returns 1, otherwise multiply x by x^(n-1). O(n) time.",
+          "demonstrates": ["recursion", "base_case", "recursive_case"]
+        },
+        {
+          "approach": "optimized_recursive",
+          "difficulty": "advanced",
+          "code": "(defun power (x n)\n  \"Power raises x to the nth power. N must be an integer >= 0.\n   This executes in log n time, because of the check for even n.\"\n  (cond ((= n 0) 1)\n        ((evenp n) (expt (power x (/ n 2)) 2))\n        (t (* x (power x (- n 1))))))",
+          "explanation": "Optimized: for even n, compute x^(n/2) once and square it. Reduces complexity to O(log n).",
+          "demonstrates": ["recursion", "optimization", "cond", "multiple_cases"]
+        }
+      ],
+      
+      "followup_questions": [
+        "How would you extend this to handle negative exponents?",
+        "What if x is 0 and n is 0? (0^0 is undefined)",
+        "Can you trace the optimized version on (power 2 8)? How many multiplications?"
+      ]
+    },
+    
+    {
+      "id": "ex_1_3",
+      "title": "Count atoms in expression",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 20,
+      
+      "prompt": "Write a function that counts the number of atoms in an expression. For example: (count-atoms '(a (b) c)) = 3. Notice that there is something of an ambiguity in this: should (a nil c) count as three atoms, or as two, because it is equivalent to (a () c)?",
+      
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": ["recursive_writing", "multiple_recursive_calls", "tree_recursion"],
+          "weight": "primary",
+          "rationale": "Requires recursion on BOTH first and rest - tree structure"
+        },
+        {
+          "concept_id": "sublists",
+          "mastery_indicators": ["nested_navigation", "tree_traversal"],
+          "weight": "primary",
+          "rationale": "Must recursively descend into nested list structure"
+        },
+        {
+          "concept_id": "list_accessors",
+          "mastery_indicators": ["first_usage", "rest_usage"],
+          "weight": "supporting",
+          "rationale": "Uses first/rest to decompose list"
+        },
+        {
+          "concept_id": "nil",
+          "mastery_indicators": ["nil_as_empty_list", "nil_handling"],
+          "weight": "secondary",
+          "rationale": "Exercise explicitly asks about nil treatment - design decision"
+        }
+      ],
+      
+      "prerequisites": ["recursion", "sublists", "list_accessors", "nil"],
+      
+      "learning_opportunities": [
+        "Tree recursion pattern: recurse on BOTH parts",
+        "Design decisions: nil as atom or not?",
+        "Understanding list internal structure",
+        "Multiple valid interpretations of problem"
+      ],
+      
+      "conceptual_challenge": "The nil ambiguity is intentional - teaches that specifications matter. Is nil an atom? Depends on context!",
+      
+      "common_mistakes": [
+        "Only recursing on rest, not first (misses nested atoms)",
+        "Counting empty lists as atoms",
+        "Not handling nil properly in base case",
+        "Confusion between (atom x) and (not (listp x))"
+      ],
+      
+      "hints": [
+        {
+          "level": 1,
+          "hint": "This is different from simple list recursion - you need to look inside sublists too"
+        },
+        {
+          "level": 2,
+          "hint": "You need TWO recursive calls: one on (first exp) to count atoms inside, one on (rest exp) to count the rest"
+        },
+        {
+          "level": 3,
+          "hint": "Think about your base cases: What if exp is nil? What if exp is an atom? What if exp is a list?"
+        }
+      ],
+      
+      "example_solutions": [
+        {
+          "approach": "ignore_nil",
+          "difficulty": "intermediate",
+          "code": "(defun count-atoms (exp)\n  \"Return the total number of non-nil atoms in the expression.\"\n  (cond ((null exp) 0)\n        ((atom exp) 1)\n        (t (+ (count-atoms (first exp))\n              (count-atoms (rest exp))))))",
+          "explanation": "Treats nil as 0 atoms. Clean interpretation: empty list contributes nothing.",
+          "demonstrates": ["tree_recursion", "cond", "multiple_cases"]
+        },
+        {
+          "approach": "count_nil_in_non_tail",
+          "difficulty": "advanced",
+          "code": "(defun count-all-atoms (exp &optional (if-null 1))\n  \"Return the total number of atoms in the expression,\n  counting nil as an atom only in non-tail position.\"\n  (cond ((null exp) if-null)\n        ((atom exp) 1)\n        (t (+ (count-all-atoms (first exp) 1)\n              (count-all-atoms (rest exp) 0)))))",
+          "explanation": "Sophisticated: nil counts as atom in non-tail position (explicit nil), but not at end of list.",
+          "demonstrates": ["optional_parameters", "context_dependent_logic", "tree_recursion"]
+        }
+      ],
+      
+      "followup_questions": [
+        "Which interpretation (count nil or not) is more useful? Why?",
+        "How would you count only symbols, excluding numbers?",
+        "Can you write this using mapcar and apply instead of explicit recursion?"
+      ]
+    },
+    
+    {
+      "id": "ex_1_4",
+      "title": "Count occurrences anywhere",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 15,
+      
+      "prompt": "Write a function that counts the number of times an expression occurs anywhere within another expression. Example: (count-anywhere 'a '(a ((a) b) a)) => 3.",
+      
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": ["recursive_writing", "tree_recursion", "multiple_recursive_calls"],
+          "weight": "primary",
+          "rationale": "Tree recursion pattern similar to count-atoms"
+        },
+        {
+          "concept_id": "sublists",
+          "mastery_indicators": ["nested_navigation", "tree_traversal"],
+          "weight": "primary",
+          "rationale": "Must search through nested structure"
+        },
+        {
+          "concept_id": "list_accessors",
+          "mastery_indicators": ["first_usage", "rest_usage"],
+          "weight": "supporting",
+          "rationale": "Decompose structure with first/rest"
+        }
+      ],
+      
+      "prerequisites": ["recursion", "sublists", "list_accessors"],
+      
+      "learning_opportunities": [
+        "Similar structure to count-atoms but with matching condition",
+        "Understanding eql vs equal for matching",
+        "Three-case logic: found, not-found-atom, recurse-into-list"
+      ],
+      
+      "common_mistakes": [
+        "Only checking if item is first element (missing nested occurrences)",
+        "Using equal instead of eql (works but slower)",
+        "Not handling the case where tree itself equals item",
+        "Forgetting to add results from both recursive calls"
+      ],
+      
+      "hints": [
+        {
+          "level": 1,
+          "hint": "This is very similar to count-atoms, but you're looking for a specific item"
+        },
+        {
+          "level": 2,
+          "hint": "Three cases: (1) tree itself equals item, (2) tree is an atom but doesn't match, (3) tree is a list, recurse"
+        },
+        {
+          "level": 3,
+          "hint": "Use eql to test equality between item and tree"
+        }
+      ],
+      
+      "example_solutions": [
+        {
+          "approach": "tree_recursion",
+          "difficulty": "intermediate",
+          "code": "(defun count-anywhere (item tree)\n  \"Count the times item appears anywhere within tree.\"\n  (cond ((eql item tree) 1)\n        ((atom tree) 0)\n        (t (+ (count-anywhere item (first tree))\n              (count-anywhere item (rest tree))))))",
+          "explanation": "Three-case cond: found it (1), not in atom (0), or recurse into structure adding results.",
+          "demonstrates": ["tree_recursion", "eql_test", "three_case_logic"]
+        }
+      ],
+      
+      "followup_questions": [
+        "What's the difference between eql and equal? When would equal be necessary?",
+        "How would you find the POSITIONS of all occurrences (not just count)?",
+        "Can you modify this to find the first occurrence and return the path to it?"
+      ],
+      
+      "comparison_to": "ex_1_3",
+      "comparison_note": "Same recursive structure as count-atoms, but with item matching instead of universal counting"
+    },
+    
+    {
+      "id": "ex_1_5",
+      "title": "Dot product",
+      "section": "1.11",
+      "difficulty": "intermediate",
+      "estimated_time_minutes": 20,
+      
+      "prompt": "Write a function to compute the dot product of two sequences of numbers, represented as lists. The dot product is computed by multiplying corresponding elements and then adding up the resulting products. Example: (dot-product '(10 20) '(3 4)) = 10 × 3 + 20 × 4 = 110",
+      
+      "tests_concepts": [
+        {
+          "concept_id": "recursion",
+          "mastery_indicators": ["recursive_writing", "parallel_recursion", "termination_reasoning"],
+          "weight": "primary",
+          "rationale": "Can solve with recursion on two lists in parallel"
+        },
+        {
+          "concept_id": "list_accessors",
+          "mastery_indicators": ["first_usage", "rest_usage"],
+          "weight": "supporting",
+          "rationale": "Decompose both lists simultaneously"
+        },
+        {
+          "concept_id": "mapcar",
+          "mastery_indicators": ["mapcar_usage", "binary_functions", "parallel_mapping"],
+          "weight": "alternative_primary",
+          "rationale": "Elegant solution using mapcar to multiply pairs"
+        },
+        {
+          "concept_id": "apply",
+          "mastery_indicators": ["apply_usage", "function_to_list"],
+          "weight": "alternative_primary",
+          "rationale": "Use apply to sum the mapped results"
+        },
+        {
+          "concept_id": "higher_order_functions",
+          "mastery_indicators": ["functional_composition", "higher_order_thinking"],
+          "weight": "alternative_primary",
+          "rationale": "Demonstrates power of higher-order functions"
+        }
+      ],
+      
+      "prerequisites": ["recursion", "list_accessors"],
+      "optional_prerequisites": ["mapcar", "apply", "higher_order_functions"],
+      
+      "learning_opportunities": [
+        "Multiple valid approaches: recursive vs functional",
+        "Parallel iteration over two lists",
+        "Composition: mapcar → apply",
+        "Comparing approaches: clarity vs conciseness"
+      ],
+      
+      "multiple_approaches": true,
+      "approach_comparison": "Recursive version is more explicit, functional version is more elegant. Both are correct.",
+      
+      "common_mistakes": [
+        "Forgetting base case (both lists empty)",
+        "Not handling lists of different lengths",
+        "In functional approach: forgetting #' before function names",
+        "Confusing apply and funcall"
+      ],
+      
+      "hints": [
+        {
+          "level": 1,
+          "hint": "Think about the structure: multiply first elements, add to result of rest"
+        },
+        {
+          "level": 2,
+          "hint": "What's your base case? When should recursion stop?"
+        },
+        {
+          "level": 3,
+          "hint": "Alternative approach: Can you use mapcar to multiply corresponding pairs? Then how would you sum the results?"
+        },
+        {
+          "level": 4,
+          "hint": "The apply function can apply + to a list of numbers: (apply #'+ '(1 2 3)) => 6"
+        }
+      ],
+      
+      "example_solutions": [
+        {
+          "approach": "simple_recursive",
+          "difficulty": "basic",
+          "code": "(defun dot-product (a b)\n  \"Compute the mathematical dot product of two vectors.\"\n  (if (or (null a) (null b))\n      0\n      (+ (* (first a) (first b))\n         (dot-product (rest a) (rest b)))))",
+          "explanation": "Recursive: multiply first elements, add to recursive call on rest. Stops when either list is empty.",
+          "demonstrates": ["recursion", "parallel_iteration", "base_case"]
+        },
+        {
+          "approach": "iterative_with_loop",
+          "difficulty": "intermediate",
+          "code": "(defun dot-product (a b)\n  \"Compute the mathematical dot product of two vectors.\"\n  (let ((sum 0))\n    (dotimes (i (length a))\n      (incf sum (* (elt a i) (elt b i))))\n    sum))",
+          "explanation": "Iterative: use loop to accumulate sum. Uses indexed access with elt.",
+          "demonstrates": ["iteration", "dotimes", "accumulation", "let"]
+        },
+        {
+          "approach": "functional_mapcar_apply",
+          "difficulty": "advanced",
+          "code": "(defun dot-product (a b)\n  \"Compute the mathematical dot product of two vectors.\"\n  (apply #'+ (mapcar #'* a b)))",
+          "explanation": "Elegant functional: mapcar multiplies pairs element-wise, apply sums them all. Most concise!",
+          "demonstrates": ["mapcar", "apply", "higher_order_functions", "functional_composition"]
+        }
+      ],
+      
+      "pedagogical_value": "This exercise beautifully demonstrates that functional programming can be more expressive than imperative/recursive approaches. The mapcar/apply solution is 1 line vs 4-5 for recursive.",
+      
+      "followup_questions": [
+        "What happens if the lists have different lengths?",
+        "How would you modify this to compute the cross product instead?",
+        "Can you use reduce instead of apply to sum the products?"
+      ]
+    }
+  ],
+  
+  "concept_to_exercises": {
+    "recursion": {
+      "exercises": ["ex_1_1", "ex_1_2", "ex_1_3", "ex_1_4", "ex_1_5"],
+      "note": "All exercises can be solved recursively; core skill for chapter"
+    },
+    "list_accessors": {
+      "exercises": ["ex_1_1", "ex_1_3", "ex_1_4", "ex_1_5"],
+      "note": "Essential for decomposing lists"
+    },
+    "sublists": {
+      "exercises": ["ex_1_3", "ex_1_4"],
+      "note": "These require tree recursion through nested structures"
+    },
+    "defun": {
+      "exercises": ["ex_1_1", "ex_1_2", "ex_1_3", "ex_1_4", "ex_1_5"],
+      "note": "All exercises require function definition"
+    },
+    "nil": {
+      "exercises": ["ex_1_3"],
+      "note": "Exercise explicitly explores nil semantics"
+    },
+    "mapcar": {
+      "exercises": ["ex_1_5"],
+      "note": "Demonstrates elegant alternative to recursion"
+    },
+    "apply": {
+      "exercises": ["ex_1_5"],
+      "note": "Used with mapcar for functional approach"
+    },
+    "higher_order_functions": {
+      "exercises": ["ex_1_5"],
+      "note": "Shows power of functional programming"
+    },
+    "list_constructors": {
+      "exercises": ["ex_1_1"],
+      "note": "Alternative filtering approach"
+    },
+    "function_application": {
+      "exercises": ["ex_1_2"],
+      "note": "Uses arithmetic operations"
+    }
+  },
+  
+  "exercise_progressions": [
+    {
+      "name": "recursive_mastery",
+      "sequence": ["ex_1_2", "ex_1_5", "ex_1_3", "ex_1_4"],
+      "rationale": "Ordered by recursive complexity: simple linear → parallel lists → tree recursion",
+      "difficulty_curve": "steady_increase"
+    },
+    {
+      "name": "by_difficulty",
+      "sequence": ["ex_1_2", "ex_1_4", "ex_1_5", "ex_1_3", "ex_1_1"],
+      "rationale": "Subjective difficulty based on cognitive load",
+      "difficulty_curve": "ex_1_3 hardest due to design ambiguity"
+    },
+    {
+      "name": "prerequisite_order",
+      "sequence": ["ex_1_2", "ex_1_4", "ex_1_3", "ex_1_5", "ex_1_1"],
+      "rationale": "Each builds on skills from previous",
+      "difficulty_curve": "introduces one new complexity at a time"
+    }
+  ],
+  
+  "difficulty_analysis": {
+    "ex_1_2": {
+      "cognitive_load": "low",
+      "concepts_required": 3,
+      "novelty": "standard recursive pattern",
+      "ambiguity": "none"
+    },
+    "ex_1_4": {
+      "cognitive_load": "medium",
+      "concepts_required": 3,
+      "novelty": "tree recursion",
+      "ambiguity": "low"
+    },
+    "ex_1_5": {
+      "cognitive_load": "medium",
+      "concepts_required": 2,
+      "novelty": "parallel recursion or functional approach",
+      "ambiguity": "none",
+      "note": "Can be easy (1 line) or medium (recursive) depending on approach"
+    },
+    "ex_1_3": {
+      "cognitive_load": "high",
+      "concepts_required": 4,
+      "novelty": "tree recursion + design decision",
+      "ambiguity": "high (nil semantics)",
+      "note": "Deliberately ambiguous specification teaches real-world thinking"
+    },
+    "ex_1_1": {
+      "cognitive_load": "high",
+      "concepts_required": 3,
+      "novelty": "bidirectional checking + design decisions",
+      "ambiguity": "high (what counts as title/suffix?)",
+      "note": "Open-ended, multiple valid solutions"
+    }
+  },
+  
+  "pedagogical_insights": {
+    "tree_recursion_introduction": "Exercises 1.3 and 1.4 introduce tree recursion pattern - recurse on BOTH first and rest. This is a conceptual jump from simple list recursion.",
+    
+    "multiple_approaches": "Exercise 1.5 brilliantly shows that problems can have multiple valid solutions with different tradeoffs (recursive vs functional).",
+    
+    "ambiguity_as_teaching": "Exercises 1.1 and 1.3 deliberately have ambiguous specifications. This teaches students that real-world problems require design decisions.",
+    
+    "progressive_complexity": "Power (1.2) → Count-anywhere (1.4) → Count-atoms (1.3) shows increasing complexity in recursive patterns.",
+    
+    "functional_vs_recursive": "Exercise 1.5 is a pivot point - can be solved purely functionally, introducing students to higher-order thinking."
+  },
+  
+  "statistics": {
+    "total_exercises": 5,
+    "difficulty_breakdown": {
+      "basic": 0,
+      "intermediate": 5,
+      "advanced": 0
+    },
+    "concepts_tested": 10,
+    "average_time_minutes": 18,
+    "requires_tree_recursion": 2,
+    "has_multiple_approaches": 3,
+    "has_design_ambiguity": 2
+  }
+}
