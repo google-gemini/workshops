@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Multi-stage build for Next.js on Cloud Run
-FROM node:18-alpine AS base
+FROM node:alpine AS base
 
 # Install dependencies only when needed
 FROM base AS deps

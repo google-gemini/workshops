@@ -28,6 +28,19 @@ BLUE='\033[0;34m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Check for required API key
+if [ -z "${GOOGLE_API_KEY}" ]; then
+  echo -e "${YELLOW}⚠️  Warning: GOOGLE_API_KEY not set${NC}"
+  echo "Export it before deploying:"
+  echo "  export GOOGLE_API_KEY='your-key-here'"
+  echo ""
+  read -p "Continue anyway? (y/N) " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    exit 1
+  fi
+fi
+
 echo -e "${BLUE}🚀 Deploying learning app to Cloud Run${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "  Project: ${PROJECT_ID}"
@@ -79,7 +92,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --min-instances=0 \
   --max-instances=10 \
   --timeout=300 \
-  --set-env-vars="NODE_ENV=production" \
+  --set-env-vars="NODE_ENV=production,GOOGLE_API_KEY=${GOOGLE_API_KEY}" \
   --project="${PROJECT_ID}"
 
 # Get the service URL
