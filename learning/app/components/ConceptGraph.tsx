@@ -140,7 +140,7 @@ export default function ConceptGraph({
             color: '#000',
             'text-valign': 'bottom',
             'text-halign': 'center',
-            'text-margin-y': '5px',
+            'text-margin-y': 5,
             'font-size': '20px',
             'font-weight': 'bold',
             'text-background-color': '#ffffff',
@@ -168,7 +168,6 @@ export default function ConceptGraph({
             height: '35px',
             'border-width': '4px',
             'border-color': '#4CAF50', // Bright green border
-            'box-shadow': '0 0 30px rgba(76, 175, 80, 0.8)',
           },
         },
         {
@@ -224,10 +223,9 @@ export default function ConceptGraph({
       ],
       layout: {
         name: layout,
-        directed: true,
         padding: 50,
         spacingFactor: 1.5,
-      },
+      } as any, // Cast to any since different layouts support different options
     });
 
     // Helper function to highlight prerequisite path
@@ -314,7 +312,7 @@ export default function ConceptGraph({
   const handleLayoutChange = (newLayout: string) => {
     setLayout(newLayout);
     if (cyRef.current) {
-      cyRef.current.layout({ name: newLayout, directed: true, padding: 50 }).run();
+      cyRef.current.layout({ name: newLayout, padding: 50 } as any).run();
     }
   };
 

@@ -36,6 +36,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/cytoscape-dagre": "^2.3.3",
+    "@types/cytoscape-fcose": "^2.2.4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

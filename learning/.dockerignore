@@ -1,0 +1,37 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Next.js build outputs
+.next/
+out/
+
+# Environment files
+.env*.local
+.env
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+NOTES.md
+DEPLOY.md
+
+# IDE
+.vscode
+.idea
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test data
+test-data/
+
+# Scripts (not needed at runtime)
+scripts/
+
+# Public screenshots (optional - remove if you want them in prod)
+public/*.png
