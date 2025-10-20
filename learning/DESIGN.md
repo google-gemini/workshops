@@ -156,52 +156,41 @@ graph TB
 
 ### Three-Layer Architecture
 
-```graphviz
-digraph architecture {
-  rankdir=TB;
-  node [shape=box, style=rounded];
-  
-  subgraph cluster_frontend {
-    label="Frontend (Next.js)";
-    style=filled;
-    color=lightblue;
+```mermaid
+graph TB
+    subgraph Frontend["Frontend (Next.js)"]
+        CG[ConceptGraph<br/>Cytoscape.js]
+        SD[SocraticDialogue<br/>React Modal]
+        CD[ConceptDetails<br/>Sidebar]
+    end
     
-    ConceptGraph [label="ConceptGraph\n(Cytoscape.js)"];
-    SocraticDialogue [label="SocraticDialogue\n(React Modal)"];
-    ConceptDetails [label="ConceptDetails\n(Sidebar)"];
-  }
-  
-  subgraph cluster_api {
-    label="API Layer (Next.js API Routes)";
-    style=filled;
-    color=lightgreen;
+    subgraph API["API Layer (Next.js API Routes)"]
+        Route[/api/socratic-dialogue<br/>• RAG retrieval<br/>• LLM prompt construction<br/>• Mastery assessment]
+    end
     
-    API [label="/api/socratic-dialogue\n• RAG retrieval\n• LLM prompt construction\n• Mastery assessment"];
-  }
-  
-  subgraph cluster_data {
-    label="Data Layer";
-    style=filled;
-    color=lightyellow;
+    subgraph Data["Data Layer"]
+        PCG[concept-graph.json<br/>PCG]
+        Emb[embeddings.json<br/>RAG vectors]
+        LS[localStorage<br/>progress]
+    end
     
-    PCG [label="concept-graph.json\n(PCG)"];
-    Embeddings [label="embeddings.json\n(RAG vectors)"];
-    LocalStorage [label="localStorage\n(progress)"];
-  }
-  
-  Gemini [label="Gemini 2.5 Flash\n+ embedding-001", shape=ellipse, color=orange, style=filled];
-  
-  ConceptGraph -> API [label="REST"];
-  SocraticDialogue -> API [label="REST"];
-  ConceptDetails -> API [label="REST"];
-  
-  API -> Gemini [label="LLM calls"];
-  API -> PCG [label="read"];
-  API -> Embeddings [label="read"];
-  
-  ConceptGraph -> LocalStorage [label="read/write"];
-  SocraticDialogue -> LocalStorage [label="read/write"];
-}
+    Gemini[Gemini 2.5 Flash<br/>+ embedding-001]
+    
+    CG -->|REST| Route
+    SD -->|REST| Route
+    CD -->|REST| Route
+    
+    Route -->|LLM calls| Gemini
+    Route -->|read| PCG
+    Route -->|read| Emb
+    
+    CG <-->|read/write| LS
+    SD <-->|read/write| LS
+    
+    style Frontend fill:#add8e6
+    style API fill:#90ee90
+    style Data fill:#ffffe0
+    style Gemini fill:#ffa500
 ```
 
 ### Technology Stack
@@ -261,30 +250,24 @@ Embedding Generation (embed-chunks.ts)
 
 ### Stage 2: Runtime (Per Dialogue Turn)
 
-```graphviz
-digraph runtime_flow {
-  rankdir=TB;
-  node [shape=box, style=rounded];
-  
-  UserInput [label="User Input", shape=ellipse, color=lightblue, style=filled];
-  APIRoute [label="API Route\n/api/socratic-dialogue"];
-  LoadData [label="Load Data\n• Concept info\n• Cached textbook context", color=lightyellow, style=filled];
-  RAG [label="RAG Retrieval\n• Embed query\n• Cosine similarity\n• Top-K chunks", color=lightgreen, style=filled];
-  BuildPrompt [label="Build Prompt\n• Learning objectives\n• Textbook passages\n• Conversation history"];
-  Gemini [label="Gemini 2.5 Flash", shape=ellipse, color=orange, style=filled];
-  ParseJSON [label="Parse JSON Response\n• message\n• mastery_assessment"];
-  UpdateUI [label="Update UI\n• Show message\n• Update progress bar\n• Enable mastery button", color=lightblue, style=filled];
-  
-  UserInput -> APIRoute;
-  APIRoute -> LoadData;
-  LoadData -> RAG [label="first turn only"];
-  LoadData -> BuildPrompt;
-  RAG -> BuildPrompt [label="textbook context"];
-  BuildPrompt -> Gemini;
-  Gemini -> ParseJSON;
-  ParseJSON -> UpdateUI;
-  UpdateUI -> UserInput [label="next turn", style=dashed];
-}
+```mermaid
+graph TB
+    Start([User Input]) --> API[API Route<br/>/api/socratic-dialogue]
+    API --> Load[Load Data<br/>• Concept info<br/>• Cached textbook context]
+    Load --> RAG{First turn?}
+    RAG -->|Yes| Retrieve[RAG Retrieval<br/>• Embed query<br/>• Cosine similarity<br/>• Top-K chunks]
+    RAG -->|No| Build
+    Retrieve --> Build[Build Prompt<br/>• Learning objectives<br/>• Textbook passages<br/>• Conversation history]
+    Build --> Gemini[Gemini 2.5 Flash]
+    Gemini --> Parse[Parse JSON Response<br/>• message<br/>• mastery_assessment]
+    Parse --> UI[Update UI<br/>• Show message<br/>• Update progress bar<br/>• Enable mastery button]
+    UI -.->|Next turn| Start
+    
+    style Start fill:#add8e6
+    style Load fill:#ffffe0
+    style Retrieve fill:#90ee90
+    style Gemini fill:#ffa500
+    style UI fill:#add8e6
 ```
 
 ---
