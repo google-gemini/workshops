@@ -7,6 +7,18 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Python tool caches
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# C extensions
+*.so
+cython_debug/
+
 # Test artifacts
 .pytest_cache/
 .coverage
@@ -27,6 +39,8 @@ dist/
 # IDE/Editor
 .vscode/
 .idea/
+*.swp
+*~
 
 # OS junk
 .DS_Store
