@@ -165,7 +165,7 @@ graph TB
     end
     
     subgraph API["API Layer (Next.js API Routes)"]
-        Route[/api/socratic-dialogue<br/>• RAG retrieval<br/>• LLM prompt construction<br/>• Mastery assessment]
+        Route[API: socratic-dialogue<br/>- RAG retrieval<br/>- LLM prompt construction<br/>- Mastery assessment]
     end
     
     subgraph Data["Data Layer"]
@@ -252,15 +252,15 @@ Embedding Generation (embed-chunks.ts)
 
 ```mermaid
 graph TB
-    Start([User Input]) --> API[API Route<br/>/api/socratic-dialogue]
-    API --> Load[Load Data<br/>• Concept info<br/>• Cached textbook context]
+    Start([User Input]) --> API[API Route<br/>socratic-dialogue]
+    API --> Load[Load Data<br/>- Concept info<br/>- Cached textbook context]
     Load --> RAG{First turn?}
-    RAG -->|Yes| Retrieve[RAG Retrieval<br/>• Embed query<br/>• Cosine similarity<br/>• Top-K chunks]
+    RAG -->|Yes| Retrieve[RAG Retrieval<br/>- Embed query<br/>- Cosine similarity<br/>- Top-K chunks]
     RAG -->|No| Build
-    Retrieve --> Build[Build Prompt<br/>• Learning objectives<br/>• Textbook passages<br/>• Conversation history]
+    Retrieve --> Build[Build Prompt<br/>- Learning objectives<br/>- Textbook passages<br/>- Conversation history]
     Build --> Gemini[Gemini 2.5 Flash]
-    Gemini --> Parse[Parse JSON Response<br/>• message<br/>• mastery_assessment]
-    Parse --> UI[Update UI<br/>• Show message<br/>• Update progress bar<br/>• Enable mastery button]
+    Gemini --> Parse[Parse JSON Response<br/>- message<br/>- mastery_assessment]
+    Parse --> UI[Update UI<br/>- Show message<br/>- Update progress bar<br/>- Enable mastery button]
     UI -.->|Next turn| Start
     
     style Start fill:#add8e6
