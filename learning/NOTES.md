@@ -4549,6 +4549,316 @@ jobs:
 
 ---
 
+## 🐍 Python Scratchpad Integration (2025-10-30)
+
+### Overview
+
+Added interactive Python code execution environment integrated into the Socratic dialogue for programming concepts. Students can write and run Python code alongside the conversation, with execution results feeding back into the dialogue context.
+
+### Architecture
+
+**Technology:** Pyodide (CPython compiled to WebAssembly)
+- Runs entirely in browser (no server-side execution)
+- Full Python standard library
+- Pre-loaded packages: numpy, micropip
+- ~10-15 second initial load time (cached thereafter)
+
+**Component:** `learning/app/components/PythonScratchpad.tsx`
+
+**Key Features:**
+1. **Monaco Editor integration** - Full code editor with syntax highlighting
+2. **Keyboard shortcuts:**
+   - `Ctrl+Enter` / `Cmd+Enter` - Execute code
+   - `Tab` - Insert indentation (overrides default browser behavior)
+3. **Output capture:**
+   - Stdout displayed in green
+   - Stderr displayed in red
+   - Execution errors shown with full traceback
+4. **Code context feedback:**
+   - Execution results sent back to Gemini via `codeContext` parameter
+   - LLM can reference student's code, output, and errors in dialogue
+
+### Dialog Layout
+
+**Split-pane design for programming concepts:**
+```
+┌────────────────────────────────────────────────────────┐
+│  Dialog Header                                         │
+├──────────────────────────┬─────────────────────────────┤
+│                          │                             │
+│  Conversation (50%)      │  Python Scratchpad (50%)    │
+│  - Socratic questions    │  - Monaco editor            │
+│  - Student responses     │  - Execute button           │
+│  - Mastery tracking      │  - Output console           │
+│  - Progress indicators   │  - Reset button             │
+│                          │                             │
+└──────────────────────────┴─────────────────────────────┘
+```
+
+**Conditional rendering:** Scratchpad only appears when:
+```typescript
+const isProgrammingConcept = 
+  conceptData.tags?.includes('code') ||
+  conceptData.tags?.includes('algorithm') ||
+  conceptData.type === 'implementation';
+```
+
+**Dialog dimensions:**
+- Width: `!max-w-[96vw] w-[96vw]` (96% of viewport)
+- Height: `!h-[90vh]` (90% of viewport)
+- Split: `flex-1` + `flex-1` (equal 50/50)
+- Gap: `gap-4` between panes
+
+### Integration with Socratic Dialogue
+
+**Code context flow:**
+```
+Student writes code → Executes → Output captured
+  ↓
+onExecute callback fires
+  ↓
+setCodeContext({ code, output, error })
+  ↓
+Included in next API request to /api/socratic-dialogue
+  ↓
+Gemini sees: "The student wrote this code: ... It produced this output: ..."
+  ↓
+LLM can debug, guide, or celebrate based on actual execution results
+```
+
+**System prompt enhancement:**
+```typescript
+${codeContext ? `
+## STUDENT'S CODE EXECUTION
+
+The student has written and executed code:
+
+**Code:**
+\`\`\`python
+${codeContext.code}
+\`\`\`
+
+**Output:**
+${codeContext.output}
+
+${codeContext.error ? `**Error:**\n${codeContext.error}` : ''}
+
+Reference their code directly in your responses. Help them debug if there are errors.
+` : ''}
+```
+
+### Pedagogical Design Decisions
+
+#### The Sacred Scratchpad Principle
+
+**Decision:** Gemini provides hints and guidance via conversation, but **never directly modifies student's code**.
+
+**Rationale:**
+1. **Preserves ownership** - "I figured it out!" moment
+2. **True Socratic method** - Questions, not answers
+3. **Clear boundaries** - Chat is teacher, code is student
+4. **Authentic learning** - Real programming involves synthesis, not copying
+5. **Avoids confusion** - Who wrote this line? Was it me or the AI?
+
+**What Gemini CAN do:**
+- ✅ See student's code via `codeContext`
+- ✅ Reference specific lines: "On line 5, you're using..."
+- ✅ Suggest changes: "Try adding `import math` at the top"
+- ✅ Show example patterns in chat (with syntax highlighting)
+- ✅ Ask guiding questions: "What's missing from your function signature?"
+- ✅ Debug errors: "That NameError means you haven't defined `City` yet"
+
+**What Gemini CANNOT do:**
+- ❌ Directly edit the scratchpad
+- ❌ Auto-fix code
+- ❌ Insert solutions
+
+**Rejected alternatives:**
+- **"Copy to Scratchpad" button** - Too tempting to just copy answers
+- **AI code injection** - Breaks ownership, causes confusion
+- **"Ask for help" button** - Becomes a crutch, deprives pedagogical moment
+
+#### Starter Code: Blank Slate vs Scaffolding
+
+**The Pedagogical Tension:**
+
+Peter Norvig noted that productive struggle is beneficial for learning. But blank pages cause paralysis. How much scaffolding is optimal?
+
+**Research-backed considerations:**
+
+**Blank Slate Pros:**
+- Productive struggle (Bjork's "desirable difficulty")
+- Retrieval practice > recognition (deeper encoding)
+- Reveals knowledge gaps early
+- Builds "from scratch" confidence
+
+**Blank Slate Cons:**
+- Cognitive overload (concept + syntax simultaneously)
+- Demotivation from "blank page paralysis"
+- Time spent on boilerplate takes away from concept learning
+- False negatives (understands concept, not syntax)
+
+**Starter Code Pros:**
+- Scaffolding reduces extraneous cognitive load
+- Working example → modify workflow (concrete before abstract)
+- Shows conventions and best practices
+- Momentum from small wins
+
+**Starter Code Cons:**
+- Passive copying without understanding
+- Becomes a crutch (never learns to start fresh)
+- False positives (code works, student doesn't know why)
+
+**Our Adaptive Approach:**
+
+**Level 1 (Basic concepts):** Give starter code
+```python
+City = complex  # From previous concept
+A = City(300, 100)  # Create a city
+print(A.real, A.imag)  # Access coordinates
+```
+*Focus on THE CONCEPT (complex numbers represent points), not Python syntax*
+
+**Level 2 (Intermediate):** Give skeleton
+```python
+def distance(A: City, B: City) -> float:
+    """Return Euclidean distance between cities A and B."""
+    # TODO: Implement using complex number operations
+    pass
+```
+*Shows interface, student discovers implementation*
+
+**Level 3 (Advanced/synthesis):** Blank slate
+```python
+# Implement the 2-opt optimization algorithm
+```
+*By now, students should start from scratch*
+
+**Implementation Strategy (Proposed):**
+
+Since Gemini has full context on the first turn (examples, textbook sections, learning objectives), have it generate pedagogically appropriate starter code:
+
+```typescript
+// System prompt addition (first turn only):
+STARTER CODE GENERATION:
+Generate minimal starter code (5-15 lines) that provides scaffolding WITHOUT solving:
+
+INCLUDE:
+- Imports and type definitions from prerequisites
+- Function signature with docstring
+- TODO comments where logic should go
+- 1-2 test cases showing expected behavior
+
+DO NOT INCLUDE:
+- The actual implementation/algorithm
+- Complete working solution
+- More than 40% of the final code
+
+Return as: { "starter_code": "..." }
+```
+
+**Why LLM-generated:**
+- ✅ Contextual (sees all examples, can synthesize)
+- ✅ Adaptive to concept difficulty
+- ✅ Can extract patterns from Norvig's code style
+- ✅ One API call (no extra latency)
+- ✅ Better than hardcoded templates
+
+**Fallback hierarchy:**
+1. LLM-generated starter code (first turn)
+2. `conceptData.examples[0].content` (curated examples)
+3. Blank slate: `"# Write your implementation here\n"`
+
+**Current Status:** Discussion phase - implementation pending after documenting design decisions.
+
+### UX Enhancements
+
+#### Auto-Focus After LLM Response
+
+**Problem:** Users had to manually click the textarea after each response, breaking conversational flow.
+
+**Solution:** 
+```typescript
+const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+useEffect(() => {
+  if (!isLoading && textareaRef.current) {
+    textareaRef.current.focus();
+  }
+}, [isLoading]);
+```
+
+**Impact:** Seamless typing flow - cursor ready immediately after Gemini responds.
+
+#### Markdown Rendering in Dialogue
+
+**Added libraries:**
+- `react-markdown` - Core markdown rendering
+- `react-syntax-highlighter` - Code block syntax highlighting (oneDark theme)
+- `remark-gfm` - GitHub Flavored Markdown (tables, task lists)
+- `remark-math` + `rehype-katex` - Mathematical equations
+
+**Example rendering:**
+```markdown
+The distance formula is $\sqrt{(y_2 - y_1)^2 + (x_2 - x_1)^2}$
+
+$$
+d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}
+$$
+```
+
+**Impact:** Professional, readable dialogue with proper code highlighting and math rendering.
+
+### Future Enhancements (TODO)
+
+#### Collapsible Scratchpad
+
+**Motivation:** Wide dialog is great for Pytudes (code-heavy), but overwhelming for theory concepts or mobile users.
+
+**Proposed:**
+- Add toggle button in dialog header: `[</>]` icon
+- Collapse scratchpad to narrow sidebar or hide entirely
+- Conversation area expands to fill space
+- State persists in localStorage
+
+**When to implement:** After adding non-programming content (pure theory concepts, exercises without code).
+
+#### Starter Code Generation
+
+**Status:** Design complete, implementation pending.
+
+**Next steps:**
+1. Update `buildSocraticPrompt` to include starter code instructions (first turn only)
+2. Modify response schema to include `starter_code` field
+3. Parse and set starter code in dialogue component
+4. Test with various concept types (basic, intermediate, advanced)
+5. Validate that generated code doesn't over-solve
+
+**Estimated effort:** 1-2 hours
+
+### Files Modified
+
+**Created:**
+- `learning/app/components/PythonScratchpad.tsx` - Interactive Python workspace
+
+**Modified:**
+- `learning/app/layout.tsx` - Added Pyodide CDN script to head
+- `learning/app/components/SocraticDialogue.tsx` - Integrated scratchpad, 50/50 layout, code context state, auto-focus
+- `learning/app/api/socratic-dialogue/route.ts` - Accept `codeContext`, pass to LLM
+- `learning/package.json` - Added react-markdown, syntax highlighter, math rendering
+- `learning/NOTES.md` - This documentation
+
+### Key Insights
+
+1. **In-browser Python execution works!** Pyodide is production-ready for educational use cases
+2. **50/50 split is ideal** for code-heavy concepts (Pytudes), but may need collapsible option for theory
+3. **Code context is powerful** - Gemini seeing actual execution results enables precise debugging guidance
+4. **Starter code is nuanced** - Must balance scaffolding vs productive struggle
+5. **LLM-generated scaffolding** is promising - can synthesize examples into pedagogically sound templates
+6. **Sacred scratchpad principle** - Never auto-modify student code; preserves ownership and learning
+
+---
+
 ## 🐍 Pytudes Integration: TSP Notebook (2025-10-30)
 
 ### Overview

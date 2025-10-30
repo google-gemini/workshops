@@ -18,6 +18,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import PythonScratchpad from './PythonScratchpad';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -51,6 +52,7 @@ type SocraticDialogueProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   conceptData: any;
+  embeddingsPath: string;
   onMasteryAchieved?: (conceptId: string) => void;
 };
 
@@ -58,6 +60,7 @@ export default function SocraticDialogue({
   open,
   onOpenChange,
   conceptData,
+  embeddingsPath,
   onMasteryAchieved,
 }: SocraticDialogueProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -67,6 +70,11 @@ export default function SocraticDialogue({
   const [demonstratedSkills, setDemonstratedSkills] = useState<Set<string>>(new Set());
   const [readyForMastery, setReadyForMastery] = useState(false);
   const [textbookContext, setTextbookContext] = useState<string | null>(null);
+  const [codeContext, setCodeContext] = useState<{
+    code: string;
+    output: string;
+    error: string | null;
+  } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -98,6 +106,7 @@ export default function SocraticDialogue({
       setDemonstratedSkills(new Set());
       setReadyForMastery(false);
       setTextbookContext(null); // Clear cached context
+      setCodeContext(null); // Clear code context
     }
   }, [open]);
 
@@ -114,6 +123,8 @@ export default function SocraticDialogue({
           conversationHistory: [],
           conceptData,
           textbookContext: null, // Signal: please do semantic search
+          embeddingsPath,
+          codeContext, // Include code context if available
         }),
       });
 
@@ -184,6 +195,8 @@ export default function SocraticDialogue({
           conversationHistory,
           conceptData,
           textbookContext, // Reuse cached context from first turn
+          embeddingsPath,
+          codeContext, // Include code context
         }),
       });
 
@@ -249,9 +262,15 @@ export default function SocraticDialogue({
   const demonstratedCount = demonstratedSkills.size;
   const progressPercent = totalIndicators > 0 ? (demonstratedCount / totalIndicators) * 100 : 0;
 
+  // Determine if this is a programming concept
+  const isProgrammingConcept = conceptData.tags?.includes('programming') || 
+                                conceptData.type === 'algorithm' ||
+                                conceptData.id.includes('distance') ||
+                                conceptData.id.includes('tsp');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl h-[80vh] flex flex-col">
+      <DialogContent className={`${isProgrammingConcept ? '!max-w-[96vw] w-[96vw]' : 'max-w-3xl'} !h-[90vh] flex flex-col p-4`}>
         <DialogHeader>
           <DialogTitle>Learning: {conceptData.name}</DialogTitle>
           <DialogDescription>{conceptData.description}</DialogDescription>
@@ -309,8 +328,11 @@ export default function SocraticDialogue({
           )
         )}
 
-        {/* Messages area */}
-        <div className="flex-1 overflow-y-auto space-y-4 py-4 px-2">
+        {/* Main content area */}
+        <div className="flex-1 flex gap-4 overflow-auto">
+          {/* Messages area (left side or full width) */}
+          <div className={`${isProgrammingConcept ? 'flex-1 min-w-0' : 'w-full'} flex flex-col`}>
+            <div className="flex-1 overflow-y-auto space-y-4 py-4 px-2">
           {messages.map((msg, idx) => (
             <div
               key={idx}
@@ -369,11 +391,11 @@ export default function SocraticDialogue({
               </div>
             </div>
           )}
-          <div ref={messagesEndRef} />
-        </div>
+              <div ref={messagesEndRef} />
+            </div>
 
-        {/* Input area */}
-        <div className="flex gap-2 pt-4 border-t">
+            {/* Input area */}
+            <div className="flex gap-2 pt-4 border-t">
           <Textarea
             ref={textareaRef}
             value={input}
@@ -383,9 +405,23 @@ export default function SocraticDialogue({
             className="flex-1 min-h-[60px] max-h-[120px]"
             disabled={isLoading}
           />
-          <Button onClick={sendMessage} disabled={isLoading || !input.trim()}>
-            Send
-          </Button>
+              <Button onClick={sendMessage} disabled={isLoading || !input.trim()}>
+                Send
+              </Button>
+            </div>
+          </div>
+
+          {/* Python Scratchpad (right side) - only for programming concepts */}
+          {isProgrammingConcept && (
+            <div className="flex-1 min-w-0 border-l pl-3 flex flex-col">
+              <PythonScratchpad
+                starterCode={conceptData.starter_code || `# Try calculating Euclidean distance\nimport math\n\ndef distance(p1, p2):\n    dx = p2[0] - p1[0]\n    dy = p2[1] - p1[1]\n    return math.sqrt(dx**2 + dy**2)\n\n# Test your function\nprint(distance((0, 0), (3, 4)))`}
+                onExecute={(code, output, error) => {
+                  setCodeContext({ code, output, error });
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Learning objectives reference */}

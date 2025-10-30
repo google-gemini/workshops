@@ -15,6 +15,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 type Message = {
   role: 'system' | 'user' | 'assistant';
@@ -75,10 +77,21 @@ async function loadConceptContext(
   conceptId: string, 
   conceptData: any,
   apiKey: string,
+  embeddingsPath: string,
   topK: number = 5
 ): Promise<string> {
   try {
-    const embeddings = require('../../../paip-chapter-1/embeddings.json');
+    // Load embeddings from dynamic path
+    const embeddingsFile = path.join(
+      process.cwd(), 
+      'public',
+      embeddingsPath.replace(/^\/data\//, '') // Remove /data/ prefix
+    );
+    
+    const embeddingsData = JSON.parse(
+      await fs.readFile(embeddingsFile, 'utf-8')
+    );
+    const embeddings = embeddingsData;
     
     console.log(`   📊 Searching ${embeddings.chunks.length} chunks using semantic similarity...`);
     
@@ -122,7 +135,7 @@ async function loadConceptContext(
 
 export async function POST(request: NextRequest) {
   try {
-    const { conceptId, conversationHistory, conceptData, textbookContext } = await request.json();
+    const { conceptId, conversationHistory, conceptData, textbookContext, embeddingsPath, codeContext } = await request.json();
 
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎓 NEW SOCRATIC DIALOGUE REQUEST');
@@ -147,7 +160,7 @@ export async function POST(request: NextRequest) {
     
     if (!textbookSections) {
       console.log('\n📚 SEMANTIC SEARCH (first turn):');
-      textbookSections = await loadConceptContext(conceptId, conceptData, apiKey, 5);
+      textbookSections = await loadConceptContext(conceptId, conceptData, apiKey, embeddingsPath, 5);
     } else {
       console.log('\n📚 REUSING CACHED CONTEXT:');
     }
@@ -166,8 +179,8 @@ export async function POST(request: NextRequest) {
       console.log(textbookSections.substring(0, 500) + '...\n');
     }
 
-    // Build system prompt with textbook grounding
-    const systemPrompt = buildSocraticPrompt(conceptData, textbookSections);
+    // Build system prompt with textbook grounding and code context
+    const systemPrompt = buildSocraticPrompt(conceptData, textbookSections, codeContext);
     
     console.log('\n📝 SYSTEM PROMPT CONSTRUCTED:');
     console.log(`   - Total length: ${systemPrompt.length} characters`);
@@ -347,7 +360,11 @@ function convertToGeminiFormat(systemPrompt: string, conversationHistory: Messag
 }
 
 // Build a Socratic teaching prompt using the concept's pedagogical data
-function buildSocraticPrompt(conceptData: any, textbookSections?: string): string {
+function buildSocraticPrompt(
+  conceptData: any, 
+  textbookSections?: string,
+  codeContext?: { code: string; output: string; error: string | null }
+): string {
   const { name, description, learning_objectives, mastery_indicators, examples, misconceptions } = conceptData;
 
   return `You are a Socratic tutor teaching the concept: "${name}".
@@ -368,6 +385,16 @@ ${textbookSections}
 6. Never expect the student to have access to material you haven't explicitly shown them in this conversation
 
 ---
+` : ''}
+
+${codeContext ? `
+**STUDENT'S PYTHON WORKSPACE:**
+\`\`\`python
+${codeContext.code}
+\`\`\`
+${codeContext.error ? `❌ ERROR: ${codeContext.error}` : `✅ OUTPUT:\n${codeContext.output || '(no output)'}`}
+
+**IMPORTANT:** You can see and reference their code! Suggest experiments like "try changing the values to..." or "what happens if you add...". Guide them to discover through coding.
 ` : ''}
 
 **Learning Objectives:**

@@ -1,0 +1,32 @@
+{
+  "libraries": [
+    {
+      "id": "paip-ch1",
+      "title": "PAIP Chapter 1: Introduction to Lisp",
+      "author": "Peter Norvig",
+      "type": "textbook",
+      "conceptGraphPath": "/data/paip-ch1/concept-graph.json",
+      "embeddingsPath": "/data/paip-ch1/paip-embeddings.json",
+      "description": "Learn Lisp programming fundamentals through Paradigms of AI Programming",
+      "color": "blue",
+      "stats": {
+        "totalConcepts": 42,
+        "estimatedHours": 8
+      }
+    },
+    {
+      "id": "pytudes-tsp",
+      "title": "Traveling Salesperson Problem",
+      "author": "Peter Norvig",
+      "type": "pytude",
+      "conceptGraphPath": "/data/pytudes/concept-graph.json",
+      "embeddingsPath": "/data/pytudes/tsp-embeddings.json",
+      "description": "Explore algorithm design strategies through TSP variations",
+      "color": "green",
+      "stats": {
+        "totalConcepts": 25,
+        "estimatedHours": 5
+      }
+    }
+  ]
+}

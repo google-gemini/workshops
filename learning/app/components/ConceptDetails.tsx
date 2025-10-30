@@ -47,6 +47,7 @@ type ConceptDetailsProps = {
   readyConcepts?: Set<string>;
   lockedConcepts?: Set<string>;
   onConceptClick?: (conceptId: string) => void;
+  embeddingsPath?: string; // Not used here, but passed down from parent
 };
 
 // Compute full prerequisite chain with topological sort

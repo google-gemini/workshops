@@ -20,7 +20,28 @@ import { useState, useEffect } from 'react';
 import ConceptGraph from './components/ConceptGraph';
 import ConceptDetails from './components/ConceptDetails';
 import SocraticDialogue from './components/SocraticDialogue';
-import conceptGraphData from '../paip-chapter-1/concept-graph.json';
+import LibrarySelector from './components/LibrarySelector';
+
+type Library = {
+  id: string;
+  title: string;
+  author: string;
+  type: string;
+  conceptGraphPath: string;
+  embeddingsPath: string;
+  description: string;
+  color: string;
+  stats: {
+    totalConcepts: number;
+    estimatedHours: number;
+  };
+};
+
+type ConceptGraphData = {
+  metadata: any;
+  concepts: any[];
+  edges: any[];
+};
 
 type MasteryRecord = {
   conceptId: string;
@@ -28,9 +49,44 @@ type MasteryRecord = {
 };
 
 export default function Home() {
+  const [libraries, setLibraries] = useState<Library[]>([]);
+  const [selectedLibraryId, setSelectedLibraryId] = useState<string | null>(null);
+  const [conceptGraphData, setConceptGraphData] = useState<ConceptGraphData | null>(null);
   const [selectedConceptId, setSelectedConceptId] = useState<string | null>(null);
   const [dialogueOpen, setDialogueOpen] = useState(false);
   const [masteredConcepts, setMasteredConcepts] = useState<Map<string, MasteryRecord>>(new Map());
+
+  // Load libraries on mount
+  useEffect(() => {
+    fetch('/data/libraries.json')
+      .then(res => res.json())
+      .then(data => {
+        setLibraries(data.libraries);
+        // Auto-select from localStorage or first library
+        const saved = localStorage.getItem('selectedLibrary');
+        if (saved && data.libraries.find((l: Library) => l.id === saved)) {
+          setSelectedLibraryId(saved);
+        } else if (data.libraries.length > 0) {
+          setSelectedLibraryId(data.libraries[0].id);
+        }
+      })
+      .catch(err => console.error('Failed to load libraries:', err));
+  }, []);
+
+  // Load concept graph when library changes
+  useEffect(() => {
+    if (!selectedLibraryId) return;
+    
+    const library = libraries.find(l => l.id === selectedLibraryId);
+    if (!library) return;
+
+    fetch(library.conceptGraphPath)
+      .then(res => res.json())
+      .then(data => setConceptGraphData(data))
+      .catch(err => console.error('Failed to load concept graph:', err));
+    
+    localStorage.setItem('selectedLibrary', selectedLibraryId);
+  }, [selectedLibraryId, libraries]);
 
   // Load mastered concepts from localStorage on mount
   useEffect(() => {
@@ -58,6 +114,17 @@ export default function Home() {
     }
   }, [masteredConcepts]);
 
+  // Show library selector if not ready
+  if (!selectedLibraryId || !conceptGraphData || libraries.length === 0) {
+    return (
+      <LibrarySelector 
+        libraries={libraries}
+        onSelect={setSelectedLibraryId}
+      />
+    );
+  }
+
+  const selectedLibrary = libraries.find(l => l.id === selectedLibraryId)!;
   const selectedConcept = selectedConceptId
     ? conceptGraphData.concepts.find((c) => c.id === selectedConceptId) || null
     : null;
@@ -136,7 +203,17 @@ export default function Home() {
     <div className="h-screen flex flex-col">
       {/* Header */}
       <header className="bg-slate-900 text-white p-4">
-        <h1 className="text-2xl font-bold">PAIP Chapter 1: Introduction to Lisp</h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <button 
+              onClick={() => setSelectedLibraryId(null)}
+              className="text-sm text-slate-300 hover:text-white mb-1 transition-colors"
+            >
+              ← Back to Libraries
+            </button>
+            <h1 className="text-2xl font-bold">{selectedLibrary.title}</h1>
+          </div>
+        </div>
       </header>
 
       {/* Main content */}
@@ -226,6 +303,7 @@ export default function Home() {
           open={dialogueOpen}
           onOpenChange={setDialogueOpen}
           conceptData={selectedConcept}
+          embeddingsPath={selectedLibrary.embeddingsPath}
           onMasteryAchieved={handleMasteryAchieved}
         />
       )}
