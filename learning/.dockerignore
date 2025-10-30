@@ -32,6 +32,3 @@ test-data/
 
 # Scripts (not needed at runtime)
 scripts/
-
-# Public screenshots (optional - remove if you want them in prod)
-public/*.png

@@ -4549,8 +4549,378 @@ jobs:
 
 ---
 
-*Last updated: 2025-01-07*
+## 🐍 Pytudes Integration: TSP Notebook (2025-10-30)
+
+### Overview
+
+Extended the Little PAIPer platform to support Peter Norvig's Pytudes collection, starting with the Traveling Salesperson Problem (TSP) notebook as a proof-of-concept.
+
+### Project Structure
+
+Mirrored the PAIP structure for consistency:
+
+```
+learning/pytudes/
+├── tsp.md                   # Source text (converted from TSP.ipynb)
+├── tsp-chunks.json          # Semantic chunks (90 chunks)
+├── tsp-embeddings.json      # Vector embeddings (3072-dim)
+├── TSP_files/               # Notebook images (matplotlib visualizations)
+└── raw/                     # Future: concept graph extraction
+    ├── concepts.json        # Pass 1: Concepts + prerequisites
+    ├── pedagogy.json        # Pass 2: Mastery criteria
+    └── exercises.json       # Pass 3: Exercise mapping
+```
+
+### Image Handling Strategy
+
+**Challenge:** TSP notebook contains matplotlib visualizations
+
+**Solution:** Static file serving through Next.js public directory
+
+**Implementation:**
+1. Copy images: `cp -r pytudes/TSP_files public/`
+2. Images referenced as `TSP_files/*.png` work automatically
+3. Next.js serves `public/` at root - no path changes needed
+4. react-markdown renders images automatically
+5. Docker build includes public/ directory
+
+**Decision:** Commit images directly to git (small ~50-200KB matplotlib plots, no Git LFS needed)
+
+---
+
+### Chunking Pipeline
+
+**Goal:** Convert TSP markdown into semantic chunks for RAG retrieval
+
+**Command:**
+```bash
+npx ts-node learning/scripts/chunk-paip.ts learning/pytudes/tsp.md learning/pytudes/tsp-chunks.json
+```
+
+**Process:**
+1. Split markdown by `#` headers (32 sections detected)
+2. Use Gemini 2.5 Flash to semantically chunk each section
+3. Tag chunks with concepts, types, and metadata
+4. Validate and save to JSON
+
+**Results:**
+- ✅ **Total chunks:** 90
+- ✅ **Average length:** 666 characters
+- ✅ **Chunk types:** overview, definition, example, explanation
+- ✅ **Concepts tagged:** 197 unique concept tags
+- ⚠️ **Partial failures:** 5 sections had JSON parsing errors (skipped)
+  - "Implementation of Basic Concepts"
+  - "Exhaustive TSP Search Algorithm"
+  - "Repeated Nearest Neighbor Algorithm"
+  - "Divide and Conquer: `divide_tsp`"
+  - "Creating a Minimum Spanning Tree"
+- ⚠️ **Validation warnings:**
+  - 1 chunk very long (>3000 chars): "Further Explorations"
+  - 3 chunks with no concept tags
+
+**Chunk structure:**
+```json
+{
+  "chunk_id": "chunk-17-algorithm-design-strategies-list",
+  "topic": "Listing of General Algorithm Design Strategies",
+  "text": "To get inspired, here are some general strategies...",
+  "concepts": [
+    "algorithm-design",
+    "brute-force-strategy",
+    "approximation-strategy",
+    "greedy-strategy"
+  ],
+  "chunk_type": "definition",
+  "section": "General Strategies for Algorithm Design"
+}
+```
+
+**Key insight:** The chunking script successfully processed 27 of 32 sections (84% success rate). The 5 failures were due to LLM generating malformed JSON with unescaped control characters in code examples.
+
+---
+
+### Embedding Pipeline
+
+**Goal:** Generate vector embeddings for semantic search
+
+**Command:**
+```bash
+npx ts-node learning/scripts/embed-chunks.ts learning/pytudes/tsp-chunks.json learning/pytudes/tsp-embeddings.json
+```
+
+**Process:**
+1. Read 90 chunks from JSON
+2. Batch process in groups of 5 (rate limiting)
+3. Embed using `gemini-embedding-001` model
+4. Save embeddings with original chunk metadata
+
+**Results:**
+- ✅ **Total embeddings:** 90/90 (100% success)
+- ✅ **Model:** gemini-embedding-001
+- ✅ **Dimensions:** 3072 (updated from previous 768-dim)
+- ✅ **File size:** 3.45 MB
+- ✅ **Processing time:** ~30-60 seconds (18 batches)
+
+**Embedding structure:**
+```json
+{
+  "chunk_id": "chunk-46-visualizing-greedy-algorithm",
+  "topic": "Introduction to visualizing the greedy algorithm",
+  "text": "## Visualizing the Greedy Algorithm...",
+  "concepts": [
+    "greedy-tsp-algorithm",
+    "visualization",
+    "dont-repeat-yourself-principle"
+  ],
+  "chunk_type": "overview",
+  "embedding": [0.0001, 0.0099, 0.0131, -0.0590, ...],  // 3072-dim vector
+  "embedding_model": "gemini-embedding-001"
+}
+```
+
+**Performance notes:**
+- Batch processing handled all chunks without errors
+- No transient network failures (unlike previous PAIP embedding run)
+- Consistent embedding dimensions across all chunks
+
+---
+
+### Comparison: PAIP vs Pytudes
+
+| Aspect | PAIP Chapter 1 | TSP Pytudes |
+|--------|----------------|-------------|
+| **Source format** | Markdown (textbook prose) | Markdown (Jupyter notebook) |
+| **Sections detected** | 2 (manual split) | 32 (automatic `#` headers) |
+| **Total chunks** | 92 | 90 |
+| **Success rate** | ~95% | 84% (5 sections failed) |
+| **Embedding dims** | 3072 | 3072 |
+| **Domain** | Lisp programming | Algorithm design, Python |
+| **Images** | None | Matplotlib plots via static files |
+| **Code examples** | Lisp S-expressions | Python code blocks |
+
+**Key difference:** Pytudes has more structured content (clear section headers) but more complex code examples that occasionally break JSON parsing.
+
+---
+
+### RAG Integration for Pytudes
+
+The TSP embeddings are now ready for semantic search in Socratic dialogues. The existing RAG infrastructure from PAIP can be reused:
+
+**How it will work:**
+1. User starts learning a TSP concept (e.g., "Greedy Algorithm")
+2. First turn: Embed concept name → cosine similarity search across 90 TSP chunks
+3. Retrieve top 5 most relevant chunks (~2-5KB text)
+4. Include in LLM prompt as textbook context
+5. Cache on client-side for subsequent turns
+6. LLM teaches from actual TSP notebook content
+
+**Expected benefits:**
+- Grounded teaching using Norvig's specific examples
+- References to actual Python implementations
+- Visual descriptions tied to matplotlib plots
+- Consistent terminology with TSP notebook
+
+**API changes needed:** None! The existing `/api/socratic-dialogue` route already supports:
+- Loading embeddings from JSON
+- Cosine similarity search
+- Client-side caching
+
+**Next step:** Point the dialogue API to `pytudes/tsp-embeddings.json` when teaching TSP concepts.
+
+---
+
+### Next Steps for Pytudes
+
+#### Immediate (Before Norvig Meeting)
+- [ ] Extract TSP concept graph (manual 3-pass approach)
+  - [ ] Pass 1: Identify 15-25 concepts + prerequisites (1.5 hrs)
+  - [ ] Pass 2: Enrich 3-5 key concepts with pedagogy (1.5 hrs)
+  - [ ] Pass 3: Map algorithm variations to concepts (30 min)
+- [ ] Create `pytudes/concept-graph.json`
+- [ ] Test TSP graph visualization in app
+- [ ] Verify Socratic dialogue works with TSP embeddings
+
+#### Future Enhancements
+- [ ] Code editor integration (Monaco Editor)
+- [ ] In-browser Python execution (Pyodide)
+- [ ] Automated concept extraction for more Pytudes
+- [ ] Multi-notebook support (100+ Pytudes)
+
+---
+
+### Files Created
+
+**New files:**
+- `learning/pytudes/tsp.md` - Source notebook (74,212 chars)
+- `learning/pytudes/tsp-chunks.json` - 90 semantic chunks
+- `learning/pytudes/tsp-embeddings.json` - 90 embedded chunks (3.45 MB)
+- `learning/pytudes/TSP_files/*.png` - Matplotlib visualizations
+
+**Modified files:**
+- `learning/NOTES.md` - This documentation
+
+**To be created:**
+- `learning/pytudes/concept-graph.json` - TSP learning graph
+- `learning/pytudes/raw/concepts.json` - Pass 1 output
+- `learning/pytudes/raw/pedagogy.json` - Pass 2 output
+- `learning/pytudes/raw/exercises.json` - Pass 3 output
+
+---
+
+### Lessons Learned
+
+1. **Reusable pipeline:** The PAIP chunking and embedding scripts worked perfectly for Pytudes with zero modifications
+
+2. **JSON parsing fragility:** Python code blocks with special characters can break LLM JSON generation. Future improvement: better escaping or fallback to plain text format
+
+3. **Header-based splitting:** Using `#` headers as section boundaries works much better for Jupyter notebooks than manual splitting
+
+4. **Embedding stability:** The new `gemini-embedding-001` model (3072-dim) ran flawlessly across 90 chunks with no retries needed
+
+5. **Static image serving:** Next.js public directory makes image handling trivial - no need for complex asset pipelines
+
+---
+
+*Last updated: 2025-10-30*
 *See CONTEXT.md for complete project design document*
+
+---
+
+## Pytudes Integration - TSP Concept Graph Extraction (2025-10-29)
+
+### Context
+Meeting with Peter Norvig tomorrow to discuss:
+1. Extending Little PAIPer to work with Pytudes (specifically TSP notebook)
+2. Code editor integration for interactive learning
+3. Code execution capability
+4. One-click deployment
+
+### Project Structure Decision
+
+Mirror the PAIP structure for consistency:
+
+```
+learning/pytudes/
+├── concept-graph.json       # Final composed graph (for app)
+├── raw/
+│   ├── concepts.json        # Pass 1: Concepts + prerequisites
+│   ├── pedagogy.json        # Pass 2: Mastery criteria (sample)
+│   └── exercises.json       # Pass 3: Exercise mapping
+├── tsp.md                   # Source text (converted from TSP.ipynb)
+└── TSP_files/               # Notebook images
+```
+
+### Image Handling Strategy
+
+**Challenge:** TSP notebook contains matplotlib visualizations
+**Solution:** Simple static file serving
+
+1. Copy images: `cp -r docs/TSP_files public/`
+2. Images referenced as `TSP_files/*.png` in markdown work automatically
+3. Next.js serves `public/` at root - no path changes needed
+4. react-markdown renders images automatically
+5. Docker build includes public/ directory
+
+**Decision:** Commit images directly to git (they're small ~50-200KB matplotlib plots). No Git LFS needed.
+
+### Manual vs Automated Extraction
+
+**Key Strategic Decision:** Do NOT build generic extraction pipeline before meeting.
+
+**Rationale:**
+1. **Prove concept first:** Manual TSP extraction proves approach works for Python
+2. **Get expert input:** Norvig can advise if automation is worth it
+3. **Quality vs speed tradeoff:** Manual = high quality, automated = unknown quality
+4. **Time risk:** Building pipeline could consume all prep time
+
+**Approach for tomorrow:** Manual 3-pass extraction (4 hours)
+- Pass 1: Extract 15-25 concepts + prerequisites (1.5 hrs)
+- Pass 2: Enrich 3-5 key concepts with pedagogy (1.5 hrs)
+- Pass 3: Map algorithm variations to concepts (30 min)
+- Compose and test in app (30 min)
+
+### Action Plan for Tonight/Tomorrow
+
+**Total estimated time: 4-5 hours**
+
+**Setup (15 minutes):**
+```bash
+cd learning
+mkdir -p pytudes/raw pytudes/TSP_files
+cp docs/TSP.md pytudes/tsp.md
+cp docs/TSP_files/*.png pytudes/TSP_files/
+cp -r pytudes/TSP_files public/
+```
+
+**Extraction (3-4 hours):**
+1. Use Claude/Gemini to extract concepts from pytudes/tsp.md
+2. Save outputs to pytudes/raw/*.json
+3. Manually compose into pytudes/concept-graph.json
+4. Test in app to verify visualization works
+
+**Optional enhancements if time permits:**
+- Code editor integration with Monaco Editor (1-2 hours)
+- Pyodide for in-browser Python execution (2-3 hours)
+
+### Demo Structure for Meeting
+
+**Show (in order):**
+1. Live Cloud Run deployment
+2. PAIP Chapter 1 (proven Lisp extraction)
+3. TSP concept graph (manual Python extraction)
+4. Code editor mockup (if implemented)
+
+**Ask Norvig:**
+1. "This manual extraction took 4 hours. Should we automate for all 100+ Pytudes?"
+2. "What quality bar do you need for pedagogical concept graphs?"
+3. "Which Pytudes would be most valuable as interactive learning graphs?"
+4. "Is manual curation better for maintaining pedagogical quality?"
+
+### Key Insights
+
+**What worked from PAIP:**
+- 3-pass structure (concepts → pedagogy → exercises)
+- JSON intermediate format allows iteration
+- Composition from raw/*.json to final concept-graph.json
+- react-markdown + vis.js visualization scales well
+
+**Challenges for Pytudes:**
+- Images (solved: static file serving)
+- Code execution (nice-to-have: Pyodide)
+- Jupyter notebook format (solved: use .md conversion)
+- Scale (100+ notebooks vs 1 chapter)
+
+**Strategic Decision Point:**
+After this meeting, we'll know whether to:
+- Build generic extraction pipeline for all Pytudes
+- Focus on manual curation of high-value notebooks
+- Extend to other educational content (textbooks, courses)
+
+### Files Created/Modified
+
+**Created:**
+- `learning/scripts/deploy.sh` - One-click Cloud Run deployment
+- `learning/pytudes/` - New directory structure (pending)
+
+**To be created:**
+- `learning/pytudes/tsp.md` - Source text
+- `learning/pytudes/raw/concepts.json` - Pass 1 output
+- `learning/pytudes/raw/pedagogy.json` - Pass 2 output
+- `learning/pytudes/raw/exercises.json` - Pass 3 output
+- `learning/pytudes/concept-graph.json` - Final composed graph
+
+**Modified:**
+- `NOTES.md` - This documentation
+
+### Next Steps After Meeting
+
+Based on Norvig's feedback, decide on:
+1. **Generic extraction:** Build automated pipeline vs continue manual curation
+2. **Scope:** All Pytudes vs curated subset vs expand to other content
+3. **Features:** Prioritize code editor, execution, or other enhancements
+4. **Deployment:** Share publicly vs keep private for testing
+
+The meeting will provide strategic direction on whether this project should scale horizontally (more content, automation) or vertically (deeper features, better UX).
 # Pedagogical Concept Graph (PCG) - Visualization Notes
 
 ## Overview

@@ -1,0 +1,248 @@
+{
+  "metadata": {
+    "title": "The Traveling Salesperson Problem - Exercises",
+    "author": "Peter Norvig",
+    "source": "Pytudes - TSP.ipynb",
+    "description": "Implementation exercises for TSP algorithms",
+    "total_exercises": 6,
+    "extracted_date": "2025-10-29"
+  },
+  "exercises": [
+    {
+      "id": "ex_basic_functions",
+      "title": "Implement Basic TSP Functions",
+      "prompt": "Implement the foundational functions for working with TSP: `distance(A, B)` to compute Euclidean distance between two cities, `tour_length(tour)` to compute the total distance of a tour, and `valid_tour(tour, cities)` to verify a tour visits each city exactly once.",
+      "concepts": [
+        {
+          "concept_id": "city_representation",
+          "mastery_indicators": ["Understands cities as complex numbers", "Can extract x and y coordinates"]
+        },
+        {
+          "concept_id": "euclidean_distance",
+          "mastery_indicators": ["Can compute distance using abs() on complex numbers", "Understands distance formula"]
+        },
+        {
+          "concept_id": "tour_length_calculation",
+          "mastery_indicators": ["Can sum distances between consecutive cities", "Remembers to include return to start"]
+        },
+        {
+          "concept_id": "valid_tour",
+          "mastery_indicators": ["Can verify tour is a permutation", "Uses Counter for comparison"]
+        }
+      ],
+      "prerequisites": ["city_representation"],
+      "hints": [
+        "Use Python's complex number type - abs(A - B) gives you the distance",
+        "For tour_length, use range(len(tour)) and remember tour[i-1] wraps around",
+        "For valid_tour, check if Counter(tour) == Counter(cities)"
+      ],
+      "solution_sketch": "```python\ndef distance(A: City, B: City) -> float:\n    return abs(A - B)\n\ndef tour_length(tour: Tour) -> float:\n    return sum(distance(tour[i], tour[i - 1]) for i in range(len(tour)))\n\ndef valid_tour(tour: Tour, cities: Cities) -> bool:\n    return Counter(tour) == Counter(cities)\n```",
+      "common_mistakes": [
+        "Forgetting to include the link from last city back to first in tour_length",
+        "Using tour[-1] instead of tour[i-1] which handles wraparound automatically",
+        "Trying to compute distance with separate x/y calculations instead of using complex numbers"
+      ],
+      "follow_up_questions": [
+        "What is the time complexity of tour_length?",
+        "Why does tour[i-1] correctly handle the wraparound case when i=0?",
+        "How would distance change for non-Euclidean metrics?"
+      ],
+      "difficulty": "basic"
+    },
+    {
+      "id": "ex_exhaustive_tsp",
+      "title": "Implement Exhaustive Search",
+      "prompt": "Implement `exhaustive_tsp(cities)` which finds the optimal tour by generating all possible permutations and selecting the shortest one. Use `itertools.permutations` but optimize by fixing the first city.",
+      "concepts": [
+        {
+          "concept_id": "exhaustive_search",
+          "mastery_indicators": ["Can generate all permutations", "Understands O(n!) complexity", "Can optimize by fixing start city"]
+        },
+        {
+          "concept_id": "tour_concept",
+          "mastery_indicators": ["Represents tour as ordered list", "Understands tour is a cycle"]
+        },
+        {
+          "concept_id": "valid_tour",
+          "mastery_indicators": ["Verifies each permutation is valid"]
+        }
+      ],
+      "prerequisites": ["tour_concept", "tour_length_calculation", "valid_tour"],
+      "hints": [
+        "Use itertools.permutations to generate all possible orderings",
+        "Since a tour is a cycle, you can fix the first city and only permute the rest",
+        "Use the shortest() helper to find the minimum tour by tour_length"
+      ],
+      "solution_sketch": "```python\ndef exhaustive_tsp(cities) -> Tour:\n    return shortest(possible_tours(cities))\n\ndef possible_tours(cities) -> List[Tour]:\n    start, *others = cities\n    return [[start, *perm] for perm in itertools.permutations(others)]\n```",
+      "common_mistakes": [
+        "Not fixing the first city, leading to n times more work than necessary",
+        "Forgetting that permutations of a set loses the ability to fix first element",
+        "Not understanding that [A,B,C], [B,C,A], [C,A,B] are the same tour"
+      ],
+      "follow_up_questions": [
+        "Why is exhaustive search O(n!) even with the first-city optimization?",
+        "How many cities can you solve in 1 second? 1 minute?",
+        "What's the speedup factor from fixing the first city?"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "ex_nearest_neighbor",
+      "title": "Implement Nearest Neighbor Algorithm",
+      "prompt": "Implement `nearest_tsp(cities, start=None)` which builds a tour by always moving to the nearest unvisited neighbor. Also implement the helper function `nearest_neighbor(A, cities)` that finds the closest city to A.",
+      "concepts": [
+        {
+          "concept_id": "nearest_neighbor_algorithm",
+          "mastery_indicators": ["Can build tour greedily", "Maintains unvisited set", "Extends tour step by step"]
+        },
+        {
+          "concept_id": "greedy_strategy",
+          "mastery_indicators": ["Understands local optimization", "Knows greedy may not find global optimum"]
+        },
+        {
+          "concept_id": "euclidean_distance",
+          "mastery_indicators": ["Uses distance to find nearest city"]
+        }
+      ],
+      "prerequisites": ["greedy_strategy", "euclidean_distance", "tour_concept"],
+      "hints": [
+        "Start with a partial tour containing just the start city",
+        "Maintain a set of unvisited cities",
+        "At each step, find the nearest neighbor to the last city in the tour",
+        "Use min() with a key function to find the nearest neighbor"
+      ],
+      "solution_sketch": "```python\ndef nearest_tsp(cities, start=None) -> Tour:\n    start = start or first(cities)\n    tour = [start]\n    unvisited = set(cities) - {start}\n    while unvisited:\n        C = nearest_neighbor(tour[-1], unvisited)\n        tour.append(C)\n        unvisited.remove(C)\n    return tour\n\ndef nearest_neighbor(A: City, cities) -> City:\n    return min(cities, key=lambda C: distance(C, A))\n```",
+      "common_mistakes": [
+        "Not removing visited cities from the unvisited set",
+        "Searching for nearest among all cities instead of just unvisited",
+        "Not handling the start parameter correctly"
+      ],
+      "follow_up_questions": [
+        "What is the time complexity of nearest_tsp?",
+        "Why might nearest neighbor produce a suboptimal tour?",
+        "How could you improve nearest neighbor with multiple random starts?"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "ex_2opt",
+      "title": "Implement 2-Opt Optimization",
+      "prompt": "Implement `opt2(tour)` which improves a tour by reversing segments that reduce total distance. For each subsegment tour[i:j], check if reversing it would improve the tour. Also implement `reversal_is_improvement(tour, i, j)`.",
+      "concepts": [
+        {
+          "concept_id": "two_opt_optimization",
+          "mastery_indicators": ["Can detect crossing links", "Knows when reversal improves tour", "Implements iterative improvement"]
+        },
+        {
+          "concept_id": "segment_reversal",
+          "mastery_indicators": ["Can reverse tour segment", "Understands symmetric distance property"]
+        },
+        {
+          "concept_id": "improvement_strategy",
+          "mastery_indicators": ["Iterates until no improvement", "Tests all subsegments"]
+        }
+      ],
+      "prerequisites": ["improvement_strategy", "segment_reversal", "tour_length_calculation"],
+      "hints": [
+        "For each subsegment tour[i:j], check if reversing it makes the tour shorter",
+        "Given tour [...A,B--C,D...], reversing B--C means replacing links A-B and C-D with A-C and B-D",
+        "Use triangle inequality: if links cross, uncrossing them is always shorter",
+        "Repeat until no improvements are found"
+      ],
+      "solution_sketch": "```python\ndef opt2(tour) -> Tour:\n    changed = False\n    old_tour = list(tour)\n    for (i, j) in subsegments(len(tour)):\n        if reversal_is_improvement(tour, i, j):\n            tour[i:j] = reversed(tour[i:j])\n            changed = True\n    return (tour if not changed else opt2(tour))\n\ndef reversal_is_improvement(tour, i, j) -> bool:\n    A, B, C, D = tour[i-1], tour[i], tour[j-1], tour[j % len(tour)]\n    return distance(A, B) + distance(C, D) > distance(A, C) + distance(B, D)\n```",
+      "common_mistakes": [
+        "Not handling the wraparound case correctly (use tour[j % len(tour)])",
+        "Forgetting to make a copy of the tour before modifying",
+        "Only running one iteration instead of repeating until convergence",
+        "Trying subsegments in the wrong order (try longer segments first)"
+      ],
+      "follow_up_questions": [
+        "Why does uncrossing an X always reduce tour length in Euclidean space?",
+        "What is the worst-case time complexity of opt2?",
+        "How would you extend this to 3-opt?"
+      ],
+      "difficulty": "advanced"
+    },
+    {
+      "id": "ex_greedy_tsp",
+      "title": "Implement Greedy Link Selection",
+      "prompt": "Implement `greedy_tsp(cities)` which builds a tour by repeatedly adding the shortest link that connects two different segments without creating a loop. Also implement `join_segments(endpoints, A, B)` which joins two segments at their endpoints.",
+      "concepts": [
+        {
+          "concept_id": "greedy_tsp_algorithm",
+          "mastery_indicators": ["Can maintain segment endpoints", "Joins segments correctly", "Detects when segments would form loop"]
+        },
+        {
+          "concept_id": "greedy_strategy",
+          "mastery_indicators": ["Sorts links by length", "Makes locally optimal choices"]
+        },
+        {
+          "concept_id": "tour_concept",
+          "mastery_indicators": ["Builds tour from segments"]
+        }
+      ],
+      "prerequisites": ["greedy_strategy", "tour_concept", "euclidean_distance"],
+      "hints": [
+        "Maintain a dict mapping endpoints to segments: {A: [A, B, C], C: [A, B, C]}",
+        "Sort all possible links by distance",
+        "For each link (A, B), check if both are endpoints and from different segments",
+        "When joining, make sure A is last of its segment and B is first of its segment (reverse if needed)"
+      ],
+      "solution_sketch": "```python\ndef greedy_tsp(cities):\n    endpoints = {C: [C] for C in cities}\n    for (A, B) in shortest_links_first(cities):\n        if A in endpoints and B in endpoints and endpoints[A] != endpoints[B]:\n            joined_segment = join_segments(endpoints, A, B)\n            if len(joined_segment) == len(cities):\n                return joined_segment\n\ndef join_segments(endpoints, A, B):\n    Aseg, Bseg = endpoints[A], endpoints[B]\n    if Aseg[-1] is not A: Aseg.reverse()\n    if Bseg[0]  is not B: Bseg.reverse()\n    Aseg += Bseg\n    del endpoints[A], endpoints[B]\n    endpoints[Aseg[0]] = endpoints[Aseg[-1]] = Aseg\n    return Aseg\n```",
+      "common_mistakes": [
+        "Not checking if A and B are from different segments (would create a loop)",
+        "Not reversing segments to make sure A is last and B is first",
+        "Forgetting to update the endpoints dict after joining",
+        "Not checking if both A and B are endpoints (middle cities can't join)"
+      ],
+      "follow_up_questions": [
+        "Why check 'endpoints[A] != endpoints[B]' instead of just checking A and B are endpoints?",
+        "What is the time complexity of greedy_tsp?",
+        "How does this compare to nearest neighbor in terms of tour quality?"
+      ],
+      "difficulty": "advanced"
+    },
+    {
+      "id": "ex_held_karp",
+      "title": "Implement Held-Karp Algorithm",
+      "prompt": "Implement `held_karp_tsp(cities)` using dynamic programming to find optimal tours in O(n² 2ⁿ) time. The key insight: for a given start A, end C, and middle cities Bs, only the shortest segment through those cities can be part of an optimal tour. Also implement the memoized `shortest_segment(A, Bs, C)` function.",
+      "concepts": [
+        {
+          "concept_id": "held_karp_algorithm",
+          "mastery_indicators": ["Understands dynamic programming approach", "Can implement memoization", "Knows O(n² 2ⁿ) complexity"]
+        },
+        {
+          "concept_id": "caching_memoization",
+          "mastery_indicators": ["Uses @cache decorator", "Understands why caching helps", "Clears cache between problems"]
+        },
+        {
+          "concept_id": "tour_vs_segment",
+          "mastery_indicators": ["Distinguishes segments from tours", "Finds shortest segment for each end city"]
+        }
+      ],
+      "prerequisites": ["tour_concept", "caching_memoization", "tour_vs_segment"],
+      "hints": [
+        "For each possible end city C, find the shortest segment from start to C",
+        "Use recursion with memoization: shortest_segment(A, Bs, C) = min over B in Bs of shortest_segment(A, Bs-{B}, B) + [C]",
+        "Base case: if Bs is empty, return [A, C]",
+        "Use @cache decorator for memoization",
+        "Clear cache at start of each new problem"
+      ],
+      "solution_sketch": "```python\ndef held_karp_tsp(cities) -> Tour:\n    A = first(cities)\n    shortest_segment.cache_clear()\n    return shortest(shortest_segment(A, cities - {A, C}, C)\n                    for C in cities - {A})\n\n@cache\ndef shortest_segment(A, Bs, C) -> Segment:\n    if not Bs:\n        return [A, C]\n    else:\n        return min((shortest_segment(A, Bs - {B}, B) + [C] for B in Bs),\n                   key=segment_length)\n```",
+      "common_mistakes": [
+        "Not using memoization (will be extremely slow)",
+        "Not clearing the cache between different problems",
+        "Using frozenset for Bs parameter (need hashable type for cache)",
+        "Forgetting to choose the minimum over all possible end cities",
+        "Confusing segment_length with tour_length"
+      ],
+      "follow_up_questions": [
+        "Why is Held-Karp O(n² 2ⁿ) instead of O(n!)?",
+        "How much faster is this than exhaustive search for n=15 cities?",
+        "What would happen if you forgot the @cache decorator?",
+        "How could you add branch-and-bound to improve this further?"
+      ],
+      "difficulty": "advanced"
+    }
+  ]
+}
