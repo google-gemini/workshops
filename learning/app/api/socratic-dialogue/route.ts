@@ -135,7 +135,7 @@ async function loadConceptContext(
 
 export async function POST(request: NextRequest) {
   try {
-    const { conceptId, conversationHistory, conceptData, textbookContext, embeddingsPath, codeContext } = await request.json();
+    const { conceptId, conversationHistory, conceptData, textbookContext, embeddingsPath } = await request.json();
 
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎓 NEW SOCRATIC DIALOGUE REQUEST');
@@ -179,8 +179,8 @@ export async function POST(request: NextRequest) {
       console.log(textbookSections.substring(0, 500) + '...\n');
     }
 
-    // Build system prompt with textbook grounding and code context
-    const systemPrompt = buildSocraticPrompt(conceptData, textbookSections, codeContext);
+    // Build system prompt with textbook grounding
+    const systemPrompt = buildSocraticPrompt(conceptData, textbookSections);
     
     console.log('\n📝 SYSTEM PROMPT CONSTRUCTED:');
     console.log(`   - Total length: ${systemPrompt.length} characters`);
@@ -306,7 +306,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: parsedResponse.message,
       mastery_assessment: parsedResponse.mastery_assessment,
-      textbookContext: textbookSections, // Return for client to cache
+      textbookContext: textbookSections,
       usage: data.usageMetadata,
     });
 
@@ -362,8 +362,7 @@ function convertToGeminiFormat(systemPrompt: string, conversationHistory: Messag
 // Build a Socratic teaching prompt using the concept's pedagogical data
 function buildSocraticPrompt(
   conceptData: any, 
-  textbookSections?: string,
-  codeContext?: { code: string; output: string; error: string | null }
+  textbookSections?: string
 ): string {
   const { name, description, learning_objectives, mastery_indicators, examples, misconceptions } = conceptData;
 
@@ -387,16 +386,6 @@ ${textbookSections}
 ---
 ` : ''}
 
-${codeContext ? `
-**STUDENT'S PYTHON WORKSPACE:**
-\`\`\`python
-${codeContext.code}
-\`\`\`
-${codeContext.error ? `❌ ERROR: ${codeContext.error}` : `✅ OUTPUT:\n${codeContext.output || '(no output)'}`}
-
-**IMPORTANT:** You can see and reference their code! Suggest experiments like "try changing the values to..." or "what happens if you add...". Guide them to discover through coding.
-` : ''}
-
 **Learning Objectives:**
 ${learning_objectives?.map((obj: string, i: number) => `${i + 1}. ${obj}`).join('\n') || 'Not specified'}
 
@@ -412,9 +401,10 @@ ${misconceptions?.map((m: any) => `- "${m.misconception}" → Reality: ${m.reali
 3. Check understanding of each learning objective through dialogue
 4. Gently correct misconceptions when they arise
 5. Reference specific passages from the textbook content when helpful
-6. Be encouraging and patient
-7. Keep responses concise (2-3 sentences with one focused question)
-8. When the student demonstrates mastery of the core skills, conclude with encouragement
+6. If student shares code/output, reference it directly and suggest experiments
+7. Be encouraging and patient
+8. Keep responses concise (2-3 sentences with one focused question)
+9. When the student demonstrates mastery of the core skills, conclude with encouragement
 
 **Mastery Assessment Instructions:**
 After each student response, evaluate which mastery indicators they demonstrated:

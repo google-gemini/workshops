@@ -70,8 +70,8 @@ export default function SocraticDialogue({
   const [demonstratedSkills, setDemonstratedSkills] = useState<Set<string>>(new Set());
   const [readyForMastery, setReadyForMastery] = useState(false);
   const [textbookContext, setTextbookContext] = useState<string | null>(null);
-  const [codeContext, setCodeContext] = useState<{
-    code: string;
+  const [code, setCode] = useState<string>('');
+  const [evaluation, setEvaluation] = useState<{
     output: string;
     error: string | null;
   } | null>(null);
@@ -105,8 +105,9 @@ export default function SocraticDialogue({
       setInput('');
       setDemonstratedSkills(new Set());
       setReadyForMastery(false);
-      setTextbookContext(null); // Clear cached context
-      setCodeContext(null); // Clear code context
+      setTextbookContext(null);
+      setCode('');
+      setEvaluation(null);
     }
   }, [open]);
 
@@ -124,7 +125,6 @@ export default function SocraticDialogue({
           conceptData,
           textbookContext: null, // Signal: please do semantic search
           embeddingsPath,
-          codeContext, // Include code context if available
         }),
       });
 
@@ -172,20 +172,46 @@ export default function SocraticDialogue({
   };
 
   const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+    const hasText = input.trim().length > 0;
+    const hasCode = code.trim().length > 0;
+    
+    if ((!hasText && !hasCode) || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input };
+    // For UI display: just show the text (code is already visible in workspace)
+    const displayContent = hasText ? input.trim() : '(working in Python workspace)';
+    
+    // For API: include everything so Gemini has full context
+    let apiContent = input.trim() || '(sharing code)';
+    if (code.trim()) {
+      apiContent += `\n\n**My Code:**\n\`\`\`python\n${code}\n\`\`\``;
+    }
+    if (evaluation) {
+      if (evaluation.error) {
+        apiContent += `\n\n**Error:**\n${evaluation.error}`;
+      } else {
+        apiContent += `\n\n**Output:**\n${evaluation.output || '(no output)'}`;
+      }
+    }
+
+    // Display clean version in UI
+    const userMessage: Message = { role: 'user', content: displayContent };
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput('');
     setIsLoading(true);
 
     try {
-      // Convert to OpenAI format
-      const conversationHistory = updatedMessages.map((msg) => ({
+      // Send full context to API
+      const conversationHistory = updatedMessages.slice(0, -1).map((msg) => ({
         role: msg.role,
         content: msg.content,
       }));
+      
+      // Add current message with full context (code + eval)
+      conversationHistory.push({
+        role: 'user',
+        content: apiContent
+      });
 
       const response = await fetch('/api/socratic-dialogue', {
         method: 'POST',
@@ -194,9 +220,8 @@ export default function SocraticDialogue({
           conceptId: conceptData.id,
           conversationHistory,
           conceptData,
-          textbookContext, // Reuse cached context from first turn
+          textbookContext,
           embeddingsPath,
-          codeContext, // Include code context
         }),
       });
 
@@ -267,6 +292,9 @@ export default function SocraticDialogue({
                                 conceptData.type === 'algorithm' ||
                                 conceptData.id.includes('distance') ||
                                 conceptData.id.includes('tsp');
+
+  // Send button: enabled if text OR code exists
+  const canSend = !isLoading && (input.trim().length > 0 || code.trim().length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -405,7 +433,7 @@ export default function SocraticDialogue({
             className="flex-1 min-h-[60px] max-h-[120px]"
             disabled={isLoading}
           />
-              <Button onClick={sendMessage} disabled={isLoading || !input.trim()}>
+              <Button onClick={sendMessage} disabled={!canSend}>
                 Send
               </Button>
             </div>
@@ -415,9 +443,20 @@ export default function SocraticDialogue({
           {isProgrammingConcept && (
             <div className="flex-1 min-w-0 border-l pl-3 flex flex-col">
               <PythonScratchpad
-                starterCode={conceptData.starter_code || `# Try calculating Euclidean distance\nimport math\n\ndef distance(p1, p2):\n    dx = p2[0] - p1[0]\n    dy = p2[1] - p1[1]\n    return math.sqrt(dx**2 + dy**2)\n\n# Test your function\nprint(distance((0, 0), (3, 4)))`}
-                onExecute={(code, output, error) => {
-                  setCodeContext({ code, output, error });
+                starterCode={`# 🧮 Python scratchpad for exploring ${conceptData.name}
+# 
+# Feel free to experiment here! You can:
+# - Test out ideas in code
+# - Answer questions by implementing solutions
+# - Work through examples
+# 
+# Your code and output will be visible to your tutor.
+`}
+                onExecute={(execCode, output, error) => {
+                  setEvaluation({ output, error });
+                }}
+                onCodeChange={(newCode) => {
+                  setCode(newCode);
                 }}
               />
             </div>

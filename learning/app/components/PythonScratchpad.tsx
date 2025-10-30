@@ -23,13 +23,15 @@ import { Textarea } from '@/components/ui/textarea';
 type PythonScratchpadProps = {
   starterCode?: string;
   onExecute?: (code: string, output: string, error: string | null) => void;
+  onCodeChange?: (code: string) => void;
 };
 
 export default function PythonScratchpad({ 
   starterCode = '', 
-  onExecute 
+  onExecute,
+  onCodeChange
 }: PythonScratchpadProps) {
-  const [code, setCode] = useState(starterCode);
+  const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -155,9 +157,21 @@ sys.stdout = StringIO()
       <div className="flex-1 p-3">
         <Textarea
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(e) => {
+            const newCode = e.target.value;
+            // If current code is still the starter code and user is typing,
+            // clear it and use only what they typed (like placeholder behavior)
+            if (code === starterCode && newCode.length > code.length) {
+              const typedChar = newCode.charAt(newCode.length - 1);
+              setCode(typedChar);
+              onCodeChange?.(typedChar);
+            } else {
+              setCode(newCode);
+              onCodeChange?.(newCode);
+            }
+          }}
           onKeyDown={handleKeyDown}
-          placeholder={isLoading ? "Loading Python..." : "# Write Python code here...\nprint('Hello, world!')"}
+          placeholder={isLoading ? "Loading Python..." : starterCode}
           disabled={isLoading}
           className="font-mono text-sm h-full resize-none bg-white"
           style={{ minHeight: '200px' }}

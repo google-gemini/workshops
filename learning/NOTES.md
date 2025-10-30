@@ -5091,6 +5091,83 @@ The TSP embeddings are now ready for semantic search in Socratic dialogues. The 
 
 ---
 
+## 🐍 Python Scratchpad: Ephemeral Starter Code (2025-10-30)
+
+### Problem Solved
+
+Users had to manually delete the starter code ("Hello, world!" example) before writing their own code. This was tedious and cluttered the workspace.
+
+### Solution: Placeholder-Style Behavior
+
+Made the starter code behave like placeholder text in a form field:
+- Shows as grey text when scratchpad is empty
+- Disappears automatically when you start typing
+- No manual deletion needed
+
+### Implementation
+
+**Key changes in `PythonScratchpad.tsx`:**
+
+1. **Initialize with empty string:**
+```typescript
+const [code, setCode] = useState('');  // Not starterCode
+```
+
+2. **Use placeholder instead of value:**
+```typescript
+<Textarea
+  value={code}
+  placeholder={isLoading ? "Loading Python..." : starterCode}
+  ...
+/>
+```
+
+3. **Ephemeral logic (attempted but unnecessary):**
+```typescript
+// This complex logic was added but turns out to be unnecessary:
+if (code === starterCode && newCode.length > code.length) {
+  const typedChar = newCode.charAt(newCode.length - 1);
+  setCode(typedChar);
+  onCodeChange?.(typedChar);
+}
+```
+
+**Why it works:**
+- HTML `<textarea>` placeholder attribute already handles ephemeral text
+- When textarea is empty (`code === ''`), shows placeholder
+- When user types, placeholder disappears automatically
+- Simple and native browser behavior
+
+### User Experience
+
+**Before:**
+```
+# 🧮 Python scratchpad for exploring Euclidean Distance
+# Feel free to experiment here!
+# Your code will be visible to your tutor.
+```
+User has to manually delete this to write code.
+
+**After:**
+```
+[grey placeholder text]
+```
+User starts typing → placeholder vanishes → clean slate.
+
+### Impact
+
+- ✅ Less friction to start coding
+- ✅ Cleaner initial workspace
+- ✅ Familiar UX pattern (like form placeholders)
+- ✅ No manual deletion needed
+- ✅ Professional appearance
+
+### Files Modified
+
+- `learning/app/components/PythonScratchpad.tsx` - Empty initial state, placeholder prop
+
+---
+
 *Last updated: 2025-10-30*
 *See CONTEXT.md for complete project design document*
 
