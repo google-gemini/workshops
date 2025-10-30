@@ -5168,6 +5168,154 @@ User starts typing → placeholder vanishes → clean slate.
 
 ---
 
+## 🔄 Dialogue Context Optimization (2025-10-30)
+
+### Problem: Redundant Code/Evaluation in Every Message
+
+**Issue:** The Socratic dialogue was sending the full code and evaluation state on every turn, even when nothing changed. This caused Gemini to incorrectly think the student had just run new code when they were simply typing a text response.
+
+**Example of confusing behavior:**
+```
+Student: "I understand now!"
+API sends: code + last evaluation (unchanged)
+Gemini: "Great job running that code! Now let's..."  ❌ (student didn't run anything)
+```
+
+**Solution:** Track what was last sent and only include changes
+
+**Implementation:**
+```typescript
+// Track state
+const [lastSentCode, setLastSentCode] = useState<string>('');
+const [lastSentEvaluation, setLastSentEvaluation] = useState<any>(null);
+
+// Check what changed
+const codeChanged = currentCode !== lastSentCode;
+const evalChanged = JSON.stringify(currentEval) !== JSON.stringify(lastSentEvaluation);
+
+// Only include in API message if changed
+if (codeChanged && currentCode) {
+  apiContent += `\n\n**My Code:**\n\`\`\`python\n${currentCode}\n\`\`\``;
+}
+
+if (evalChanged && currentEval) {
+  apiContent += `\n\n**Output:**\n${currentEval.output || '(no output)'}`;
+}
+
+// Update tracking after successful response
+if (codeChanged) setLastSentCode(currentCode);
+if (evalChanged) setLastSentEvaluation(currentEval);
+```
+
+**Result:**
+- ✅ Text-only responses: Gemini sees only text
+- ✅ Code edited but not run: Gemini sees text + new code
+- ✅ Code re-run: Gemini sees text + new evaluation
+- ✅ New code and run: Gemini sees text + code + evaluation
+
+**Impact:** Much cleaner context - Gemini only sees workspace changes when something actually happened.
+
+---
+
+## 🛡️ Improved Error Handling for Truncated Responses (2025-10-30)
+
+### Problem: Partial JSON Leaking to UI
+
+**Issue:** When Gemini's response was truncated mid-JSON (hitting token limits or network issues), the raw partial JSON appeared in the chat:
+
+```json
+{
+  "message": "You're absolutely right! When you have...",
+  "mastery_assessment": {
+    "indicators_demonstrated": [
+      "metric_applicability"
+    ],
+    "confidence":
+```
+
+This exposed internal implementation details and confused users.
+
+**Solution:** User-friendly error messages with truncation detection
+
+**Implementation:**
+```typescript
+try {
+  parsedResponse = JSON.parse(responseText);
+} catch (e) {
+  console.error('\n❌ JSON PARSE ERROR:', e);
+  console.error('   - Raw response:', responseText);
+  
+  // Detect if response was partial/truncated
+  const isPartialResponse = responseText.trim().length > 0 && 
+                           (responseText.includes('{') || responseText.includes('['));
+  
+  const errorMessage = isPartialResponse
+    ? '⚠️ My response was incomplete (possibly truncated). Please click retry below to try again.'
+    : '⚠️ I encountered an error generating my response. Please click retry below to try again.';
+  
+  // Show user-friendly error, not raw JSON
+  parsedResponse = {
+    message: errorMessage,
+    mastery_assessment: {
+      indicators_demonstrated: [],
+      confidence: 0,
+      ready_for_mastery: false,
+      next_focus: 'Retry the request',
+    },
+  };
+}
+```
+
+**Result:**
+- ✅ Users see clean error message
+- ✅ Retry button appears automatically
+- ✅ No raw JSON leakage
+- ✅ Different messages for truncation vs malformed JSON
+
+---
+
+## 📏 Increased Token Limit for Better Responses (2025-10-30)
+
+### Problem: Response Truncation
+
+**Issue:** `maxOutputTokens: 800` was too restrictive, causing:
+- Responses cut off mid-sentence
+- Incomplete explanations
+- JSON truncated before completion
+- Poor user experience with frequent retries
+
+**Analysis:**
+- 800 tokens ≈ 600 words (too cramped for detailed Socratic dialogue)
+- Gemini 2.5 Flash supports up to 8192 tokens
+- Socratic teaching needs room for:
+  - Thoughtful explanations: 200-400 tokens
+  - Follow-up questions: 50-100 tokens
+  - Code examples: 100-300 tokens
+  - JSON structure overhead: ~50 tokens
+  - Safety margin: 200-400 tokens
+
+**Solution:** Increase to 1500 tokens
+
+**Implementation:**
+```typescript
+generationConfig: {
+  temperature: 0.7,
+  maxOutputTokens: 1500,  // Increased from 800
+  responseMimeType: 'application/json',
+  responseSchema: { ... }
+}
+```
+
+**Result:**
+- ✅ 1500 tokens ≈ 1125 words (comfortable for detailed teaching)
+- ✅ Room for code examples in responses
+- ✅ Eliminates truncation issues
+- ✅ Still efficient (not wasteful like 8192 would be)
+
+**Impact:** No more truncated responses observed in testing. Users get complete, well-formed answers every time.
+
+---
+
 *Last updated: 2025-10-30*
 *See CONTEXT.md for complete project design document*
 
