@@ -75,6 +75,14 @@ export default function SocraticDialogue({
     output: string;
     error: string | null;
   } | null>(null);
+  const [lastFailedMessage, setLastFailedMessage] = useState<{
+    input: string;
+    code: string;
+    evaluation: any;
+    conversationHistory: any[];
+  } | null>(null);
+  const [lastSentCode, setLastSentCode] = useState<string>('');
+  const [lastSentEvaluation, setLastSentEvaluation] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -108,6 +116,8 @@ export default function SocraticDialogue({
       setTextbookContext(null);
       setCode('');
       setEvaluation(null);
+      setLastSentCode('');
+      setLastSentEvaluation(null);
     }
   }, [open]);
 
@@ -171,41 +181,65 @@ export default function SocraticDialogue({
     }
   };
 
-  const sendMessage = async () => {
-    const hasText = input.trim().length > 0;
-    const hasCode = code.trim().length > 0;
+  const sendMessage = async (retryData?: {
+    input: string;
+    code: string;
+    evaluation: any;
+    conversationHistory: any[];
+  }) => {
+    const currentInput = retryData?.input ?? input.trim();
+    const currentCode = retryData?.code ?? code.trim();
+    const currentEval = retryData?.evaluation ?? evaluation;
+    
+    const hasText = currentInput.length > 0;
+    const hasCode = currentCode.length > 0;
     
     if ((!hasText && !hasCode) || isLoading) return;
 
+    // Check what actually changed since last turn
+    const codeChanged = currentCode !== lastSentCode;
+    const evalChanged = JSON.stringify(currentEval) !== JSON.stringify(lastSentEvaluation);
+
     // For UI display: just show the text (code is already visible in workspace)
-    const displayContent = hasText ? input.trim() : '(working in Python workspace)';
+    const displayContent = hasText ? currentInput : '(working in Python workspace)';
     
-    // For API: include everything so Gemini has full context
-    let apiContent = input.trim() || '(sharing code)';
-    if (code.trim()) {
-      apiContent += `\n\n**My Code:**\n\`\`\`python\n${code}\n\`\`\``;
+    // For API: only include code/evaluation if they changed
+    let apiContent = currentInput || '(sharing code)';
+    
+    if (codeChanged && currentCode) {
+      apiContent += `\n\n**My Code:**\n\`\`\`python\n${currentCode}\n\`\`\``;
     }
-    if (evaluation) {
-      if (evaluation.error) {
-        apiContent += `\n\n**Error:**\n${evaluation.error}`;
+    
+    if (evalChanged && currentEval) {
+      if (currentEval.error) {
+        apiContent += `\n\n**Error:**\n${currentEval.error}`;
       } else {
-        apiContent += `\n\n**Output:**\n${evaluation.output || '(no output)'}`;
+        apiContent += `\n\n**Output:**\n${currentEval.output || '(no output)'}`;
       }
     }
 
     // Display clean version in UI
     const userMessage: Message = { role: 'user', content: displayContent };
-    const updatedMessages = [...messages, userMessage];
+    const updatedMessages = retryData 
+      ? [...messages.slice(0, -1), userMessage] // Replace error message
+      : [...messages, userMessage];
     setMessages(updatedMessages);
-    setInput('');
+    
+    // Clear input only if not retrying
+    if (!retryData) {
+      setInput('');
+    }
+    
     setIsLoading(true);
+    setLastFailedMessage(null); // Clear any previous failure
 
     try {
       // Send full context to API
-      const conversationHistory = updatedMessages.slice(0, -1).map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      }));
+      const conversationHistory = retryData?.conversationHistory ?? 
+        updatedMessages.slice(0, -1).map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        }));
       
       // Add current message with full context (code + eval)
       conversationHistory.push({
@@ -226,7 +260,8 @@ export default function SocraticDialogue({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `API error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -241,6 +276,10 @@ export default function SocraticDialogue({
         setReadyForMastery(data.mastery_assessment.ready_for_mastery);
       }
       
+      // Update tracking for next turn - only if they were actually sent
+      if (codeChanged) setLastSentCode(currentCode);
+      if (evalChanged) setLastSentEvaluation(currentEval);
+      
       setMessages([...updatedMessages, { 
         role: 'assistant', 
         content: data.message,
@@ -248,15 +287,34 @@ export default function SocraticDialogue({
       }]);
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Save failed message for retry
+      setLastFailedMessage({
+        input: currentInput,
+        code: currentCode,
+        evaluation: currentEval,
+        conversationHistory: updatedMessages.slice(0, -1).map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+      });
+      
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       setMessages([
         ...updatedMessages,
         {
           role: 'assistant',
-          content: 'Sorry, I encountered an error. Please try again.',
+          content: `⚠️ **Error:** ${errorMessage}\n\nYour message was saved. Click the retry button below to try again.`,
         },
       ]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const retryLastMessage = () => {
+    if (lastFailedMessage) {
+      sendMessage(lastFailedMessage);
     }
   };
 
@@ -423,19 +481,38 @@ export default function SocraticDialogue({
             </div>
 
             {/* Input area */}
-            <div className="flex gap-2 pt-4 border-t">
-          <Textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type your response... (Enter to send, Shift+Enter for new line)"
-            className="flex-1 min-h-[60px] max-h-[120px]"
-            disabled={isLoading}
-          />
-              <Button onClick={sendMessage} disabled={!canSend}>
-                Send
-              </Button>
+            <div className="space-y-2 pt-4 border-t">
+              {lastFailedMessage && (
+                <div className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <span className="text-sm text-amber-800">
+                    💬 Previous message failed - click retry to send again
+                  </span>
+                  <Button 
+                    onClick={retryLastMessage}
+                    variant="default"
+                    size="sm"
+                    className="bg-amber-600 hover:bg-amber-700"
+                    disabled={isLoading}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              )}
+              
+              <div className="flex gap-2">
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Type your response... (Enter to send, Shift+Enter for new line)"
+                  className="flex-1 min-h-[60px] max-h-[120px]"
+                  disabled={isLoading}
+                />
+                <Button onClick={() => sendMessage()} disabled={!canSend}>
+                  Send
+                </Button>
+              </div>
             </div>
           </div>
 

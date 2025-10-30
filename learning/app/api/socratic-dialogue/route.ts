@@ -216,7 +216,7 @@ export async function POST(request: NextRequest) {
           contents: geminiContents,
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 800,
+            maxOutputTokens: 1500,
             responseMimeType: 'application/json',
             responseSchema: {
               type: 'object',
@@ -273,7 +273,21 @@ export async function POST(request: NextRequest) {
     console.log('   - Usage metadata:', JSON.stringify(data.usageMetadata, null, 2));
     console.log('   - Candidates:', data.candidates.length);
     
-    const responseText = data.candidates[0].content.parts[0].text;
+    // Find the text response (skip thought parts if using thinking mode)
+    const textPart = data.candidates[0].content.parts.find(
+      (part: any) => part.text !== undefined
+    );
+    
+    if (!textPart) {
+      console.error('\n❌ No text part found in response');
+      console.error('   - Parts structure:', JSON.stringify(data.candidates[0].content.parts, null, 2));
+      return NextResponse.json(
+        { error: 'Invalid response structure from Gemini' },
+        { status: 500 }
+      );
+    }
+    
+    const responseText = textPart.text;
     console.log('\n📄 RAW RESPONSE TEXT:');
     console.log(responseText.substring(0, 500) + (responseText.length > 500 ? '...' : ''));
     
@@ -289,14 +303,23 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.error('\n❌ JSON PARSE ERROR:', e);
       console.error('   - Raw response:', responseText);
-      // Fallback: treat as plain text
+      
+      // Detect if response was partial/truncated
+      const isPartialResponse = responseText.trim().length > 0 && 
+                               (responseText.includes('{') || responseText.includes('['));
+      
+      const errorMessage = isPartialResponse
+        ? '⚠️ My response was incomplete (possibly truncated). Please click retry below to try again.'
+        : '⚠️ I encountered an error generating my response. Please click retry below to try again.';
+      
+      // Show user-friendly error, not raw JSON
       parsedResponse = {
-        message: responseText,
+        message: errorMessage,
         mastery_assessment: {
           indicators_demonstrated: [],
           confidence: 0,
           ready_for_mastery: false,
-          next_focus: 'Continue the dialogue',
+          next_focus: 'Retry the request',
         },
       };
     }
