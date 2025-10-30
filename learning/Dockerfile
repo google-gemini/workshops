@@ -21,7 +21,9 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json ./
-RUN npm ci
+
+# Use npm install (npm ci has persistent bugs in Alpine)
+RUN npm install
 
 # Rebuild the source code only when needed
 FROM base AS builder

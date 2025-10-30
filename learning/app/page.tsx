@@ -162,13 +162,13 @@ export default function Home() {
   // Ready concepts: all prerequisites mastered, but not yet mastered itself
   const readyConcepts = conceptGraphData.concepts.filter(c => 
     !masteredConcepts.has(c.id) &&
-    c.prerequisites.every(p => masteredConcepts.has(p))
+    c.prerequisites.every((p: string) => masteredConcepts.has(p))
   );
 
   // Locked concepts: missing at least one prerequisite
   const lockedConcepts = conceptGraphData.concepts.filter(c =>
     !masteredConcepts.has(c.id) &&
-    c.prerequisites.some(p => !masteredConcepts.has(p))
+    c.prerequisites.some((p: string) => !masteredConcepts.has(p))
   );
 
   // Recommended concepts: Top 3-5 ready concepts, prioritized by:
