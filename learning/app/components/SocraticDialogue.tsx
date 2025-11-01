@@ -345,18 +345,15 @@ export default function SocraticDialogue({
   const demonstratedCount = demonstratedSkills.size;
   const progressPercent = totalIndicators > 0 ? (demonstratedCount / totalIndicators) * 100 : 0;
 
-  // Determine if this is a programming concept
-  const isProgrammingConcept = conceptData.tags?.includes('programming') || 
-                                conceptData.type === 'algorithm' ||
-                                conceptData.id.includes('distance') ||
-                                conceptData.id.includes('tsp');
+  // Show Python scratchpad by default (can opt-out with hide_editor: true)
+  const showPythonEditor = conceptData.hide_editor !== true;
 
   // Send button: enabled if text OR code exists
   const canSend = !isLoading && (input.trim().length > 0 || code.trim().length > 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${isProgrammingConcept ? '!max-w-[96vw] w-[96vw]' : 'max-w-3xl'} !h-[90vh] flex flex-col p-4`}>
+      <DialogContent className={`${showPythonEditor ? '!max-w-[96vw] w-[96vw]' : 'max-w-3xl'} !h-[90vh] flex flex-col p-4`}>
         <DialogHeader>
           <DialogTitle>Learning: {conceptData.name}</DialogTitle>
           <DialogDescription>{conceptData.description}</DialogDescription>
@@ -417,7 +414,7 @@ export default function SocraticDialogue({
         {/* Main content area */}
         <div className="flex-1 flex gap-4 overflow-auto">
           {/* Messages area (left side or full width) */}
-          <div className={`${isProgrammingConcept ? 'flex-1 min-w-0' : 'w-full'} flex flex-col`}>
+          <div className={`${showPythonEditor ? 'flex-1 min-w-0' : 'w-full'} flex flex-col`}>
             <div className="flex-1 overflow-y-auto space-y-4 py-4 px-2">
           {messages.map((msg, idx) => (
             <div
@@ -516,8 +513,8 @@ export default function SocraticDialogue({
             </div>
           </div>
 
-          {/* Python Scratchpad (right side) - only for programming concepts */}
-          {isProgrammingConcept && (
+          {/* Python Scratchpad (right side) - shown by default */}
+          {showPythonEditor && (
             <div className="flex-1 min-w-0 border-l pl-3 flex flex-col">
               <PythonScratchpad
                 starterCode={`# 🧮 Python scratchpad for exploring ${conceptData.name}

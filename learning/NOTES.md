@@ -4077,6 +4077,34 @@ function ModelSelector({ selected, onChange }) {
 
 ---
 
+### 4. Language-Specific Code Editors
+
+**Problem:** Python scratchpad shown for all books, but PAIP teaches Lisp
+
+**Proposed solution:** Add `language` metadata to each library:
+```json
+{
+  "id": "paip-ch1",
+  "language": "lisp",
+  "dialect": "common-lisp",
+  ...
+}
+```
+
+**Implementation options:**
+1. **MVP:** Syntax-highlighted editor (no execution) for Lisp
+2. **Future:** In-browser Lisp REPL using JSCL or BiwaScheme
+3. **Conditional rendering:** Show Python scratchpad for Python books, Lisp editor for Lisp books
+
+**Priority:** Medium - currently showing Python editor for Lisp concepts is confusing
+
+**Estimated effort:** 
+- Metadata + conditional rendering: 1-2 hours
+- Syntax-only Lisp editor: 2-3 hours
+- Full REPL with execution: 1-2 days
+
+---
+
 ### Other TODOs (Carried Forward)
 
 From earlier sections, still pending:
