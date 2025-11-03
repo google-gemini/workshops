@@ -1,0 +1,237 @@
+{
+  "metadata": {
+    "title": "The Traveling Salesperson Problem",
+    "author": "Peter Norvig",
+    "source": "Pytudes - TSP.ipynb",
+    "pass": 2,
+    "description": "Structure extraction complete - concepts and prerequisites identified",
+    "total_concepts": 28,
+    "extracted_date": "2025-10-29"
+  },
+  "nodes": [
+    {
+      "id": "city_representation",
+      "name": "City Representation as Complex Numbers",
+      "description": "Representing cities as complex numbers where real part is x-coordinate and imaginary part is y-coordinate",
+      "prerequisites": [],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "euclidean_distance",
+      "name": "Euclidean Distance",
+      "description": "Computing straight-line distance between two points in 2D space using the distance formula",
+      "prerequisites": ["city_representation"],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "tour_concept",
+      "name": "Tour as a Cycle",
+      "description": "Understanding a tour as an ordered list of cities that visits each city once and returns to start",
+      "prerequisites": ["city_representation"],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "tour_length_calculation",
+      "name": "Tour Length Calculation",
+      "description": "Computing total distance of a tour by summing distances between consecutive cities including return to start",
+      "prerequisites": ["euclidean_distance", "tour_concept"],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "valid_tour",
+      "name": "Valid Tour Verification",
+      "description": "Verifying that a tour visits each city exactly once by checking it's a permutation of cities",
+      "prerequisites": ["tour_concept"],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "tour_vs_segment",
+      "name": "Tour vs Segment Distinction",
+      "description": "Understanding that a segment is a partial path without returning to start, while a tour forms a complete cycle",
+      "prerequisites": ["tour_concept"],
+      "difficulty": "basic",
+      "section": "Visualizing results"
+    },
+    {
+      "id": "type_annotations",
+      "name": "Type Hints and Annotations",
+      "description": "Using Python type hints to document expected types of function parameters and return values",
+      "prerequisites": [],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "frozenset_usage",
+      "name": "Frozenset for Immutable Collections",
+      "description": "Using frozenset to represent immutable collections that can be hashed and used as dict keys",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "list_comprehensions",
+      "name": "List Comprehensions",
+      "description": "Creating lists using compact comprehension syntax instead of explicit loops",
+      "prerequisites": [],
+      "difficulty": "basic",
+      "section": "Throughout"
+    },
+    {
+      "id": "generators_yield",
+      "name": "Generator Functions with Yield",
+      "description": "Creating iterators that generate values on-demand using yield instead of building full lists",
+      "prerequisites": ["list_comprehensions"],
+      "difficulty": "intermediate",
+      "section": "Minimum Spanning Tree, Greedy Algorithm visualization"
+    },
+    {
+      "id": "exhaustive_search",
+      "name": "Exhaustive Search Strategy",
+      "description": "Finding optimal solution by systematically trying all possible permutations of cities",
+      "prerequisites": ["tour_concept", "tour_length_calculation", "valid_tour"],
+      "difficulty": "intermediate",
+      "section": "Exhaustive TSP Search Algorithm"
+    },
+    {
+      "id": "greedy_strategy",
+      "name": "Greedy Algorithm Strategy",
+      "description": "Making locally optimal choices at each step hoping to find a global optimum",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "General Strategies for Algorithm Design"
+    },
+    {
+      "id": "improvement_strategy",
+      "name": "Iterative Improvement Strategy",
+      "description": "Starting with a solution and repeatedly making local changes that improve it",
+      "prerequisites": ["tour_concept", "tour_length_calculation"],
+      "difficulty": "intermediate",
+      "section": "Improvement Strategy: Optimizing Links"
+    },
+    {
+      "id": "divide_conquer_strategy",
+      "name": "Divide and Conquer Strategy",
+      "description": "Splitting problem into smaller subproblems, solving each, then combining solutions",
+      "prerequisites": [],
+      "difficulty": "advanced",
+      "section": "Divide and Conquer"
+    },
+    {
+      "id": "ensemble_strategy",
+      "name": "Ensemble Strategy",
+      "description": "Running multiple algorithms and selecting the best result from all attempts",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "Repeated Nearest Neighbor, Ensemble TSP"
+    },
+    {
+      "id": "approximation_strategy",
+      "name": "Approximation Strategy",
+      "description": "Accepting a slightly suboptimal solution when finding the exact optimum is too expensive",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "General Strategies for Algorithm Design"
+    },
+    {
+      "id": "nearest_neighbor_algorithm",
+      "name": "Nearest Neighbor Algorithm",
+      "description": "Greedy algorithm that always moves to the closest unvisited city from current position",
+      "prerequisites": ["greedy_strategy", "euclidean_distance", "tour_concept"],
+      "difficulty": "intermediate",
+      "section": "Nearest Neighbor Algorithm"
+    },
+    {
+      "id": "two_opt_optimization",
+      "name": "2-Opt Local Search",
+      "description": "Improving tours by reversing segments that eliminate crossing edges",
+      "prerequisites": ["improvement_strategy", "segment_reversal", "tour_length_calculation"],
+      "difficulty": "advanced",
+      "section": "Improvement Strategy: Optimizing Links"
+    },
+    {
+      "id": "segment_reversal",
+      "name": "Tour Segment Reversal",
+      "description": "Reversing a portion of a tour to uncross edges and reduce total distance",
+      "prerequisites": ["tour_vs_segment", "euclidean_distance"],
+      "difficulty": "intermediate",
+      "section": "Improvement Strategy: Optimizing Links"
+    },
+    {
+      "id": "greedy_tsp_algorithm",
+      "name": "Greedy Link Selection Algorithm",
+      "description": "Building tour by repeatedly adding shortest available link that doesn't create a subtour",
+      "prerequisites": ["greedy_strategy", "tour_concept", "euclidean_distance"],
+      "difficulty": "advanced",
+      "section": "Greedy TSP Algorithm"
+    },
+    {
+      "id": "minimum_spanning_tree",
+      "name": "Minimum Spanning Tree",
+      "description": "Tree connecting all cities with minimum total edge weight, used to construct TSP tours",
+      "prerequisites": ["graph_theory_concepts", "euclidean_distance"],
+      "difficulty": "advanced",
+      "section": "Minimum Spanning Tree Algorithm"
+    },
+    {
+      "id": "held_karp_algorithm",
+      "name": "Held-Karp Dynamic Programming",
+      "description": "Optimal TSP algorithm using dynamic programming and memoization to avoid redundant calculations",
+      "prerequisites": ["tour_concept", "caching_memoization", "tour_vs_segment"],
+      "difficulty": "advanced",
+      "section": "Held-Karp Algorithm"
+    },
+    {
+      "id": "algorithmic_complexity",
+      "name": "Time Complexity Analysis",
+      "description": "Understanding how algorithm runtime grows with input size using Big-O notation",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "Throughout"
+    },
+    {
+      "id": "caching_memoization",
+      "name": "Caching and Memoization",
+      "description": "Storing computed results to avoid redundant calculations in recursive algorithms",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "Held-Karp Algorithm"
+    },
+    {
+      "id": "benchmarking",
+      "name": "Algorithm Benchmarking",
+      "description": "Systematically comparing algorithms on test sets using statistical measures",
+      "prerequisites": ["tour_length_calculation", "algorithmic_complexity"],
+      "difficulty": "intermediate",
+      "section": "Benchmark Experiments"
+    },
+    {
+      "id": "statistical_comparison",
+      "name": "Statistical Comparison Methods",
+      "description": "Using boxplots, rankings, and confidence intervals to compare algorithm performance",
+      "prerequisites": ["benchmarking"],
+      "difficulty": "intermediate",
+      "section": "Benchmark Experiments"
+    },
+    {
+      "id": "graph_theory_concepts",
+      "name": "Graph Theory Foundations",
+      "description": "Understanding graphs as vertices and edges, trees, spanning trees, and traversals",
+      "prerequisites": ["city_representation", "euclidean_distance"],
+      "difficulty": "advanced",
+      "section": "Minimum Spanning Tree"
+    },
+    {
+      "id": "tour_length_guarantee",
+      "name": "Approximation Guarantees",
+      "description": "Proving that an algorithm produces tours within a constant factor of optimal",
+      "prerequisites": ["approximation_strategy", "minimum_spanning_tree", "algorithmic_complexity"],
+      "difficulty": "advanced",
+      "section": "Guaranteed Tour Length"
+    }
+  ]
+}

@@ -35,7 +35,7 @@ def load_json(filepath: str) -> Dict:
 def find_pedagogy_for_concept(pedagogy_data: Dict, concept_id: str) -> Dict | None:
     """Find pedagogy enrichment for a concept."""
     for enriched in pedagogy_data.get('concepts_enriched', []):
-        if enriched['id'] == concept_id:
+        if enriched.get('concept_id') == concept_id:
             return enriched
     return None
 
@@ -125,7 +125,8 @@ def merge_pcg(*json_files: str) -> Dict:
     
     # 2. Extract primary data by key (order-independent!)
     base_concepts = merged.get('nodes', [])
-    enriched_pedagogy_list = merged.get('concepts_enriched', [])
+    # Support both 'concepts' (pytudes) and 'concepts_enriched' (paip) formats
+    enriched_pedagogy_list = merged.get('concepts', merged.get('concepts_enriched', []))
     exercises = merged.get('exercises', [])
     
     # 3. Build pedagogy lookup for efficient access

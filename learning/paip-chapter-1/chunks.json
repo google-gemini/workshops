@@ -1,0 +1,1241 @@
+{
+  "chunks": [
+    {
+      "chunk_id": "chunk-1-chapter-1-introduction",
+      "topic": "Introduction to Chapter 1",
+      "text": "# Chapter 1\n---\n",
+      "concepts": [],
+      "chunk_type": "overview",
+      "section": "1"
+    },
+    {
+      "chunk_id": "chunk-2-introduction-to-lisp",
+      "topic": "Introduction to the chapter and Lisp programming",
+      "text": "## Introduction to Lisp\n\n> You think you know when you learn, are more sure when you can write, even more when you can teach, but certain when you can program.\n>\n> -Alan Perlis \n> Yale University computer scientist\n\nThis chapter is for people with little or no experience in Lisp.\nReaders who feel confident in their Lisp programming ability can quickly skim the chapter or skip it entirely.\nThis chapter necessarily moves quickly, so those with little programming experience, or any reader who finds this chapter tough going, should seek out a supplementary introductory text.\nMy recommendations are in the preface.",
+      "concepts": [
+        "lisp-programming"
+      ],
+      "chunk_type": "overview"
+    },
+    {
+      "chunk_id": "chunk-3-computational-objects",
+      "topic": "Defining computational objects in the context of computers",
+      "text": "Computers allow one to carry out computations.\nA word processing program deals with words while a calculator deals with numbers, but the principles are the same.\nIn both cases, you provide the input (words or numbers) and specify the operations (such as deleting a word or adding two numbers) to yield a result (a completed document or calculation).\n\nWe will refer to anything that can be represented in the memory of a computer as a *computational object,* or just an *object.*\nSo, words, paragraphs, and numbers can be objects.\nAnd because the operations (deleting and adding) must be represented somewhere in the computer's memory, they are objects, too.\n\nNormally, the distinction between a computer \"user\" and a computer \"programmer\" is that the user provides new input, or data (words or numbers), while the programmer defines new *operations*, or programs, as well as new *types* of data.\nEvery new object, be it datum or operation, must be defined in terms of previously defined objects.\nThe bad news is that it can be quite tedious to get these definitions right.\nThe good news is that each new object can in turn be used in the definition of future objects.\nThus, even complex programs can be built out of smaller, simpler objects.\nThis book covers a number of typical AI problems, showing how each problem can be broken down into manageable pieces, and also how each piece can be described in the programming language Common Lisp.\nIdeally, readers will learn enough through studying these examples to attack new AI problems with style, grace, and success.",
+      "concepts": [
+        "computational-object",
+        "data",
+        "operations",
+        "common-lisp"
+      ],
+      "chunk_type": "definition"
+    },
+    {
+      "chunk_id": "chunk-4-interactive-dialog-with-lisp",
+      "topic": "Introduction to interactive mode in Lisp using arithmetic expressions",
+      "text": "Let's consider a simple example of a computation: finding the sum of two numbers, let's say 2 and 2.\nIf we had a calculator handy, we would type \"2 + 2 =\" and see the answer displayed.\nOn a calculator using reverse Polish notation, we would have to type \"2 2 +\" to see the same answer.\nIn Lisp, as with the calculator, the user carries out an interactive dialog with the computer by typing in an expression and seeing the computer print the value of that expression.\nThis interactive mode is different from many other programming languages that only offer a batch mode, wherein an entire program is compiled and run before any output can be seen.\n\nWe start up a pocket calculator by flipping the on/off switch.\nThe Lisp program must also be started, but the details vary from one computer to another, so I can't explain how your Lisp will work.\nAssuming we have managed to start up Lisp, we are likely to see a *prompt* of some kind.\nOn my computer, Lisp types \"`>`\" to indicate it is ready to accept the next computation.\nSo we are faced with a screen that looks like this:\n\n```lisp\n>\n```\n\nWe may now type in our computation and see the result displayed.\nIt turns out that the Lisp convention for arithmetic expressions is slightly different: a computation consists of a parenthesized list with the operation name first, followed by any number of operands, or arguments.\nThis is called *prefix notation.*",
+      "concepts": [
+        "interactive-mode",
+        "batch-mode",
+        "prompt",
+        "prefix-notation",
+        "lisp-expressions"
+      ],
+      "chunk_type": "explanation"
+    },
+    {
+      "chunk_id": "chunk-5-prefix-notation-examples",
+      "topic": "Examples of prefix notation and Lisp expressions",
+      "text": "```lisp\n> (+ 2 2)\n4\n>\n```\n\nWe see that Lisp has printed the answer, 4, and then another prompt, >, to indicate it is ready for the next computation.\nThroughout this book, all Lisp expressions will be displayed in `typewriter` font.\nText on the same line as the \">\" prompt is input typed by the user, and text following it is output printed by the computer.\nUsually, input that is typed by the programmer will be in `lowercase` letters, while output that is printed back by the computer will be in `UPPERCASE` letters.\nOf course, with symbols like + and 4 there is no difference.\n\nTo save space on the page, the output will sometimes be shown on the same line as the input, separated by an arrow (=>), which can be read as \"evaluates to,\" and can also be thought of as standing for the return or enter key that the user presses to complete the input:\n\n```lisp\n> (+ 2 2) => 4\n```\n\nOne advantage of parenthesized prefix notation is that the parentheses clearly mark the beginning and end of an expression.\nIf we want, we can give + more than two arguments, and it will still add them all:\n\n```lisp\n> (+ 1 2 3 4 5 6 7 8 9 10) => 55\n```\n\nThis time we try (9000 + 900 + 90 + 9) - (5000 + 500 + 50 + 5):\n\n```lisp\n> (- (+ 9000 900 90 9) (+ 5000 500 50 5)) => 4444\n```",
+      "concepts": [
+        "prefix-notation",
+        "lisp-expressions",
+        "evaluation"
+      ],
+      "chunk_type": "example"
+    },
+    {
+      "chunk_id": "chunk-6-lisp-evaluation-rule",
+      "topic": "Explanation of the Lisp evaluation rule and comparison to other languages",
+      "text": "This example shows that expressions can be nested.\nThe arguments to the - function are parenthesized lists, while the arguments to each `+` are atoms.\nThe Lisp notation may look unusual compared to standard mathematical notation, but there are advantages to this notation; since Lisp expressions can consist of a function followed by any number of arguments, we don't have to keep repeating the \"`+`\". More important than the notation is the rule for evaluation.\nIn Lisp, lists are evaluated by first evaluating all the arguments, then applying the function to the arguments, thereby computing the result.\nThis rule is much simpler than the rule for evaluating normal mathematical expressions, where there are many conventions to remember, such as doing multiplications and divisions before sums and differences.\nWe will see below that the actual Lisp evaluation rule is a little more complicated, but not much.\n\nSometimes programmers who are familiar with other languages have preconceptions that make it difficult for them to learn Lisp.\nFor them, three points are worth stressing here.\nFirst, many other languages make a distinction between statements and expressions.\nAn expression, like `2 + 2`, has a value, but a statement, like `x = 2 + 2`, does not.\nStatements have effects, but they do not return values.\nIn Lisp, there is no such distinction: every expression returns a value.\nIt is true that some expressions have effects, but even those expressions also return values.",
+      "concepts": [
+        "lisp-evaluation-rule",
+        "expressions",
+        "statements"
+      ],
+      "chunk_type": "explanation"
+    },
+    {
+      "chunk_id": "chunk-7-lexical-rules-and-comments",
+      "topic": "Lexical rules, punctuation, and comments in Lisp",
+      "text": "Second, the lexical rules for Lisp are much simpler than the rules for other languages.\nIn particular, there are fewer punctuation characters: only parentheses, quote marks (single, double, and backward), spaces, and the comma serve to separate symbols from each other.\nThus, while the statement `y=a*x+3` is analyzed as seven separate tokens in other languages, in Lisp it would be treated as a single symbol.\n<a id=\"tfn01-1\"></a>\nTo get a list of tokens, we would have to insert spaces: `(y = a * x + 3)`.<sup>[1](#fn01-1)</sup>\n\nThird, while many languages use semicolons to delimit statements, Lisp has no need of semicolons, since expressions are delimited by parentheses.\nLisp chooses to use semicolons for another purpose—to mark the beginning of a comment, which lasts until the end of the line:\n\n```lisp\n> (+ 2 2) ; this is a comment\n4\n```",
+      "concepts": [
+        "lexical-rules",
+        "punctuation",
+        "comments",
+        "tokens"
+      ],
+      "chunk_type": "explanation"
+    },
+    {
+      "chunk_id": "chunk-8-symbolic-computation-introduction",
+      "topic": "Introduction to Symbolic Computation in Lisp",
+      "text": "## 1.1 Symbolic Computation\n\nAll we've done so far is manipulate numbers in the same way a simple pocket calculator would.\nLisp is more useful than a calculator for two main reasons.\nFirst, it allows us to manipulate objects other than numbers, and second, it allows us to define new objects that might be useful in subsequent computations.\nWe will examine these two important properties in turn.",
+      "concepts": [
+        "symbolic-computation",
+        "lisp-programming"
+      ],
+      "chunk_type": "overview",
+      "section": "1.1"
+    },
+    {
+      "chunk_id": "chunk-9-lisp-data-types",
+      "topic": "Lisp Data Types Beyond Numbers",
+      "text": "Besides numbers, Lisp can represent characters (letters), strings of characters, and arbitrary symbols, where we are free to interpret these symbols as referring to things outside the world of mathematics.\nLisp can also build nonatomic objects by combining several objects into a list.\nThis capability is fundamental and well supported in the language; in fact, the name Lisp is short for LISt Processing.",
+      "concepts": [
+        "lisp-data-types",
+        "symbols",
+        "lists",
+        "list-processing"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.1"
+    },
+    {
+      "chunk_id": "chunk-10-list-manipulation-example",
+      "topic": "Example of List Manipulation with `append`",
+      "text": "Here's an example of a computation on lists:\n\n```lisp\n> (append '(Pat Kim) '(Robin Sandy)) => (PAT KIM ROBIN SANDY)\n```\n\nThis expression appends together two lists of names.\nThe rule for evaluating this expression is the same as the rule for numeric calculations: apply the function (in this case append) to the value of the arguments.",
+      "concepts": [
+        "list-manipulation",
+        "append-function",
+        "function-evaluation"
+      ],
+      "chunk_type": "example",
+      "section": "1.1"
+    },
+    {
+      "chunk_id": "chunk-11-quote-operator-explanation",
+      "topic": "Explanation of the Quote Operator",
+      "text": "The unusual part is the quote mark `(')`, which serves to block the evaluation of the following expression, returning it literally.\nIf we just had the expression `(Pat Kim)`, it would be evaluated by considering `Pat` as a function and applying it to the value of the expression `Kim`.\nThis is not what we had in mind.\nThe quote mark instructs Lisp to treat the list as a piece of data rather than as a function call:\n\n```lisp\n> '(Pat Kim) => (PAT KIM)\n```\n\nIn other computer languages (and in English), quotes usually come in pairs: one to mark the beginning, and one to mark the end.\nIn Lisp, a single quote is used to mark the beginning of an expression.\nSince we always know how long a single expression is—either to the end of an atom or to the matching parenthesis of a list—we don't need an explicit punctuation mark to tell us where the expression ends.\nQuotes can be used on lists, as in `'(Pat Kim)`, on symbols as in `'Robin`, and in fact on anything else.",
+      "concepts": [
+        "quote-operator",
+        "expression-evaluation",
+        "data-vs-function"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.1"
+    },
+    {
+      "chunk_id": "chunk-12-quote-operator-examples",
+      "topic": "Examples of Using the Quote Operator with Different Data Types",
+      "text": "Here are some examples:\n\n```lisp\n> 'John => JOHN\n\n> '(John Q Public) => (JOHN Q PUBLIC)\n\n> '2 => 2\n\n> 2 => 2\n\n> '(+ 2 2) => (+ 2 2)\n\n> (+ 2 2) 4\n\n> John => *Error: JOHN is not a bound variable*\n\n> (John Q Public) => *Error: JOHN is not a function*\n```\n\nNote that `'2` evaluates to `2` because it is a quoted expression, and `2` evaluates to `2` because numbers evaluate to themselves.\nSame result, different reason.\nIn contrast, `'John` evaluates to `John` because it is a quoted expression, but evaluating `John` leads to an error, because evaluating a symbol means getting the value of the symbol, and no value has been assigned to `John`.",
+      "concepts": [
+        "quote-operator",
+        "symbol-evaluation",
+        "error-handling"
+      ],
+      "chunk_type": "example",
+      "section": "1.1"
+    },
+    {
+      "chunk_id": "chunk-13-nested-symbolic-numeric-computations",
+      "topic": "Nested Symbolic and Numeric Computations",
+      "text": "Symbolic computations can be nested and even mixed with numeric computations.\nThe following expression builds a list of names in a slightly different way than we saw before, using the built-in function `list`.\nWe then see how to find the number of elements in the list, using the built-in function `length`:\n\n```lisp\n> (append '(Pat Kim) (list '(John Q Public) 'Sandy))\n(PAT KIM (JOHN Q PUBLIC) SANDY)\n\n> (length (append '(Pat Kim) (list '(John Q Public) 'Sandy)))\n4\n```",
+      "concepts": [
+        "nested-computations",
+        "list-function",
+        "length-function"
+      ],
+      "chunk_type": "example",
+      "section": "1.1"
+    },
+    {
+      "chunk_id": "chunk-14-symbols-important-points",
+      "topic": "Important Points About Symbols in Lisp",
+      "text": "There are four important points to make about symbols:\n\n*   First, it is important to remember that Lisp does not attach any external significance to the objects it manipulates.\nFor example, we naturally think of (`Robin Sandy`) as a list of two first names, and (`John Q Public`) as a list of one person's first name, middle initial, and last name.\nLisp has no such preconceptions.\nTo Lisp, both `Robin` and `xyzzy` are perfectly good symbols.\n\n*   Second, to do the computations above, we had to know that `append`, `length`, and `+` are defined functions in Common Lisp.\nLearning a language involves remembering vocabulary items (or knowing where to look them up) as well as learning the basic rules for forming expressions and determining what they mean.\nCommon Lisp provides over 700 built-in functions.\nAt some point the reader should flip through a reference text to see what's there, but most of the important functions are presented in part I of this book.\n\n*   Third, note that symbols in Common Lisp are not case sensitive.\n<a id=\"tfn01-2\"></a>\nBy that I mean that the inputs `John`, `john`, and `jOhN` all refer to the same symbol, which is normally printed as `JOHN`.<sup>[2](#fn01-2)</sup>\n\n*   Fourth, note that a wide variety of characters are allowed in symbols: numbers, letters, and other punctuation marks like `'+'` or `'!'`\nThe exact rules for what constitutes a symbol are a little complicated, but the normal convention is to use symbols consisting mostly of letters, with words separated by a dash `(-)`, and perhaps with a number at the end.\nSome programmers are more liberal in naming variables, and include characters like `'?!$/<=>'`.\nFor example, a function to convert dollars to yen might be named with the symbol `$-to-yen` or `$->yen` in Lisp, while one would use something like `DollarsToYen, dollars_to_yen` or `dol2yen` in Pascal or C.\nThere are a few exceptions to these naming conventions, which will be dealt with as they come up.",
+      "concepts": [
+        "symbol-significance",
+        "common-lisp-functions",
+        "case-insensitivity",
+        "symbol-naming-conventions"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.1"
+    },
+    {
+      "chunk_id": "chunk-15-variables-introduction",
+      "topic": "Introduction to Variables",
+      "text": "We have seen some of the basics of symbolic computation.\nNow we move on to perhaps the most important characteristic of a programming language: the ability to define new objects in terms of others, and to name these objects for future use.\nHere symbols again play an important role-they are used to name variables.\nA variable can take on a value, which can be any Lisp object.\nOne way to give a value to a variable is with `setf`:",
+      "concepts": [
+        "variables",
+        "symbolic-computation",
+        "lisp-objects",
+        "setf"
+      ],
+      "chunk_type": "overview",
+      "section": "1.2"
+    },
+    {
+      "chunk_id": "chunk-16-setf-examples",
+      "topic": "Examples of using setf to assign values to variables",
+      "text": "```lisp\n> (setf p '(John Q Public)) => (JOHN Q PUBLIC)\n> p => (JOHN Q PUBLIC)\n> (setf x 10) => 10\n> (+ x x) => 20\n> (+ x (length p)) => 13\n```\n\nAfter assigning the value (`John Q Public`) to the variable named `p`, we can refer to the value with the name `p`.\nSimilarly, after assigning a value to the variable named `x`, we can refer to both `x` and `p`.",
+      "concepts": [
+        "setf",
+        "variables",
+        "variable-assignment"
+      ],
+      "chunk_type": "example",
+      "section": "1.2"
+    },
+    {
+      "chunk_id": "chunk-17-symbols-and-functions",
+      "topic": "Symbols as names for variables and functions",
+      "text": "Symbols are also used to name functions in Common Lisp.\nEvery symbol can be used as the name of a variable or a function, or both, although it is rare (and potentially confusing) to have symbols name both.\nFor example, `append` and `length` are symbols that name functions but have no values as variables, and `pi` does not name a function but is a variable whose value is 3.1415926535897936 (or thereabout).",
+      "concepts": [
+        "symbols",
+        "functions",
+        "common-lisp",
+        "variables",
+        "append",
+        "length",
+        "pi"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.2"
+    },
+    {
+      "chunk_id": "chunk-18-special-forms-introduction",
+      "topic": "Introduction to Special Forms in Lisp",
+      "text": "The careful reader will note that `setf` violates the evaluation rule.\nWe said earlier that functions like `+`, `-` and `append` work by first evaluating all their arguments and then applying the function to the result.\nBut `setf` doesn't follow that rule, because `setf` is not a function at all.\nRather, it is part of the basic syntax of Lisp.\nBesides the syntax of atoms and function calls, Lisp has a small number of syntactic expressions.\nThey are known as *special forms.*",
+      "concepts": [
+        "special-forms",
+        "evaluation-rules",
+        "lisp-syntax",
+        "setf"
+      ],
+      "chunk_type": "definition",
+      "section": "1.3"
+    },
+    {
+      "chunk_id": "chunk-19-special-forms-purpose-and-characteristics",
+      "topic": "Purpose and Characteristics of Special Forms",
+      "text": "They serve the same purpose as statements in other programming languages, and indeed have some of the same syntactic markers, such as `if` and `loop`.\nThere are two main differences between Lisp's syntax and other languages.\nFirst, Lisp's syntactic forms are always lists in which the first element is one of a small number of privileged symbols.\n`setf` is one of these symbols, so (`setf x 10`) is a special form.\nSecond, special forms are expressions that return a value.\nThis is in contrast to statements in most languages, which have an effect but do not return a value.",
+      "concepts": [
+        "special-forms",
+        "lisp-syntax",
+        "statements",
+        "evaluation-rules",
+        "setf"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.3"
+    },
+    {
+      "chunk_id": "chunk-20-special-forms-evaluation-and-necessity",
+      "topic": "Evaluation and Necessity of Special Forms",
+      "text": "In evaluating an expression like `(setf x (+ 1 2))`, we set the variable named by the symbol `x` to the value of `(+ 1 2)`, which is `3`.\nIf `setf` were a normal function, we would evaluate both the symbol `x` and the expression `(+ 1 2)` and do something with these two values, which is not what we want at all.\n`setf` is called a special form because it does something special: if it did not exist, it would be impossible to write a function that assigns a value to a variable.\nThe philosophy of Lisp is to provide a small number of special forms to do the things that could not otherwise be done, and then to expect the user to write everything else as functions.",
+      "concepts": [
+        "special-forms",
+        "evaluation",
+        "setf",
+        "lisp-philosophy"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.3"
+    },
+    {
+      "chunk_id": "chunk-21-special-form-terminology",
+      "topic": "Terminology Clarification for Special Forms",
+      "text": "The term *special form* is used confusingly to refer both to symbols like `setf` and expressions that start with them, like `(setf x 3)`.\nIn the book *Common LISPcraft,* Wilensky resolves the ambiguity by calling `setf` a *special function,* and reserving the term *special form* for `(setf x 3)`.\nThis terminology implies that `setf` is just another function, but a special one in that its first argument is not evaluated.\nSuch a view made sense in the days when Lisp was primarily an interpreted language.\nThe modern view is that `setf` should not be considered some kind of abnormal function but rather a marker of special syntax that will be handled specially by the compiler.\nThus, the special form `(setf x (+ 2 1))` should be considered the equivalent of `x = 2 + 1` in `C`.\nWhen there is risk of confusion, we will call `setf` a *special form operator* and `(setf x 3)` a *special form expression.*",
+      "concepts": [
+        "special-forms",
+        "setf",
+        "special-form-operator",
+        "special-form-expression",
+        "lisp-terminology"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.3"
+    },
+    {
+      "chunk_id": "chunk-22-quote-as-special-form",
+      "topic": "The Quote Mark as a Special Form",
+      "text": "It turns out that the quote mark is just an abbreviation for another special form.\nThe expression '*x* is equivalent to `(quote` *x*`)`, a special form expression that evaluates to *x*.",
+      "concepts": [
+        "quote",
+        "special-forms",
+        "evaluation"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.3"
+    },
+    {
+      "chunk_id": "chunk-23-special-form-operators-summary",
+      "topic": "Summary of Special Form Operators",
+      "text": "The special form operators used in this chapter are:\n\n| []()            |                                              |\n|-----------------|----------------------------------------------|\n| `defun`         | define function                              |\n| `defparameter`  | define special variable                      |\n| `setf`          | set variable or field to new value           |\n| `let`           | bind local variable(s)                       |\n| `case`          | choose one of several alternatives           |\n| `if`            | do one thing or another, depending on a test |\n| `function (#')` | refer to a function                          |\n| `quote (')`     | introduce constant data                      |",
+      "concepts": [
+        "special-forms",
+        "defun",
+        "defparameter",
+        "setf",
+        "let",
+        "case",
+        "if",
+        "function",
+        "quote"
+      ],
+      "chunk_type": "overview",
+      "section": "1.3"
+    },
+    {
+      "chunk_id": "chunk-24-list-processing-functions-introduction",
+      "topic": "Introduction to list processing functions",
+      "text": "## 1.4 Lists\n\nSo far we have seen two functions that operate on lists: `append` and `length`. Since lists are important, let's look at some more list processing functions:",
+      "concepts": [
+        "list-processing",
+        "append",
+        "length"
+      ],
+      "chunk_type": "overview",
+      "section": "1.4"
+    },
+    {
+      "chunk_id": "chunk-25-first-rest-second-third-fourth-example",
+      "topic": "Examples of first, rest, second, third, and fourth functions",
+      "text": "```lisp\n> p => (JOHN Q PUBLIC)\n\n> (first p) JOHN\n\n> (rest p) => (Q PUBLIC)\n\n> (second p) => Q\n\n> (third p) => PUBLIC\n\n> (fourth p) => NIL\n\n> (length p) => 3\n```\n\nThe functions `first`, `second`, `third`, and `fourth` are aptly named: `first` returns the first element of a list, `second` gives you the second element, and so on.\nThe function `rest` is not as obvious; its name stands for \"the rest of the list after the first element.\" The symbol `nil` and the form `()` are completely synonymous; they are both representations of the empty list.\n`nil` is also used to denote the \"false\" value in Lisp.\nThus, `(fourth p)` is `nil` because there is no fourth element of `p`.\nNote that lists need not be composed only of atoms, but can contain sublists as elements:",
+      "concepts": [
+        "first",
+        "rest",
+        "second",
+        "third",
+        "fourth",
+        "nil",
+        "empty-list"
+      ],
+      "chunk_type": "example",
+      "section": "1.4"
+    },
+    {
+      "chunk_id": "chunk-26-nested-lists-example",
+      "topic": "Example of nested lists and accessing elements",
+      "text": "```lisp\n> (setf x '((1st element) 2 (element 3) ((4)) 5))\n((1ST ELEMENT) 2 (ELEMENT 3) ((4)) 5)\n\n> (length x) => 5\n\n> (first x) => (1ST ELEMENT)\n\n> (second x) => 2\n\n> (third x) => (ELEMENT 3)\n\n> (fourth x) => ((4))\n\n> (first (fourth x)) => (4)\n\n> (first (first (fourth x))) => 4\n\n> (fifth x) => 5\n\n> (first x) => (1ST ELEMENT)\n\n> (second (first x)) => ELEMENT\n```",
+      "concepts": [
+        "nested-lists",
+        "first",
+        "second",
+        "third",
+        "fourth",
+        "fifth",
+        "length"
+      ],
+      "chunk_type": "example",
+      "section": "1.4"
+    },
+    {
+      "chunk_id": "chunk-27-list-construction-functions",
+      "topic": "Introduction to list construction functions: cons, list, append",
+      "text": "So far we have seen how to access parts of lists.\nIt is also possible to build up new lists, as these examples show:\n\n```lisp\n> p => (JOHN Q PUBLIC)\n\n> (cons 'Mr p) => (MR JOHN Q PUBLIC)\n\n> (cons (first p) (rest p)) => (JOHN Q PUBLIC)\n\n> (setf town (list 'Anytown 'USA)) => (ANYTOWN USA)\n\n> (list p 'of town 'may 'have 'already 'won!) =>\n((JOHN Q PUBLIC) OF (ANYTOWN USA) MAY HAVE ALREADY WON!)\n\n> (append p '(of) town '(may have already won!)) =>\n(JOHN Q PUBLIC OF ANYTOWN USA MAY HAVE ALREADY WON!)\n\n> p => (JOHN Q PUBLIC)\n```\n\nThe function cons stands for \"construct.\"\n<a id=\"tfn01-3\"></a>\nIt takes as arguments an element and a list,<sup>[3](#fn01-3)</sup> and constructs a new list whose first is the element and whose rest is the original list.\n`list` takes any number of elements as arguments and returns a new list containing those elements in order.\nWe've already seen `append`, which is similar to `list`; it takes as arguments any number of lists and appends them all together, forming one big list.\nThus, the arguments to `append` must be lists, while the arguments to `list` may be lists or atoms.\nIt is important to note that these functions create new lists; they don't modify old ones.\nWhen we say `(append p q)`, the effect is to create a brand new list that starts with the same elements that were in `p`.\n`p` itself remains unchanged.",
+      "concepts": [
+        "cons",
+        "list",
+        "append",
+        "list-construction"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.4"
+    },
+    {
+      "chunk_id": "chunk-28-extracting-last-name-problem",
+      "topic": "Problem: Extracting the last name from a list",
+      "text": "Now let's move away from abstract functions on lists, and consider a simple problem: given a person's name in the form of a list, how might we extract the family name?\nFor `(JOHN Q PUBLIC)` we could just use the function `third`, but that wouldn't work for someone with no middle name.\nThere is a function called `last` in Common Lisp; perhaps that would work.\nWe can experiment:\n\n```lisp\n> (last p) => (PUBLIC)\n\n> (first (last p)) => PUBLIC\n```\n\n<a id=\"tfn01-4\"></a>\nIt turns out that `last` perversely returns a list of the last element, rather than the last element itself.<sup>[4](#fn01-4)</sup>\nThus we need to combine `first` and `last` to pick out the actual last element.\nWe would like to be able to save the work we've done, and give it a proper description, like `last-name`.\nWe could use `setf` to save the last name of `p`, but that wouldn't help determine any other last name.\nInstead we want to define a new function that computes the last name of *any* name that is represented as a list.\nThe next section does just that.",
+      "concepts": [
+        "last",
+        "first",
+        "last-name",
+        "setf"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.4"
+    },
+    {
+      "chunk_id": "chunk-29-defining-new-functions",
+      "topic": "Introduction to defining functions using `defun`",
+      "text": "## 1.5 Defining New Functions\n\nThe special form `defun` stands for \"define function.\"\nIt is used here to define a new function called `last-name`:\n\n```lisp\n(defun last-name (name)\n  \"Select the last name from a name represented as a list.\"\n  (first (last name)))\n```\n\nWe give our new function the name `last-name`. It has a *parameter list* consisting of a single parameter: (`name`).\nThis means that the function takes one argument, which we will refer to as `name`. It also has a *documentation string* that states what the function does. This is not used in any computation, but documentation strings are crucial tools for debugging and understanding large systems.\nThe body of the definition is `(first (last name))`, which is what we used before to pick out the last name of `p`. The difference is that here we want to pick out the last name of any `name`, not just of the particular name `p`.",
+      "concepts": [
+        "defun",
+        "function-definition",
+        "parameter-list",
+        "documentation-string"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.5"
+    },
+    {
+      "chunk_id": "chunk-30-defun-syntax",
+      "topic": "General form of a function definition using `defun`",
+      "text": "In general, a function definition takes the following form (where the documentation string is optional, and all other parts are required):\n\n`(defun` *function-name* (*parameter...*) \n&nbsp;&nbsp;&nbsp;&nbsp;\"*documentation string*\"\n&nbsp;&nbsp;&nbsp;&nbsp;*function-body...*)\n\nThe function name must be a symbol, the parameters are usually symbols (with some complications to be explained later), and the function body consists of one or more expressions that are evaluated when the function is called. The last expression is returned as the value of the function call.",
+      "concepts": [
+        "defun",
+        "function-definition",
+        "function-name",
+        "parameter",
+        "function-body"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.5"
+    },
+    {
+      "chunk_id": "chunk-31-last-name-function-examples",
+      "topic": "Examples of using the `last-name` function",
+      "text": "Once we have defined `last-name`, we can use it just like any other Lisp function:\n\n```lisp\n> (last-name p) => PUBLIC\n\n> (last-name '(Rear Admiral Grace Murray Hopper)) => HOPPER\n\n> (last-name '(Rex Morgan MD)) => MD\n\n> (last-name '(Spot)) => SPOT\n\n> (last-name '(Aristotle)) => ARISTOTLE\n```\n\nThe last three examples point out an inherent limitation of the programming enterprise. When we say `(defun last-name...)` we are not really defining what it means for a person to have a last name; we are just defining an operation on a representation of names in terms of lists. Our intuitions-that MD is a title, Spot is the first name of a dog, and Aristotle lived before the concept of last name was invented-are not represented in this operation. However, we could always change the definition of `last-name` to incorporate these problematic cases.",
+      "concepts": [
+        "last-name",
+        "function-application",
+        "abstraction"
+      ],
+      "chunk_type": "example",
+      "section": "1.5"
+    },
+    {
+      "chunk_id": "chunk-32-first-name-function",
+      "topic": "Defining and using the `first-name` function",
+      "text": "We can also define the function `first-name`.\nEven though the definition is trivial (it is the same as the function `first`), it is still good practice to define `first-name` explicitly. Then we can use the function `first-name` when we are dealing with names, and `first` when we are dealing with arbitrary lists. The computer will perform the same operation in each case, but we as programmers (and readers of programs) will be less confused. Another advantage of defining specific functions like `first-name` is that if we decide to change the representation of names we will only have to change the definition of `first-name`. This is a much easier task than hunting through a large program and changing the uses of `first` that refer to names, while leaving other uses alone.",
+      "concepts": [
+        "first-name",
+        "code-readability",
+        "abstraction",
+        "code-maintainability"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.5"
+    },
+    {
+      "chunk_id": "chunk-33-first-name-function-definition-and-examples",
+      "topic": "Definition and usage examples of the `first-name` function",
+      "text": "```lisp\n(defun first-name (name)\n  \"Select the first name from a name represented as a list.\"\n  (first name))\n\n> p => (JOHN Q PUBLIC)\n\n> (first-name p) => JOHN\n\n> (first-name '(Wilma Flintstone)) => WILMA\n\n> (setf names '((John Q Public) (Malcolm X)\n              (Admiral Grace Murray Hopper) (Spot)\n              (Aristotle) (A A Milne) (Z Z Top)\n              (Sir Larry Olivier) (Miss Scarlet))) =>\n\n((JOHN Q PUBLIC) (MALCOLM X) (ADMIRAL GRACE MURRAY HOPPER)\n (SPOT) (ARISTOTLE) (A A MILNE) (Z Z TOP) (SIR LARRY OLIVIER)\n (MISS SCARLET))\n\n> (first-name (first names)) => JOHN\n```\n\nIn the last expression we used the function `first` to pick out the first element in a list of names, and then the function `first-name` to pick out the first name of that element. We could also have said `(first (first names))` or even `(first (first-name names))` and still have gotten `JOHN`, but we would not be accurately representing what is being considered a name and what is being considered a list of names.",
+      "concepts": [
+        "first-name",
+        "first",
+        "function-composition",
+        "data-representation"
+      ],
+      "chunk_type": "example",
+      "section": "1.5"
+    },
+    {
+      "chunk_id": "chunk-34-testing-functions-with-mapcar",
+      "topic": "Testing functions using mapcar",
+      "text": "One good thing about defining a list of names, as we did above, is that it makes it easier to test our functions.\nConsider the following expression, which can be used to test the `last-name` function:\n\n```lisp\n> (mapcar #'last-name names)\n(PUBLIC X HOPPER SPOT ARISTOTLE MILNE TOP OLIVIER SCARLET)\n```\n\nThe funny `#'` notation maps from the name of a function to the function itself.\nThis is analogous to `'x` notation.\nThe built-in function `mapcar` is passed two arguments, a function and a list.\nIt returns a list built by calling the function on every element of the input list.\nIn other words, the `mapcar` call above is equivalent to:\n\n```lisp\n(list (last-name (first names))\n      (last-name (second names))\n      (last-name (third names))\n      ...)\n```",
+      "concepts": [
+        "mapcar",
+        "function-application",
+        "function-testing"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-35-mapcar-function-details",
+      "topic": "Explanation of mapcar function and its historical context",
+      "text": "`mapcar`'s name comes from the fact that it \"maps\" the function across each of the arguments.\nThe `car` part of the name refers to the Lisp function `car`, an old name for `first`.\n`cdr` is the old name for `rest`.\nThe names stand for \"contents of the address register\" and \"contents of the decrement register,\" the instructions that were used in the first implementation of Lisp on the IBM 704.\nI'm sure you'll agree that `first` and `rest` are much better names, and they will be used instead of `car` and `cdr` whenever we are talking about lists.\nHowever, we will continue to use `car` and `cdr` on occasion when we are considering a pair of values that are not considered as a list.\nBeware that some programmers still use `car` and `cdr` for lists as well.",
+      "concepts": [
+        "mapcar",
+        "car",
+        "cdr",
+        "first",
+        "rest",
+        "lisp-history"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-36-mapcar-examples",
+      "topic": "Examples of using mapcar with different functions and arguments",
+      "text": "Here are some more examples of `mapcar`:\n\n```lisp\n> (mapcar #'- '(1 2 3 4)) => (-1 -2 -3 -4)\n\n> (mapcar #'+ '(1 2 3 4) '(10 20 30 40)) => (11 22 33 44)\n```\n\nThis last example shows that `mapcar` can be passed three arguments, in which case the first argument should be a binary function, which will be applied to corresponding elements of the other two lists.\nIn general, `mapcar` expects an *n*-ary function as its first argument, followed by *n* lists.\nIt first applies the function to the argument list obtained by collecting the first element of each list.\nThen it applies the function to the second element of each list, and so on, until one of the lists is exhausted.\nIt returns a list of all the function values it has computed.",
+      "concepts": [
+        "mapcar",
+        "n-ary-functions",
+        "function-application"
+      ],
+      "chunk_type": "example",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-37-testing-first-name-with-mapcar",
+      "topic": "Testing the first-name function and introducing titles",
+      "text": "Now that we understand `mapcar`, let's use it to test the `first-name` function:\n\n```lisp\n> (mapcar #'first-name names)\n(JOHN MALCOLM ADMIRAL SPOT ARISTOTLE A Z SIR MISS)\n```\n\nWe might be disappointed with these results.\nSuppose we wanted a version of `first-name` which ignored titles like Admiral and Miss, and got to the \"real\" first name.\nWe could proceed as follows:\n\n```lisp\n(defparameter *titles*\n  '(Mr Mrs Miss Ms Sir Madam Dr Admiral Major General)\n  \"A list of titles that can appear at the start of a name.\")\n```",
+      "concepts": [
+        "mapcar",
+        "first-name-function",
+        "defparameter",
+        "special-variables"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-38-defparameter-explanation",
+      "topic": "Explanation of defparameter and special variables",
+      "text": "We've introduced another new special form, `defparameter`, which defines a parameter-a variable that does not change over the course of a computation, but that might change when we think of new things to add (like the French Mme or the military Lt.).\nThe `defparameter` form both gives a value to the variable and makes it possible to use the variable in subsequent function definitions.\nIn this example we have exercised the option of providing a documentation string that describes the variable.\nIt is a widely used convention among Lisp programmers to mark special variables by spelling their names with asterisks on either end.\nThis is just a convention; in Lisp, the asterisk is just another character that has no particular meaning.",
+      "concepts": [
+        "defparameter",
+        "special-variables",
+        "documentation-strings"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-39-redefining-first-name-with-if",
+      "topic": "Redefining first-name using if and member to handle titles",
+      "text": "<a id=\"tfn01-5\"></a>\nWe next give a new definition for `first-name`, which supersedes the previous definition.<sup>[5](#fn01-5)</sup>\nThis definition says that if the first word of the name is a member of the list of titles, then we want to ignore that word and return the `first-name` of the rest of the words in the name.\nOtherwise, we use the first word, just as before.\nAnother built-in function, `member`, tests to see if its first argument is an element of the list passed as the second argument.\n\nThe special form `if` has the form `(if` *test then-part else-part*).\nThere are many special forms for performing conditional tests in Lisp; `if` is the most appropriate for this example.\nAn `if` form is evaluated by first evaluating the *test* expression.\nIf it is true, the *then-part* is evaluated and returned as the value of the `if` form; otherwise the *else-part* is evaluated and returned.\nWhile some languages insist that the value of a conditional test must be either `true` or `false`, Lisp is much more forgiving.\nThe test may legally evaluate to any value at all.\nOnly the value `nil` is considered false; all other values are considered true.\nIn the definition of `first-name` below, the function `member` will return a non-nil (hence true) value if the first element of the name is in the list of titles, and will return `nil` (hence false) if it is not.\nAlthough all non-nil values are considered true, by convention the constant `t` is usually used to represent truth.",
+      "concepts": [
+        "first-name-function",
+        "if-special-form",
+        "member-function",
+        "truthiness",
+        "nil"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-40-recursive-first-name-definition",
+      "topic": "Recursive definition of first-name function",
+      "text": "```lisp\n(defun first-name (name)\n  \"Select the first name from a name represented as a list.\"\n  (if (member (first name) *titles*)\n      (first-name (rest name))\n      (first name)))\n```\n\nWhen we map the new `first-name` over the list of names, the results are more encouraging.\nIn addition, the function gets the \"right\" result for `'(Madam Major General Paula Jones)` by dropping off titles one at a time.\n\n```lisp\n> (mapcar #'first-name names)\n(JOHN MALCOLM GRACE SPOT ARISTOTLE A Z LARRY SCARLET)\n\n> (first-name '(Madam Major General Paula Jones))\nPAULA\n```",
+      "concepts": [
+        "first-name-function",
+        "recursion",
+        "mapcar",
+        "function-definition"
+      ],
+      "chunk_type": "example",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-41-tracing-function-execution",
+      "topic": "Using trace and untrace to understand function execution",
+      "text": "We can see how this works by *tracing* the execution of `first-name`, and seeing the values passed to and returned from the function.\nThe special forms `trace` and `untrace` are used for this purpose.\n\n```lisp\n> (trace first-name)\n(FIRST-NAME)\n\n> (first-name '(John Q Public))\n(1 ENTER FIRST-NAME: (JOHN Q PUBLIC))\n(1 EXIT FIRST-NAME: JOHN)\nJOHN\n```\n\nWhen `first-name` is called, the definition is entered with the single argument, `name`, taking on the value `(JOHN Q PUBLIC)`.\nThe value returned is `JOHN`.\nTrace prints two lines indicating entry and exit from the function, and then Lisp, as usual, prints the final result, `JOHN`.\n\nThe next example is more complicated.\nThe function `first-name` is used four times.\nFirst, it is entered with `name` bound to `(Madam Major General Paula Jones)`.\nThe first element of this list is `Madam`, and since this is a member of the list of titles, the result is computed by calling `first-name` again on the rest of the name-`(Major General Paula Jones)`.\nThis process repeats two more times, and we finally enter `first-name` with name bound to (`Paula Jones`).\nSince `Paula` is not a title, it becomes the result of this call to `first-name`, and thus the result of all four calls, as trace shows.\nOnce we are happy with the workings of `first-name`, the special form `untrace` turns off tracing.",
+      "concepts": [
+        "trace",
+        "untrace",
+        "function-execution",
+        "recursion",
+        "first-name-function"
+      ],
+      "chunk_type": "example",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-42-trace-example-and-untrace",
+      "topic": "Detailed trace example and untracing the function",
+      "text": "```lisp\n> (first-name '(Madam Major General Paula Jones)) =>\n(1 ENTER FIRST-NAME: (MADAM MAJOR GENERAL PAULA JONES))\n  (2 ENTER FIRST-NAME: (MAJOR GENERAL PAULA JONES))\n    (3 ENTER FIRST-NAME: (GENERAL PAULA JONES))\n      (4 ENTER FIRST-NAME: (PAULA JONES))\n      (4 EXIT FIRST-NAME: PAULA)\n    (3 EXIT FIRST-NAME: PAULA)\n  (2 EXIT FIRST-NAME: PAULA)\n(1 EXIT FIRST-NAME: PAULA)\nPAULA\n\n> (untrace first-name) => (FIRST-NAME)\n\n> (first-name '(Mr Blue Jeans)) => BLUE\n```",
+      "concepts": [
+        "trace",
+        "untrace",
+        "function-execution",
+        "recursion",
+        "first-name-function"
+      ],
+      "chunk_type": "example",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-43-understanding-recursion",
+      "topic": "Explanation of recursion and how to think about it",
+      "text": "The function `first-name` is said to be *recursive* because its definition includes a call to itself.\nProgrammers who are new to the concept of recursion sometimes find it mysterious.\nBut recursive functions are really no different from nonrecursive ones.\nAny function is required to return the correct value for the given input(s).\nAnother way to look at this requirement is to break it into two parts: a function must return a value, and it must not return any incorrect values.\nThis two-part requirement is equivalent to the first one, but it makes it easier to think about and design function definitions.",
+      "concepts": [
+        "recursion",
+        "function-correctness"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-44-abstract-description-of-recursion",
+      "topic": "Abstract description of the first-name problem and recursive solution",
+      "text": "Next I show an abstract description of the `first-name` problem, to emphasize the design of the function and the fact that recursive solutions are not tied to Lisp in any way:\n\n`function first-name(name):`\n&nbsp;&nbsp;&nbsp;&nbsp;`if` *the first element of name is a title*\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`then` *do something complicated to get the first-name*\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`else` *return the first element of the name*\n\nThis breaks up the problem into two cases.\nIn the second case, we return an answer, and it is in fact the correct answer.\nWe have not yet specified what to do in the first case.\nBut we do know that it has something to do with the rest of the name after the first element, and that what we want is to extract the first name out of those elements.\nThe leap of faith is to go ahead and use `first-name`, even though it has not been fully defined yet:\n\n`function first-name(name):`\n&nbsp;&nbsp;&nbsp;&nbsp;`if` *the first element of name is a title*\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`then` *return the* `first-name` *of the rest of the name*\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`else` *return the first element of the name*",
+      "concepts": [
+        "recursion",
+        "problem-solving",
+        "first-name-function"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-45-recursion-correctness-and-termination",
+      "topic": "Demonstrating the correctness and termination of the recursive first-name function",
+      "text": "Now the first case in `first-name` is recursive, and the second case remains unchanged.\nWe already agreed that the second case returns the correct answer, and the first case only returns what `first-name` returns.\nSo `first-name` as a whole can only return correct answers.\nThus, we're halfway to showing that the function is correct; the other half is to show that it eventually returns some answer.\nBut every recursive call chops off the first element and looks at the rest, so for an *n*-element list there can be at most *n* recursive calls.\nThis completes the demonstration that the function is correct.\nProgrammers who learn to think this way find recursion to be a valuable tool rather than a confusing mystery.",
+      "concepts": [
+        "recursion",
+        "function-correctness",
+        "termination",
+        "first-name-function"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.6"
+    },
+    {
+      "chunk_id": "chunk-46-higher-order-functions-introduction",
+      "topic": "Introduction to Higher-Order Functions",
+      "text": "Functions in Lisp can not only be \"called,\" or applied to arguments, they can also be manipulated just like any other kind of object.\nA function that takes another function as an argument is called a *higher-order function.*\n`mapcar` is an example.\nTo demonstrate the higher-order-function style of programming, we will define a new function called `mappend`. It takes two arguments, a function and a list.\n`mappend` maps the function over each element of the list and appends together all the results.\nThe first definition follows immediately from the description and the fact that the function `apply` can be used to apply a function to a list of arguments.",
+      "concepts": [
+        "higher-order-functions",
+        "mapcar",
+        "mappend",
+        "apply"
+      ],
+      "chunk_type": "definition",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-47-mappend-definition",
+      "topic": "Definition of mappend",
+      "text": "```lisp\n(defun mappend (fn the-list)\n  \"Apply fn to each element of list and append the results.\"\n  (apply #'append (mapcar fn the-list)))\n```",
+      "concepts": [
+        "mappend",
+        "defun",
+        "apply",
+        "append",
+        "mapcar"
+      ],
+      "chunk_type": "example",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-48-apply-mappend-examples",
+      "topic": "Examples of apply and mappend",
+      "text": "Now we experiment a little to see how `apply` and `mappend` work.\nThe first example applies the addition function to a list of four numbers.\n\n```lisp\n> (apply #'+ '(1 2 3 4)) => 10\n```\n\nThe next example applies append to a list of two arguments, where each argument is a list.\nIf the arguments were not lists, it would be an error.\n\n```lisp\n> (apply #'append '((1 2 3) (a b c))) => (1 2 3 A B C)\n```\n\nNow we define a new function, `self-and-double`, and apply it to a variety of arguments.\n\n```lisp\n> (defun self-and-double (x) (list x (+ x x)))\n\n> (self-and-double 3) => (3 6)\n\n> (apply #'self-and-double '(3)) => (3 6)\n```\n\nIf we had tried to apply `self-and-double` to a list of more than one argument, or to a list that did not contain a number, it would be an error, just as it would be an error to evaluate (`self-and-double 3 4`) or (`self-and-double 'Kim`).\nNow let's return to the mapping functions:\n\n```lisp\n> (mapcar #'self-and-double '(1 10 300)) => ((1 2) (10 20) (300 600))\n\n> (mappend #'self-and-double '(1 10 300)) => (1 2 10 20 300 600)\n```",
+      "concepts": [
+        "apply",
+        "mappend",
+        "append",
+        "self-and-double",
+        "mapcar",
+        "defun"
+      ],
+      "chunk_type": "example",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-49-mapcar-vs-mappend",
+      "topic": "Comparison of mapcar and mappend",
+      "text": "When `mapcar` is passed a function and a list of three arguments, it always returns a list of three values.\nEach value is the result of calling the function on the respective argument.\nIn contrast, when `mappend` is called, it returns one big list, which is equal to all the values that `mapcar` would generate appended together.\nIt would be an error to call `mappend` with a function that didn't return lists, because `append` expects to see lists as its arguments.",
+      "concepts": [
+        "mapcar",
+        "mappend",
+        "append"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-50-numbers-and-negations-example",
+      "topic": "Example: numbers-and-negations function",
+      "text": "Now consider the following problem: given a list of elements, return a list consisting of all the numbers in the original list and the negation of those numbers.\nFor example, given the list (`testing 1 2 3 test`), return (`1 -1 2 -2 3 -3`).\nThis problem can be solved very easily using `mappend` as a component:\n\n```lisp\n(defun numbers-and-negations (input)\n  \"Given a list, return only the numbers and their negations.\"\n  (mappend #'number-and-negation input))\n\n(defun number-and-negation (x)\n  \"If x is a number, return a list of x and -x.\"\n  (if (numberp x)\n      (list x (- x))\n      nil))\n\n> (numbers-and-negations '(testing 1 2 3 test)) => (1 -1 2 -2 3 -3)\n```",
+      "concepts": [
+        "mappend",
+        "numbers-and-negations",
+        "number-and-negation",
+        "numberp",
+        "defun"
+      ],
+      "chunk_type": "example",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-51-mappend-alternate-definition",
+      "topic": "Alternate definition of mappend using funcall",
+      "text": "The alternate definition of `mappend` shown in the following doesn't make use of `mapcar;` instead it builds up the list one element at a time:\n\n```lisp\n(defun mappend (fn the-list)\n  \"Apply fn to each element of list and append the results.\"\n  (if (null the-list)\n      nil\n      (append (funcall fn (first the-list))\n              (mappend fn (rest the-list)))))\n```",
+      "concepts": [
+        "mappend",
+        "funcall",
+        "append",
+        "defun"
+      ],
+      "chunk_type": "example",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-52-funcall-explanation",
+      "topic": "Explanation of funcall",
+      "text": "`funcall` is similar to `apply;` it too takes a function as its first argument and applies the function to a list of arguments, but in the case of `funcall`, the arguments are listed separately:\n\n```lisp\n> (funcall #'+ 2 3) => 5\n\n> (apply #'+ '(2 3)) => 5\n\n> (funcall #'+ '(2 3)) => *Error: (2 3) is not a number.*\n```\n\nThese are equivalent to `(+ 2 3)`, `(+ 2 3)`, and `(+ '(2 3))`, respectively.",
+      "concepts": [
+        "funcall",
+        "apply"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-53-lambda-introduction",
+      "topic": "Introduction to Lambda Expressions",
+      "text": "So far, every function we have used has been either predefined in Common Lisp or introduced with a `defun`, which pairs a function with a name.\nIt is also possible to introduce a function without giving it a name, using the special syntax `lambda`.\n\nThe name *lambda* comes from the mathematician Alonzo Church's notation for functions (Church 1941).\nLisp usually prefers expressive names over terse Greek letters, but lambda is an exception.\nA better name would be `make-function`.\nLambda derives from the notation in Russell and Whitehead's *Principia Mathematica,* which used a caret over bound variables: *x&#x302;*(*x + x*).\n\nChurch wanted a one-dimensional string, so he moved the caret in front: *^x*(*x + x*).\nThe caret looked funny with nothing below it, so Church switched to the closest thing, an uppercase lambda, *&Lambda;x*(*x + x*).\nThe &Lambda; was easily confused with other symbols, so eventually the lowercase lambda was substituted: *&lambda;x*(*x + x*).\nJohn McCarthy was a student of Church's at Princeton, so when McCarthy invented Lisp in 1958, he adopted the lambda notation.\nThere were no Greek letters on the keypunches of that era, so McCarthy used (`lambda (x) (+ x x)`), and it has survived to this day.\nIn general, the form of a lambda expression is\n\n`(lambda` (*parameters...*) *body...*)",
+      "concepts": [
+        "lambda-expressions",
+        "defun"
+      ],
+      "chunk_type": "definition",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-54-lambda-expression-evaluation",
+      "topic": "Lambda Expressions and Evaluation",
+      "text": "A lambda expression is just a nonatomic *name* for a function, just as `append` is an atomic name for a built-in function.\nAs such, it is appropriate for use in the first position of a function call, but if we want to get at the actual function, rather than its name, we still have to use the `#'` notation.\nFor example:\n\n```lisp\n> ((lambda (x) (+ x 2)) 4) => 6\n\n> (funcall #'(lambda (x) (+ x 2)) 4) => 6\n```\n\nTo understand the distinction we have to be clear on how expressions are evaluated in Lisp.\nThe normal rule for evaluation states that symbols are evaluated by looking up the value of the variable that the symbol refers to.\nSo the `x` in `(+ x 2)` is evaluated by looking up the value of the variable named `x`.\nA list is evaluated in one of two ways.\nIf the first element of the list is a special form operator, then the list is evaluated according to the syntax rule for that special form.\nOtherwise, the list represents a function call.\nThe first element is evaluated in a unique way, as a function.\nThis means it can either be a symbol or a lambda expression.\nIn either case, the function named by the first element is applied to the values of the remaining elements in the list.\nThese values are determined by the normal evaluation rules.\nIf we want to refer to a function in a position other than the first element of a function call, we have to use the `#'` notation.\nOtherwise, the expressions will be evaluated by the normal evaluation rule, and will not be treated as functions.\nFor example:\n\n```lisp\n> append => *Error: APPEND is not a bound variable*\n\n> (lambda (x) (+ x 2)) => *Error: LAMBDA is not a function*\n```",
+      "concepts": [
+        "lambda-expressions",
+        "append",
+        "funcall"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-55-lambda-examples",
+      "topic": "Examples of Lambda Expressions",
+      "text": "Here are some more examples of the correct use of functions:\n\n```lisp\n> (mapcar #'(lambda (x) (+ x x))\n         '(1 2 3 4 5)) =>\n(2 4 6 8 10)\n\n> (mappend #'(lambda (l) (list l (reverse l)))\n           '((1 2 3) (a b c))) =>\n((1 2 3) (3 2 1) (A B C) (C B A))\n```",
+      "concepts": [
+        "lambda-expressions",
+        "mapcar",
+        "mappend",
+        "reverse"
+      ],
+      "chunk_type": "example",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-56-lambda-usefulness",
+      "topic": "Usefulness of Lambda Expressions",
+      "text": "Programmers who are used to other languages sometimes fail to see the point of lambda expressions.\nThere are two reasons why lambda expressions are very useful.\n\nFirst, it can be messy to clutter up a program with superfluous names.\nJust as it is clearer to write `(a+b)*(c+d)` rather than to invent variable names like `temp1` and `temp2` to hold `a+b` and `c+d`, so it can be clearer to define a function as a lambda expression rather than inventing a name for it.\n\nSecond, and more importantly, lambda expressions make it possible to create new functions at run time.\nThis is a powerful technique that is not possible in most programming languages.\nThese run-time functions, known as *closures,* will be covered in section 3.16.",
+      "concepts": [
+        "lambda-expressions",
+        "closures"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.7"
+    },
+    {
+      "chunk_id": "chunk-57-introduction-to-other-data-types",
+      "topic": "Introduction to Lisp data types beyond numbers, symbols, lists, and functions",
+      "text": "## 1.8 Other Data Types\n\nSo far we have seen just four kinds of Lisp objects: numbers, symbols, lists, and functions.\nLisp actually defines about 25 different types of objects: vectors, arrays, structures, characters, streams, hash tables, and others.\nAt this point we will introduce one more, the string.\nAs you can see in the following, strings, like numbers, evaluate to themselves.\nStrings are used mainly for printing out messages, while symbols are used for their relationships to other objects, and to name variables.\nThe printed representation of a string has a double quote mark `(\")` at each end.",
+      "concepts": [
+        "lisp-objects",
+        "numbers",
+        "symbols",
+        "lists",
+        "functions",
+        "vectors",
+        "arrays",
+        "structures",
+        "characters",
+        "streams",
+        "hash-tables",
+        "string"
+      ],
+      "chunk_type": "definition",
+      "section": "1.8"
+    },
+    {
+      "chunk_id": "chunk-58-string-examples",
+      "topic": "Examples of string usage in Lisp",
+      "text": "```lisp\n> \"a string\" => \"a string\"\n\n> (length \"a string\") => 8\n\n> (length \"\") => 0\n```",
+      "concepts": [
+        "string",
+        "length-function"
+      ],
+      "chunk_type": "example",
+      "section": "1.8"
+    },
+    {
+      "chunk_id": "chunk-59-lisp-evaluation-summary",
+      "topic": "Summary of the Lisp evaluation rule.",
+      "text": "## 1.9 Summary: The Lisp Evaluation Rule\n\nWe can now summarize the evaluation rule for Lisp.\n\n*   Every expression is either a *list* or an *atom.*\n\n*   Every list to be evaluated is either a *special form expression* or a *function application*.",
+      "concepts": [
+        "lisp-evaluation",
+        "list",
+        "atom",
+        "special-form-expression",
+        "function-application"
+      ],
+      "chunk_type": "overview",
+      "section": "1.9"
+    },
+    {
+      "chunk_id": "chunk-60-special-form-expressions",
+      "topic": "Explanation of special form expressions in Lisp.",
+      "text": "*   A *special form expression* is defined to be a list whose first element is a special form operator.\nThe expression is evaluated according to the operator's idiosyncratic evaluation rule.\nFor example, the evaluation rule for `setf` is to evaluate the second argument according to the normal evaluation rule, set the first argument to that value, and return the value as the result.\nThe rule for `defun` is to define a new function, and return the name of the function.\nThe rule for quote is to return the first argument unevaluated.\nThe notation `'x` is actually an abbreviation for the special form expression `(quote x)`. Similarly, the notation `#'f` is an abbreviation for the special form expression `(function f)`.\n\n```lisp\n'John ≡ (quote John) => JOHN\n\n(setf p 'John) => JOHN\n\n(defun twice (x) (+ x x)) => TWICE\n\n(if (= 2 3) (error) (+ 5 6)) => 11\n```",
+      "concepts": [
+        "special-form-expression",
+        "special-form-operator",
+        "evaluation-rule",
+        "setf",
+        "defun",
+        "quote",
+        "function"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.9"
+    },
+    {
+      "chunk_id": "chunk-61-function-application-evaluation",
+      "topic": "Explanation of function application evaluation in Lisp.",
+      "text": "*   A *function application* is evaluated by first evaluating the arguments (the rest of the list) and then finding the function named by the first element of the list and applying it to the list of evaluated arguments.\n\n```lisp\n(+ 2 3) => 5\n(- (+ 90 9) (+ 50 5 (length '(Pat Kim)))) => 42\n```\n\nNote that if `'(Pat Kim)` did not have the quote, it would be treated as a function application of the function `pat` to the value of the variable `kim`.",
+      "concepts": [
+        "function-application",
+        "evaluation",
+        "arguments",
+        "function"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.9"
+    },
+    {
+      "chunk_id": "chunk-62-atoms-symbols-nonsymbols",
+      "topic": "Explanation of atoms, symbols, and nonsymbols in Lisp.",
+      "text": "*   Every atom is either a *symbol* or a *nonsymbol.*\n\n*   A *symbol* evaluates to the most recent value that has been assigned to the variable named by that symbol.\nSymbols are composed of letters, and possibly digits and, rarely, punctuation characters.\n<a id=\"tfn01-6\"></a>\nTo avoid confusion, we will use symbols composed mostly of the letters `a-z` and the `'-'` character, with a few exceptions.<sup>[6](#fn01-6)</sup>\n\n```lisp\nnames\np\n*print-pretty*\n```\n\n*   A *nonsymbol atom* evaluates to itself.\nFor now, numbers and strings are the only such non-symbol atoms we know of.\nNumbers are composed of digits, and possibly a decimal point and sign.\nThere are also provisions for scientific notation, rational and complex numbers, and numbers with different bases, but we won't describe the details here.\nStrings are delimited by double quote marks on both sides.\n\n```lisp\n42 => 42\n-273.15 => -273.15\n\"a string\" => \"a string\"\n```",
+      "concepts": [
+        "atom",
+        "symbol",
+        "nonsymbol-atom",
+        "variable",
+        "number",
+        "string"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.9"
+    },
+    {
+      "chunk_id": "chunk-63-reading-vs-evaluating",
+      "topic": "Distinction between reading and evaluating expressions in Lisp.",
+      "text": "There are some minor details of Common Lisp that complicate the evaluation rules, but this definition will suffice for now.\n\nOne complication that causes confusion for beginning Lispers is the difference between *reading* and *evaluating* an expression.\nBeginners often imagine that when they type an expression, such as\n\n```lisp\n> (+ (* 3 4) (* 5 6))\n```\n\nthe Lisp system first reads the (`+`, then fetches the addition function, then reads `(* 3 4)` and computes `12`, then reads `(* 5 6)` and computes 30, and finally computes 42.\nIn fact, what actually happens is that the system first reads the entire expression, the list `(+ (* 3 4) (* 5 6))`. Only after it has been read does the system begin to evaluate it.\nThis evaluation can be done by an interpreter that looks at the list directly, or it can be done by a compiler that translates the list into machine language instructions and then executes those instructions.",
+      "concepts": [
+        "common-lisp",
+        "evaluation-rules",
+        "reading",
+        "evaluating",
+        "expression",
+        "interpreter",
+        "compiler"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.9"
+    },
+    {
+      "chunk_id": "chunk-64-printed-vs-internal-representation",
+      "topic": "Printed representation vs. internal representation of numbers and strings.",
+      "text": "We can see now that it was a little imprecise to say, \"Numbers are composed of digits, and possibly a decimal point and sign.\" It would be more precise to say that the printed representation of a number, as expected by the function read and as produced by the function print, is composed of digits, and possibly a decimal point and sign.\nThe internal representation of a number varies from one computer to another, but you can be sure that it will be a bit pattern in a particular memory location, and it will no longer contain the original characters used to represent the number in decimal notation.\nSimilarly, it is the printed representation of a string that is surrounded by double quote marks; the internal representation is a memory location marking the beginning of a vector of characters.\n\nBeginners who fail to grasp the distinction between reading and evaluating may have a good model of what expressions evaluate to, but they usually have a terrible model of the efficiency of evaluating expressions.\nOne student used only one-letter variable names, because he felt that it would be faster for the computer to look up a one-letter name than a multiletter name.\nWhile it may be true that shorter names can save a microsecond at read time, this makes no difference at all at evaluation time.\nEvery variable, regardless of its name, is just a memory location, and the time to access the location does not depend on the name of the variable.",
+      "concepts": [
+        "printed-representation",
+        "internal-representation",
+        "number",
+        "string",
+        "variable",
+        "evaluation-efficiency"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.9"
+    },
+    {
+      "chunk_id": "chunk-65-lisp-differences-introduction",
+      "topic": "Introduction to what makes Lisp different",
+      "text": "## 1.10 What Makes Lisp Different?\n\nWhat is it that sets Lisp apart from other languages?\nWhy is it a good language for AI applications?\nThere are at least eight important factors:\n\n*   Built-in Support for Lists\n*   Automatic Storage Management\n*   Dynamic Typing\n*   First-Class Functions\n*   Uniform Syntax\n*   Interactive Environment\n*   Extensibility\n*   History\n\nIn sum, these factors allow a programmer to delay making decisions.\nIn the example dealing with names, we were able to use the built-in list functions to construct and manipulate names without making a lot of explicit decisions about their representation.\nIf we decided to change the representation, it would be easy to go back and alter parts of the program, leaving other parts unchanged.\n\nThis ability to delay decisions-or more accurately, to make temporary, nonbinding decisions-is usually a good thing, because it means that irrelevant details can be ignored.\nThere are also some negative points of delaying decisions.\nFirst, the less we tell the compiler, the greater the chance that it may have to produce inefficient code.\nSecond, the less we tell the compiler, the less chance it has of noticing inconsistencies and warning us.\nErrors may not be detected until the program is run.\nLet's consider each factor in more depth, weighing the advantages and disadvantages:",
+      "concepts": [
+        "lisp",
+        "ai-applications",
+        "list-functions",
+        "compiler"
+      ],
+      "chunk_type": "overview",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-66-built-in-support-for-lists",
+      "topic": "Built-in support for lists in Lisp",
+      "text": "*   *Built-in Support for Lists.*\nThe list is a very versatile data structure, and while lists can be implemented in any language, Lisp makes it easy to use them.\nMany AI applications involve lists of constantly changing size, making fixed-length data structures like vectors harder to use.\nEarly versions of Lisp used lists as their only aggregate data structure.\nCommon Lisp provides other types as well, because lists are not always the most efficient choice.",
+      "concepts": [
+        "built-in-support-for-lists",
+        "data-structure",
+        "lisp",
+        "ai-applications",
+        "vectors",
+        "common-lisp"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-67-automatic-storage-management",
+      "topic": "Automatic Storage Management in Lisp",
+      "text": "*   *Automatic Storage Management.*\nThe Lisp programmer needn't keep track of memory allocation; it is all done automatically.\nThis frees the programmer of a lot of effort, and makes it easy to use the functional style of programming.\nOther languages present programmers with a choice.\nVariables can be allocated on the stack, meaning that they are created when a procedure is entered, and disappear when the procedure is done.\nThis is an efficient use of storage, but it rules out functions that return complex values.\nThe other choice is for the programmer to explicitly allocate and free storage.\nThis makes the functional style possible but can lead to errors.",
+      "concepts": [
+        "automatic-storage-management",
+        "memory-allocation",
+        "lisp",
+        "functional-programming",
+        "stack-allocation",
+        "heap-allocation"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-68-matrix-multiplication-example",
+      "topic": "Example comparing matrix multiplication in Pascal and Lisp",
+      "text": "For example, consider the trivial problem of computing the expression *a* x (b + c), where *a*, *b*, and *c* are numbers.\nThe code is trivial in any language; here it is in Pascal and in Lisp:\n\n```pascal\n/* Pascal */\na * (b + c)\n```\n\n```lisp\n;;; Lisp\n(* a (+ b c))\n```\n\nThe only difference is that Pascal uses infix notation and Lisp uses prefix.\nNow consider computing *a \\* (b + c)* when *a*, *b*, and *c* are matrices.\nAssume we have procedures for matrix multiplication and addition.\nIn Lisp the form is exactly the same; only the names of the functions are changed.\nIn Pascal we have the choice of approaches mentioned before.\nWe could declare temporary variables to hold intermediate results on the stack, and replace the functional expression with a series of procedure calls:\n\n```pascal\n/* Pascal */\nvar temp, result: matrix;\nadd(b,c,temp);\nmult(a,temp,result);\nreturn(result);\n```\n\n```lisp\n;;; Lisp\n(mult a (add b c))\n```\n\nThe other choice is to write Pascal functions that allocate new matrices on the heap.\nThen one can write nice functional expressions like `mult(a,add(b,c))` even in Pascal.\nHowever, in practice it rarely works this nicely, because of the need to manage storage explicitly:\n\n```pascal\n/* Pascal */\nvar a,b,c,x,y: matrix;\nx := add(b.c);\ny := mult(a,x);\nfree(x);\nreturn(y);\n```\n\n```lisp\n;;; Lisp\n(mult a (add b c))\n```\n\nIn general, deciding which structures to free is a difficult task for the Pascal programmer.\nIf the programmer misses some, then the program may run out of memory.\nWorse, if the programmer frees a structure that is still being used, then strange errors can occur when that piece of memory is reallocated.\nLisp automatically allocates and frees structures, so these two types of errors can *never* occur.",
+      "concepts": [
+        "matrix-multiplication",
+        "pascal",
+        "lisp",
+        "infix-notation",
+        "prefix-notation",
+        "stack-allocation",
+        "heap-allocation",
+        "memory-management"
+      ],
+      "chunk_type": "example",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-69-dynamic-typing",
+      "topic": "Dynamic Typing in Lisp",
+      "text": "*   *Dynamic Typing.*\nLisp programmers don't have to provide type declarations, because the language keeps track of the type of each object at run time, rather than figuring out all types at compile time.\nThis makes Lisp programs shorter and hence faster to develop, and it also means that functions can often be extended to work for objects to which they were not originally intended to apply.\nIn Pascal, we can write a procedure to sort an array of 100 integers, but we can't use that same procedure to sort 200 integers, or 100 strings.\nIn Lisp, one `sort` fits all.\nOne way to appreciate this kind of flexibility is to see how hard it is to achieve in other languages.\nIt is impossible in Pascal; in fact, the language Modula was invented primarily to fix this problem in Pascal.\nThe language Ada was designed to allow flexible generic functions, and a book by Musser and Stepanov (1989) describes an Ada package that gives some of the functionality of Common Lisp's sequence functions.\nBut the Ada solution is less than ideal: it takes a 264-page book to duplicate only part of the functionality of the 20-page chapter 14 from [Steele (1990)](bibliography.md#bb1160), and Musser and Stepanov went through five Ada compilers before they found one that would correctly compile their package.\nAlso, their package is considerably less powerful, since it does not handle vectors or optional keyword parameters.\nIn Common Lisp, all this functionality comes for free, and it is easy to add more.\nOn the other hand, dynamic typing means that some errors will go undetected until run time.\nThe great advantage of strongly typed languages is that they are able to give error messages at compile time.\nThe great frustration with strongly typed languages is that they are only able to warn about a small class of errors.\nThey can tell you that you are mistakenly passing a string to a function that expects an integer, but they can't tell you that you are passing an odd number to a function that expects an even number.",
+      "concepts": [
+        "dynamic-typing",
+        "lisp",
+        "type-declarations",
+        "pascal",
+        "modula",
+        "ada",
+        "common-lisp",
+        "strongly-typed-languages"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-70-first-class-functions",
+      "topic": "First-Class Functions in Lisp",
+      "text": "*   *First-Class Functions.*\nA *first-class* object is one that can be used anywhere and can be manipulated in the same ways as any other kind of object.\nIn Pascal or C, for example, functions can be passed as arguments to other functions, but they are not first-class, because it is not possible to create new functions while the program is running, nor is it possible to create an anonymous function without giving it a name.\nIn Lisp we can do both those things using `lambda`.\nThis is explained in section 3.16, page 92.",
+      "concepts": [
+        "first-class-functions",
+        "pascal",
+        "c",
+        "lambda",
+        "anonymous-function",
+        "lisp"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-71-uniform-syntax",
+      "topic": "Uniform Syntax in Lisp",
+      "text": "*   *Uniform Syntax.*\nThe syntax of Lisp programs is simple.\nThis makes the language easy to learn, and very little time is wasted correcting typos.\nIn addition, it is easy to write programs that manipulate other programs or define whole new languages-a very powerful technique.\nThe simple syntax also makes it easy for text editing programs to parse Lisp.\nYour editor program should be able to indent expressions automatically and to show matching parentheses.\nThis is harder to do for languages with complex syntax.\nOn the other hand, some people object to all the parentheses.\nThere are two answers to this objection.\nFirst, consider the alternative: in a language with \"conventional\" syntax, Lisp's parentheses pairs would be replaced either by an implicit operator precedence rule (in the case of arithmetic and logical expressions) or by a `begin/end` pair (in the case of control structures).\nBut neither of these is necessarily an advantage.\nImplicit precedence is notoriously error-prone, and `begin/end` pairs clutter up the page without adding any content.\nMany languages are moving away from `begin/end`: `C` uses `{` and `}`, which are equivalent to parentheses, and several modern functional languages (such as Haskell) use horizontal blank space, with no explicit grouping at all.\nSecond, many Lisp programmers *have* considered the alternative.\nThere have been a number of preprocessors that translate from \"conventional\" syntax into Lisp.\nNone of these has caught on.\nIt is not that Lisp programmers find it *tolerable* to use all those parentheses, rather, they find it *advantageous.*\nWith a little experience, you may too.\nIt is also important that the syntax of Lisp data is the same as the syntax of programs.\nObviously, this makes it easy to convert data to program.\nLess obvious is the time saved by having universal functions to handle input and output.\nThe Lisp functions `read` and `print` will automatically handle any list, structure, string, or number.\nThis makes it trivial to test individual functions while developing your program.\nIn a traditional language like C or Pascal, you would have to write special-purpose functions to read and print each data type you wanted to debug, as well as a special-purpose driver to call the routines.\nBecause this is time-consuming and error-prone, the temptation is to avoid testing altogether.\nThus, Lisp encourages better-tested programs, and makes it easier to develop them faster.",
+      "concepts": [
+        "uniform-syntax",
+        "lisp",
+        "operator-precedence",
+        "c",
+        "haskell",
+        "read-function",
+        "print-function",
+        "data-types",
+        "pascal"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-72-interactive-environment",
+      "topic": "Interactive Environment in Lisp",
+      "text": "*   *Interactive Environment.*\nTraditionally, a programmer would write a complete program, compile it, correct any errors detected by the compiler, and then run and debug it.\nThis is known as the *batch* mode of interaction.\nFor long programs, waiting for the compiler occupied a large portion of the debugging time.\nIn Lisp one normally writes a few small functions at a time, getting feedback from the Lisp system after evaluating each one.\nThis is known as an *interactive* environment.\nWhen it comes time to make a change, only the changed functions need to be recompiled, so the wait is much shorter.\nIn addition, the Lisp programmer can debug by typing in arbitrary expressions at any time.\nThis is a big improvement over editing the program to introduce print statements and recompiling.\nNotice that the distinction between *interactive* and a *batch* languages is separate from the distinction between *interpreted* and *compiled* languages.\nIt has often been stated, incorrectly, that Lisp has an advantage by virtue of being an interpreted language.\nActually, experienced Common Lisp programmers tend to use the compiler almost exclusively.\nThe important point is interaction, not interpretation.\nThe idea of an interactive environment is such a good one that even traditional languages like C and Pascal are starting to offer interactive versions, so this is not an exclusive advantage of Lisp.\nHowever, Lisp still provides much better access to the interactive features.\nA C interpreter may allow the programmer to type in an expression and have it evaluated immediately, but it will not allow the programmer to write a program that, say, goes through the symbol table and finds all the user-defined functions and prints information on them.\nIn C-even interpreted C-the symbol table is just a Cheshire-cat-like invention of the interpreter's imagination that disappears when the program is run.\n<a id=\"tfn01-7\"></a>\nIn Lisp, the symbol table is a first-class object<sup>[7](#fn01-7)</sup> that can be accessed and modified with functions like `read, intern` and `do-symbols`.\nCommon Lisp offers an unusually rich set of useful tools, including over 700 built-in functions (ANSI Common Lisp has over 900).\nThus, writing a new program involves more gathering of existing pieces of code and less writing of new code from scratch.\nIn addition to the standard functions, Common Lisp implementations usually provide extensions for interacting with the editor, debugger, and window system.",
+      "concepts": [
+        "interactive-environment",
+        "batch-mode",
+        "lisp",
+        "compiler",
+        "interpreted-language",
+        "compiled-language",
+        "c",
+        "pascal",
+        "symbol-table",
+        "first-class-object",
+        "read-function",
+        "intern-function",
+        "do-symbols-function",
+        "common-lisp"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-73-extensibility",
+      "topic": "Extensibility of Lisp",
+      "text": "*   *Extensibility*.\nWhen Lisp was invented in 1958, nobody could have foreseen the advances in programming theory and language design that have taken place in the last thirty years.\nOther early languages have been discarded, replaced by ones based on newer ideas.\nHowever, Lisp has been able to survive, because it has been able to adapt.\nBecause Lisp is extensible, it has been changed to incorporate the newest features as they become popular.\nThe easiest way to extend the language is with macros.\nWhen so-called structured programming constructs such as *case* and *if-then-else* arose, they were incorporated into Lisp as macros.\nBut the flexibility of Lisp goes beyond adding individual constructs.\nBrand new styles of programming can easily be implemented.\nMany AI applications are based on the idea of *rule-based* programming.\n<a id=\"tfn01-8\"></a>\nAnother new style is *object-oriented* programming, which has been incorporated with the Common Lisp Object System (CLOS),<sup>[8](#fn01-8)</sup> a set of macros, functions, and data types that have been integrated into ANSI Common Lisp.",
+      "concepts": [
+        "extensibility",
+        "lisp",
+        "macros",
+        "structured-programming",
+        "rule-based-programming",
+        "object-oriented-programming",
+        "common-lisp-object-system",
+        "clos",
+        "ansi-common-lisp"
+      ],
+      "chunk_type": "explanation",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-74-lisp-evolution-example",
+      "topic": "Example showing the evolution of Lisp code",
+      "text": "To show how far Lisp has come, here's the only sample program given in the *Lisp/MTS Programmer's Guide* (Hafner and Wilcox 1974):\n\n```lisp\n(PROG (LIST DEPTH TEMP RESTLIST)\n(SETQ RESTLIST (LIST (CONS (READ) O)))\nA (COND\n((NOT RESTLIST) (RETURN 'DONE))\n(T (SETQ LIST (UNCONS (UNCONS RESTLIST\n     RESTLIST) DEPTH))\n(COND ((ATOM LIST)\n(MAPC 'PRIN1 (LIST '\"ATOM:\" LIST '\",\" 'DEPTH DEPTH))\n(TERPRI))\n(T (SETQ TEMP (UNCONS LIST LIST))\n(COND (LIST\n(SETQ RESTLIST (CONS(CONS LIST DEPTH) RESTLIST))))\n(SETQ RESTLIST (CONS (CONS TEMP\n     (ADD1 DEPTH)) RESTLIST))\n))))\n(GO A))\n```\n\nNote the use of the now-deprecated goto `(GO)` statement, and the lack of consistent indentation conventions.\nThe manual also gives a recursive version of the same program:\n\n```lisp\n(PROG NIL (\n(LABEL ATOMPRINT (LAMBDA (RESTLIST)\n(COND ((NOT RESTLIST) (RETURN 'DONE))\n((ATOM (CAAR RESTLIST)) (MAPC 'PRIN1\n     (LIST '\"ATOM:\" (CAAR RESTLIST)\n          '\",\" 'DEPTH (CDAR RESTLIST)))\n(TERPRI)\n(ATOMPRINT (CDR RESTLIST)))\n( T (ATOMPRINT (GRAFT\n(LIST (CONS (CAAAR RESTLIST) (ADD1 (CDAR RESTLIST))))\n(AND (CDAAR RESTLIST) (LIST (CONS (CDAAR RESTLIST)\n     (CDAR RESTLIST))))\n           (CDR RESTLIST)))))))\n(LIST (CONS (READ) 0))))\n```\n\nBoth versions are very difficult to read.\nWith our modern insight (and text editors that automatically indent), a much simpler program is possible:\n\n```lisp\n(defun atomprint (exp &optional (depth 0))\n  \"Print each atom in exp, along with its depth of nesting.\"\n  (if (atom exp)\n      (format t \"~&ATOM: ~a, DEPTH ~d\" exp depth)\n      (dolist (element exp)\n        (atomprint element (+ depth 1)))))\n```",
+      "concepts": [
+        "lisp",
+        "goto-statement",
+        "recursion",
+        "atom",
+        "defun",
+        "format",
+        "dolist"
+      ],
+      "chunk_type": "example",
+      "section": "1.10"
+    },
+    {
+      "chunk_id": "chunk-75-exercises-1-11",
+      "topic": "Exercises for section 1.11",
+      "text": "## 1.11 Exercises\n\n&#9635; **Exercise  1.1 [m]** Define a version of `last-name` that handles \"Rex Morgan MD,\" \"Morton Downey, Jr.,\" and whatever other cases you can think of.",
+      "concepts": [
+        "last-name-function",
+        "string-manipulation"
+      ],
+      "chunk_type": "exercise",
+      "section": "1.11"
+    },
+    {
+      "chunk_id": "chunk-76-exercise-1-2-exponentiation",
+      "topic": "Exercise 1.2: Exponentiation function",
+      "text": "&#9635; **Exercise  1.2 [m]** Write a function to exponentiate, or raise a number to an integer power.\nFor example: `(power 3 2)` = 3<sup>2</sup> = 9.",
+      "concepts": [
+        "exponentiation",
+        "power-function",
+        "arithmetic-operations"
+      ],
+      "chunk_type": "exercise",
+      "section": "1.11"
+    },
+    {
+      "chunk_id": "chunk-77-exercise-1-3-count-atoms",
+      "topic": "Exercise 1.3: Counting atoms in an expression",
+      "text": "&#9635; **Exercise  1.3 [m]** Write a function that counts the number of atoms in an expression.\nFor example: `(count-atoms '(a (b) c)) = 3`.\nNotice that there is something of an ambiguity in this: should (`a nil c`) count as three atoms, or as two, because it is equivalent to (`a () c`)?",
+      "concepts": [
+        "atom-counting",
+        "list-processing",
+        "expression-evaluation",
+        "nil-handling"
+      ],
+      "chunk_type": "exercise",
+      "section": "1.11"
+    },
+    {
+      "chunk_id": "chunk-78-exercise-1-4-count-anywhere",
+      "topic": "Exercise 1.4: Counting expression occurrences",
+      "text": "&#9635; **Exercise  1.4 [m]** Write a function that counts the number of times an expression occurs anywhere within another expression.\nExample: `(count-anywhere 'a '(a ((a) b) a)) => 3`.",
+      "concepts": [
+        "expression-occurrence",
+        "nested-lists",
+        "recursive-search"
+      ],
+      "chunk_type": "exercise",
+      "section": "1.11"
+    },
+    {
+      "chunk_id": "chunk-79-exercise-1-5-dot-product",
+      "topic": "Exercise 1.5: Dot product of two sequences",
+      "text": "&#9635; **Exercise  1.5 [m]** Write a function to compute the dot product of two sequences of numbers, represented as lists.\nThe dot product is computed by multiplying corresponding elements and then adding up the resulting products.\nExample:\n\n```lisp\n(dot-product '(10 20) '(3 4)) = 10 x 3 + 20 x 4 = 110\n```",
+      "concepts": [
+        "dot-product",
+        "sequence-processing",
+        "list-manipulation",
+        "arithmetic-operations"
+      ],
+      "chunk_type": "exercise",
+      "section": "1.11"
+    },
+    {
+      "chunk_id": "chunk-80-answers-section",
+      "topic": "Answers Section",
+      "text": "## 1.12 Answers\n---\n",
+      "concepts": [],
+      "chunk_type": "overview",
+      "section": "1.12"
+    },
+    {
+      "chunk_id": "chunk-81-power-function-example",
+      "topic": "Example of the power function in Lisp",
+      "text": "### Answer 1.2\n```lisp\n(defun power (x n)\n  \"Power raises x to the nth power.  N must be an integer >= 0.\n   This executes in log n time, because of the check for even n.\"\n  (cond ((= n 0) 1)\n        ((evenp n) (expt (power x (/ n 2)) 2))\n        (t (* x (power x (- n 1))))))\n```",
+      "concepts": [
+        "power-function",
+        "lisp",
+        "recursion",
+        "evenp-function",
+        "expt-function",
+        "defun-macro",
+        "cond-macro"
+      ],
+      "chunk_type": "example",
+      "section": null
+    },
+    {
+      "chunk_id": "chunk-82-answer-1-3",
+      "topic": "Lisp functions for counting atoms in an expression",
+      "text": "### Answer 1.3\n\n```lisp\n(defun count-atoms (exp)\n  \"Return the total number of non-nil atoms in the expression.\"\n  (cond ((null exp) 0)\n        ((atom exp) 1)\n        (t (+ (count-atoms (first exp))\n              (count-atoms (rest exp))))))\n\n(defun count-all-atoms (exp &optional (if-null 1))\n  \"Return the total number of atoms in the expression,\n  counting nil as an atom only in non-tail position.\"\n  (cond ((null exp) if-null)\n        ((atom exp) 1)\n        (t (+ (count-all-atoms (first exp) 1)\n              (count-all-atoms (rest exp) 0)))))\n```",
+      "concepts": [
+        "lisp",
+        "defun",
+        "count-atoms",
+        "count-all-atoms",
+        "atom",
+        "null",
+        "cond",
+        "first",
+        "rest",
+        "recursion"
+      ],
+      "chunk_type": "example",
+      "section": "1.3"
+    },
+    {
+      "chunk_id": "chunk-83-count-anywhere-function-definition",
+      "topic": "Definition of the `count-anywhere` function in Lisp",
+      "text": "### Answer 1.4\n\n```lisp\n(defun count-anywhere (item tree)\n  \"Count the times item appears anywhere within tree.\"\n  (cond ((eql item tree) 1)\n        ((atom tree) 0)\n        (t (+ (count-anywhere item (first tree))\n              (count-anywhere item (rest tree))))))\n```",
+      "concepts": [
+        "count-anywhere-function",
+        "recursion",
+        "lisp",
+        "tree-traversal",
+        "conditional-execution",
+        "atom-check",
+        "first-function",
+        "rest-function",
+        "eql-function"
+      ],
+      "chunk_type": "example",
+      "section": "1.4"
+    },
+    {
+      "chunk_id": "chunk-84-dot-product-implementations",
+      "topic": "Dot product implementations in Lisp",
+      "text": "### Answer 1.5\nHere are three versions:\n\n\n```lisp\n(defun dot-product (a b)\n  \"Compute the mathematical dot product of two vectors.\"\n  (if (or (null a) (null b))\n      0\n      (+ (* (first a) (first b))\n         (dot-product (rest a) (rest b)))))\n\n(defun dot-product (a b)\n  \"Compute the mathematical dot product of two vectors.\"\n  (let ((sum 0))\n    (dotimes (i (length a))\n      (incf sum (* (elt a i) (elt b i))))\n    sum))\n\n(defun dot-product (a b)\n  \"Compute the mathematical dot product of two vectors.\"\n  (apply #'+ (mapcar #'* a b)))\n```",
+      "concepts": [
+        "dot-product",
+        "lisp-programming",
+        "recursion",
+        "iteration",
+        "functional-programming"
+      ],
+      "chunk_type": "example",
+      "section": null
+    },
+    {
+      "chunk_id": "chunk-85-lisp-data-object-footnote",
+      "topic": "Footnote about Lisp data objects",
+      "text": "----------------------\n\n<a id=\"fn01-1\"></a><sup>[1](#tfn01-1)</sup>\nThis list of symbols is not a legal Lisp assignment statement, but it is a Lisp data object.",
+      "concepts": [
+        "lisp-data-object",
+        "lisp-assignment-statement",
+        "symbols"
+      ],
+      "chunk_type": "explanation",
+      "section": null
+    },
+    {
+      "chunk_id": "chunk-86-print-case-variable-footnote",
+      "topic": "Footnote about the *print-case* variable",
+      "text": "<a id=\"fn01-2\"></a><sup>[2](#tfn01-2)</sup>\nThe variable `*print-case*` controls how symbols will be printed.\nBy default, the value of this variable is `:upcase`, but it can be changed to `:downcase` or `:capitalize`.",
+      "concepts": [
+        "print-case-variable",
+        "symbols",
+        "lisp-programming"
+      ],
+      "chunk_type": "explanation",
+      "section": null
+    },
+    {
+      "chunk_id": "chunk-87-argument-type-footnote",
+      "topic": "Footnote about argument types in Lisp",
+      "text": "<a id=\"fn01-3\"></a><sup>[3](#tfn01-3)</sup>\nLater we will see what happens when the second argument is not a list.",
+      "concepts": [
+        "lisp-programming",
+        "argument-types",
+        "lists"
+      ],
+      "chunk_type": "explanation",
+      "section": null
+    },
+    {
+      "chunk_id": "chunk-88-last-function-definition-footnote",
+      "topic": "Footnote about the `last` function in ANSI Common Lisp",
+      "text": "<a id=\"fn01-4\"></a><sup>[4](#tfn01-4)</sup>\nIn ANSI Common Lisp, `last` is defined to return a list of the last *n* elements, where n defaults to 1.\nThus `(last p) = (last p 1) = (PUBLIC)`,and `(last p 2) = (Q PUBLIC)`.\nThis may make the definition of `last` seem less perverse.",
+      "concepts": [
+        "last-function",
+        "ansi-common-lisp",
+        "lists"
+      ],
+      "chunk_type": "explanation",
+      "section": null
+    },
+    {
+      "chunk_id": "chunk-89-function-redefinition-footnote",
+      "topic": "Footnote about function redefinition in Lisp",
+      "text": "<a id=\"fn01-5\"></a><sup>[5](#tfn01-5)</sup>\nJust as we can change the value of a variable, we can also change the value of a function in Lisp.\nIt is not necessary to recompile everything when a change is made, as it would be in other languages.",
+      "concepts": [
+        "function-redefinition",
+        "lisp-programming",
+        "variables"
+      ],
+      "chunk_type": "explanation",
+      "section": null
+    },
+    {
+      "chunk_id": "chunk-90-special-variables-footnote",
+      "topic": "Footnote about special variables in Lisp",
+      "text": "<a id=\"fn01-6\"></a><sup>[6](#tfn01-6)</sup>\nFor example, symbols that denote so-called *special* variables usually begin and end in asterisks.\nAlso, note that I did not hesitate to use the symbol `won!` on page 11.",
+      "concepts": [
+        "special-variables",
+        "symbols",
+        "lisp-programming"
+      ],
+      "chunk_type": "explanation",
+      "section": null
+    },
+    {
+      "chunk_id": "chunk-91-symbol-tables-packages-footnote",
+      "topic": "Footnote about symbol tables and packages in Common Lisp",
+      "text": "<a id=\"fn01-7\"></a><sup>[7](#tfn01-7)</sup>\nActually, there can be several symbol tables.\nThey are known as *packages* in Common Lisp.",
+      "concepts": [
+        "symbol-tables",
+        "packages",
+        "common-lisp",
+        "symbols"
+      ],
+      "chunk_type": "explanation",
+      "section": null
+    },
+    {
+      "chunk_id": "chunk-92-see-loss-pronunciation-footnote",
+      "topic": "Footnote about the pronunciation of 'see-loss'",
+      "text": "<a id=\"fn01-8\"></a><sup>[8](#tfn01-8)</sup>\nPronounced \"see-loss.\" An alternate pronunciation, \"klaus,\" seems to be losing favor.",
+      "concepts": [],
+      "chunk_type": "explanation",
+      "section": null
+    }
+  ],
+  "metadata": {
+    "total_chunks": 92,
+    "source_file": "text.md",
+    "chunked_at": "2025-10-08T00:27:31.152Z"
+  }
+}

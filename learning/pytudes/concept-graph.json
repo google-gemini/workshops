@@ -1,0 +1,1378 @@
+{
+  "metadata": {
+    "title": "The Traveling Salesperson Problem - Exercises",
+    "source": "Pytudes - TSP.ipynb",
+    "author": "Peter Norvig",
+    "description": "Complete concept graph with 28 concepts and 6 exercises",
+    "roots": [
+      "city_representation",
+      "type_annotations",
+      "frozenset_usage",
+      "list_comprehensions",
+      "greedy_strategy",
+      "divide_conquer_strategy",
+      "ensemble_strategy",
+      "approximation_strategy",
+      "algorithmic_complexity",
+      "caching_memoization"
+    ],
+    "statistics": {
+      "total_concepts": 28,
+      "total_exercises": 6,
+      "difficulty_breakdown": {
+        "basic": 8,
+        "intermediate": 13,
+        "advanced": 7
+      },
+      "concepts_with_pedagogy": 8
+    }
+  },
+  "concepts": [
+    {
+      "id": "city_representation",
+      "name": "City Representation as Complex Numbers",
+      "description": "Representing cities as complex numbers where real part is x-coordinate and imaginary part is y-coordinate",
+      "prerequisites": [],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts",
+      "learning_objectives": [
+        "Represent 2D points using Python's complex number type",
+        "Extract x and y coordinates from complex numbers",
+        "Explain the advantages of using complex numbers over tuples/classes for geometric problems"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "complex_number_creation",
+          "description": "Can create cities using complex number notation",
+          "difficulty": "basic",
+          "test_method": "Ask: 'Write code to create a city at coordinates (300, 100)'"
+        },
+        {
+          "skill": "coordinate_extraction",
+          "description": "Can extract x-coordinate (real part) and y-coordinate (imaginary part)",
+          "difficulty": "basic",
+          "test_method": "Given City(300, 100), ask student to get x and y values"
+        },
+        {
+          "skill": "abstraction_understanding",
+          "description": "Understands why complex numbers are elegant for 2D geometry",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'What operations become simpler with complex numbers vs (x,y) tuples?'"
+        }
+      ],
+      "examples": [
+        {
+          "content": "City = complex\nA = City(300, 100)  # City at x=300, y=100\nprint(A.real, A.imag)  # 300.0, 100.0",
+          "explanation": "Complex numbers naturally represent points in 2D space. The real part is the x-coordinate, imaginary part is y-coordinate.",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "complex_number_creation",
+            "coordinate_extraction"
+          ]
+        },
+        {
+          "content": "# Distance between cities is simply abs(A - B)\nA = City(0, 0)\nB = City(3, 4)\nprint(abs(A - B))  # 5.0 - Pythagorean theorem!",
+          "explanation": "Complex number arithmetic automatically handles vector operations. Subtraction gives displacement, abs() gives magnitude.",
+          "when_to_show": "showing_advantage",
+          "demonstrates": [
+            "abstraction_understanding"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "Complex numbers are only for advanced mathematics or electrical engineering",
+          "reality": "They're a natural fit for 2D geometry and make code simpler and more elegant",
+          "correction_strategy": "Show side-by-side comparison: complex vs tuple/class approach for distance calculation"
+        },
+        {
+          "misconception": "Using 'j' for imaginary part is confusing or non-standard",
+          "reality": "Python uses 'j' (engineering notation); math/physics uses 'i'. Both are valid conventions.",
+          "correction_strategy": "Acknowledge both notations exist; focus on the concept of representing (x, y) pairs, not the notation"
+        }
+      ],
+      "key_insights": [
+        "The right data structure makes algorithms cleaner and more maintainable",
+        "Complex numbers provide built-in 2D vector operations (subtraction, distance)",
+        "Leveraging existing Python types can dramatically simplify code"
+      ]
+    },
+    {
+      "id": "euclidean_distance",
+      "name": "Euclidean Distance",
+      "description": "Computing straight-line distance between two points in 2D space using the distance formula",
+      "prerequisites": [
+        "city_representation"
+      ],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts",
+      "learning_objectives": [
+        "Compute straight-line distance between two points in 2D space",
+        "Recognize the Pythagorean theorem in distance calculations",
+        "Understand when Euclidean distance is appropriate vs other metrics",
+        "Recognize properties: non-negative, symmetric, satisfies triangle inequality"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "distance_implementation",
+          "description": "Can implement distance using abs() on complex numbers",
+          "difficulty": "basic",
+          "test_method": "Ask student to write distance(A, B) function"
+        },
+        {
+          "skill": "symmetry_understanding",
+          "description": "Understands distance is symmetric (distance(A,B) == distance(B,A))",
+          "difficulty": "basic",
+          "test_method": "Ask: 'Does the order of cities matter for distance?'"
+        },
+        {
+          "skill": "metric_applicability",
+          "description": "Can explain when Euclidean distance doesn't apply",
+          "difficulty": "intermediate",
+          "test_method": "Present scenario: 'City A and B with one-way street. Does distance(A,B)==distance(B,A)?'"
+        }
+      ],
+      "examples": [
+        {
+          "content": "def distance(A: City, B: City) -> float:\n    return abs(A - B)",
+          "explanation": "One line! The abs() of complex difference gives Euclidean distance automatically.",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "distance_implementation",
+            "abstraction_understanding"
+          ]
+        },
+        {
+          "content": "# Equivalent to sqrt((x2-x1)^2 + (y2-y1)^2)\nA, B = City(0, 0), City(3, 4)\nprint(distance(A, B))  # 5.0\nprint(math.sqrt((3-0)**2 + (4-0)**2))  # 5.0 - same!",
+          "explanation": "Shows the connection to the Pythagorean theorem. Complex numbers handle the calculation internally.",
+          "when_to_show": "explaining_mathematics",
+          "demonstrates": [
+            "pythagorean_connection"
+          ]
+        },
+        {
+          "content": "# Euclidean distance is symmetric\nprint(distance(A, B) == distance(B, A))  # True\n\n# Triangle inequality holds\nC = City(6, 8)\nprint(distance(A, C) <= distance(A, B) + distance(B, C))  # True",
+          "explanation": "Key properties of Euclidean metric that enable many TSP optimizations",
+          "when_to_show": "advanced_properties",
+          "demonstrates": [
+            "symmetry_understanding",
+            "triangle_inequality"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "Distance always means straight-line distance in real applications",
+          "reality": "TSP can use any distance metric; Euclidean is just one option (others: Manhattan, road network, flight time)",
+          "correction_strategy": "Show examples: Manhattan distance (taxi cab), actual road network distances, flight times with layovers"
+        },
+        {
+          "misconception": "You need to manually implement sqrt((x2-x1)^2 + (y2-y1)^2)",
+          "reality": "Python's abs() on complex numbers does this automatically and efficiently",
+          "correction_strategy": "Demonstrate both implementations produce same result; emphasize clean abstraction"
+        }
+      ],
+      "key_insights": [
+        "Euclidean distance satisfies the triangle inequality (key for many optimizations like 2-opt)",
+        "Distance metrics define the problem space - different metrics = different optimal tours",
+        "Choosing the right abstraction (complex numbers) makes implementation trivial"
+      ]
+    },
+    {
+      "id": "tour_concept",
+      "name": "Tour as a Cycle",
+      "description": "Understanding a tour as an ordered list of cities that visits each city once and returns to start",
+      "prerequisites": [
+        "city_representation"
+      ],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts",
+      "learning_objectives": [
+        "Represent a tour as an ordered list of cities",
+        "Understand that a tour is a cycle (returns to start)",
+        "Distinguish between permutations and distinct tours (rotations are the same tour)",
+        "Recognize when tours are equivalent despite different representations"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "tour_representation",
+          "description": "Can represent a tour visiting cities A, B, C as a list",
+          "difficulty": "basic",
+          "test_method": "Ask: 'How would you represent a tour visiting cities in order A→B→C→A?'"
+        },
+        {
+          "skill": "cycle_understanding",
+          "description": "Understands tour includes implicit link back to start",
+          "difficulty": "basic",
+          "test_method": "Show [A,B,C] and ask: 'How many links does this tour have?'"
+        },
+        {
+          "skill": "rotation_equivalence",
+          "description": "Recognizes [A,B,C], [B,C,A], [C,A,B] are the same tour",
+          "difficulty": "intermediate",
+          "test_method": "Show three rotations, ask if they're different tours and why/why not"
+        }
+      ],
+      "examples": [
+        {
+          "content": "Tour = list  # Type alias for clarity\ntour = [City(0,0), City(1,1), City(2,0)]\n# This visits 3 cities and returns to start\n# Total of 3 links: (0,0)→(1,1)→(2,0)→(0,0)",
+          "explanation": "A tour is represented as a list, but conceptually includes the return link back to the start.",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "tour_representation",
+            "cycle_understanding"
+          ]
+        },
+        {
+          "content": "# These three tours are identical (just different starting points)\ntour1 = [A, B, C]  # Start at A\ntour2 = [B, C, A]  # Start at B  \ntour3 = [C, A, B]  # Start at C\n# All visit the same cities in the same cyclic order",
+          "explanation": "Tours are cycles, so rotation doesn't change the tour. This is why we can fix the first city in exhaustive search.",
+          "when_to_show": "explaining_optimization",
+          "demonstrates": [
+            "rotation_equivalence"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "A tour needs to explicitly list the return to start",
+          "reality": "The tour [A,B,C] implicitly includes the link from C back to A",
+          "correction_strategy": "Show tour_length calculation that includes tour[i-1] which wraps around to last city when i=0"
+        },
+        {
+          "misconception": "[A,B,C] and [C,B,A] are completely different tours",
+          "reality": "[C,B,A] is the same tour traversed in reverse direction (equivalent for symmetric distance)",
+          "correction_strategy": "Draw both on paper - they trace the same cycle, just in opposite directions; same length for symmetric distance"
+        }
+      ],
+      "key_insights": [
+        "A tour is fundamentally a cycle, not a path",
+        "Rotational equivalence means n! permutations collapse to (n-1)! distinct tours",
+        "Surface representation (list) vs semantic meaning (cycle) distinction is crucial for optimization"
+      ]
+    },
+    {
+      "id": "tour_length_calculation",
+      "name": "Tour Length Calculation",
+      "description": "Computing total distance of a tour by summing distances between consecutive cities including return to start",
+      "prerequisites": [
+        "euclidean_distance",
+        "tour_concept"
+      ],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "valid_tour",
+      "name": "Valid Tour Verification",
+      "description": "Verifying that a tour visits each city exactly once by checking it's a permutation of cities",
+      "prerequisites": [
+        "tour_concept"
+      ],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "tour_vs_segment",
+      "name": "Tour vs Segment Distinction",
+      "description": "Understanding that a segment is a partial path without returning to start, while a tour forms a complete cycle",
+      "prerequisites": [
+        "tour_concept"
+      ],
+      "difficulty": "basic",
+      "section": "Visualizing results"
+    },
+    {
+      "id": "type_annotations",
+      "name": "Type Hints and Annotations",
+      "description": "Using Python type hints to document expected types of function parameters and return values",
+      "prerequisites": [],
+      "difficulty": "basic",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "frozenset_usage",
+      "name": "Frozenset for Immutable Collections",
+      "description": "Using frozenset to represent immutable collections that can be hashed and used as dict keys",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "Implementation of Basic Concepts"
+    },
+    {
+      "id": "list_comprehensions",
+      "name": "List Comprehensions",
+      "description": "Creating lists using compact comprehension syntax instead of explicit loops",
+      "prerequisites": [],
+      "difficulty": "basic",
+      "section": "Throughout"
+    },
+    {
+      "id": "generators_yield",
+      "name": "Generator Functions with Yield",
+      "description": "Creating iterators that generate values on-demand using yield instead of building full lists",
+      "prerequisites": [
+        "list_comprehensions"
+      ],
+      "difficulty": "intermediate",
+      "section": "Minimum Spanning Tree, Greedy Algorithm visualization"
+    },
+    {
+      "id": "exhaustive_search",
+      "name": "Exhaustive Search Strategy",
+      "description": "Finding optimal solution by systematically trying all possible permutations of cities",
+      "prerequisites": [
+        "tour_concept",
+        "tour_length_calculation",
+        "valid_tour"
+      ],
+      "difficulty": "intermediate",
+      "section": "Exhaustive TSP Search Algorithm",
+      "learning_objectives": [
+        "Generate all possible permutations of cities to find optimal tour",
+        "Understand O(n!) time complexity and its exponential growth implications",
+        "Apply rotational equivalence optimization: fix first city to reduce by factor of n",
+        "Recognize when exhaustive search is practical vs impractical"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "optimality_guarantee",
+          "description": "Can explain why exhaustive search guarantees optimal solution",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'Why do we know exhaustive_tsp finds the shortest possible tour?'"
+        },
+        {
+          "skill": "complexity_understanding",
+          "description": "Understands why algorithm is O(n!) and can estimate runtime",
+          "difficulty": "intermediate",
+          "test_method": "Ask student to count permutations for 4, 5, 6 cities and extrapolate to 12"
+        },
+        {
+          "skill": "rotation_optimization",
+          "description": "Can optimize by fixing start city (reduce by factor of n)",
+          "difficulty": "advanced",
+          "test_method": "Ask: 'How can we reduce 10!=3.6M to 9!=362K permutations without losing optimality?'"
+        }
+      ],
+      "examples": [
+        {
+          "content": "def exhaustive_tsp(cities) -> Tour:\n    return shortest(possible_tours(cities))\n\ndef possible_tours(cities) -> List[Tour]:\n    start, *others = cities\n    return [[start, *perm] for perm in itertools.permutations(others)]",
+          "explanation": "Try all permutations, return shortest. Fix first city to avoid redundant rotations - this is an n-fold speedup!",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "algorithm_implementation",
+            "rotation_optimization"
+          ]
+        },
+        {
+          "content": "# For 3 cities {A,B,C}, there are 3!=6 permutations:\n# [A,B,C], [A,C,B], [B,A,C], [B,C,A], [C,A,B], [C,B,A]\n# But only 2 distinct tours:\n#   - [A,B,C] (same as [B,C,A] and [C,A,B] by rotation)\n#   - [A,C,B] (same as [C,B,A] and [B,A,C] by rotation)\n# Fixing first city: [A,B,C], [A,C,B] - only (3-1)! = 2!",
+          "explanation": "Shows the factorial explosion and how rotation redundancy can be eliminated",
+          "when_to_show": "explaining_optimization",
+          "demonstrates": [
+            "complexity_understanding",
+            "rotation_optimization"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "Exhaustive search is always impractical and should never be used",
+          "reality": "It works fine for small n (≤10 cities), provides optimality guarantee, and is conceptually important as baseline",
+          "correction_strategy": "Show timing results: 8 cities in <0.1 sec, 10 cities in ~1 sec, explain value as baseline"
+        },
+        {
+          "misconception": "We need to try all n! permutations to find the optimal tour",
+          "reality": "We only need (n-1)! because rotations are equivalent tours",
+          "correction_strategy": "Draw cycle diagram showing [A,B,C] = [B,C,A] = [C,A,B] trace identical cycles"
+        },
+        {
+          "misconception": "Factorial growth is just 'really fast' but still manageable",
+          "reality": "10! = 3.6M, 15! = 1.3 trillion, 20! = 2.4 quintillion - truly impossible for large n",
+          "correction_strategy": "Calculate: at 1M tours/sec, 20! would take 77,000 years"
+        }
+      ],
+      "key_insights": [
+        "Brute force is valuable as a baseline for small problems and correctness verification",
+        "Understanding problem structure (tours as cycles) enables n-fold optimization",
+        "Factorial complexity grows impossibly fast: practical limit around 10-12 cities",
+        "Optimality guarantees come at exponential cost"
+      ]
+    },
+    {
+      "id": "greedy_strategy",
+      "name": "Greedy Algorithm Strategy",
+      "description": "Making locally optimal choices at each step hoping to find a global optimum",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "General Strategies for Algorithm Design",
+      "learning_objectives": [
+        "Understand that greedy algorithms make locally optimal choices at each step",
+        "Recognize that greedy doesn't guarantee global optimum",
+        "Apply greedy strategy to TSP in multiple ways (nearest neighbor, shortest links)",
+        "Analyze when and why greedy strategies succeed or fail"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "greedy_definition",
+          "description": "Can explain what 'greedy' means in algorithm design",
+          "difficulty": "basic",
+          "test_method": "Ask: 'What does it mean for an algorithm to be greedy?'"
+        },
+        {
+          "skill": "suboptimality_understanding",
+          "description": "Understands greedy can produce suboptimal solutions",
+          "difficulty": "intermediate",
+          "test_method": "Show greedy tour that's longer than optimal; ask why greedy missed the better solution"
+        },
+        {
+          "skill": "multiple_greedy_approaches",
+          "description": "Can identify different ways to apply greedy strategy to same problem",
+          "difficulty": "advanced",
+          "test_method": "Ask: 'What are two different greedy approaches to TSP and how do they differ?'"
+        }
+      ],
+      "examples": [
+        {
+          "content": "# Greedy nearest neighbor: always go to closest unvisited city\ntour = [start]\nwhile unvisited:\n    nearest = min(unvisited, key=lambda C: distance(tour[-1], C))\n    tour.append(nearest)\n    unvisited.remove(nearest)",
+          "explanation": "At each step, make the choice that looks best right now (shortest distance). Repeat until done.",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "greedy_definition",
+            "basic_pattern"
+          ]
+        },
+        {
+          "content": "# Example where greedy fails:\n# Cities arranged in square: A--B  (distance 1 for edges, √2 for diagonal)\n#                            |  |\n#                            D--C\n# Starting at A, greedy goes A→B (nearest)→C→D, total = 1+1+1+√2 ≈ 4.41\n# Optimal tour: A→D→C→B→A or A→B→C→D→A, total = 1+1+1+1 = 4",
+          "explanation": "Greedy made locally good choices (closest neighbor each time) but painted itself into a corner, forced to take long diagonal link",
+          "when_to_show": "explaining_limitation",
+          "demonstrates": [
+            "suboptimality_understanding"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "Greedy always finds the optimal solution if implemented correctly",
+          "reality": "Greedy finds local optima, which may not be global optima (by definition of the strategy)",
+          "correction_strategy": "Show concrete counter-example where greedy produces provably longer tour than optimal"
+        },
+        {
+          "misconception": "There's only one way to apply greedy to TSP",
+          "reality": "Nearest neighbor and shortest-link-first (greedy_tsp) are both greedy, with different local choices",
+          "correction_strategy": "Compare nearest_tsp vs greedy_tsp side-by-side - both greedy, different 'locally optimal' decisions"
+        },
+        {
+          "misconception": "Greedy algorithms are inferior and shouldn't be used",
+          "reality": "Greedy trades optimality guarantee for massive speed improvement (O(n²) vs O(n!))",
+          "correction_strategy": "Show benchmark: greedy finds 'good enough' tours 1000x faster, enabling real-world applications"
+        }
+      ],
+      "key_insights": [
+        "Greedy strategy trades optimality guarantee for computational efficiency",
+        "Local optimization ≠ global optimization (but often 'close enough')",
+        "The same high-level strategy (greedy) can be applied in multiple ways to the same problem",
+        "Greedy algorithms often work surprisingly well in practice despite lack of guarantees"
+      ]
+    },
+    {
+      "id": "improvement_strategy",
+      "name": "Iterative Improvement Strategy",
+      "description": "Starting with a solution and repeatedly making local changes that improve it",
+      "prerequisites": [
+        "tour_concept",
+        "tour_length_calculation"
+      ],
+      "difficulty": "intermediate",
+      "section": "Improvement Strategy: Optimizing Links"
+    },
+    {
+      "id": "divide_conquer_strategy",
+      "name": "Divide and Conquer Strategy",
+      "description": "Splitting problem into smaller subproblems, solving each, then combining solutions",
+      "prerequisites": [],
+      "difficulty": "advanced",
+      "section": "Divide and Conquer"
+    },
+    {
+      "id": "ensemble_strategy",
+      "name": "Ensemble Strategy",
+      "description": "Running multiple algorithms and selecting the best result from all attempts",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "Repeated Nearest Neighbor, Ensemble TSP"
+    },
+    {
+      "id": "approximation_strategy",
+      "name": "Approximation Strategy",
+      "description": "Accepting a slightly suboptimal solution when finding the exact optimum is too expensive",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "General Strategies for Algorithm Design"
+    },
+    {
+      "id": "nearest_neighbor_algorithm",
+      "name": "Nearest Neighbor Algorithm",
+      "description": "Greedy algorithm that always moves to the closest unvisited city from current position",
+      "prerequisites": [
+        "greedy_strategy",
+        "euclidean_distance",
+        "tour_concept"
+      ],
+      "difficulty": "intermediate",
+      "section": "Nearest Neighbor Algorithm",
+      "learning_objectives": [
+        "Build tour incrementally by always choosing nearest unvisited neighbor",
+        "Maintain set of unvisited cities efficiently using Python sets",
+        "Understand O(n²) complexity: n cities, ~n comparisons each",
+        "Recognize dependency on start city and use ensemble strategy"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "algorithm_implementation",
+          "description": "Can implement nearest neighbor algorithm from English description",
+          "difficulty": "intermediate",
+          "test_method": "Give prose description, ask student to code it in Python"
+        },
+        {
+          "skill": "complexity_analysis",
+          "description": "Understands why algorithm is O(n²) by counting operations",
+          "difficulty": "intermediate",
+          "test_method": "Ask: 'For n cities, roughly how many distance comparisons does this algorithm make?'"
+        },
+        {
+          "skill": "start_dependency",
+          "description": "Can explain why different start cities give different tours and tour lengths",
+          "difficulty": "intermediate",
+          "test_method": "Run algorithm with two different starts on same cities; ask why results differ"
+        }
+      ],
+      "examples": [
+        {
+          "content": "def nearest_tsp(cities, start=None) -> Tour:\n    start = start or first(cities)\n    tour = [start]\n    unvisited = set(cities) - {start}\n    while unvisited:\n        C = nearest_neighbor(tour[-1], unvisited)\n        tour.append(C)\n        unvisited.remove(C)\n    return tour",
+          "explanation": "Start somewhere (arbitrary or specified), always go to nearest unvisited city. Use set for O(1) removal.",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "algorithm_implementation",
+            "data_structure_choice"
+          ]
+        },
+        {
+          "content": "def nearest_neighbor(A: City, cities) -> City:\n    return min(cities, key=lambda C: distance(C, A))\n\n# Example with cities at (0,0), (1,0), (2,0):\n# Starting from (0,0): visits (0,0)→(1,0)→(2,0), length ≈ 4\n# Starting from (1,0): visits (1,0)→(0,0) or (2,0) first, length ≈ 2+2=4\n# Different representation, but equivalent tours",
+          "explanation": "Python's min() with key function elegantly finds nearest city. Start city affects tour construction.",
+          "when_to_show": "teaching_implementation",
+          "demonstrates": [
+            "pythonic_idioms",
+            "start_dependency"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "Must use nested loops to find minimum distance city",
+          "reality": "Python's min() with key parameter is cleaner, more readable, and equally efficient",
+          "correction_strategy": "Show side-by-side: manual loop with if statements vs min(cities, key=lambda...)"
+        },
+        {
+          "misconception": "Should track which cities are visited in a list",
+          "reality": "Better to track unvisited set - set removal is O(1), list search is O(n)",
+          "correction_strategy": "Compare performance: 'visited' list (with 'in' checks) vs 'unvisited' set for efficiency"
+        },
+        {
+          "misconception": "Nearest neighbor always produces the same tour for a given city set",
+          "reality": "Different start cities produce different tours with potentially different lengths",
+          "correction_strategy": "Demonstrate: run with multiple starts, show different results, explain ensemble strategy"
+        }
+      ],
+      "key_insights": [
+        "O(n²) is vastly better than O(n!) - enables thousands of cities vs ~10",
+        "Start city matters significantly - motivates rep_nearest_tsp ensemble approach",
+        "Greedy algorithms are fast but typically need improvement strategies (like 2-opt) for quality",
+        "Simple algorithms can be very effective with the right data structures"
+      ]
+    },
+    {
+      "id": "two_opt_optimization",
+      "name": "2-Opt Local Search",
+      "description": "Improving tours by reversing segments that eliminate crossing edges",
+      "prerequisites": [
+        "improvement_strategy",
+        "segment_reversal",
+        "tour_length_calculation"
+      ],
+      "difficulty": "advanced",
+      "section": "Improvement Strategy: Optimizing Links",
+      "learning_objectives": [
+        "Detect and uncross crossed links in a tour (eliminate X patterns)",
+        "Understand when reversing a segment improves tour length",
+        "Apply iterative improvement until reaching local optimum",
+        "Recognize triangle inequality as the geometric basis for 2-opt"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "crossing_detection",
+          "description": "Can recognize when two links cross (form an X pattern)",
+          "difficulty": "intermediate",
+          "test_method": "Show tour diagram with crossing links, ask student to identify which links form the X"
+        },
+        {
+          "skill": "triangle_inequality_application",
+          "description": "Understands why uncrossing always helps (via triangle inequality)",
+          "difficulty": "advanced",
+          "test_method": "Ask: 'Why is d(A,C)+d(B,D) < d(A,B)+d(C,D) when links A-B and C-D cross?'"
+        },
+        {
+          "skill": "improvement_check_implementation",
+          "description": "Can implement reversal_is_improvement check correctly",
+          "difficulty": "advanced",
+          "test_method": "Given tour segment with cities [...A,B,C,D...], ask if reversing B--C improves tour"
+        }
+      ],
+      "examples": [
+        {
+          "content": "def opt2(tour) -> Tour:\n    \"\"\"Perform 2-opt: try reversing each segment until no improvement found.\"\"\"\n    changed = False\n    for (i, j) in subsegments(len(tour)):\n        if reversal_is_improvement(tour, i, j):\n            tour[i:j] = reversed(tour[i:j])\n            changed = True\n    return (tour if not changed else opt2(tour))",
+          "explanation": "Try all possible segment reversals; if any improve the tour, apply them and repeat. Stop when no improvements found (local optimum).",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "algorithm_structure",
+            "iterative_improvement"
+          ]
+        },
+        {
+          "content": "def reversal_is_improvement(tour, i, j) -> bool:\n    # Given tour [...A, B--C, D...], would reversing B--C make tour shorter?\n    A, B, C, D = tour[i-1], tour[i], tour[j-1], tour[j % len(tour)]\n    # Replace links A-B + C-D with A-C + B-D\n    return distance(A, B) + distance(C, D) > distance(A, C) + distance(B, D)",
+          "explanation": "Check if replacing two links with two different links reduces total distance. The % handles wraparound.",
+          "when_to_show": "implementation_details",
+          "demonstrates": [
+            "improvement_check_implementation",
+            "wraparound_handling"
+          ]
+        },
+        {
+          "content": "# Visual: uncrossing an X always helps\n# Before:  A---B    Links: A-B and C-D (crossed in X pattern)\n#           \\\\ /\n#            X\n#           / \\\\\n#          D---C\n# After:   A   B    Links: A-C and B-D (parallel, uncrossed)\n#          |   |\n#          C   D\n# Total distance decreases by triangle inequality",
+          "explanation": "Crossed links form an X; uncrossing always reduces distance in Euclidean space due to triangle inequality.",
+          "when_to_show": "explaining_geometry",
+          "demonstrates": [
+            "crossing_detection",
+            "triangle_inequality_application"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "2-opt only needs to run once - check all segments and you're done",
+          "reality": "Must iterate until convergence (no more improvements found) because one reversal can enable others",
+          "correction_strategy": "Show example where first reversal uncrosses one X but creates opportunity for second improvement"
+        },
+        {
+          "misconception": "Need to check all possible rearrangements of tour segments",
+          "reality": "Only need to check segment reversals (2 links removed, 2 links added) - hence '2-opt'",
+          "correction_strategy": "Explain name: optimizing by changing 2 links at a time, not considering 3+ link changes"
+        },
+        {
+          "misconception": "2-opt guarantees finding the optimal tour",
+          "reality": "2-opt finds a local optimum (no improving 2-opt moves), not necessarily the global optimum",
+          "correction_strategy": "Show example of tour that's 2-opt-optimal but still suboptimal (3-opt could improve it)"
+        },
+        {
+          "misconception": "Should try shorter segments before longer ones",
+          "reality": "Trying longer segments first can be more efficient (fewer iterations to convergence)",
+          "correction_strategy": "Explain heuristic: longer segments more likely to contain crossings worth fixing"
+        }
+      ],
+      "key_insights": [
+        "Local search iteratively improves solutions until reaching local optimum",
+        "Triangle inequality is the geometric basis proving 2-opt improvements are valid",
+        "Even simple optimizations can dramatically improve tour quality (often 10-20% shorter)",
+        "2-opt is a special case of k-opt family (3-opt, Lin-Kernighan generalize the idea)"
+      ]
+    },
+    {
+      "id": "segment_reversal",
+      "name": "Tour Segment Reversal",
+      "description": "Reversing a portion of a tour to uncross edges and reduce total distance",
+      "prerequisites": [
+        "tour_vs_segment",
+        "euclidean_distance"
+      ],
+      "difficulty": "intermediate",
+      "section": "Improvement Strategy: Optimizing Links"
+    },
+    {
+      "id": "greedy_tsp_algorithm",
+      "name": "Greedy Link Selection Algorithm",
+      "description": "Building tour by repeatedly adding shortest available link that doesn't create a subtour",
+      "prerequisites": [
+        "greedy_strategy",
+        "tour_concept",
+        "euclidean_distance"
+      ],
+      "difficulty": "advanced",
+      "section": "Greedy TSP Algorithm"
+    },
+    {
+      "id": "minimum_spanning_tree",
+      "name": "Minimum Spanning Tree",
+      "description": "Tree connecting all cities with minimum total edge weight, used to construct TSP tours",
+      "prerequisites": [
+        "graph_theory_concepts",
+        "euclidean_distance"
+      ],
+      "difficulty": "advanced",
+      "section": "Minimum Spanning Tree Algorithm"
+    },
+    {
+      "id": "held_karp_algorithm",
+      "name": "Held-Karp Dynamic Programming",
+      "description": "Optimal TSP algorithm using dynamic programming and memoization to avoid redundant calculations",
+      "prerequisites": [
+        "tour_concept",
+        "caching_memoization",
+        "tour_vs_segment"
+      ],
+      "difficulty": "advanced",
+      "section": "Held-Karp Algorithm",
+      "learning_objectives": [
+        "Apply dynamic programming to TSP with O(n² 2ⁿ) complexity",
+        "Use memoization (@cache) to avoid redundant subproblem calculations",
+        "Understand the key insight: only shortest segment through given cities matters",
+        "Recognize optimal substructure and overlapping subproblems in TSP"
+      ],
+      "mastery_indicators": [
+        {
+          "skill": "key_insight_understanding",
+          "description": "Understands Held-Karp key insight about shortest segments",
+          "difficulty": "advanced",
+          "test_method": "Ask: 'Why don't we need to try all permutations of cities Bs between A and C?'"
+        },
+        {
+          "skill": "memoization_necessity",
+          "description": "Can explain why memoization is essential, not optional",
+          "difficulty": "advanced",
+          "test_method": "Ask: 'What happens if you remove @cache decorator? Why is it orders of magnitude slower?'"
+        },
+        {
+          "skill": "complexity_comparison",
+          "description": "Understands O(n² 2ⁿ) vs O(n!) complexity difference",
+          "difficulty": "advanced",
+          "test_method": "Ask student to calculate speedup factor for n=15 and n=20"
+        }
+      ],
+      "examples": [
+        {
+          "content": "@cache\ndef shortest_segment(A, Bs, C) -> Segment:\n    \"\"\"Shortest segment from A through all Bs to C.\"\"\"\n    if not Bs:\n        return [A, C]\n    else:\n        return min((shortest_segment(A, Bs - {B}, B) + [C] for B in Bs),\n                   key=segment_length)",
+          "explanation": "Recursively find shortest path through city subsets. @cache decorator prevents redundant calculations - essential for performance!",
+          "when_to_show": "first_introduction",
+          "demonstrates": [
+            "algorithm_implementation",
+            "memoization_pattern"
+          ]
+        },
+        {
+          "content": "# Key insight: For cities {A,B,C,D,E}, many tour segments go A→{B,C}→D:\n# Could be A→B→C→D or A→C→B→D (among others)\n# Only the shorter one matters for optimal tour!\n# If A→B→C→D is length 10 and A→C→B→D is length 12,\n# then any tour using 'A→...→{B,C}→...→D' will prefer the length-10 path.\n# Cache shortest_segment(A, {B,C}, D) = [A,B,C,D] and reuse it!",
+          "explanation": "Optimal substructure: best tour through subset of cities doesn't depend on what happens outside that subset.",
+          "when_to_show": "explaining_dynamic_programming",
+          "demonstrates": [
+            "key_insight_understanding",
+            "optimal_substructure"
+          ]
+        },
+        {
+          "content": "# Complexity comparison for n=15 cities:\n# Exhaustive: 15! = 1,307,674,368,000 (1.3 trillion) tours\n# Held-Karp: 15² × 2^15 = 225 × 32,768 ≈ 7.4 million subproblems\n# Speedup: ~175,000x faster! (seconds vs days)",
+          "explanation": "Dynamic programming exploits overlapping subproblems to achieve exponential speedup over brute force.",
+          "when_to_show": "complexity_analysis",
+          "demonstrates": [
+            "complexity_comparison"
+          ]
+        }
+      ],
+      "misconceptions": [
+        {
+          "misconception": "Held-Karp is practical for large problems (100+ cities)",
+          "reality": "2ⁿ still grows exponentially fast; practical for ~15-25 cities depending on hardware",
+          "correction_strategy": "Show timing progression: n=10 (1 sec), n=15 (30 sec), n=20 (15 min), n=25 (days)"
+        },
+        {
+          "misconception": "Memoization is just an optional performance optimization",
+          "reality": "Without memoization, Held-Karp degrades to near-exponential performance (loses the speedup)",
+          "correction_strategy": "Time both versions: with @cache (fast) vs without (10,000x+ slower), explain repeated calculations"
+        },
+        {
+          "misconception": "Dynamic programming is always better than brute force",
+          "reality": "DP requires problem structure (optimal substructure + overlapping subproblems) and trades space for time",
+          "correction_strategy": "Explain DP prerequisites; show memory usage can be limiting factor; not all problems have DP solutions"
+        },
+        {
+          "misconception": "Should use list or set for Bs parameter",
+          "reality": "Must use frozenset because @cache requires hashable types",
+          "correction_strategy": "Show error when using set; explain frozenset is immutable and hashable, perfect for cache keys"
+        }
+      ],
+      "key_insights": [
+        "Dynamic programming exploits optimal substructure: optimal solution contains optimal subsolutions",
+        "Memoization transforms exponential algorithms into (polynomial × exponential) by eliminating redundant work",
+        "O(n² 2ⁿ) is vastly better than O(n!): can handle 15 cities vs 10 cities in same time",
+        "Even 'fast' exact algorithms have exponential limits; approximate algorithms needed for large n"
+      ]
+    },
+    {
+      "id": "algorithmic_complexity",
+      "name": "Time Complexity Analysis",
+      "description": "Understanding how algorithm runtime grows with input size using Big-O notation",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "Throughout"
+    },
+    {
+      "id": "caching_memoization",
+      "name": "Caching and Memoization",
+      "description": "Storing computed results to avoid redundant calculations in recursive algorithms",
+      "prerequisites": [],
+      "difficulty": "intermediate",
+      "section": "Held-Karp Algorithm"
+    },
+    {
+      "id": "benchmarking",
+      "name": "Algorithm Benchmarking",
+      "description": "Systematically comparing algorithms on test sets using statistical measures",
+      "prerequisites": [
+        "tour_length_calculation",
+        "algorithmic_complexity"
+      ],
+      "difficulty": "intermediate",
+      "section": "Benchmark Experiments"
+    },
+    {
+      "id": "statistical_comparison",
+      "name": "Statistical Comparison Methods",
+      "description": "Using boxplots, rankings, and confidence intervals to compare algorithm performance",
+      "prerequisites": [
+        "benchmarking"
+      ],
+      "difficulty": "intermediate",
+      "section": "Benchmark Experiments"
+    },
+    {
+      "id": "graph_theory_concepts",
+      "name": "Graph Theory Foundations",
+      "description": "Understanding graphs as vertices and edges, trees, spanning trees, and traversals",
+      "prerequisites": [
+        "city_representation",
+        "euclidean_distance"
+      ],
+      "difficulty": "advanced",
+      "section": "Minimum Spanning Tree"
+    },
+    {
+      "id": "tour_length_guarantee",
+      "name": "Approximation Guarantees",
+      "description": "Proving that an algorithm produces tours within a constant factor of optimal",
+      "prerequisites": [
+        "approximation_strategy",
+        "minimum_spanning_tree",
+        "algorithmic_complexity"
+      ],
+      "difficulty": "advanced",
+      "section": "Guaranteed Tour Length"
+    }
+  ],
+  "edges": [
+    {
+      "from": "euclidean_distance",
+      "to": "city_representation",
+      "type": "requires"
+    },
+    {
+      "from": "tour_concept",
+      "to": "city_representation",
+      "type": "requires"
+    },
+    {
+      "from": "tour_length_calculation",
+      "to": "euclidean_distance",
+      "type": "requires"
+    },
+    {
+      "from": "tour_length_calculation",
+      "to": "tour_concept",
+      "type": "requires"
+    },
+    {
+      "from": "valid_tour",
+      "to": "tour_concept",
+      "type": "requires"
+    },
+    {
+      "from": "tour_vs_segment",
+      "to": "tour_concept",
+      "type": "requires"
+    },
+    {
+      "from": "generators_yield",
+      "to": "list_comprehensions",
+      "type": "requires"
+    },
+    {
+      "from": "exhaustive_search",
+      "to": "tour_concept",
+      "type": "requires"
+    },
+    {
+      "from": "exhaustive_search",
+      "to": "tour_length_calculation",
+      "type": "requires"
+    },
+    {
+      "from": "exhaustive_search",
+      "to": "valid_tour",
+      "type": "requires"
+    },
+    {
+      "from": "improvement_strategy",
+      "to": "tour_concept",
+      "type": "requires"
+    },
+    {
+      "from": "improvement_strategy",
+      "to": "tour_length_calculation",
+      "type": "requires"
+    },
+    {
+      "from": "nearest_neighbor_algorithm",
+      "to": "greedy_strategy",
+      "type": "requires"
+    },
+    {
+      "from": "nearest_neighbor_algorithm",
+      "to": "euclidean_distance",
+      "type": "requires"
+    },
+    {
+      "from": "nearest_neighbor_algorithm",
+      "to": "tour_concept",
+      "type": "requires"
+    },
+    {
+      "from": "two_opt_optimization",
+      "to": "improvement_strategy",
+      "type": "requires"
+    },
+    {
+      "from": "two_opt_optimization",
+      "to": "segment_reversal",
+      "type": "requires"
+    },
+    {
+      "from": "two_opt_optimization",
+      "to": "tour_length_calculation",
+      "type": "requires"
+    },
+    {
+      "from": "segment_reversal",
+      "to": "tour_vs_segment",
+      "type": "requires"
+    },
+    {
+      "from": "segment_reversal",
+      "to": "euclidean_distance",
+      "type": "requires"
+    },
+    {
+      "from": "greedy_tsp_algorithm",
+      "to": "greedy_strategy",
+      "type": "requires"
+    },
+    {
+      "from": "greedy_tsp_algorithm",
+      "to": "tour_concept",
+      "type": "requires"
+    },
+    {
+      "from": "greedy_tsp_algorithm",
+      "to": "euclidean_distance",
+      "type": "requires"
+    },
+    {
+      "from": "minimum_spanning_tree",
+      "to": "graph_theory_concepts",
+      "type": "requires"
+    },
+    {
+      "from": "minimum_spanning_tree",
+      "to": "euclidean_distance",
+      "type": "requires"
+    },
+    {
+      "from": "held_karp_algorithm",
+      "to": "tour_concept",
+      "type": "requires"
+    },
+    {
+      "from": "held_karp_algorithm",
+      "to": "caching_memoization",
+      "type": "requires"
+    },
+    {
+      "from": "held_karp_algorithm",
+      "to": "tour_vs_segment",
+      "type": "requires"
+    },
+    {
+      "from": "benchmarking",
+      "to": "tour_length_calculation",
+      "type": "requires"
+    },
+    {
+      "from": "benchmarking",
+      "to": "algorithmic_complexity",
+      "type": "requires"
+    },
+    {
+      "from": "statistical_comparison",
+      "to": "benchmarking",
+      "type": "requires"
+    },
+    {
+      "from": "graph_theory_concepts",
+      "to": "city_representation",
+      "type": "requires"
+    },
+    {
+      "from": "graph_theory_concepts",
+      "to": "euclidean_distance",
+      "type": "requires"
+    },
+    {
+      "from": "tour_length_guarantee",
+      "to": "approximation_strategy",
+      "type": "requires"
+    },
+    {
+      "from": "tour_length_guarantee",
+      "to": "minimum_spanning_tree",
+      "type": "requires"
+    },
+    {
+      "from": "tour_length_guarantee",
+      "to": "algorithmic_complexity",
+      "type": "requires"
+    }
+  ],
+  "exercises": [
+    {
+      "id": "ex_basic_functions",
+      "title": "Implement Basic TSP Functions",
+      "prompt": "Implement the foundational functions for working with TSP: `distance(A, B)` to compute Euclidean distance between two cities, `tour_length(tour)` to compute the total distance of a tour, and `valid_tour(tour, cities)` to verify a tour visits each city exactly once.",
+      "concepts": [
+        {
+          "concept_id": "city_representation",
+          "mastery_indicators": [
+            "Understands cities as complex numbers",
+            "Can extract x and y coordinates"
+          ]
+        },
+        {
+          "concept_id": "euclidean_distance",
+          "mastery_indicators": [
+            "Can compute distance using abs() on complex numbers",
+            "Understands distance formula"
+          ]
+        },
+        {
+          "concept_id": "tour_length_calculation",
+          "mastery_indicators": [
+            "Can sum distances between consecutive cities",
+            "Remembers to include return to start"
+          ]
+        },
+        {
+          "concept_id": "valid_tour",
+          "mastery_indicators": [
+            "Can verify tour is a permutation",
+            "Uses Counter for comparison"
+          ]
+        }
+      ],
+      "prerequisites": [
+        "city_representation"
+      ],
+      "hints": [
+        "Use Python's complex number type - abs(A - B) gives you the distance",
+        "For tour_length, use range(len(tour)) and remember tour[i-1] wraps around",
+        "For valid_tour, check if Counter(tour) == Counter(cities)"
+      ],
+      "solution_sketch": "```python\ndef distance(A: City, B: City) -> float:\n    return abs(A - B)\n\ndef tour_length(tour: Tour) -> float:\n    return sum(distance(tour[i], tour[i - 1]) for i in range(len(tour)))\n\ndef valid_tour(tour: Tour, cities: Cities) -> bool:\n    return Counter(tour) == Counter(cities)\n```",
+      "common_mistakes": [
+        "Forgetting to include the link from last city back to first in tour_length",
+        "Using tour[-1] instead of tour[i-1] which handles wraparound automatically",
+        "Trying to compute distance with separate x/y calculations instead of using complex numbers"
+      ],
+      "follow_up_questions": [
+        "What is the time complexity of tour_length?",
+        "Why does tour[i-1] correctly handle the wraparound case when i=0?",
+        "How would distance change for non-Euclidean metrics?"
+      ],
+      "difficulty": "basic"
+    },
+    {
+      "id": "ex_exhaustive_tsp",
+      "title": "Implement Exhaustive Search",
+      "prompt": "Implement `exhaustive_tsp(cities)` which finds the optimal tour by generating all possible permutations and selecting the shortest one. Use `itertools.permutations` but optimize by fixing the first city.",
+      "concepts": [
+        {
+          "concept_id": "exhaustive_search",
+          "mastery_indicators": [
+            "Can generate all permutations",
+            "Understands O(n!) complexity",
+            "Can optimize by fixing start city"
+          ]
+        },
+        {
+          "concept_id": "tour_concept",
+          "mastery_indicators": [
+            "Represents tour as ordered list",
+            "Understands tour is a cycle"
+          ]
+        },
+        {
+          "concept_id": "valid_tour",
+          "mastery_indicators": [
+            "Verifies each permutation is valid"
+          ]
+        }
+      ],
+      "prerequisites": [
+        "tour_concept",
+        "tour_length_calculation",
+        "valid_tour"
+      ],
+      "hints": [
+        "Use itertools.permutations to generate all possible orderings",
+        "Since a tour is a cycle, you can fix the first city and only permute the rest",
+        "Use the shortest() helper to find the minimum tour by tour_length"
+      ],
+      "solution_sketch": "```python\ndef exhaustive_tsp(cities) -> Tour:\n    return shortest(possible_tours(cities))\n\ndef possible_tours(cities) -> List[Tour]:\n    start, *others = cities\n    return [[start, *perm] for perm in itertools.permutations(others)]\n```",
+      "common_mistakes": [
+        "Not fixing the first city, leading to n times more work than necessary",
+        "Forgetting that permutations of a set loses the ability to fix first element",
+        "Not understanding that [A,B,C], [B,C,A], [C,A,B] are the same tour"
+      ],
+      "follow_up_questions": [
+        "Why is exhaustive search O(n!) even with the first-city optimization?",
+        "How many cities can you solve in 1 second? 1 minute?",
+        "What's the speedup factor from fixing the first city?"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "ex_nearest_neighbor",
+      "title": "Implement Nearest Neighbor Algorithm",
+      "prompt": "Implement `nearest_tsp(cities, start=None)` which builds a tour by always moving to the nearest unvisited neighbor. Also implement the helper function `nearest_neighbor(A, cities)` that finds the closest city to A.",
+      "concepts": [
+        {
+          "concept_id": "nearest_neighbor_algorithm",
+          "mastery_indicators": [
+            "Can build tour greedily",
+            "Maintains unvisited set",
+            "Extends tour step by step"
+          ]
+        },
+        {
+          "concept_id": "greedy_strategy",
+          "mastery_indicators": [
+            "Understands local optimization",
+            "Knows greedy may not find global optimum"
+          ]
+        },
+        {
+          "concept_id": "euclidean_distance",
+          "mastery_indicators": [
+            "Uses distance to find nearest city"
+          ]
+        }
+      ],
+      "prerequisites": [
+        "greedy_strategy",
+        "euclidean_distance",
+        "tour_concept"
+      ],
+      "hints": [
+        "Start with a partial tour containing just the start city",
+        "Maintain a set of unvisited cities",
+        "At each step, find the nearest neighbor to the last city in the tour",
+        "Use min() with a key function to find the nearest neighbor"
+      ],
+      "solution_sketch": "```python\ndef nearest_tsp(cities, start=None) -> Tour:\n    start = start or first(cities)\n    tour = [start]\n    unvisited = set(cities) - {start}\n    while unvisited:\n        C = nearest_neighbor(tour[-1], unvisited)\n        tour.append(C)\n        unvisited.remove(C)\n    return tour\n\ndef nearest_neighbor(A: City, cities) -> City:\n    return min(cities, key=lambda C: distance(C, A))\n```",
+      "common_mistakes": [
+        "Not removing visited cities from the unvisited set",
+        "Searching for nearest among all cities instead of just unvisited",
+        "Not handling the start parameter correctly"
+      ],
+      "follow_up_questions": [
+        "What is the time complexity of nearest_tsp?",
+        "Why might nearest neighbor produce a suboptimal tour?",
+        "How could you improve nearest neighbor with multiple random starts?"
+      ],
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "ex_2opt",
+      "title": "Implement 2-Opt Optimization",
+      "prompt": "Implement `opt2(tour)` which improves a tour by reversing segments that reduce total distance. For each subsegment tour[i:j], check if reversing it would improve the tour. Also implement `reversal_is_improvement(tour, i, j)`.",
+      "concepts": [
+        {
+          "concept_id": "two_opt_optimization",
+          "mastery_indicators": [
+            "Can detect crossing links",
+            "Knows when reversal improves tour",
+            "Implements iterative improvement"
+          ]
+        },
+        {
+          "concept_id": "segment_reversal",
+          "mastery_indicators": [
+            "Can reverse tour segment",
+            "Understands symmetric distance property"
+          ]
+        },
+        {
+          "concept_id": "improvement_strategy",
+          "mastery_indicators": [
+            "Iterates until no improvement",
+            "Tests all subsegments"
+          ]
+        }
+      ],
+      "prerequisites": [
+        "improvement_strategy",
+        "segment_reversal",
+        "tour_length_calculation"
+      ],
+      "hints": [
+        "For each subsegment tour[i:j], check if reversing it makes the tour shorter",
+        "Given tour [...A,B--C,D...], reversing B--C means replacing links A-B and C-D with A-C and B-D",
+        "Use triangle inequality: if links cross, uncrossing them is always shorter",
+        "Repeat until no improvements are found"
+      ],
+      "solution_sketch": "```python\ndef opt2(tour) -> Tour:\n    changed = False\n    old_tour = list(tour)\n    for (i, j) in subsegments(len(tour)):\n        if reversal_is_improvement(tour, i, j):\n            tour[i:j] = reversed(tour[i:j])\n            changed = True\n    return (tour if not changed else opt2(tour))\n\ndef reversal_is_improvement(tour, i, j) -> bool:\n    A, B, C, D = tour[i-1], tour[i], tour[j-1], tour[j % len(tour)]\n    return distance(A, B) + distance(C, D) > distance(A, C) + distance(B, D)\n```",
+      "common_mistakes": [
+        "Not handling the wraparound case correctly (use tour[j % len(tour)])",
+        "Forgetting to make a copy of the tour before modifying",
+        "Only running one iteration instead of repeating until convergence",
+        "Trying subsegments in the wrong order (try longer segments first)"
+      ],
+      "follow_up_questions": [
+        "Why does uncrossing an X always reduce tour length in Euclidean space?",
+        "What is the worst-case time complexity of opt2?",
+        "How would you extend this to 3-opt?"
+      ],
+      "difficulty": "advanced"
+    },
+    {
+      "id": "ex_greedy_tsp",
+      "title": "Implement Greedy Link Selection",
+      "prompt": "Implement `greedy_tsp(cities)` which builds a tour by repeatedly adding the shortest link that connects two different segments without creating a loop. Also implement `join_segments(endpoints, A, B)` which joins two segments at their endpoints.",
+      "concepts": [
+        {
+          "concept_id": "greedy_tsp_algorithm",
+          "mastery_indicators": [
+            "Can maintain segment endpoints",
+            "Joins segments correctly",
+            "Detects when segments would form loop"
+          ]
+        },
+        {
+          "concept_id": "greedy_strategy",
+          "mastery_indicators": [
+            "Sorts links by length",
+            "Makes locally optimal choices"
+          ]
+        },
+        {
+          "concept_id": "tour_concept",
+          "mastery_indicators": [
+            "Builds tour from segments"
+          ]
+        }
+      ],
+      "prerequisites": [
+        "greedy_strategy",
+        "tour_concept",
+        "euclidean_distance"
+      ],
+      "hints": [
+        "Maintain a dict mapping endpoints to segments: {A: [A, B, C], C: [A, B, C]}",
+        "Sort all possible links by distance",
+        "For each link (A, B), check if both are endpoints and from different segments",
+        "When joining, make sure A is last of its segment and B is first of its segment (reverse if needed)"
+      ],
+      "solution_sketch": "```python\ndef greedy_tsp(cities):\n    endpoints = {C: [C] for C in cities}\n    for (A, B) in shortest_links_first(cities):\n        if A in endpoints and B in endpoints and endpoints[A] != endpoints[B]:\n            joined_segment = join_segments(endpoints, A, B)\n            if len(joined_segment) == len(cities):\n                return joined_segment\n\ndef join_segments(endpoints, A, B):\n    Aseg, Bseg = endpoints[A], endpoints[B]\n    if Aseg[-1] is not A: Aseg.reverse()\n    if Bseg[0]  is not B: Bseg.reverse()\n    Aseg += Bseg\n    del endpoints[A], endpoints[B]\n    endpoints[Aseg[0]] = endpoints[Aseg[-1]] = Aseg\n    return Aseg\n```",
+      "common_mistakes": [
+        "Not checking if A and B are from different segments (would create a loop)",
+        "Not reversing segments to make sure A is last and B is first",
+        "Forgetting to update the endpoints dict after joining",
+        "Not checking if both A and B are endpoints (middle cities can't join)"
+      ],
+      "follow_up_questions": [
+        "Why check 'endpoints[A] != endpoints[B]' instead of just checking A and B are endpoints?",
+        "What is the time complexity of greedy_tsp?",
+        "How does this compare to nearest neighbor in terms of tour quality?"
+      ],
+      "difficulty": "advanced"
+    },
+    {
+      "id": "ex_held_karp",
+      "title": "Implement Held-Karp Algorithm",
+      "prompt": "Implement `held_karp_tsp(cities)` using dynamic programming to find optimal tours in O(n² 2ⁿ) time. The key insight: for a given start A, end C, and middle cities Bs, only the shortest segment through those cities can be part of an optimal tour. Also implement the memoized `shortest_segment(A, Bs, C)` function.",
+      "concepts": [
+        {
+          "concept_id": "held_karp_algorithm",
+          "mastery_indicators": [
+            "Understands dynamic programming approach",
+            "Can implement memoization",
+            "Knows O(n² 2ⁿ) complexity"
+          ]
+        },
+        {
+          "concept_id": "caching_memoization",
+          "mastery_indicators": [
+            "Uses @cache decorator",
+            "Understands why caching helps",
+            "Clears cache between problems"
+          ]
+        },
+        {
+          "concept_id": "tour_vs_segment",
+          "mastery_indicators": [
+            "Distinguishes segments from tours",
+            "Finds shortest segment for each end city"
+          ]
+        }
+      ],
+      "prerequisites": [
+        "tour_concept",
+        "caching_memoization",
+        "tour_vs_segment"
+      ],
+      "hints": [
+        "For each possible end city C, find the shortest segment from start to C",
+        "Use recursion with memoization: shortest_segment(A, Bs, C) = min over B in Bs of shortest_segment(A, Bs-{B}, B) + [C]",
+        "Base case: if Bs is empty, return [A, C]",
+        "Use @cache decorator for memoization",
+        "Clear cache at start of each new problem"
+      ],
+      "solution_sketch": "```python\ndef held_karp_tsp(cities) -> Tour:\n    A = first(cities)\n    shortest_segment.cache_clear()\n    return shortest(shortest_segment(A, cities - {A, C}, C)\n                    for C in cities - {A})\n\n@cache\ndef shortest_segment(A, Bs, C) -> Segment:\n    if not Bs:\n        return [A, C]\n    else:\n        return min((shortest_segment(A, Bs - {B}, B) + [C] for B in Bs),\n                   key=segment_length)\n```",
+      "common_mistakes": [
+        "Not using memoization (will be extremely slow)",
+        "Not clearing the cache between different problems",
+        "Using frozenset for Bs parameter (need hashable type for cache)",
+        "Forgetting to choose the minimum over all possible end cities",
+        "Confusing segment_length with tour_length"
+      ],
+      "follow_up_questions": [
+        "Why is Held-Karp O(n² 2ⁿ) instead of O(n!)?",
+        "How much faster is this than exhaustive search for n=15 cities?",
+        "What would happen if you forgot the @cache decorator?",
+        "How could you add branch-and-bound to improve this further?"
+      ],
+      "difficulty": "advanced"
+    }
+  ],
+  "concept_to_exercises": {}
+}

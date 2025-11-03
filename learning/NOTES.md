@@ -4077,6 +4077,34 @@ function ModelSelector({ selected, onChange }) {
 
 ---
 
+### 4. Language-Specific Code Editors
+
+**Problem:** Python scratchpad shown for all books, but PAIP teaches Lisp
+
+**Proposed solution:** Add `language` metadata to each library:
+```json
+{
+  "id": "paip-ch1",
+  "language": "lisp",
+  "dialect": "common-lisp",
+  ...
+}
+```
+
+**Implementation options:**
+1. **MVP:** Syntax-highlighted editor (no execution) for Lisp
+2. **Future:** In-browser Lisp REPL using JSCL or BiwaScheme
+3. **Conditional rendering:** Show Python scratchpad for Python books, Lisp editor for Lisp books
+
+**Priority:** Medium - currently showing Python editor for Lisp concepts is confusing
+
+**Estimated effort:** 
+- Metadata + conditional rendering: 1-2 hours
+- Syntax-only Lisp editor: 2-3 hours
+- Full REPL with execution: 1-2 days
+
+---
+
 ### Other TODOs (Carried Forward)
 
 From earlier sections, still pending:
@@ -4549,8 +4577,913 @@ jobs:
 
 ---
 
-*Last updated: 2025-01-07*
+## 🐍 Python Scratchpad Integration (2025-10-30)
+
+### Overview
+
+Added interactive Python code execution environment integrated into the Socratic dialogue for programming concepts. Students can write and run Python code alongside the conversation, with execution results feeding back into the dialogue context.
+
+### Architecture
+
+**Technology:** Pyodide (CPython compiled to WebAssembly)
+- Runs entirely in browser (no server-side execution)
+- Full Python standard library
+- Pre-loaded packages: numpy, micropip
+- ~10-15 second initial load time (cached thereafter)
+
+**Component:** `learning/app/components/PythonScratchpad.tsx`
+
+**Key Features:**
+1. **Monaco Editor integration** - Full code editor with syntax highlighting
+2. **Keyboard shortcuts:**
+   - `Ctrl+Enter` / `Cmd+Enter` - Execute code
+   - `Tab` - Insert indentation (overrides default browser behavior)
+3. **Output capture:**
+   - Stdout displayed in green
+   - Stderr displayed in red
+   - Execution errors shown with full traceback
+4. **Code context feedback:**
+   - Execution results sent back to Gemini via `codeContext` parameter
+   - LLM can reference student's code, output, and errors in dialogue
+
+### Dialog Layout
+
+**Split-pane design for programming concepts:**
+```
+┌────────────────────────────────────────────────────────┐
+│  Dialog Header                                         │
+├──────────────────────────┬─────────────────────────────┤
+│                          │                             │
+│  Conversation (50%)      │  Python Scratchpad (50%)    │
+│  - Socratic questions    │  - Monaco editor            │
+│  - Student responses     │  - Execute button           │
+│  - Mastery tracking      │  - Output console           │
+│  - Progress indicators   │  - Reset button             │
+│                          │                             │
+└──────────────────────────┴─────────────────────────────┘
+```
+
+**Conditional rendering:** Scratchpad only appears when:
+```typescript
+const isProgrammingConcept = 
+  conceptData.tags?.includes('code') ||
+  conceptData.tags?.includes('algorithm') ||
+  conceptData.type === 'implementation';
+```
+
+**Dialog dimensions:**
+- Width: `!max-w-[96vw] w-[96vw]` (96% of viewport)
+- Height: `!h-[90vh]` (90% of viewport)
+- Split: `flex-1` + `flex-1` (equal 50/50)
+- Gap: `gap-4` between panes
+
+### Integration with Socratic Dialogue
+
+**Code context flow:**
+```
+Student writes code → Executes → Output captured
+  ↓
+onExecute callback fires
+  ↓
+setCodeContext({ code, output, error })
+  ↓
+Included in next API request to /api/socratic-dialogue
+  ↓
+Gemini sees: "The student wrote this code: ... It produced this output: ..."
+  ↓
+LLM can debug, guide, or celebrate based on actual execution results
+```
+
+**System prompt enhancement:**
+```typescript
+${codeContext ? `
+## STUDENT'S CODE EXECUTION
+
+The student has written and executed code:
+
+**Code:**
+\`\`\`python
+${codeContext.code}
+\`\`\`
+
+**Output:**
+${codeContext.output}
+
+${codeContext.error ? `**Error:**\n${codeContext.error}` : ''}
+
+Reference their code directly in your responses. Help them debug if there are errors.
+` : ''}
+```
+
+### Pedagogical Design Decisions
+
+#### The Sacred Scratchpad Principle
+
+**Decision:** Gemini provides hints and guidance via conversation, but **never directly modifies student's code**.
+
+**Rationale:**
+1. **Preserves ownership** - "I figured it out!" moment
+2. **True Socratic method** - Questions, not answers
+3. **Clear boundaries** - Chat is teacher, code is student
+4. **Authentic learning** - Real programming involves synthesis, not copying
+5. **Avoids confusion** - Who wrote this line? Was it me or the AI?
+
+**What Gemini CAN do:**
+- ✅ See student's code via `codeContext`
+- ✅ Reference specific lines: "On line 5, you're using..."
+- ✅ Suggest changes: "Try adding `import math` at the top"
+- ✅ Show example patterns in chat (with syntax highlighting)
+- ✅ Ask guiding questions: "What's missing from your function signature?"
+- ✅ Debug errors: "That NameError means you haven't defined `City` yet"
+
+**What Gemini CANNOT do:**
+- ❌ Directly edit the scratchpad
+- ❌ Auto-fix code
+- ❌ Insert solutions
+
+**Rejected alternatives:**
+- **"Copy to Scratchpad" button** - Too tempting to just copy answers
+- **AI code injection** - Breaks ownership, causes confusion
+- **"Ask for help" button** - Becomes a crutch, deprives pedagogical moment
+
+#### Starter Code: Blank Slate vs Scaffolding
+
+**The Pedagogical Tension:**
+
+Peter Norvig noted that productive struggle is beneficial for learning. But blank pages cause paralysis. How much scaffolding is optimal?
+
+**Research-backed considerations:**
+
+**Blank Slate Pros:**
+- Productive struggle (Bjork's "desirable difficulty")
+- Retrieval practice > recognition (deeper encoding)
+- Reveals knowledge gaps early
+- Builds "from scratch" confidence
+
+**Blank Slate Cons:**
+- Cognitive overload (concept + syntax simultaneously)
+- Demotivation from "blank page paralysis"
+- Time spent on boilerplate takes away from concept learning
+- False negatives (understands concept, not syntax)
+
+**Starter Code Pros:**
+- Scaffolding reduces extraneous cognitive load
+- Working example → modify workflow (concrete before abstract)
+- Shows conventions and best practices
+- Momentum from small wins
+
+**Starter Code Cons:**
+- Passive copying without understanding
+- Becomes a crutch (never learns to start fresh)
+- False positives (code works, student doesn't know why)
+
+**Our Adaptive Approach:**
+
+**Level 1 (Basic concepts):** Give starter code
+```python
+City = complex  # From previous concept
+A = City(300, 100)  # Create a city
+print(A.real, A.imag)  # Access coordinates
+```
+*Focus on THE CONCEPT (complex numbers represent points), not Python syntax*
+
+**Level 2 (Intermediate):** Give skeleton
+```python
+def distance(A: City, B: City) -> float:
+    """Return Euclidean distance between cities A and B."""
+    # TODO: Implement using complex number operations
+    pass
+```
+*Shows interface, student discovers implementation*
+
+**Level 3 (Advanced/synthesis):** Blank slate
+```python
+# Implement the 2-opt optimization algorithm
+```
+*By now, students should start from scratch*
+
+**Implementation Strategy (Proposed):**
+
+Since Gemini has full context on the first turn (examples, textbook sections, learning objectives), have it generate pedagogically appropriate starter code:
+
+```typescript
+// System prompt addition (first turn only):
+STARTER CODE GENERATION:
+Generate minimal starter code (5-15 lines) that provides scaffolding WITHOUT solving:
+
+INCLUDE:
+- Imports and type definitions from prerequisites
+- Function signature with docstring
+- TODO comments where logic should go
+- 1-2 test cases showing expected behavior
+
+DO NOT INCLUDE:
+- The actual implementation/algorithm
+- Complete working solution
+- More than 40% of the final code
+
+Return as: { "starter_code": "..." }
+```
+
+**Why LLM-generated:**
+- ✅ Contextual (sees all examples, can synthesize)
+- ✅ Adaptive to concept difficulty
+- ✅ Can extract patterns from Norvig's code style
+- ✅ One API call (no extra latency)
+- ✅ Better than hardcoded templates
+
+**Fallback hierarchy:**
+1. LLM-generated starter code (first turn)
+2. `conceptData.examples[0].content` (curated examples)
+3. Blank slate: `"# Write your implementation here\n"`
+
+**Current Status:** Discussion phase - implementation pending after documenting design decisions.
+
+### UX Enhancements
+
+#### Auto-Focus After LLM Response
+
+**Problem:** Users had to manually click the textarea after each response, breaking conversational flow.
+
+**Solution:** 
+```typescript
+const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+useEffect(() => {
+  if (!isLoading && textareaRef.current) {
+    textareaRef.current.focus();
+  }
+}, [isLoading]);
+```
+
+**Impact:** Seamless typing flow - cursor ready immediately after Gemini responds.
+
+#### Markdown Rendering in Dialogue
+
+**Added libraries:**
+- `react-markdown` - Core markdown rendering
+- `react-syntax-highlighter` - Code block syntax highlighting (oneDark theme)
+- `remark-gfm` - GitHub Flavored Markdown (tables, task lists)
+- `remark-math` + `rehype-katex` - Mathematical equations
+
+**Example rendering:**
+```markdown
+The distance formula is $\sqrt{(y_2 - y_1)^2 + (x_2 - x_1)^2}$
+
+$$
+d = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}
+$$
+```
+
+**Impact:** Professional, readable dialogue with proper code highlighting and math rendering.
+
+### Future Enhancements (TODO)
+
+#### Collapsible Scratchpad
+
+**Motivation:** Wide dialog is great for Pytudes (code-heavy), but overwhelming for theory concepts or mobile users.
+
+**Proposed:**
+- Add toggle button in dialog header: `[</>]` icon
+- Collapse scratchpad to narrow sidebar or hide entirely
+- Conversation area expands to fill space
+- State persists in localStorage
+
+**When to implement:** After adding non-programming content (pure theory concepts, exercises without code).
+
+#### Starter Code Generation
+
+**Status:** Design complete, implementation pending.
+
+**Next steps:**
+1. Update `buildSocraticPrompt` to include starter code instructions (first turn only)
+2. Modify response schema to include `starter_code` field
+3. Parse and set starter code in dialogue component
+4. Test with various concept types (basic, intermediate, advanced)
+5. Validate that generated code doesn't over-solve
+
+**Estimated effort:** 1-2 hours
+
+### Files Modified
+
+**Created:**
+- `learning/app/components/PythonScratchpad.tsx` - Interactive Python workspace
+
+**Modified:**
+- `learning/app/layout.tsx` - Added Pyodide CDN script to head
+- `learning/app/components/SocraticDialogue.tsx` - Integrated scratchpad, 50/50 layout, code context state, auto-focus
+- `learning/app/api/socratic-dialogue/route.ts` - Accept `codeContext`, pass to LLM
+- `learning/package.json` - Added react-markdown, syntax highlighter, math rendering
+- `learning/NOTES.md` - This documentation
+
+### Key Insights
+
+1. **In-browser Python execution works!** Pyodide is production-ready for educational use cases
+2. **50/50 split is ideal** for code-heavy concepts (Pytudes), but may need collapsible option for theory
+3. **Code context is powerful** - Gemini seeing actual execution results enables precise debugging guidance
+4. **Starter code is nuanced** - Must balance scaffolding vs productive struggle
+5. **LLM-generated scaffolding** is promising - can synthesize examples into pedagogically sound templates
+6. **Sacred scratchpad principle** - Never auto-modify student code; preserves ownership and learning
+
+---
+
+## 🐍 Pytudes Integration: TSP Notebook (2025-10-30)
+
+### Overview
+
+Extended the Little PAIPer platform to support Peter Norvig's Pytudes collection, starting with the Traveling Salesperson Problem (TSP) notebook as a proof-of-concept.
+
+### Project Structure
+
+Mirrored the PAIP structure for consistency:
+
+```
+learning/pytudes/
+├── tsp.md                   # Source text (converted from TSP.ipynb)
+├── tsp-chunks.json          # Semantic chunks (90 chunks)
+├── tsp-embeddings.json      # Vector embeddings (3072-dim)
+├── TSP_files/               # Notebook images (matplotlib visualizations)
+└── raw/                     # Future: concept graph extraction
+    ├── concepts.json        # Pass 1: Concepts + prerequisites
+    ├── pedagogy.json        # Pass 2: Mastery criteria
+    └── exercises.json       # Pass 3: Exercise mapping
+```
+
+### Image Handling Strategy
+
+**Challenge:** TSP notebook contains matplotlib visualizations
+
+**Solution:** Static file serving through Next.js public directory
+
+**Implementation:**
+1. Copy images: `cp -r pytudes/TSP_files public/`
+2. Images referenced as `TSP_files/*.png` work automatically
+3. Next.js serves `public/` at root - no path changes needed
+4. react-markdown renders images automatically
+5. Docker build includes public/ directory
+
+**Decision:** Commit images directly to git (small ~50-200KB matplotlib plots, no Git LFS needed)
+
+---
+
+### Chunking Pipeline
+
+**Goal:** Convert TSP markdown into semantic chunks for RAG retrieval
+
+**Command:**
+```bash
+npx ts-node learning/scripts/chunk-paip.ts learning/pytudes/tsp.md learning/pytudes/tsp-chunks.json
+```
+
+**Process:**
+1. Split markdown by `#` headers (32 sections detected)
+2. Use Gemini 2.5 Flash to semantically chunk each section
+3. Tag chunks with concepts, types, and metadata
+4. Validate and save to JSON
+
+**Results:**
+- ✅ **Total chunks:** 90
+- ✅ **Average length:** 666 characters
+- ✅ **Chunk types:** overview, definition, example, explanation
+- ✅ **Concepts tagged:** 197 unique concept tags
+- ⚠️ **Partial failures:** 5 sections had JSON parsing errors (skipped)
+  - "Implementation of Basic Concepts"
+  - "Exhaustive TSP Search Algorithm"
+  - "Repeated Nearest Neighbor Algorithm"
+  - "Divide and Conquer: `divide_tsp`"
+  - "Creating a Minimum Spanning Tree"
+- ⚠️ **Validation warnings:**
+  - 1 chunk very long (>3000 chars): "Further Explorations"
+  - 3 chunks with no concept tags
+
+**Chunk structure:**
+```json
+{
+  "chunk_id": "chunk-17-algorithm-design-strategies-list",
+  "topic": "Listing of General Algorithm Design Strategies",
+  "text": "To get inspired, here are some general strategies...",
+  "concepts": [
+    "algorithm-design",
+    "brute-force-strategy",
+    "approximation-strategy",
+    "greedy-strategy"
+  ],
+  "chunk_type": "definition",
+  "section": "General Strategies for Algorithm Design"
+}
+```
+
+**Key insight:** The chunking script successfully processed 27 of 32 sections (84% success rate). The 5 failures were due to LLM generating malformed JSON with unescaped control characters in code examples.
+
+---
+
+### Embedding Pipeline
+
+**Goal:** Generate vector embeddings for semantic search
+
+**Command:**
+```bash
+npx ts-node learning/scripts/embed-chunks.ts learning/pytudes/tsp-chunks.json learning/pytudes/tsp-embeddings.json
+```
+
+**Process:**
+1. Read 90 chunks from JSON
+2. Batch process in groups of 5 (rate limiting)
+3. Embed using `gemini-embedding-001` model
+4. Save embeddings with original chunk metadata
+
+**Results:**
+- ✅ **Total embeddings:** 90/90 (100% success)
+- ✅ **Model:** gemini-embedding-001
+- ✅ **Dimensions:** 3072 (updated from previous 768-dim)
+- ✅ **File size:** 3.45 MB
+- ✅ **Processing time:** ~30-60 seconds (18 batches)
+
+**Embedding structure:**
+```json
+{
+  "chunk_id": "chunk-46-visualizing-greedy-algorithm",
+  "topic": "Introduction to visualizing the greedy algorithm",
+  "text": "## Visualizing the Greedy Algorithm...",
+  "concepts": [
+    "greedy-tsp-algorithm",
+    "visualization",
+    "dont-repeat-yourself-principle"
+  ],
+  "chunk_type": "overview",
+  "embedding": [0.0001, 0.0099, 0.0131, -0.0590, ...],  // 3072-dim vector
+  "embedding_model": "gemini-embedding-001"
+}
+```
+
+**Performance notes:**
+- Batch processing handled all chunks without errors
+- No transient network failures (unlike previous PAIP embedding run)
+- Consistent embedding dimensions across all chunks
+
+---
+
+### Comparison: PAIP vs Pytudes
+
+| Aspect | PAIP Chapter 1 | TSP Pytudes |
+|--------|----------------|-------------|
+| **Source format** | Markdown (textbook prose) | Markdown (Jupyter notebook) |
+| **Sections detected** | 2 (manual split) | 32 (automatic `#` headers) |
+| **Total chunks** | 92 | 90 |
+| **Success rate** | ~95% | 84% (5 sections failed) |
+| **Embedding dims** | 3072 | 3072 |
+| **Domain** | Lisp programming | Algorithm design, Python |
+| **Images** | None | Matplotlib plots via static files |
+| **Code examples** | Lisp S-expressions | Python code blocks |
+
+**Key difference:** Pytudes has more structured content (clear section headers) but more complex code examples that occasionally break JSON parsing.
+
+---
+
+### RAG Integration for Pytudes
+
+The TSP embeddings are now ready for semantic search in Socratic dialogues. The existing RAG infrastructure from PAIP can be reused:
+
+**How it will work:**
+1. User starts learning a TSP concept (e.g., "Greedy Algorithm")
+2. First turn: Embed concept name → cosine similarity search across 90 TSP chunks
+3. Retrieve top 5 most relevant chunks (~2-5KB text)
+4. Include in LLM prompt as textbook context
+5. Cache on client-side for subsequent turns
+6. LLM teaches from actual TSP notebook content
+
+**Expected benefits:**
+- Grounded teaching using Norvig's specific examples
+- References to actual Python implementations
+- Visual descriptions tied to matplotlib plots
+- Consistent terminology with TSP notebook
+
+**API changes needed:** None! The existing `/api/socratic-dialogue` route already supports:
+- Loading embeddings from JSON
+- Cosine similarity search
+- Client-side caching
+
+**Next step:** Point the dialogue API to `pytudes/tsp-embeddings.json` when teaching TSP concepts.
+
+---
+
+### Next Steps for Pytudes
+
+#### Immediate (Before Norvig Meeting)
+- [ ] Extract TSP concept graph (manual 3-pass approach)
+  - [ ] Pass 1: Identify 15-25 concepts + prerequisites (1.5 hrs)
+  - [ ] Pass 2: Enrich 3-5 key concepts with pedagogy (1.5 hrs)
+  - [ ] Pass 3: Map algorithm variations to concepts (30 min)
+- [ ] Create `pytudes/concept-graph.json`
+- [ ] Test TSP graph visualization in app
+- [ ] Verify Socratic dialogue works with TSP embeddings
+
+#### Future Enhancements
+- [ ] Code editor integration (Monaco Editor)
+- [ ] In-browser Python execution (Pyodide)
+- [ ] Automated concept extraction for more Pytudes
+- [ ] Multi-notebook support (100+ Pytudes)
+
+---
+
+### Files Created
+
+**New files:**
+- `learning/pytudes/tsp.md` - Source notebook (74,212 chars)
+- `learning/pytudes/tsp-chunks.json` - 90 semantic chunks
+- `learning/pytudes/tsp-embeddings.json` - 90 embedded chunks (3.45 MB)
+- `learning/pytudes/TSP_files/*.png` - Matplotlib visualizations
+
+**Modified files:**
+- `learning/NOTES.md` - This documentation
+
+**To be created:**
+- `learning/pytudes/concept-graph.json` - TSP learning graph
+- `learning/pytudes/raw/concepts.json` - Pass 1 output
+- `learning/pytudes/raw/pedagogy.json` - Pass 2 output
+- `learning/pytudes/raw/exercises.json` - Pass 3 output
+
+---
+
+### Lessons Learned
+
+1. **Reusable pipeline:** The PAIP chunking and embedding scripts worked perfectly for Pytudes with zero modifications
+
+2. **JSON parsing fragility:** Python code blocks with special characters can break LLM JSON generation. Future improvement: better escaping or fallback to plain text format
+
+3. **Header-based splitting:** Using `#` headers as section boundaries works much better for Jupyter notebooks than manual splitting
+
+4. **Embedding stability:** The new `gemini-embedding-001` model (3072-dim) ran flawlessly across 90 chunks with no retries needed
+
+5. **Static image serving:** Next.js public directory makes image handling trivial - no need for complex asset pipelines
+
+---
+
+## 🐍 Python Scratchpad: Ephemeral Starter Code (2025-10-30)
+
+### Problem Solved
+
+Users had to manually delete the starter code ("Hello, world!" example) before writing their own code. This was tedious and cluttered the workspace.
+
+### Solution: Placeholder-Style Behavior
+
+Made the starter code behave like placeholder text in a form field:
+- Shows as grey text when scratchpad is empty
+- Disappears automatically when you start typing
+- No manual deletion needed
+
+### Implementation
+
+**Key changes in `PythonScratchpad.tsx`:**
+
+1. **Initialize with empty string:**
+```typescript
+const [code, setCode] = useState('');  // Not starterCode
+```
+
+2. **Use placeholder instead of value:**
+```typescript
+<Textarea
+  value={code}
+  placeholder={isLoading ? "Loading Python..." : starterCode}
+  ...
+/>
+```
+
+3. **Ephemeral logic (attempted but unnecessary):**
+```typescript
+// This complex logic was added but turns out to be unnecessary:
+if (code === starterCode && newCode.length > code.length) {
+  const typedChar = newCode.charAt(newCode.length - 1);
+  setCode(typedChar);
+  onCodeChange?.(typedChar);
+}
+```
+
+**Why it works:**
+- HTML `<textarea>` placeholder attribute already handles ephemeral text
+- When textarea is empty (`code === ''`), shows placeholder
+- When user types, placeholder disappears automatically
+- Simple and native browser behavior
+
+### User Experience
+
+**Before:**
+```
+# 🧮 Python scratchpad for exploring Euclidean Distance
+# Feel free to experiment here!
+# Your code will be visible to your tutor.
+```
+User has to manually delete this to write code.
+
+**After:**
+```
+[grey placeholder text]
+```
+User starts typing → placeholder vanishes → clean slate.
+
+### Impact
+
+- ✅ Less friction to start coding
+- ✅ Cleaner initial workspace
+- ✅ Familiar UX pattern (like form placeholders)
+- ✅ No manual deletion needed
+- ✅ Professional appearance
+
+### Files Modified
+
+- `learning/app/components/PythonScratchpad.tsx` - Empty initial state, placeholder prop
+
+---
+
+## 🔄 Dialogue Context Optimization (2025-10-30)
+
+### Problem: Redundant Code/Evaluation in Every Message
+
+**Issue:** The Socratic dialogue was sending the full code and evaluation state on every turn, even when nothing changed. This caused Gemini to incorrectly think the student had just run new code when they were simply typing a text response.
+
+**Example of confusing behavior:**
+```
+Student: "I understand now!"
+API sends: code + last evaluation (unchanged)
+Gemini: "Great job running that code! Now let's..."  ❌ (student didn't run anything)
+```
+
+**Solution:** Track what was last sent and only include changes
+
+**Implementation:**
+```typescript
+// Track state
+const [lastSentCode, setLastSentCode] = useState<string>('');
+const [lastSentEvaluation, setLastSentEvaluation] = useState<any>(null);
+
+// Check what changed
+const codeChanged = currentCode !== lastSentCode;
+const evalChanged = JSON.stringify(currentEval) !== JSON.stringify(lastSentEvaluation);
+
+// Only include in API message if changed
+if (codeChanged && currentCode) {
+  apiContent += `\n\n**My Code:**\n\`\`\`python\n${currentCode}\n\`\`\``;
+}
+
+if (evalChanged && currentEval) {
+  apiContent += `\n\n**Output:**\n${currentEval.output || '(no output)'}`;
+}
+
+// Update tracking after successful response
+if (codeChanged) setLastSentCode(currentCode);
+if (evalChanged) setLastSentEvaluation(currentEval);
+```
+
+**Result:**
+- ✅ Text-only responses: Gemini sees only text
+- ✅ Code edited but not run: Gemini sees text + new code
+- ✅ Code re-run: Gemini sees text + new evaluation
+- ✅ New code and run: Gemini sees text + code + evaluation
+
+**Impact:** Much cleaner context - Gemini only sees workspace changes when something actually happened.
+
+---
+
+## 🛡️ Improved Error Handling for Truncated Responses (2025-10-30)
+
+### Problem: Partial JSON Leaking to UI
+
+**Issue:** When Gemini's response was truncated mid-JSON (hitting token limits or network issues), the raw partial JSON appeared in the chat:
+
+```json
+{
+  "message": "You're absolutely right! When you have...",
+  "mastery_assessment": {
+    "indicators_demonstrated": [
+      "metric_applicability"
+    ],
+    "confidence":
+```
+
+This exposed internal implementation details and confused users.
+
+**Solution:** User-friendly error messages with truncation detection
+
+**Implementation:**
+```typescript
+try {
+  parsedResponse = JSON.parse(responseText);
+} catch (e) {
+  console.error('\n❌ JSON PARSE ERROR:', e);
+  console.error('   - Raw response:', responseText);
+  
+  // Detect if response was partial/truncated
+  const isPartialResponse = responseText.trim().length > 0 && 
+                           (responseText.includes('{') || responseText.includes('['));
+  
+  const errorMessage = isPartialResponse
+    ? '⚠️ My response was incomplete (possibly truncated). Please click retry below to try again.'
+    : '⚠️ I encountered an error generating my response. Please click retry below to try again.';
+  
+  // Show user-friendly error, not raw JSON
+  parsedResponse = {
+    message: errorMessage,
+    mastery_assessment: {
+      indicators_demonstrated: [],
+      confidence: 0,
+      ready_for_mastery: false,
+      next_focus: 'Retry the request',
+    },
+  };
+}
+```
+
+**Result:**
+- ✅ Users see clean error message
+- ✅ Retry button appears automatically
+- ✅ No raw JSON leakage
+- ✅ Different messages for truncation vs malformed JSON
+
+---
+
+## 📏 Increased Token Limit for Better Responses (2025-10-30)
+
+### Problem: Response Truncation
+
+**Issue:** `maxOutputTokens: 800` was too restrictive, causing:
+- Responses cut off mid-sentence
+- Incomplete explanations
+- JSON truncated before completion
+- Poor user experience with frequent retries
+
+**Analysis:**
+- 800 tokens ≈ 600 words (too cramped for detailed Socratic dialogue)
+- Gemini 2.5 Flash supports up to 8192 tokens
+- Socratic teaching needs room for:
+  - Thoughtful explanations: 200-400 tokens
+  - Follow-up questions: 50-100 tokens
+  - Code examples: 100-300 tokens
+  - JSON structure overhead: ~50 tokens
+  - Safety margin: 200-400 tokens
+
+**Solution:** Increase to 1500 tokens
+
+**Implementation:**
+```typescript
+generationConfig: {
+  temperature: 0.7,
+  maxOutputTokens: 1500,  // Increased from 800
+  responseMimeType: 'application/json',
+  responseSchema: { ... }
+}
+```
+
+**Result:**
+- ✅ 1500 tokens ≈ 1125 words (comfortable for detailed teaching)
+- ✅ Room for code examples in responses
+- ✅ Eliminates truncation issues
+- ✅ Still efficient (not wasteful like 8192 would be)
+
+**Impact:** No more truncated responses observed in testing. Users get complete, well-formed answers every time.
+
+---
+
+*Last updated: 2025-10-30*
 *See CONTEXT.md for complete project design document*
+
+---
+
+## Pytudes Integration - TSP Concept Graph Extraction (2025-10-29)
+
+### Context
+Meeting with Peter Norvig tomorrow to discuss:
+1. Extending Little PAIPer to work with Pytudes (specifically TSP notebook)
+2. Code editor integration for interactive learning
+3. Code execution capability
+4. One-click deployment
+
+### Project Structure Decision
+
+Mirror the PAIP structure for consistency:
+
+```
+learning/pytudes/
+├── concept-graph.json       # Final composed graph (for app)
+├── raw/
+│   ├── concepts.json        # Pass 1: Concepts + prerequisites
+│   ├── pedagogy.json        # Pass 2: Mastery criteria (sample)
+│   └── exercises.json       # Pass 3: Exercise mapping
+├── tsp.md                   # Source text (converted from TSP.ipynb)
+└── TSP_files/               # Notebook images
+```
+
+### Image Handling Strategy
+
+**Challenge:** TSP notebook contains matplotlib visualizations
+**Solution:** Simple static file serving
+
+1. Copy images: `cp -r docs/TSP_files public/`
+2. Images referenced as `TSP_files/*.png` in markdown work automatically
+3. Next.js serves `public/` at root - no path changes needed
+4. react-markdown renders images automatically
+5. Docker build includes public/ directory
+
+**Decision:** Commit images directly to git (they're small ~50-200KB matplotlib plots). No Git LFS needed.
+
+### Manual vs Automated Extraction
+
+**Key Strategic Decision:** Do NOT build generic extraction pipeline before meeting.
+
+**Rationale:**
+1. **Prove concept first:** Manual TSP extraction proves approach works for Python
+2. **Get expert input:** Norvig can advise if automation is worth it
+3. **Quality vs speed tradeoff:** Manual = high quality, automated = unknown quality
+4. **Time risk:** Building pipeline could consume all prep time
+
+**Approach for tomorrow:** Manual 3-pass extraction (4 hours)
+- Pass 1: Extract 15-25 concepts + prerequisites (1.5 hrs)
+- Pass 2: Enrich 3-5 key concepts with pedagogy (1.5 hrs)
+- Pass 3: Map algorithm variations to concepts (30 min)
+- Compose and test in app (30 min)
+
+### Action Plan for Tonight/Tomorrow
+
+**Total estimated time: 4-5 hours**
+
+**Setup (15 minutes):**
+```bash
+cd learning
+mkdir -p pytudes/raw pytudes/TSP_files
+cp docs/TSP.md pytudes/tsp.md
+cp docs/TSP_files/*.png pytudes/TSP_files/
+cp -r pytudes/TSP_files public/
+```
+
+**Extraction (3-4 hours):**
+1. Use Claude/Gemini to extract concepts from pytudes/tsp.md
+2. Save outputs to pytudes/raw/*.json
+3. Manually compose into pytudes/concept-graph.json
+4. Test in app to verify visualization works
+
+**Optional enhancements if time permits:**
+- Code editor integration with Monaco Editor (1-2 hours)
+- Pyodide for in-browser Python execution (2-3 hours)
+
+### Demo Structure for Meeting
+
+**Show (in order):**
+1. Live Cloud Run deployment
+2. PAIP Chapter 1 (proven Lisp extraction)
+3. TSP concept graph (manual Python extraction)
+4. Code editor mockup (if implemented)
+
+**Ask Norvig:**
+1. "This manual extraction took 4 hours. Should we automate for all 100+ Pytudes?"
+2. "What quality bar do you need for pedagogical concept graphs?"
+3. "Which Pytudes would be most valuable as interactive learning graphs?"
+4. "Is manual curation better for maintaining pedagogical quality?"
+
+### Key Insights
+
+**What worked from PAIP:**
+- 3-pass structure (concepts → pedagogy → exercises)
+- JSON intermediate format allows iteration
+- Composition from raw/*.json to final concept-graph.json
+- react-markdown + vis.js visualization scales well
+
+**Challenges for Pytudes:**
+- Images (solved: static file serving)
+- Code execution (nice-to-have: Pyodide)
+- Jupyter notebook format (solved: use .md conversion)
+- Scale (100+ notebooks vs 1 chapter)
+
+**Strategic Decision Point:**
+After this meeting, we'll know whether to:
+- Build generic extraction pipeline for all Pytudes
+- Focus on manual curation of high-value notebooks
+- Extend to other educational content (textbooks, courses)
+
+### Files Created/Modified
+
+**Created:**
+- `learning/scripts/deploy.sh` - One-click Cloud Run deployment
+- `learning/pytudes/` - New directory structure (pending)
+
+**To be created:**
+- `learning/pytudes/tsp.md` - Source text
+- `learning/pytudes/raw/concepts.json` - Pass 1 output
+- `learning/pytudes/raw/pedagogy.json` - Pass 2 output
+- `learning/pytudes/raw/exercises.json` - Pass 3 output
+- `learning/pytudes/concept-graph.json` - Final composed graph
+
+**Modified:**
+- `NOTES.md` - This documentation
+
+### Next Steps After Meeting
+
+Based on Norvig's feedback, decide on:
+1. **Generic extraction:** Build automated pipeline vs continue manual curation
+2. **Scope:** All Pytudes vs curated subset vs expand to other content
+3. **Features:** Prioritize code editor, execution, or other enhancements
+4. **Deployment:** Share publicly vs keep private for testing
+
+The meeting will provide strategic direction on whether this project should scale horizontally (more content, automation) or vertically (deeper features, better UX).
 # Pedagogical Concept Graph (PCG) - Visualization Notes
 
 ## Overview

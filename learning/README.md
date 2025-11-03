@@ -51,6 +51,18 @@ Each concept comes with an AI tutor that:
 - **Grants Progression**: Unlocks dependent concepts only when mastery is achieved
 - **Detects Misconceptions**: Uses pedagogical data to identify and correct errors
 
+For programming concepts, learners get an **integrated Python workspace** with real-time code execution:
+
+![Socratic Dialogue with Python Workspace](docs/screenshots/socratic-dialog-euclidian.png)
+*AI tutor guides learning while student experiments with live code - clean separation between dialogue and workspace*
+
+**Key Features:**
+- **Live Python Execution**: Run code with Pyodide (no backend needed!)
+- **Ephemeral Starter Code**: Helpful hints that disappear when you start typing
+- **Context-Aware Tutoring**: Your code and output are visible to the AI
+- **Clean UX**: Code stays in workspace, avoiding chat clutter
+- **Fast Feedback Loop**: Ctrl+Enter to run, instant results
+
 **Model**: Gemini 2.5 Flash with structured JSON output for mastery assessment
 
 ### 4. **Retrieval-Augmented Generation (RAG)**

@@ -15,6 +15,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 type Message = {
   role: 'system' | 'user' | 'assistant';
@@ -75,10 +77,21 @@ async function loadConceptContext(
   conceptId: string, 
   conceptData: any,
   apiKey: string,
+  embeddingsPath: string,
   topK: number = 5
 ): Promise<string> {
   try {
-    const embeddings = require('../../../paip-chapter-1/embeddings.json');
+    // Load embeddings from dynamic path
+    const embeddingsFile = path.join(
+      process.cwd(), 
+      'public',
+      embeddingsPath.replace(/^\/data\//, '') // Remove /data/ prefix
+    );
+    
+    const embeddingsData = JSON.parse(
+      await fs.readFile(embeddingsFile, 'utf-8')
+    );
+    const embeddings = embeddingsData;
     
     console.log(`   📊 Searching ${embeddings.chunks.length} chunks using semantic similarity...`);
     
@@ -122,7 +135,7 @@ async function loadConceptContext(
 
 export async function POST(request: NextRequest) {
   try {
-    const { conceptId, conversationHistory, conceptData, textbookContext } = await request.json();
+    const { conceptId, conversationHistory, conceptData, textbookContext, embeddingsPath } = await request.json();
 
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎓 NEW SOCRATIC DIALOGUE REQUEST');
@@ -147,7 +160,7 @@ export async function POST(request: NextRequest) {
     
     if (!textbookSections) {
       console.log('\n📚 SEMANTIC SEARCH (first turn):');
-      textbookSections = await loadConceptContext(conceptId, conceptData, apiKey, 5);
+      textbookSections = await loadConceptContext(conceptId, conceptData, apiKey, embeddingsPath, 5);
     } else {
       console.log('\n📚 REUSING CACHED CONTEXT:');
     }
@@ -203,7 +216,7 @@ export async function POST(request: NextRequest) {
           contents: geminiContents,
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 800,
+            maxOutputTokens: 1500,
             responseMimeType: 'application/json',
             responseSchema: {
               type: 'object',
@@ -260,7 +273,21 @@ export async function POST(request: NextRequest) {
     console.log('   - Usage metadata:', JSON.stringify(data.usageMetadata, null, 2));
     console.log('   - Candidates:', data.candidates.length);
     
-    const responseText = data.candidates[0].content.parts[0].text;
+    // Find the text response (skip thought parts if using thinking mode)
+    const textPart = data.candidates[0].content.parts.find(
+      (part: any) => part.text !== undefined
+    );
+    
+    if (!textPart) {
+      console.error('\n❌ No text part found in response');
+      console.error('   - Parts structure:', JSON.stringify(data.candidates[0].content.parts, null, 2));
+      return NextResponse.json(
+        { error: 'Invalid response structure from Gemini' },
+        { status: 500 }
+      );
+    }
+    
+    const responseText = textPart.text;
     console.log('\n📄 RAW RESPONSE TEXT:');
     console.log(responseText.substring(0, 500) + (responseText.length > 500 ? '...' : ''));
     
@@ -276,14 +303,23 @@ export async function POST(request: NextRequest) {
     } catch (e) {
       console.error('\n❌ JSON PARSE ERROR:', e);
       console.error('   - Raw response:', responseText);
-      // Fallback: treat as plain text
+      
+      // Detect if response was partial/truncated
+      const isPartialResponse = responseText.trim().length > 0 && 
+                               (responseText.includes('{') || responseText.includes('['));
+      
+      const errorMessage = isPartialResponse
+        ? '⚠️ My response was incomplete (possibly truncated). Please click retry below to try again.'
+        : '⚠️ I encountered an error generating my response. Please click retry below to try again.';
+      
+      // Show user-friendly error, not raw JSON
       parsedResponse = {
-        message: responseText,
+        message: errorMessage,
         mastery_assessment: {
           indicators_demonstrated: [],
           confidence: 0,
           ready_for_mastery: false,
-          next_focus: 'Continue the dialogue',
+          next_focus: 'Retry the request',
         },
       };
     }
@@ -293,7 +329,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       message: parsedResponse.message,
       mastery_assessment: parsedResponse.mastery_assessment,
-      textbookContext: textbookSections, // Return for client to cache
+      textbookContext: textbookSections,
       usage: data.usageMetadata,
     });
 
@@ -347,7 +383,10 @@ function convertToGeminiFormat(systemPrompt: string, conversationHistory: Messag
 }
 
 // Build a Socratic teaching prompt using the concept's pedagogical data
-function buildSocraticPrompt(conceptData: any, textbookSections?: string): string {
+function buildSocraticPrompt(
+  conceptData: any, 
+  textbookSections?: string
+): string {
   const { name, description, learning_objectives, mastery_indicators, examples, misconceptions } = conceptData;
 
   return `You are a Socratic tutor teaching the concept: "${name}".
@@ -385,9 +424,10 @@ ${misconceptions?.map((m: any) => `- "${m.misconception}" → Reality: ${m.reali
 3. Check understanding of each learning objective through dialogue
 4. Gently correct misconceptions when they arise
 5. Reference specific passages from the textbook content when helpful
-6. Be encouraging and patient
-7. Keep responses concise (2-3 sentences with one focused question)
-8. When the student demonstrates mastery of the core skills, conclude with encouragement
+6. If student shares code/output, reference it directly and suggest experiments
+7. Be encouraging and patient
+8. Keep responses concise (2-3 sentences with one focused question)
+9. When the student demonstrates mastery of the core skills, conclude with encouragement
 
 **Mastery Assessment Instructions:**
 After each student response, evaluate which mastery indicators they demonstrated:

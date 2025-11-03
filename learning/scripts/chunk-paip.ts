@@ -173,8 +173,8 @@ function splitIntoSections(markdown: string): Array<{ header: string; content: s
   let currentContent: string[] = [];
   
   for (const line of lines) {
-    // Match ## or ### headers
-    const headerMatch = line.match(/^#{2,3}\s+(.+)$/);
+    // Match # headers (main sections)
+    const headerMatch = line.match(/^#\s+(.+)$/);
     
     if (headerMatch) {
       // Save previous section if it has content
