@@ -1,3 +1,4 @@
 utils/params.py
 .aider*
 .env
+__pycache__/

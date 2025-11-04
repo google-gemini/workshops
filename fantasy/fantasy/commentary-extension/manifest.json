@@ -1,0 +1,15 @@
+{
+  "name": "Fantasy Football Draft Companion",
+  "description": "A multi-agent app that that helps you play fantasy football draft games by capturing screen and audio.",
+  "version": "0.0.1",
+  "manifest_version": 3,
+  "permissions": ["tabCapture", "offscreen", "storage"],
+  "options_page": "permissions.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Fantasy Draft Companion"
+  }
+}

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fantasy Football Draft Companion</title>
+    <link rel="stylesheet" href="popup.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="card">
+      <header class="card-header">
+        <h1>Gemini Draft Companion</h1>
+        <p>Enter your Sleeper league details to get started.</p>
+      </header>
+
+      <main class="card-body">
+        <form>
+          <div class="mode-selection">
+            <div>
+              <input type="radio" id="audioMode" name="mode" value="audio" checked />
+              <label for="audioMode">Audio Mode</label>
+            </div>
+            <div>
+              <input type="radio" id="textMode" name="mode" value="text" />
+              <label for="textMode">Text Mode</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="user_id_input">Sleeper User ID</label>
+            <input type="text" id="user_id_input" placeholder="e.g., '1267286355931574272'" />
+          </div>
+
+          <div class="form-group">
+            <label for="league_id_input">Sleeper League ID</label>
+            <input type="text" id="league_id_input" placeholder="e.g., '1268292194029015040'" />
+          </div>
+
+          <div class="form-group">
+            <label for="draft_id_input">Sleeper Draft ID</label>
+            <input type="text" id="draft_id_input" placeholder="e.g., '1278888263074996224'" />
+          </div>
+
+          <div class="form-group-checkbox">
+            <input type="checkbox" id="superflex_input" />
+            <label for="superflex_input">This is a Superflex Draft</label>
+          </div>
+        </form>
+
+        <div class="button-group">
+          <button id="connectControlBtn" class="btn btn-primary">Connect</button>
+          <button id="stopCaptureBtn" class="btn btn-secondary" disabled>Stop Everything</button>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+          <div class="messages" id="messages"></div>
+          <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Type a message..." />
+            <button id="sendChatBtn" class="btn btn-primary">Send</button>
+          </div>
+        </div>
+      </main>
+
+      <footer class="card-footer">
+        <div id="status">Status: Awaiting connection...</div>
+        <div class="connection-status" id="connectionStatus">
+          <span class="indicator disconnected"></span>
+          <span>Disconnected</span>
+        </div>
+      </footer>
+    </div>
+
+    <video id="videoElement" autoplay style="display: none"></video>
+    <canvas id="captureCanvas" style="display: none"></canvas>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: agents/Dockerfile
+      args:
+        POETRY_VERSION: 2.2.1
+        PORT: '${PORT:-5000}'
+    container_name: '${APP_CONTAINER_NAME:-fantasy-draft-app}'
+    network_mode: host
+    command:
+      sh -c "poetry run uvicorn src.agents.middleware:app --host 0.0.0.0 --port ${PORT} --reload"
+    volumes:
+      - '${DB_PATH_ON_HOST}:${DB_PATH_IN_CONTAINER}'
+    environment:
+      - 'PORT=${PORT:-5000}'
+      - PYTHONUNBUFFERED=1
+      - 'GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI:-FALSE}'
+      - 'GOOGLE_API_KEY=${GEMINI_API_KEY}'
+      - 'DB_PATH_IN_CONTAINER=${DB_PATH_IN_CONTAINER}'
+  ingestion:
+    build:
+      context: .
+      dockerfile: ingestion/Dockerfile
+      args:
+        POETRY_VERSION: 2.2.1
+    profiles:
+      - ingestion
+    container_name: '${INGESTION_CONTAINER_NAME:-fantasy-draft-ingestion}'
+    network_mode: host
+    volumes:
+      - '${DB_PATH_ON_HOST}:${DB_PATH_IN_CONTAINER}'
+    environment:
+      - 'GOOGLE_API_KEY=${GEMINI_API_KEY}'
+      - 'DB_PATH_IN_CONTAINER=${DB_PATH_IN_CONTAINER}'

@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Fantasy Draft Companion - Permissions</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+      button {
+        font-size: 16px;
+        padding: 10px 20px;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 15px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Microphone Access Required</h1>
+    <p>The Fantasy Draft Companion needs access to your microphone to capture your audio.</p>
+    <p>Please click the button below and then click "Allow" in the browser prompt.</p>
+    <button id="requestPermissionBtn">Grant Microphone Permission</button>
+    <p id="status"></p>
+    <script src="permissions.js"></script>
+  </body>
+</html>
