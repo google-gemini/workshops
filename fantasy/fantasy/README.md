@@ -42,7 +42,7 @@ GEMINI_API_KEY="API_KEY_HERE"
 # Path *inside* the Docker container where the database will reside
 DB_PATH_IN_CONTAINER="/app/db/fantasy_ingestion.sqlite"
 # Local path on your *host machine* where the database will be stored
-DB_PATH_ON_HOST="/home/lpabon/test/db/fantasy_ingestion.sqlite"
+DB_PATH_ON_HOST="./db/fantasy_ingestion.sqlite"
 
 # Note the middleware address needs to be manually changed in the extension.
 PORT=5000
@@ -77,7 +77,7 @@ server.
 *   **Manual Update:** Run this command to manually update the database:
 
     ```bash
-    sudo docker compose up ingestion --build --force-recreate
+    docker compose up ingestion --build --force-recreate
     ```
 
     > The service will run until data population is complete and then stop.
@@ -91,7 +91,7 @@ This starts the main application server that the Sleeper extension connects to
 during your draft.
 
 ```bash
-sudo docker compose up server --build --force-recreate
+docker compose up server --build --force-recreate
 ```
 
 > **Important:** Keep this terminal window open and the server running

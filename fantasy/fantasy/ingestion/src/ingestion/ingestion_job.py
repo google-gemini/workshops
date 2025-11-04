@@ -598,7 +598,7 @@ async def run_team_defense_ingestion(
     ):
       item["offseason_additions"] = json.dumps(item["offseason_additions"])
 
-  logging.info(structured_output)
+  logging.debug(structured_output)
   final_df = pd.DataFrame(structured_output)
   logging.info(
       "Team defense DataFrame has %d rows. Expected %d rows.",
