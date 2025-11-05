@@ -166,6 +166,34 @@ jobs:
           mkdir -pv root
           cp -frv ./tedx/slides/dist ./root/tedx
 
+      # Build slides for smash
+      - name: Build slides for smash
+        id: build_smash
+        working-directory: ./smash/slides
+        run: |
+          npm install
+          npm install -D playwright-chromium
+          npm run build -- --base /workshops/smash
+
+      - name: Create deployment root for smash
+        run: |
+          mkdir -pv root
+          cp -frv ./smash/slides/dist ./root/smash
+
+      # Build slides for waker
+      - name: Build slides for waker
+        id: build_waker
+        working-directory: ./waker/slides
+        run: |
+          npm install
+          npm install -D playwright-chromium
+          npm run build -- --base /workshops/waker
+
+      - name: Create deployment root for waker
+        run: |
+          mkdir -pv root
+          cp -frv ./waker/slides/dist ./root/waker
+
       # Deploy to GitHub Pages
       - uses: actions/configure-pages@v4
 

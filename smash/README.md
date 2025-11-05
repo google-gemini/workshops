@@ -1,5 +1,7 @@
 # 🤖 Smash Bot: An LLM-Powered Fighting Game Agent
 
+> **📊 [View Presentation Slides](https://google-gemini.github.io/workshops/smash)** - Workshop presentation explaining the architecture and development journey
+
 Welcome to the Smash Bot workshop project! This repository showcases a cutting-edge AI agent capable of playing a fighting game (like Super Smash Bros.) by observing the game state and controlling a virtual gamepad, all powered by a large language model.
 
 ## 🌟 What This Project Does
