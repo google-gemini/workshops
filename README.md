@@ -98,6 +98,10 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 </td>
 <td width="33%" align="center">
 
+### [🏈 Fantasy Football Draft Companion](./fantasy/)
+**Gemini guides your fantasy football draft**
+[📖 Documentation](./fantasy/)
+
 </td>
 <td width="33%" align="center">
 
@@ -150,6 +154,7 @@ Explore the diverse range of projects available in this repository. Each link ta
 *   [`cost/`](./cost/) - **LLM Cost Comparison:** A hypothetical cost-comparison analysis of Gemini, GPT, and Llama 3 for a high-traffic app scenario, presented in a workshop slide format.
 *   [`doodles/`](./doodles/) - **Dynamic SVG Storytelling & Visualization:** A powerful pipeline for converting static bitmap images into dynamic, interactive, and animatable SVGs for engaging visual storytelling and presentations.
 *   [`factuality/`](./factuality/) - **Factuality: News Summarization & Redaction:** A Perplexity-style clone built with CrewAI that summarizes, cites, and redacts news articles, focusing on factual accuracy and source verification.
+*   [`fantasy/`](./fantasy/) - **Fantasy Football Draft Companion** A Chrome extension and server combination that streams your screen and microphone input to Gemini for commentary over a Sleeper draft, as well as assistance with any user queries, player research, or auto-recommendations.
 *   [`games/`](./games/) - **Gemini Plays Games: Multi-Agent Game Simulation:** Demonstrates how to play multi-agent games with Gemini using PettingZoo and CrewAI, exploring AI interaction and strategy in simulated game environments.
 *   [`history/`](./history/) - **Interactive LLM History & Concepts Visualizer:** Provides dynamic, animated visualizations to explain the historical development, growth patterns, and conceptual challenges (like "model collapse") of Large Language Models.
 *   [`kundali/`](./kundali/) - **Kundali Milan: AI Jyotish Guru:** Implements a Jyotish guru as a CrewAI agent to perform Kundali Milan (Vedic astrology compatibility analysis) based on provided birth details.
@@ -200,6 +205,7 @@ Projects focusing on practical applications of LLMs, multi-agent systems, and re
 ### Games & Interactive Entertainment
 Projects where AI interacts within game environments, provides interactive entertainment, or simulates game theory scenarios.
 *   [`chess/`](./chess/) - Chess Companion
+*   [`fantasy/`](./fantasy/) - Fantasy Football Draft Companion
 *   [`games/`](./games/) - Gemini Plays Games: Multi-Agent Game Simulation
 *   [`prisoner/`](./prisoner/) - LLM Agents in Game Theory: Prisoner's Dilemma Simulator
 *   [`smash/`](./smash/) - Smash Bot: An LLM-Powered Fighting Game Agent

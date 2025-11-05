@@ -1,0 +1,273 @@
+:root {
+  --primary-color: #007bff;
+  --primary-hover-color: #0056b3;
+  --secondary-color: #6c757d;
+  --secondary-hover-color: #5a6268;
+  --background-color: #f8f9fa;
+  --card-background: #fff;
+  --text-color: #343a40;
+  --label-color: #495057;
+  --border-color: #ced4da;
+  --input-focus-color: #80bdff;
+  --status-connected-color: #28a745;
+  --status-disconnected-color: #dc3545;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* --- Extension Window Sizing --- */
+html {
+  width: 500px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--background-color);
+  color: var(--text-color);
+  font-size: 15px;
+}
+
+/* --- Main Card Layout --- */
+.card {
+  background-color: var(--card-background);
+  border: 1px solid #e9ecef;
+  width: 100%;
+}
+
+.card-header,
+.card-body,
+.card-footer {
+  padding: 16px 20px;
+}
+
+.card-header {
+  border-bottom: 1px solid #e9ecef;
+}
+
+.card-footer {
+  background-color: var(--background-color);
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9em;
+}
+
+/* --- Typography --- */
+h1 {
+  font-size: 1.4em;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.card-header p {
+  font-size: 0.9em;
+  color: var(--label-color);
+}
+
+/* --- Form Elements --- */
+.form-group {
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 4px;
+  color: var(--label-color);
+  font-size: 0.9em;
+}
+
+.form-group input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 1em;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input[type="text"]::placeholder {
+  color: #adb5bd;
+}
+
+.form-group input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.form-group-checkbox {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.form-group-checkbox label {
+  margin: 0 0 0 8px;
+  font-weight: 400;
+  color: var(--text-color);
+}
+
+.form-group-checkbox input[type="checkbox"] {
+  width: 1.1em;
+  height: 1.1em;
+  accent-color: var(--primary-color);
+}
+
+
+/* --- Buttons --- */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn {
+  width: 100%;
+  padding: 9px;
+  font-size: 0.95em;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  text-align: center;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn.btn-primary:hover {
+  background-color: var(--primary-hover-color);
+}
+
+.btn.btn-secondary {
+  background-color: #e9ecef;
+  color: var(--secondary-color);
+}
+
+.btn.btn-secondary:hover {
+  background-color: #dae0e5;
+}
+
+.btn:disabled {
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* --- Status Indicators --- */
+#status {
+  color: var(--label-color);
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transition: background-color 0.3s ease;
+}
+
+.indicator.disconnected {
+  background-color: var(--status-disconnected-color);
+}
+
+.indicator.connected {
+  background-color: var(--status-connected-color);
+}
+
+/* --- Radio Buttons for Mode Selection --- */
+.mode-selection {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.mode-selection div {
+  display: flex;
+  align-items: center;
+}
+
+.mode-selection input[type="radio"] {
+  margin-right: 5px;
+  accent-color: var(--primary-color);
+}
+
+/* --- Chat Interface --- */
+.chat-container {
+  display: none; /* Hidden by default */
+  margin-top: 16px;
+  border-top: 1px solid #e9ecef;
+  padding-top: 16px;
+}
+
+.messages {
+  height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f8f9fa;
+  font-size: 0.9em;
+}
+
+.message {
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  word-wrap: break-word;
+}
+
+.message.user {
+  background-color: #e0f7fa;
+  text-align: right;
+  margin-left: 20%;
+}
+
+.message.gemini {
+  background-color: #e8eaf6;
+  text-align: left;
+  margin-right: 20%;
+}
+
+.chat-input-area {
+  display: flex;
+  gap: 8px;
+}
+
+#chatInput {
+  flex-grow: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.95em;
+}
+
+#sendChatBtn {
+  width: auto; /* Override btn class */
+  padding: 9px 15px;
+}
