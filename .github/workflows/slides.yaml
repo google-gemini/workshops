@@ -138,6 +138,34 @@ jobs:
           mkdir -pv root
           cp -frv ./startupcon/slides/dist ./root/startupcon
 
+      # Build slides for oxford
+      - name: Build slides for oxford
+        id: build_oxford
+        working-directory: ./oxford/slides
+        run: |
+          npm install
+          npm install -D playwright-chromium
+          npm run build -- --base /workshops/oxford
+
+      - name: Create deployment root for oxford
+        run: |
+          mkdir -pv root
+          cp -frv ./oxford/slides/dist ./root/oxford
+
+      # Build slides for tedx
+      - name: Build slides for tedx
+        id: build_tedx
+        working-directory: ./tedx/slides
+        run: |
+          npm install
+          npm install -D playwright-chromium
+          npm run build -- --base /workshops/tedx
+
+      - name: Create deployment root for tedx
+        run: |
+          mkdir -pv root
+          cp -frv ./tedx/slides/dist ./root/tedx
+
       # Deploy to GitHub Pages
       - uses: actions/configure-pages@v4
 

@@ -1,0 +1,13 @@
+/* Import GFS Porson for Greek typography */
+@import url('https://fonts.cdnfonts.com/css/gfs-porson');
+
+/* Apply GFS Porson to Greek text with high specificity */
+span.greek,
+.slidev-layout span.greek,
+.lang-grc,
+[lang="grc"],
+.greek {
+  font-family: 'GFS Porson', serif !important;
+  font-feature-settings: "liga" 1, "clig" 1;
+  line-height: 1.6;
+}
