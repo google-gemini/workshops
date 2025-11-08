@@ -10,13 +10,13 @@ class: text-center
 
 ---
 layout: image
-image: brains-cropped.png
+image: /brains-cropped.png
 backgroundSize: 75%
 ---
 
 ---
 layout: image
-image: cosine-similarity.png
+image: /cosine-similarity.png
 backgroundSize: 75%
 ---
 

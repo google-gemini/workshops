@@ -46,7 +46,6 @@ jobs:
         working-directory: ./games/slides
         run: |
           npm install
-          npm install -D playwright-chromium
           npm run build -- --base /workshops/games
 
       - name: Create deployment root for games
@@ -60,7 +59,6 @@ jobs:
         working-directory: ./cost/slides
         run: |
           npm install
-          npm install -D playwright-chromium
           npm run build -- --base /workshops/cost
 
       - name: Create deployment root for cost
@@ -74,7 +72,6 @@ jobs:
         working-directory: ./recap/slides
         run: |
           npm install
-          npm install -D playwright-chromium
           npm run build -- --base /workshops/recap
 
       - name: Create deployment root for recap
@@ -88,7 +85,6 @@ jobs:
         working-directory: ./factuality/slides
         run: |
           npm install
-          npm install -D playwright-chromium
           npm run build -- --base /workshops/factuality
 
       - name: Create deployment root for factuality
@@ -102,7 +98,6 @@ jobs:
         working-directory: ./history/slides
         run: |
           npm install
-          npm install -D playwright-chromium
           npm run build -- --base /workshops/history
 
       - name: Create deployment root for history
@@ -116,7 +111,6 @@ jobs:
         working-directory: ./bricks/slides
         run: |
           npm install
-          npm install -D playwright-chromium
           npm run build -- --base /workshops/bricks
 
       - name: Create deployment root for bricks
@@ -130,7 +124,6 @@ jobs:
         working-directory: ./startupcon/slides
         run: |
           npm install
-          npm install -D playwright-chromium
           npm run build -- --base /workshops/startupcon
 
       - name: Create deployment root for startupcon
@@ -144,7 +137,6 @@ jobs:
         working-directory: ./oxford/slides
         run: |
           npm install
-          npm install -D playwright-chromium
           npm run build -- --base /workshops/oxford
 
       - name: Create deployment root for oxford
@@ -158,13 +150,38 @@ jobs:
         working-directory: ./tedx/slides
         run: |
           npm install
-          npm install -D playwright-chromium
           npm run build -- --base /workshops/tedx
 
       - name: Create deployment root for tedx
         run: |
           mkdir -pv root
           cp -frv ./tedx/slides/dist ./root/tedx
+
+      # Build slides for smash
+      - name: Build slides for smash
+        id: build_smash
+        working-directory: ./smash/slides
+        run: |
+          npm install
+          npm run build -- --base /workshops/smash
+
+      - name: Create deployment root for smash
+        run: |
+          mkdir -pv root
+          cp -frv ./smash/slides/dist ./root/smash
+
+      # Build slides for waker
+      - name: Build slides for waker
+        id: build_waker
+        working-directory: ./waker/slides
+        run: |
+          npm install
+          npm run build -- --base /workshops/waker
+
+      - name: Create deployment root for waker
+        run: |
+          mkdir -pv root
+          cp -frv ./waker/slides/dist ./root/waker
 
       # Deploy to GitHub Pages
       - uses: actions/configure-pages@v4
