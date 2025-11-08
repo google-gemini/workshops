@@ -99,6 +99,7 @@ Our goal is to provide practical, open-source examples that demonstrate cutting-
 <td width="33%" align="center">
 
 ### [🏈 Fantasy Football Draft Companion](./fantasy/)
+[![Fantasy Football Draft Companion Demo](https://img.youtube.com/vi/dY1JoEQ9qzU/maxresdefault.jpg)](https://www.youtube.com/watch?v=dY1JoEQ9qzU)
 **Gemini guides your fantasy football draft**
 [📖 Documentation](./fantasy/)
 
