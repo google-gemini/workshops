@@ -35,10 +35,23 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
+type ChunkSource = {
+  text: string;
+  topic: string;
+  chunk_type: string;
+  similarity: number;
+  source_file?: string;
+  heading_path?: string[];
+  markdown_anchor?: string;
+  start_line?: number;
+  end_line?: number;
+};
+
 type Message = {
   role: 'user' | 'assistant';
   content: string;
   assessment?: MasteryAssessment;
+  sources?: ChunkSource[];
 };
 
 type MasteryAssessment = {
@@ -164,7 +177,8 @@ export default function SocraticDialogue({
       setMessages([{ 
         role: 'assistant', 
         content: data.message,
-        assessment: data.mastery_assessment 
+        assessment: data.mastery_assessment,
+        sources: data.sources || []
       }]);
     } catch (error) {
       console.error('Error starting dialogue:', error);
@@ -283,7 +297,8 @@ export default function SocraticDialogue({
       setMessages([...updatedMessages, { 
         role: 'assistant', 
         content: data.message,
-        assessment: data.mastery_assessment 
+        assessment: data.mastery_assessment,
+        sources: data.sources || []
       }]);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -417,54 +432,106 @@ export default function SocraticDialogue({
           <div className={`${showPythonEditor ? 'flex-1 min-w-0' : 'w-full'} flex flex-col`}>
             <div className="flex-1 overflow-y-auto space-y-4 py-4 px-2">
           {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+            <div key={idx} className="space-y-2">
               <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                  msg.role === 'user'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-slate-100 text-slate-900'
-                }`}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`text-sm prose prose-sm max-w-none prose-p:my-2 prose-pre:my-2 ${
-                  msg.role === 'user' ? 'prose-invert' : 'prose-slate'
-                }`}>
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                    components={{
-                      code({ node, inline, className, children, ...props }: any) {
-                        const match = /language-(\w+)/.exec(className || '');
-                        return !inline && match ? (
-                          <SyntaxHighlighter
-                            style={oneDark}
-                            language={match[1]}
-                            PreTag="div"
-                            {...props}
-                          >
-                            {String(children).replace(/\n$/, '')}
-                          </SyntaxHighlighter>
-                        ) : (
-                          <code 
-                            className={`${className} px-1 py-0.5 rounded text-xs ${
-                              msg.role === 'user' 
-                                ? 'bg-blue-600 text-white' 
-                                : 'bg-slate-200 text-slate-900'
-                            }`} 
-                            {...props}
-                          >
-                            {children}
-                          </code>
-                        );
-                      },
-                    }}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
+                <div
+                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                    msg.role === 'user'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-slate-100 text-slate-900'
+                  }`}
+                >
+                  <div className={`text-sm prose prose-sm max-w-none prose-p:my-2 prose-pre:my-2 ${
+                    msg.role === 'user' ? 'prose-invert' : 'prose-slate'
+                  }`}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        code({ node, inline, className, children, ...props }: any) {
+                          const match = /language-(\w+)/.exec(className || '');
+                          return !inline && match ? (
+                            <SyntaxHighlighter
+                              style={oneDark}
+                              language={match[1]}
+                              PreTag="div"
+                              {...props}
+                            >
+                              {String(children).replace(/\n$/, '')}
+                            </SyntaxHighlighter>
+                          ) : (
+                            <code 
+                              className={`${className} px-1 py-0.5 rounded text-xs ${
+                                msg.role === 'user' 
+                                  ? 'bg-blue-600 text-white' 
+                                  : 'bg-slate-200 text-slate-900'
+                              }`} 
+                              {...props}
+                            >
+                              {children}
+                            </code>
+                          );
+                        },
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </div>
+              
+              {/* Show sources for assistant messages */}
+              {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+                <div className="ml-4 text-xs space-y-1">
+                  <details className="group">
+                    <summary className="cursor-pointer text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                      📚 {msg.sources.length} source{msg.sources.length > 1 ? 's' : ''} used
+                      <span className="text-slate-400 group-open:rotate-90 transition-transform">▶</span>
+                    </summary>
+                    <div className="mt-2 pl-4 space-y-2 border-l-2 border-slate-200">
+                      {msg.sources.map((source, sourceIdx) => (
+                        <div key={sourceIdx} className="bg-slate-50 rounded p-2 space-y-1">
+                          <div className="font-medium text-slate-700">
+                            {source.topic}
+                            <span className="ml-2 text-slate-400">
+                              ({(source.similarity * 100).toFixed(0)}% match)
+                            </span>
+                          </div>
+                          
+                          {source.heading_path && source.heading_path.length > 0 && (
+                            <div className="text-slate-500 text-xs">
+                              📍 {source.heading_path.join(' › ')}
+                            </div>
+                          )}
+                          
+                          {source.source_file && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-slate-400">
+                                {source.source_file}
+                                {source.start_line && ` (lines ${source.start_line}-${source.end_line})`}
+                              </span>
+                              {source.markdown_anchor && (
+                                <a
+                                  href={`#${source.markdown_anchor}`}
+                                  className="text-blue-500 hover:text-blue-700 underline"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    alert(`Would navigate to: ${source.source_file}#${source.markdown_anchor}\n\nNext: implement a markdown viewer!`);
+                                  }}
+                                >
+                                  View in context →
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </div>
+              )}
             </div>
           ))}
           {isLoading && (
