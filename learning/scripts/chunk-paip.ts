@@ -27,6 +27,12 @@ interface Chunk {
   chunk_type: 'definition' | 'example' | 'explanation' | 'exercise' | 'overview';
   section?: string;
   token_estimate?: number;
+  // Provenance metadata for linking back to source
+  source_file?: string;          // Filename: "tsp.md"
+  heading_path?: string[];       // ["The Traveling Salesperson Problem", "Greedy TSP Algorithm"]
+  markdown_anchor?: string;      // "greedy-tsp-algorithm-greedy_tsp"
+  start_line?: number;           // Line number where chunk starts in source
+  end_line?: number;             // Line number where chunk ends
 }
 
 interface ChunkingResult {
@@ -144,6 +150,21 @@ function displaySamples(chunks: Chunk[]) {
     console.log(`Type: ${chunk.chunk_type}`);
     console.log(`Concepts: ${chunk.concepts.join(', ')}`);
     console.log(`Length: ${chunk.text.length} chars`);
+    
+    // Show provenance information
+    if (chunk.source_file) {
+      console.log(`Source: ${chunk.source_file}`);
+    }
+    if (chunk.heading_path && chunk.heading_path.length > 0) {
+      console.log(`Location: ${chunk.heading_path.join(' > ')}`);
+    }
+    if (chunk.markdown_anchor) {
+      console.log(`Anchor: #${chunk.markdown_anchor}`);
+    }
+    if (chunk.start_line !== undefined) {
+      console.log(`Lines: ${chunk.start_line}-${chunk.end_line}`);
+    }
+    
     console.log(`Preview:\n${chunk.text.substring(0, 200)}...`);
     console.log();
   });
@@ -164,31 +185,77 @@ function getRandomSamples<T>(arr: T[], count: number): T[] {
   return result;
 }
 
+// Generate GitHub-style markdown anchors
+function generateAnchor(headingText: string): string {
+  return headingText
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')  // Remove special chars except spaces and hyphens
+    .trim()
+    .replace(/\s+/g, '-');      // Replace spaces with hyphens
+}
+
+// Extract heading level and text from a markdown heading line
+function parseHeading(line: string): { level: number; text: string } | null {
+  const match = line.match(/^(#{1,6})\s+(.+)$/);
+  if (!match) return null;
+  return {
+    level: match[1].length,
+    text: match[2].trim(),
+  };
+}
+
+// Enhanced section structure with provenance metadata
+interface Section {
+  header: string;
+  content: string;
+  headingPath: string[];      // Hierarchical path of headers
+  anchor: string;              // Markdown anchor for this section
+  startLine: number;           // Starting line number
+  endLine: number;             // Ending line number
+}
+
 // Split document into sections by headers
-function splitIntoSections(markdown: string): Array<{ header: string; content: string }> {
-  const sections: Array<{ header: string; content: string }> = [];
+function splitIntoSections(markdown: string, sourceFile: string): Section[] {
+  const sections: Section[] = [];
   const lines = markdown.split('\n');
   
   let currentHeader = 'Introduction';
   let currentContent: string[] = [];
+  let headingStack: Array<{ level: number; text: string }> = [];
+  let sectionStartLine = 0;
   
-  for (const line of lines) {
-    // Match # headers (main sections)
-    const headerMatch = line.match(/^#\s+(.+)$/);
+  for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+    const line = lines[lineNum];
+    const heading = parseHeading(line);
     
-    if (headerMatch) {
+    if (heading && heading.level === 1) {  // Main section header
       // Save previous section if it has content
       if (currentContent.length > 0) {
         sections.push({
           header: currentHeader,
           content: currentContent.join('\n').trim(),
+          headingPath: headingStack.map(h => h.text),
+          anchor: generateAnchor(currentHeader),
+          startLine: sectionStartLine,
+          endLine: lineNum - 1,
         });
       }
       
       // Start new section
-      currentHeader = headerMatch[1];
+      currentHeader = heading.text;
+      headingStack = [{ level: heading.level, text: heading.text }];
       currentContent = [line]; // Include the header in content
+      sectionStartLine = lineNum;
     } else {
+      // Update heading stack for sub-headers
+      if (heading) {
+        // Pop any headers at the same or deeper level
+        while (headingStack.length > 0 && headingStack[headingStack.length - 1].level >= heading.level) {
+          headingStack.pop();
+        }
+        headingStack.push({ level: heading.level, text: heading.text });
+      }
+      
       currentContent.push(line);
     }
   }
@@ -198,6 +265,10 @@ function splitIntoSections(markdown: string): Array<{ header: string; content: s
     sections.push({
       header: currentHeader,
       content: currentContent.join('\n').trim(),
+      headingPath: headingStack.map(h => h.text),
+      anchor: generateAnchor(currentHeader),
+      startLine: sectionStartLine,
+      endLine: lines.length - 1,
     });
   }
   
@@ -220,8 +291,9 @@ async function chunkDocument(inputPath: string, outputPath?: string) {
     process.exit(1);
   }
   
-  // Split into sections
-  const sections = splitIntoSections(markdown);
+  // Split into sections with provenance metadata
+  const sourceFileName = path.basename(inputPath);
+  const sections = splitIntoSections(markdown, sourceFileName);
   console.log(`📑 Split into ${sections.length} sections\n`);
   
   sections.forEach((s, i) => {
@@ -266,9 +338,14 @@ async function chunkDocument(inputPath: string, outputPath?: string) {
       
       const result: { chunks: Chunk[] } = JSON.parse(resultText);
       
-      // Add section context and ensure unique IDs
+      // Add provenance metadata and ensure unique IDs
       result.chunks.forEach(chunk => {
         chunk.chunk_id = `chunk-${chunkIdCounter++}-${chunk.chunk_id}`;
+        chunk.source_file = sourceFileName;
+        chunk.heading_path = section.headingPath;
+        chunk.markdown_anchor = section.anchor;
+        chunk.start_line = section.startLine;
+        chunk.end_line = section.endLine;
       });
       
       allChunks.push(...result.chunks);

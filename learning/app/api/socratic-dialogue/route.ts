@@ -79,7 +79,7 @@ async function loadConceptContext(
   apiKey: string,
   embeddingsPath: string,
   topK: number = 5
-): Promise<string> {
+): Promise<{text: string; chunks: any[]}> {
   try {
     // Load embeddings from dynamic path
     const embeddingsFile = path.join(
@@ -110,7 +110,7 @@ async function loadConceptContext(
       .slice(0, topK);
     
     if (rankedChunks.length === 0) {
-      return '(No textbook sections found for this concept)';
+      return {text: '(No textbook sections found for this concept)', chunks: []};
     }
     
     console.log(`   ✅ Top ${rankedChunks.length} chunks by similarity:`);
@@ -119,17 +119,34 @@ async function loadConceptContext(
       console.log(`         Tags: ${item.chunk.concepts.join(', ')}`);
     });
     
-    // Format the most relevant chunks
-    return rankedChunks
+    // Format the most relevant chunks for LLM
+    const formattedText = rankedChunks
       .map((item: any) => {
         const chunk = item.chunk;
         return `**[${chunk.chunk_type.toUpperCase()}] ${chunk.topic}** (similarity: ${(item.similarity * 100).toFixed(1)}%)\n${chunk.text}`;
       })
       .join('\n\n---\n\n');
+    
+    // Return BOTH formatted text AND raw chunks with provenance
+    return {
+      text: formattedText,
+      chunks: rankedChunks.map((item: any) => ({
+        text: item.chunk.text,
+        topic: item.chunk.topic,
+        chunk_type: item.chunk.chunk_type,
+        similarity: item.similarity,
+        // Provenance metadata
+        source_file: item.chunk.source_file,
+        heading_path: item.chunk.heading_path,
+        markdown_anchor: item.chunk.markdown_anchor,
+        start_line: item.chunk.start_line,
+        end_line: item.chunk.end_line,
+      }))
+    };
       
   } catch (error) {
     console.error('   ❌ Error loading concept context:', error);
-    return '(Textbook context unavailable)';
+    return {text: '(Textbook context unavailable)', chunks: []};
   }
 }
 
@@ -157,10 +174,13 @@ export async function POST(request: NextRequest) {
 
     // Use cached textbook context or perform semantic search
     let textbookSections = textbookContext;
+    let sourceChunks: any[] = [];
     
     if (!textbookSections) {
       console.log('\n📚 SEMANTIC SEARCH (first turn):');
-      textbookSections = await loadConceptContext(conceptId, conceptData, apiKey, embeddingsPath, 5);
+      const result = await loadConceptContext(conceptId, conceptData, apiKey, embeddingsPath, 5);
+      textbookSections = result.text;
+      sourceChunks = result.chunks;
     } else {
       console.log('\n📚 REUSING CACHED CONTEXT:');
     }
@@ -330,6 +350,7 @@ export async function POST(request: NextRequest) {
       message: parsedResponse.message,
       mastery_assessment: parsedResponse.mastery_assessment,
       textbookContext: textbookSections,
+      sources: sourceChunks,
       usage: data.usageMetadata,
     });
 

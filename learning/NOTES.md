@@ -2848,6 +2848,106 @@ return {
 
 ---
 
+### 📚 Source Provenance Display in Socratic Dialogue (2025-01-07)
+
+**Achievement:** Implemented full source attribution for every assistant response, showing exactly which textbook chunks were used to generate the answer.
+
+#### What We Built
+
+**Visual Design:** Collapsible sources dropdown under each assistant message
+```
+Assistant: "You're absolutely right! When you have..."
+
+📚 5 sources used ▶
+  [Expanded view shows:]
+  1. Examples of prefix notation and Lisp expressions (71% match)
+     📍 Introduction › Lisp Basics › Prefix Notation
+     paip-chapter-1.md (lines 45-67)
+     [View in context →]
+  
+  2. Function application evaluation (68% match)
+     📍 Core Concepts › Evaluation
+     paip-chapter-1.md (lines 102-125)
+     [View in context →]
+```
+
+**Key Features:**
+- **Transparency:** Students see where the AI's knowledge comes from
+- **Trust:** Grounded in specific textbook passages, not generic LLM training
+- **Educational metadata:** 
+  - Topic/title of chunk
+  - Similarity score (shows relevance)
+  - Breadcrumb path (document navigation)
+  - Source file and line numbers
+  - "View in context" link (placeholder for future navigation)
+
+**Implementation Details:**
+
+1. **API returns full chunk metadata:**
+```typescript
+return NextResponse.json({
+  message: parsedResponse.message,
+  mastery_assessment: parsedResponse.mastery_assessment,
+  textbookContext: textbookSections,
+  sources: sourceChunks,  // NEW: Array of chunks with provenance
+  usage: data.usageMetadata,
+});
+```
+
+2. **Message type includes sources:**
+```typescript
+type ChunkSource = {
+  text: string;
+  topic: string;
+  chunk_type: string;
+  similarity: number;
+  source_file?: string;
+  heading_path?: string[];
+  markdown_anchor?: string;
+  start_line?: number;
+  end_line?: number;
+};
+
+type Message = {
+  role: 'user' | 'assistant';
+  content: string;
+  assessment?: MasteryAssessment;
+  sources?: ChunkSource[];  // NEW
+};
+```
+
+3. **UI component renders sources:**
+```tsx
+{msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+  <details className="group">
+    <summary>📚 {msg.sources.length} sources used</summary>
+    <div className="space-y-2">
+      {msg.sources.map((source, idx) => (
+        <div key={idx}>
+          <div>{source.topic} ({(source.similarity * 100).toFixed(0)}% match)</div>
+          {source.heading_path && (
+            <div>📍 {source.heading_path.join(' › ')}</div>
+          )}
+          <div>{source.source_file} (lines {source.start_line}-{source.end_line})</div>
+          <a href="#" onClick={handleViewInContext}>View in context →</a>
+        </div>
+      ))}
+    </div>
+  </details>
+)}
+```
+
+**User Feedback:**
+> "Works beautifully! The provenance is perfect."
+
+**Impact:**
+- ✅ Students can verify AI's claims by checking sources
+- ✅ Builds trust in the teaching process
+- ✅ Makes learning path traceable
+- ✅ Encourages consulting primary material
+
+---
+
 ### 📚 RAG Integration: Semantic Search in Socratic Dialogue (2025-01-07)
 
 **Implementation:** Server-side semantic search with client-side caching
@@ -4102,6 +4202,50 @@ function ModelSelector({ selected, onChange }) {
 - Metadata + conditional rendering: 1-2 hours
 - Syntax-only Lisp editor: 2-3 hours
 - Full REPL with execution: 1-2 days
+
+---
+
+### 🔲 TODO: Tabbed Pane for Source Material Navigation
+
+**User Story:** "When I click 'View in context' on a source, I want to read the actual textbook passage, not just see metadata."
+
+**Peter Norvig's Requirement (via email):**
+> "Sometimes the suggestion method works great. When the AI asks 'what do you think recursion means' that's a good conversation. But sometimes it only makes sense if the learner has read the source material. So we need to show the chapter or jupyter notebook. Maybe have the whole thing available to scroll through. Maybe just have the current bit shown. We can experiment with different UIs."
+
+**Proposed Solution:** Tab system in right pane
+
+```
+Right Pane Layout:
+┌─────────────────────────────┐
+│ [ Python ] [ Source ]       │
+├─────────────────────────────┤
+│                             │
+│  (active tab content)       │
+│                             │
+└─────────────────────────────┘
+```
+
+**Functionality:**
+1. Default: Python tab is active (current scratchpad)
+2. Click "View in context" → switches to Source tab
+3. Source tab shows full markdown document, auto-scrolled to relevant section
+4. Learner can scroll through entire document
+5. Switch back to Python tab anytime
+
+**Implementation Requirements:**
+- [ ] Tab component for right pane (shadcn/ui Tabs)
+- [ ] Markdown viewer component with scroll-to-anchor
+- [ ] Copy source .md files to `public/data/`
+- [ ] Update "View in context" handler to switch tabs + scroll
+- [ ] Highlight/emphasize the specific chunk that was cited
+
+**Design Considerations:**
+- Keep it simple (per user's "don't want to complicate things")
+- Source material should be "always one click away"
+- Support both full-document browsing AND jumping to specific sections
+- Experiment with different UIs as Peter suggested
+
+**Priority:** High - Peter specifically wants learners consulting source material, not just metadata
 
 ---
 
