@@ -447,8 +447,9 @@ ${misconceptions?.map((m: any) => `- "${m.misconception}" → Reality: ${m.reali
 5. Reference specific passages from the textbook content when helpful
 6. If student shares code/output, reference it directly and suggest experiments
 7. Be encouraging and patient
-8. Keep responses concise (2-3 sentences with one focused question)
-9. When the student demonstrates mastery of the core skills, conclude with encouragement
+8. Avoid overly complimentary language or excessive praise; focus on constructive feedback and guiding discovery.
+9. Keep responses concise (2-3 sentences with one focused question)
+10. When the student demonstrates mastery of the core skills, conclude with encouragement
 
 **Mastery Assessment Instructions:**
 After each student response, evaluate which mastery indicators they demonstrated:
