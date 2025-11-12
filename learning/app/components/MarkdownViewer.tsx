@@ -87,6 +87,12 @@ export function MarkdownViewer({ sourceFile, scrollToAnchor }: MarkdownViewerPro
             h1: ({ node, ...props }) => (
               <h1 className="text-4xl font-extrabold text-slate-900" {...props} />
             ),
+            ul: ({ node, ...props }) => (
+              <ul className="list-disc pl-5 my-4 space-y-2" {...props} />
+            ),
+            li: ({ node, ...props }) => (
+              <li className="text-slate-700 leading-relaxed" {...props} />
+            ),
             code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || '');
               return !inline && match ? (
