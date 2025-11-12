@@ -79,7 +79,7 @@ export function MarkdownViewer({ sourceFile, scrollToAnchor }: MarkdownViewerPro
       ref={containerRef} 
       className="h-full overflow-y-auto p-6 bg-white"
     >
-      <div className="prose prose-sm max-w-none prose-headings:text-slate-900 prose-p:text-slate-700">
+      <div className="prose max-w-none prose-headings:text-slate-900 prose-p:text-slate-700">
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex, rehypeSlug, rehypeRaw]} // Add rehypeRaw here
