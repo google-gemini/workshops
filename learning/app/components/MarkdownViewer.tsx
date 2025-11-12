@@ -79,11 +79,14 @@ export function MarkdownViewer({ sourceFile, scrollToAnchor }: MarkdownViewerPro
       ref={containerRef} 
       className="h-full overflow-y-auto p-6 bg-white"
     >
-      <div className="prose max-w-none prose-headings:text-slate-900 prose-p:text-slate-700 prose-h1:text-4xl prose-h1:font-extrabold">
+      <div className="prose max-w-none prose-headings:text-slate-900 prose-p:text-slate-700">
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeKatex, rehypeSlug, rehypeRaw]} // Add rehypeRaw here
+          rehypePlugins={[rehypeKatex, rehypeSlug, rehypeRaw]}
           components={{
+            h1: ({ node, ...props }) => (
+              <h1 className="text-4xl font-extrabold text-slate-900" {...props} />
+            ),
             code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || '');
               return !inline && match ? (
