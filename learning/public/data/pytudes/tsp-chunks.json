@@ -1,0 +1,1797 @@
+{
+  "chunks": [
+    {
+      "chunk_id": "chunk-1-peter-norvig-attribution",
+      "topic": "Attribution to Peter Norvig",
+      "text": "<div style=\"text-align: right\" align=\"right\"><i>Peter Norvig, 2015–2023</i></div>\n---\n",
+      "concepts": [],
+      "chunk_type": "overview",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [],
+      "markdown_anchor": "introduction",
+      "start_line": 0,
+      "end_line": 1
+    },
+    {
+      "chunk_id": "chunk-2-traveling-salesperson-problem-definition",
+      "topic": "Introduction to the Traveling Salesperson Problem (TSP)",
+      "text": "# The Traveling Salesperson Problem\n\nConsider the [***Traveling Salesperson Problem***](http://en.wikipedia.org/wiki/Traveling_salesman_problem) (abbreviated ***TSP***): \n\n- *Given a **set of cities** and the **distance** between each pair of cities, what is the **shortest** possible **tour** that visits each city exactly once, and returns to the starting city?*\n\nIn this notebook we will develop some solutions to the problem, and more generally show *how to think about* solving  problems. Versions of the algorithms developed here are used in [serious applications](https://research.googleblog.com/2016/09/the-280-year-old-algorithm-inside.html) that millions of people rely on every day. \n\n|![](http://support.sas.com/documentation/cdl/en/ornoaug/66084/HTML/default/images/map002g.png)|\n|---|\n|[An example tour, from the TSP History page](http://www.math.uwaterloo.ca/tsp/history/pictorial/dfj.html)|",
+      "concepts": [
+        "traveling-salesperson-problem",
+        "set-of-cities",
+        "distance",
+        "shortest-tour"
+      ],
+      "chunk_type": "definition",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "The Traveling Salesperson Problem"
+      ],
+      "markdown_anchor": "the-traveling-salesperson-problem",
+      "start_line": 2,
+      "end_line": 14
+    },
+    {
+      "chunk_id": "chunk-3-plot_tour-function",
+      "topic": "Definition of the `plot_tour` function for visualizing TSP tours.",
+      "text": "# Visualizing results: `plot_tour`\n\nI'll define `plot_tour` to plot all the cities and links in a tour, highlighting the first city. \n\n- *Vocabulary note:* A **segment** is a portion of a tour that does not loop back to the start. The **segment** `[A, B, C]` has only two links, A-B and B-C, whereas the **tour** `[A, B, C]` has three links, A-B, B-C, and C-A.",
+      "concepts": [
+        "plot_tour-function",
+        "tour",
+        "segment",
+        "link"
+      ],
+      "chunk_type": "definition",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Visualizing results: `plot_tour`"
+      ],
+      "markdown_anchor": "visualizing-results-plot_tour",
+      "start_line": 132,
+      "end_line": 172
+    },
+    {
+      "chunk_id": "chunk-4-plot_tour-implementation",
+      "topic": "Implementation of `plot_tour` and helper functions.",
+      "text": "```python\nSegment = list # A portion of a tour; it does not loop back to the start.\n\ndef plot_tour(tour: Tour, style='bo-', hilite='rs', title=''): \n    \"Plot every city and link in the tour, and highlight the start city.\"\n    scale = 1 + len(tour) ** 0.5 // 10\n    plt.figure(figsize=((3 * scale, 2 * scale)))\n    start = tour[0]\n    plot_segment([*tour, start], style)\n    plot_segment([start], hilite) \n    plt.title(title)\n    \ndef Xs(cities) -> List[float]: \"X coordinates\"; return [c.real for c in cities]\ndef Ys(cities) -> List[float]: \"Y coordinates\"; return [c.imag for c in cities]\n\ndef plot_segment(segment: Segment, style='bo:'):\n    \"Plot every city and link in the segment.\"\n    plt.plot(Xs(segment), Ys(segment), style, linewidth=2/3, markersize=4, clip_on=False)\n    plt.axis('scaled'); plt.axis('off')\n```",
+      "concepts": [
+        "plot_tour-function",
+        "plot_segment-function",
+        "x-coordinates",
+        "y-coordinates",
+        "tour",
+        "segment"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Visualizing results: `plot_tour`"
+      ],
+      "markdown_anchor": "visualizing-results-plot_tour",
+      "start_line": 132,
+      "end_line": 172
+    },
+    {
+      "chunk_id": "chunk-5-plot_tour-example",
+      "topic": "Example usage of `plot_tour` with `exhaustive_tsp` and `random_cities`.",
+      "text": "```python\nplot_tour(exhaustive_tsp(random_cities(8)))\n```\n\n\n    \n![png](TSP_files/TSP_14_0.png)\n    \n\nThe plot helps convince me that this is indeed the shortest tour.",
+      "concepts": [
+        "plot_tour-function",
+        "exhaustive_tsp-function",
+        "random_cities-function",
+        "shortest-tour"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Visualizing results: `plot_tour`"
+      ],
+      "markdown_anchor": "visualizing-results-plot_tour",
+      "start_line": 132,
+      "end_line": 172
+    },
+    {
+      "chunk_id": "chunk-6-run-function-definition",
+      "topic": "Definition of the `run` convenience function",
+      "text": "# Convenience function: `run`\n\nI will define `run` to run a TSP algorithm on a set of cities, plot the resulting tour, and print the tour length and run time.",
+      "concepts": [
+        "run-function",
+        "tsp-algorithm",
+        "tour-length",
+        "plotting-tour"
+      ],
+      "chunk_type": "definition",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Convenience function: `run`"
+      ],
+      "markdown_anchor": "convenience-function-run",
+      "start_line": 173,
+      "end_line": 204
+    },
+    {
+      "chunk_id": "chunk-7-run-function-implementation",
+      "topic": "Implementation of the `run` function in Python",
+      "text": "```python\ndef run(tsp: callable, cities: Cities):\n    \"\"\"Run a TSP algorithm on a set of cities and plot/print results.\"\"\"\n    t0   = time.perf_counter()\n    tour = tsp(cities)\n    t1   = time.perf_counter()\n    L    = tour_length(tour)\n    print(f\"length {round(L):,d} tour of {len(cities)} cities in {t1 - t0:.3f} secs\")\n    plot_tour(tour)\n```",
+      "concepts": [
+        "run-function",
+        "tsp-algorithm",
+        "time-complexity",
+        "tour-length",
+        "plotting-tour"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Convenience function: `run`"
+      ],
+      "markdown_anchor": "convenience-function-run",
+      "start_line": 173,
+      "end_line": 204
+    },
+    {
+      "chunk_id": "chunk-8-run-function-example",
+      "topic": "Example usage of the `run` function",
+      "text": "Here is `run` in action:\n\n\n```python\nrun(exhaustive_tsp, random_cities(8))\n```\n\n    length 23,470 tour of 8 cities in 0.086 secs\n\n\n\n    \n![png](TSP_files/TSP_18_1.png)",
+      "concepts": [
+        "run-function",
+        "exhaustive-tsp",
+        "random-cities",
+        "tour-length"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Convenience function: `run`"
+      ],
+      "markdown_anchor": "convenience-function-run",
+      "start_line": 173,
+      "end_line": 204
+    },
+    {
+      "chunk_id": "chunk-9-possible-tours-speedup-introduction",
+      "topic": "Introduction to speeding up the `possible_tours` function",
+      "text": "The number of possible tours of *n* cities is the number of permutations, which is *n*! (the factorial of *n*), and thus there are  6 tours of 3 cities:\n\n```python\ntuple(possible_tours({1, 2, 3}))\n```\n\n\n    ((1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 3, 1), (3, 1, 2), (3, 2, 1))",
+      "concepts": [
+        "possible-tours",
+        "permutations",
+        "factorial",
+        "tour"
+      ],
+      "chunk_type": "explanation",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Speedup for  `possible_tours`"
+      ],
+      "markdown_anchor": "speedup-for-possible_tours",
+      "start_line": 205,
+      "end_line": 276
+    },
+    {
+      "chunk_id": "chunk-10-redundant-tour-elimination",
+      "topic": "Eliminating redundant tours by fixing the starting city",
+      "text": "But a tour is a loop, so `(1, 2, 3)`, `(2, 3, 1)`, and `(3, 1, 2)` are three ways of describing exactly the same loop. I can redefine `possible_tours` to only include one representation of each loop by arbitrarily saying that a tour must start with the first city in the set of cities.",
+      "concepts": [
+        "tour",
+        "loop",
+        "possible-tours",
+        "redundancy-elimination"
+      ],
+      "chunk_type": "explanation",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Speedup for  `possible_tours`"
+      ],
+      "markdown_anchor": "speedup-for-possible_tours",
+      "start_line": 205,
+      "end_line": 276
+    },
+    {
+      "chunk_id": "chunk-11-improved-possible-tours-implementation",
+      "topic": "Implementation of the improved `possible_tours` function",
+      "text": "```python\ndef possible_tours(cities) -> List[Tour]:\n    \"\"\"Return a list of non-redundant tours (permutations of cities with first city first).\"\"\"\n    start, *others = cities\n    return [[start, *perm] for perm in itertools.permutations(others)]\n```",
+      "concepts": [
+        "possible-tours",
+        "tour",
+        "permutations",
+        "itertools.permutations"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Speedup for  `possible_tours`"
+      ],
+      "markdown_anchor": "speedup-for-possible_tours",
+      "start_line": 205,
+      "end_line": 276
+    },
+    {
+      "chunk_id": "chunk-12-verification-of-improved-possible-tours",
+      "topic": "Verifying the improved `possible_tours` function with 3 cities",
+      "text": "We can verify that for 3 cities there are now only 2 tours, not 6:\n\n```python\npossible_tours({1, 2, 3})\n```\n\n\n    [[1, 2, 3], [1, 3, 2]]",
+      "concepts": [
+        "possible-tours",
+        "tour"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Speedup for  `possible_tours`"
+      ],
+      "markdown_anchor": "speedup-for-possible_tours",
+      "start_line": 205,
+      "end_line": 276
+    },
+    {
+      "chunk_id": "chunk-13-exhaustive-tsp-performance-9-cities",
+      "topic": "Performance of `exhaustive_tsp` with 9 cities after optimization",
+      "text": "We can see that `exhaustive_tsp` can now do 9 cities in roughly the time it took to do 8 before:\n\n```python\nrun(exhaustive_tsp, random_cities(9))\n```\n\n    length 22,412 tour of 9 cities in 0.151 secs\n\n\n    \n![png](TSP_files/TSP_26_1.png)",
+      "concepts": [
+        "exhaustive-tsp",
+        "tour",
+        "performance-optimization"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Speedup for  `possible_tours`"
+      ],
+      "markdown_anchor": "speedup-for-possible_tours",
+      "start_line": 205,
+      "end_line": 276
+    },
+    {
+      "chunk_id": "chunk-14-exhaustive-tsp-performance-10-cities",
+      "topic": "Performance of `exhaustive_tsp` with 10 cities after optimization",
+      "text": "We can keep going to 10 cities, which takes about a second:\n\n```python\nrun(exhaustive_tsp, random_cities(10))\n```\n\n    length 23,013 tour of 10 cities in 0.870 secs\n\n\n    \n![png](TSP_files/TSP_28_1.png)",
+      "concepts": [
+        "exhaustive-tsp",
+        "tour",
+        "performance-optimization"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Speedup for  `possible_tours`"
+      ],
+      "markdown_anchor": "speedup-for-possible_tours",
+      "start_line": 205,
+      "end_line": 276
+    },
+    {
+      "chunk_id": "chunk-15-tsp-algorithm-strategies-introduction",
+      "topic": "Introduction to algorithm design strategies for the Traveling Salesperson Problem (TSP)",
+      "text": "It takes Exhaustive Search a second or so to solve a 10-city problem, so 12 cities would take about 2 minutes (11×12 times longer), and 15 cities would take days.\nThere must be a better way ...",
+      "concepts": [
+        "traveling-salesperson-problem",
+        "exhaustive-search"
+      ],
+      "chunk_type": "overview",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "General Strategies for Algorithm Design"
+      ],
+      "markdown_anchor": "general-strategies-for-algorithm-design",
+      "start_line": 277,
+      "end_line": 294
+    },
+    {
+      "chunk_id": "chunk-16-algorithm-design-strategies",
+      "topic": "Overview of general strategies for algorithm design",
+      "text": "To get inspired, here are some general  strategies for algorithm design:\n\n* **Brute Force Strategy**: The strategy used for `exhaustive_tsp`; as [Ken Thompson](https://en.wikipedia.org/wiki/Ken_Thompson) [says](https://www.brainyquote.com/quotes/ken_thompson_185574?src=t_brute_force), \"*when in doubt, use brute force*.\"\n* **Approximation Strategy**: If it is too hard to find an exact, optimal solution, consider an approximate, slightly suboptimal solution.\n* **Greeedy Strategy**: To complete a multiple step problem, first do the step that appears to be best in the short run. Repeat.\n* **Improvement Strategy**: Use an existing algorithm to create a solution, then have another algorithm improve the solution.\n* **Divide and Conquer Strategy**: Split the problem in half, solve each half, and combine the two partial solutions.\n* **Ensemble Strategy**: Apply a set of algorithms to the problem, and pick the best solution.\n* **Stand on the Shoulders of Giants Strategy**: Find out what other people have done, and copy them.\n\nLet's apply these strategies to develop some TSP algorithms.",
+      "concepts": [
+        "algorithm-design",
+        "brute-force-strategy",
+        "approximation-strategy",
+        "greedy-strategy",
+        "improvement-strategy",
+        "divide-and-conquer-strategy",
+        "ensemble-strategy",
+        "traveling-salesperson-problem"
+      ],
+      "chunk_type": "definition",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "General Strategies for Algorithm Design"
+      ],
+      "markdown_anchor": "general-strategies-for-algorithm-design",
+      "start_line": 277,
+      "end_line": 294
+    },
+    {
+      "chunk_id": "chunk-17-nearest-neighbor-tsp-algorithm-definition",
+      "topic": "Definition of the Nearest Neighbor TSP Algorithm",
+      "text": "#  Nearest Neighbor Algorithm: `nearest_tsp`\n\nHere's a second TSP algorithm:\n\n- **Nearest Neighbor TSP Algorithm:** *Create a partial tour that initially is just the start city. At each step extend the partial tour to the nearest unvisited neighbor of the last city in the partial tour, until there are no unvisited cities remaining.*\n\nThis is both an **approximation strategy** and a **greedy strategy**. It is an approximation, because it won't necessarily find the optimal tour. It is greedy because at each step it makes the choice that looks best in the short run (the nearest neighbor), even if that is not the best in the long run.",
+      "concepts": [
+        "nearest-neighbor-tsp-algorithm",
+        "approximation-strategy",
+        "greedy-strategy",
+        "traveling-salesperson-problem"
+      ],
+      "chunk_type": "definition",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Nearest Neighbor Algorithm: `nearest_tsp`"
+      ],
+      "markdown_anchor": "nearest-neighbor-algorithm-nearest_tsp",
+      "start_line": 295,
+      "end_line": 343
+    },
+    {
+      "chunk_id": "chunk-18-nearest-neighbor-tsp-algorithm-implementation",
+      "topic": "Python implementation of the Nearest Neighbor TSP Algorithm",
+      "text": "```python\ndef nearest_tsp(cities, start=None) -> Tour:\n    \"\"\"Create a partial tour that initially is just the start city. \n    At each step extend the partial tour to the nearest unvisited neighbor \n    of the last city in the partial tour, while there are unvisited cities remaining.\"\"\"\n    start = start or first(cities)\n    tour = [start]\n    unvisited = set(cities) - {start}\n    def extend_to(C): tour.append(C); unvisited.remove(C)\n    while unvisited:\n        extend_to(nearest_neighbor(tour[-1], unvisited))\n    return tour\n\ndef first(collection):\n    \"\"\"The first element of a collection.\"\"\"\n    return next(iter(collection))\n\ndef nearest_neighbor(A: City, cities) -> City:\n    \"\"\"Find the city C in cities that is nearest to city A.\"\"\"\n    return min(cities, key=lambda C: distance(C, A))\n```",
+      "concepts": [
+        "nearest-neighbor-tsp-algorithm",
+        "tour",
+        "city",
+        "nearest-neighbor",
+        "distance"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Nearest Neighbor Algorithm: `nearest_tsp`"
+      ],
+      "markdown_anchor": "nearest-neighbor-algorithm-nearest_tsp",
+      "start_line": 295,
+      "end_line": 343
+    },
+    {
+      "chunk_id": "chunk-19-nearest-neighbor-tsp-algorithm-complexity-and-performance",
+      "topic": "Complexity and performance comparison with exhaustive search",
+      "text": "The exhaustive search considers all tours, so the run time for *n* cities is proportional to *n*! and [we say](https://en.wikipedia.org/wiki/Big_O_notation) it is *O*(*n*!). The nearest neighbor algorithm builds *n* links in the tour and at each step considers up to *n* possibilities, so we say it is *O*(*n*<sup>2</sup>). That means it runs a lot faster! While `exhaustive_tsp` could only do 10 cities in a second, `nearest_tsp` can do thousands. Here it is with 3,000 cities:",
+      "concepts": [
+        "time-complexity",
+        "big-o-notation",
+        "exhaustive-search",
+        "nearest-neighbor-tsp-algorithm"
+      ],
+      "chunk_type": "explanation",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Nearest Neighbor Algorithm: `nearest_tsp`"
+      ],
+      "markdown_anchor": "nearest-neighbor-algorithm-nearest_tsp",
+      "start_line": 295,
+      "end_line": 343
+    },
+    {
+      "chunk_id": "chunk-20-nearest-neighbor-tsp-algorithm-example-run",
+      "topic": "Example run of the Nearest Neighbor TSP Algorithm with 3000 cities",
+      "text": "```python\nrun(nearest_tsp, random_cities(3000))\n```\n\n    length 410,442 tour of 3000 cities in 0.682 secs\n\n\n\n    \n![png](TSP_files/TSP_33_1.png)",
+      "concepts": [
+        "nearest-neighbor-tsp-algorithm",
+        "random-cities",
+        "tour-length"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Nearest Neighbor Algorithm: `nearest_tsp`"
+      ],
+      "markdown_anchor": "nearest-neighbor-algorithm-nearest_tsp",
+      "start_line": 295,
+      "end_line": 343
+    },
+    {
+      "chunk_id": "chunk-21-real-cities-introduction",
+      "topic": "Introduction to using real city data for the Traveling Salesperson Problem",
+      "text": "A tour of 3,000 random cities may look like a [Jackson Pollack](https://www.moma.org/artists/4675) painting, but I thought it would be fun to work on some *real* cities. I found a web page (now 404, but a copy is [here](https://raw.githubusercontent.com/norvig/pytudes/master/data/latlong.htm)) that lists coordinates of over 1000 cities in the USA (actually, the locations of airports in these cities), in this format:\n\n     [TCL]  33.23   87.62  Tuscaloosa,AL\n     [FLG]  35.13  111.67  Flagstaff,AZ\n     [ANC]  61.17  150.02  Anchorage,AK",
+      "concepts": [
+        "traveling-salesperson-problem",
+        "city-data",
+        "latitude-longitude"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Real Cities"
+      ],
+      "markdown_anchor": "real-cities",
+      "start_line": 344,
+      "end_line": 395
+    },
+    {
+      "chunk_id": "chunk-22-fetching-city-data",
+      "topic": "Fetching the city data file",
+      "text": "We can fetch the file if a local copy is not already in the current directory:\n\n\n```python\n! [ -e latlong.htm ] || curl -O https://raw.githubusercontent.com/norvig/pytudes/master/data/latlong.htm\n```",
+      "concepts": [
+        "data-acquisition",
+        "command-line-interface"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Real Cities"
+      ],
+      "markdown_anchor": "real-cities",
+      "start_line": 344,
+      "end_line": 395
+    },
+    {
+      "chunk_id": "chunk-23-parsing-city-data",
+      "topic": "Parsing the city data to extract city coordinates",
+      "text": "I define the function `parse_cities` to extract cities from a file in this format (skipping Alaska and Hawaii):\n\n\n```python\ndef parse_cities(text, skip=('AK', 'HI'), long_scale=-48, lat_scale=69) -> Cities:\n    \"\"\"Make a set of Cities from lines of text, skipping the specified states.\"\"\"\n    return Cities(City(int(long_scale * float(long)), int(lat_scale  * float(lat)))\n                  for (lat, long, state) in re.findall(r'([\\d.]+)\\s+([\\d.]+).+([A-Z][A-Z])', text)\n                  if state not in skip)\n\nUSA = parse_cities(pathlib.Path('latlong.htm').read_text())\n```",
+      "concepts": [
+        "data-parsing",
+        "regular-expressions",
+        "latitude-longitude",
+        "data-structures"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Real Cities"
+      ],
+      "markdown_anchor": "real-cities",
+      "start_line": 344,
+      "end_line": 395
+    },
+    {
+      "chunk_id": "chunk-24-latitude-longitude-scaling",
+      "topic": "Explanation of latitude and longitude scaling for distance approximation",
+      "text": "(You might be wondering about the `long_scale=-48, lat_scale=69` part. The issue is that computing distance from latitude and longitude requires [complicated trigonometry](http://en.wikipedia.org/wiki/Haversine_formula).  But we can get an approximation by assuming that latitude and longitude are on a flat rectangular grid. (This is a bad approximation if you're talking about links of 1,000 miles, but close enough for shorter links, as long as you're not too near the poles.)  I took the latitude of the center of the USA (Wichita, KS: latitude 37.65) and plugged it into a [Length Of A Degree Of Latitude\nAnd Longitude Calculator](http://www.csgnetwork.com/degreelenllavcalc.html) to find that, in Wichita, one degree of latitude is 69 miles, and one degree of longitude is 48 miles.  I use -48 rather than +48 because the USA is west of the prime meridian.)",
+      "concepts": [
+        "latitude-longitude",
+        "distance-calculation",
+        "approximation",
+        "haversine-formula"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Real Cities"
+      ],
+      "markdown_anchor": "real-cities",
+      "start_line": 344,
+      "end_line": 395
+    },
+    {
+      "chunk_id": "chunk-25-alternative-tsp-solutions",
+      "topic": "References to other TSP solutions using real road distances",
+      "text": "I also found a [blog post](http://www.randalolson.com/2015/03/08/computing-the-optimal-road-trip-across-the-u-s/) by Randal S. Olson, who chose 50 landmarks across the USA and found a tour based on actual road-travel distances, not straight-line distance; I would need a new `distance` function to handle that. William Cook provides an\nanalysis, and a [tour that is shorter](http://www.math.uwaterloo.ca/tsp/usa50/index.html) than Randal's.",
+      "concepts": [
+        "traveling-salesperson-problem",
+        "road-distance",
+        "optimization"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Real Cities"
+      ],
+      "markdown_anchor": "real-cities",
+      "start_line": 344,
+      "end_line": 395
+    },
+    {
+      "chunk_id": "chunk-26-nearest-neighbor-tour-usa",
+      "topic": "Running the nearest neighbor algorithm on the USA city data",
+      "text": "Now let's find a baseline nearest neighbor tour on the USA map:\n\n\n```python\nrun(nearest_tsp, USA)\n```\n\n    length 53,364 tour of 1088 cities in 0.082 secs\n\n\n\n    \n![png](TSP_files/TSP_40_1.png)",
+      "concepts": [
+        "nearest-neighbor-algorithm",
+        "traveling-salesperson-problem",
+        "tour-optimization"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Real Cities"
+      ],
+      "markdown_anchor": "real-cities",
+      "start_line": 344,
+      "end_line": 395
+    },
+    {
+      "chunk_id": "chunk-27-optimizing-links-introduction",
+      "topic": "Introduction to optimizing links in TSP tours",
+      "text": "# Improvement Strategy: Optimizing Links\n\nConsider this tour of 10 non-random cities:\n\n\n```python\nx10 = Tour(City(x, 0.9) for x in range(0, 5)) + Tour(City(x, 0) for x in range(4, 9))\n\nplot_tour(rep_nearest_tsp(Cities(x10)))\n```\n\n\n    \n![png](TSP_files/TSP_52_0.png)\n    \n",
+      "concepts": [
+        "traveling-salesperson-problem",
+        "tour",
+        "nearest-neighbor-algorithm"
+      ],
+      "chunk_type": "overview",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Improvement Strategy: Optimizing Links"
+      ],
+      "markdown_anchor": "improvement-strategy-optimizing-links",
+      "start_line": 471,
+      "end_line": 556
+    },
+    {
+      "chunk_id": "chunk-28-improvement-strategy-explanation",
+      "topic": "Explanation of the improvement strategy for TSP",
+      "text": "No matter where `rep_nearest_tsp` starts, it ends up greeedily going to nearest neighbors and being stuck with a long diagonal link to get back to the other end; that long link is a mistake.\n\nCould we modify nearest neighbors search to avoid making mistakes like this? That would be hard. Everything appears to be going well until we are forced to take the long diagonal link; we can't easily say which links before that are mistakes to avoid.  So, rather than tackling the difficult task of **avoiding** mistakes, the **improvement strategy** says to go ahead and make mistakes in creating the initial version of a tour, and then do the easier task of **fixing** the mistakes. Why is it easier to fix the mistakes? Because we can propose an alteration and get a definitive answer: either the change makes the whole tour shorter or it doesn't.",
+      "concepts": [
+        "improvement-strategy",
+        "nearest-neighbor-algorithm",
+        "tour-optimization"
+      ],
+      "chunk_type": "explanation",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Improvement Strategy: Optimizing Links"
+      ],
+      "markdown_anchor": "improvement-strategy-optimizing-links",
+      "start_line": 471,
+      "end_line": 556
+    },
+    {
+      "chunk_id": "chunk-29-2-opt-optimization-introduction",
+      "topic": "Introduction to 2-opt optimization using link swapping",
+      "text": "In the diagram below, we propose altering the tour above by replacing the two red links with new green links.  If the total distance of the two green links is less than the total distance of the two red links, then we should make the alteration. \n\n\n```python\nA, _, _, _, E, F, _, _, _, J = x10\nplot_tour(x10, 'bo-')\nplot_segment([E, F], 'r-');  plot_segment([E, J], 'g-')\nplot_segment([A, J], 'r-');  plot_segment([A, F], 'g-')\n```\n\n\n    \n![png](TSP_files/TSP_54_0.png)\n    \n",
+      "concepts": [
+        "2-opt",
+        "tour-optimization",
+        "link-swapping"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Improvement Strategy: Optimizing Links"
+      ],
+      "markdown_anchor": "improvement-strategy-optimizing-links",
+      "start_line": 471,
+      "end_line": 556
+    },
+    {
+      "chunk_id": "chunk-30-2-opt-optimization-explanation",
+      "topic": "Explanation of 2-opt optimization and segment reversal",
+      "text": "When we are dealing with **Euclidean distance** (or any **[metric space](https://en.wikipedia.org/wiki/Metric_space)** for that matter), then by the [triangle inequality](https://en.wikipedia.org/wiki/Triangle_inequality) we can see that each green line is shorter than the sum of the two parts of the red lines that make up the rest of the triangle; thus we should make the alteration, and in general, anytime there are two links that **cross** in an **X** pattern, we should uncross the **X**. (With a non-Euclidean distance measure, the 2-opt optimizations still work, but the **crossed X** analogy does not apply.)\n\nYou can think of the alteration as deleting the two red links and adding the two green ones. Or you can think of it as **reversing a segment** of the tour: the crossed-links tour visits the top 5 cities in left-to-right order, then jags down to the bottom 5 cities, visiting them in left-to-right order. A better tour would visit the bottom five in right-to-left order. (Note that the total distance for a reversed segment is the same as the unreversed segment, because our `distance` is **symmetric**. If we were dealing with a non-symmetric `distance` function, we would have to keep track, for each segment, of the difference between traversing it one direction or the other, and incorporate that into the decision of whether reversing is an improvement.)\n\nIn the literature of TSP, this kind of improvement is called [**2-opt**](https://en.wikipedia.org/wiki/2-opt), because it involves deleting two links and replacing them with **two optimized** links. There is also a [**3-opt**](https://en.wikipedia.org/wiki/3-opt), which we won't cover, but you are welcome to look into it.",
+      "concepts": [
+        "2-opt",
+        "3-opt",
+        "euclidean-distance",
+        "metric-space",
+        "triangle-inequality",
+        "segment-reversal",
+        "tour-optimization"
+      ],
+      "chunk_type": "explanation",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Improvement Strategy: Optimizing Links"
+      ],
+      "markdown_anchor": "improvement-strategy-optimizing-links",
+      "start_line": 471,
+      "end_line": 556
+    },
+    {
+      "chunk_id": "chunk-31-opt2-function-definition",
+      "topic": "Definition of the opt2 function for 2-opt optimization",
+      "text": "I'll define `opt2(tour)` to consider various segments, and reverse the ones that improve the tour. What segments should we consider? I don't know how to be clever about that, but I do know how to use **brute force**: try every subsegment. (I have an intuition (from experience with [simulated annealing](https://en.wikipedia.org/wiki/Simulated_annealing)) that trying longer subsegments first would be better, so I'll write `subsegments` that way.) After I've tried all segments, if one of them did improve the tour I'll repeat the process until there are no improvements, then return the improved tour:\n\n\n```python\ndef opt2(tour) -> Tour:\n    \"\"\"Perform 2-opt segment reversals to optimize tour.\"\"\"\n    changed = False\n    old_tour = list(tour) # make a copy\n    for (i, j) in subsegments(len(tour)):\n        if reversal_is_improvement(tour, i, j):\n            tour[i:j] = reversed(tour[i:j])\n            changed = True\n    return (tour if not changed else opt2(tour))\n        \ndef reversal_is_improvement(tour, i, j) -> bool:\n    \"\"\"Would reversing the segment `tour[i:j]` make the tour shorter?\"\"\" \n    # Given tour [...A,B--C,D...], would reversing B--C make the tour shorter?\n    A, B, C, D = tour[i-1], tour[i], tour[j-1], tour[j % len(tour)]\n    return distance(A, B) + distance(C, D) > distance(A, C) + distance(B, D)\n\ncache = functools.lru_cache(None) # Or just `functools.cache` in Python 3.9+\n        \n@cache # All tours of length N have the same subsegments, so cache them.\ndef subsegments(N) -> Tuple[Tuple[int, int]]:\n    \"\"\"Return (i, j) index pairs denoting tour[i:j] subsegments of a tour of length N.\"\"\"\n    return tuple((i, i + length)\n                 for length in reversed(range(2, N - 1))\n                 for i in range(N - length))\n```",
+      "concepts": [
+        "2-opt",
+        "tour-optimization",
+        "segment-reversal",
+        "brute-force",
+        "simulated-annealing",
+        "lru-cache"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Improvement Strategy: Optimizing Links"
+      ],
+      "markdown_anchor": "improvement-strategy-optimizing-links",
+      "start_line": 471,
+      "end_line": 556
+    },
+    {
+      "chunk_id": "chunk-32-opt2-function-application",
+      "topic": "Application of the opt2 function and visualization of the optimized tour",
+      "text": "We can see that `opt2` does the trick on the 10 cities:\n\n\n```python\nplot_tour(opt2(x10))\n```\n\n\n    \n![png](TSP_files/TSP_58_0.png)",
+      "concepts": [
+        "2-opt",
+        "tour-optimization"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Improvement Strategy: Optimizing Links"
+      ],
+      "markdown_anchor": "improvement-strategy-optimizing-links",
+      "start_line": 471,
+      "end_line": 556
+    },
+    {
+      "chunk_id": "chunk-33-tools-for-comparing-results-introduction",
+      "topic": "Introduction to comparing algorithms",
+      "text": "We're about to get into comparing different algorithms, with and without `opt2`.\n\nI will rewrite `run` to perform a longer list of duties:\n\n- As before, `run` will **run** a TSP algorithm on a set of cities, **timing** how long it takes.\n- I will make `Tour` be a class, that inherits from `list`, but can be annotated with \n- Each `run` will **annotate** the save and return a **`Result`** object describing the run, the resulting tour, and the run time.\n- If an **optimization function** is specified with the `opt` parameter, first run the unoptimized version, save the result for it, then run the optimizer and save that result, with the added run time.\n- A **`@cache`** of results means a previously-run result can just be fetched, saving run time.\n- I'll add an **`assert`** statement to verify the tour is valid.\n- Plotting results will no longer be the responsibility of `run`; instead call `plot_result(result)`.\n- The function `runs` does a run for each of several TSP algorithms, then calls `plot` for the last one, and returns a list of all the results on the input cities.",
+      "concepts": [
+        "tsp-algorithm",
+        "optimization-function",
+        "caching",
+        "assertion"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Tools for Comparing Results"
+      ],
+      "markdown_anchor": "tools-for-comparing-results",
+      "start_line": 557,
+      "end_line": 615
+    },
+    {
+      "chunk_id": "chunk-34-result-class-definition",
+      "topic": "Definition of the Result class and helper functions",
+      "text": "```python\nclass Result(namedtuple('_', 'tsp, opt, tour, cities, secs')):\n    \"\"\"A `Result` records the results of a `run` on a TSP.\"\"\"\n    def __repr__(self):\n        best = min([length(r) for r in all_results[self.cities]], default=length(self))\n        return (f\"{name(self.tsp, self.opt):>25}: length {round(length(self)):,d} tour \"\n                f\"({length(self)/best:5.1%}) in {self.secs:6.3f} secs\")   \n\nall_results = defaultdict(list) # {cities: [tour, ...]}\n\ndef name(tsp, opt=None) -> str: return tsp.__name__ + (('+' + opt.__name__) if opt else '')\n    \ndef length(result: Result) -> float: return tour_length(result.tour)\n```",
+      "concepts": [
+        "result-class",
+        "namedtuple",
+        "tour-length",
+        "defaultdict"
+      ],
+      "chunk_type": "definition",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Tools for Comparing Results"
+      ],
+      "markdown_anchor": "tools-for-comparing-results",
+      "start_line": 557,
+      "end_line": 615
+    },
+    {
+      "chunk_id": "chunk-35-run-function-definition",
+      "topic": "Definition of the run function",
+      "text": "```python\n@cache\ndef run(tsp: TSP, cities: Cities, opt=None) -> Result:\n    \"\"\"Run a TSP algorithm on a set of cities and return results.\"\"\"\n    if opt: # recursively run unoptimized version; add .secs for that to opt(tour)\n        res0  = run(tsp, cities, None)\n        t0    = time.perf_counter()\n        tour  = opt(Tour(res0.tour))\n        t1    = time.perf_counter()\n        secs  = res0.secs + t1 - t0\n    else: # run the tsp\n        t0    = time.perf_counter()\n        tour  = tsp(cities)\n        t1    = time.perf_counter()\n        secs  = t1 - t0\n    result = Result(tsp, opt, tour, cities, secs)\n    all_results[cities].append(result)\n    assert valid_tour(tour, cities)\n    return result\n```",
+      "concepts": [
+        "run-function",
+        "tsp-algorithm",
+        "caching",
+        "time-complexity",
+        "assertion",
+        "recursion"
+      ],
+      "chunk_type": "definition",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Tools for Comparing Results"
+      ],
+      "markdown_anchor": "tools-for-comparing-results",
+      "start_line": 557,
+      "end_line": 615
+    },
+    {
+      "chunk_id": "chunk-36-runs-function-definition",
+      "topic": "Definition of the runs function",
+      "text": "```python\ndef runs(tsps, cities, opts=(None, opt2)) -> List[Result]:\n    \"\"\"Run each of the tsps on the cities, and return a list of all results on `cities`.\"\"\"\n    for tsp, opt in itertools.product(tsps, opts):\n        run(tsp, cities, opt)\n    all_results[cities].sort(key=length)\n    best = all_results[cities][0]\n    plot_tour(best.tour, title=repr(best))\n    return all_results[cities]\n```",
+      "concepts": [
+        "runs-function",
+        "tsp-algorithm",
+        "itertools-product",
+        "tour-length",
+        "sorting"
+      ],
+      "chunk_type": "definition",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Tools for Comparing Results"
+      ],
+      "markdown_anchor": "tools-for-comparing-results",
+      "start_line": 557,
+      "end_line": 615
+    },
+    {
+      "chunk_id": "chunk-37-comparing-2-opt-optimizations",
+      "topic": "Comparing 2-opt optimizations with nearest neighbor algorithms",
+      "text": "# Comparing 2-opt Optimizations\n\nNow that we have the 2-opt optimization function, let's run it on four variations of the nearest neighbor algorithm:\n1. `Tour` (run nearest neighbor zero times (just take the cities in given order), then 2-opt)\n2. `nearest_tsp` (run nearest neighbor once, then 2-opt)\n3. `rep_nearest` (run nearest neighbor k=10 times, then 2-opt)\n4. `rep_opt2_nearest_tsp` (run nearest neighbor followed by 2-opt, k=10 times)\n\nLet's see:",
+      "concepts": [
+        "2-opt-optimization",
+        "nearest-neighbor-algorithm",
+        "tour",
+        "nearest-tsp",
+        "rep-nearest",
+        "rep-opt2-nearest-tsp"
+      ],
+      "chunk_type": "overview",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Comparing 2-opt Optimizations"
+      ],
+      "markdown_anchor": "comparing-2-opt-optimizations",
+      "start_line": 616,
+      "end_line": 660
+    },
+    {
+      "chunk_id": "chunk-38-rep-opt2-nearest-tsp-example",
+      "topic": "Example of rep_opt2_nearest_tsp function and runs",
+      "text": "```python\ndef rep_opt2_nearest_tsp(cities, k=10) -> Tour: \n    \"\"\"Apply 2-opt to *each* of the repeated nearest neighbors tours.\"\"\"\n    return shortest(opt2(nearest_tsp(cities, start)) for start in sample(cities, k))\n\nruns([Tour, nearest_tsp, rep_nearest_tsp, rep_opt2_nearest_tsp], USA) \n```\n\n\n\n    [     rep_opt2_nearest_tsp: length 44,317 tour (100.0%) in 16.662 secs,\n     rep_opt2_nearest_tsp+opt2: length 44,317 tour (100.0%) in 16.995 secs,\n          rep_nearest_tsp+opt2: length 44,473 tour (100.4%) in  2.137 secs,\n              nearest_tsp+opt2: length 45,105 tour (101.8%) in  1.768 secs,\n                     list+opt2: length 46,460 tour (104.8%) in  2.929 secs,\n               rep_nearest_tsp: length 50,915 tour (114.9%) in  0.798 secs,\n                   nearest_tsp: length 53,364 tour (120.4%) in  0.080 secs,\n                          list: length 1,122,001 tour (2531.8%) in  0.000 secs]\n\n\n\n    \n![png](TSP_files/TSP_62_1.png)\n    ",
+      "concepts": [
+        "rep-opt2-nearest-tsp",
+        "2-opt-optimization",
+        "nearest-neighbor-algorithm",
+        "tour",
+        "shortest",
+        "sample"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Comparing 2-opt Optimizations"
+      ],
+      "markdown_anchor": "comparing-2-opt-optimizations",
+      "start_line": 616,
+      "end_line": 660
+    },
+    {
+      "chunk_id": "chunk-39-analysis-of-2-opt-results",
+      "topic": "Analysis of the 2-opt optimization results",
+      "text": "I notice that:\n- `opt2` makes a **big** difference; all the optimized results are better than all the unoptimized ones.\n- The best result is the one that calls `opt2` the most: `rep_opt2_nearest_tsp` does 10 nearest neighbor trials and calls `opt2` on each one.\n- An `opt2` application on 1088 cities takes about a couple of seconds; a `nearest_tsp` application only about 0.1 seconds.\n- We should be happy to have saved 9,000 miles of travel (between the worst and best results) in 20 seconds of computing time; that's 1.6 million miles per hour!",
+      "concepts": [
+        "2-opt-optimization",
+        "rep-opt2-nearest-tsp",
+        "nearest-tsp"
+      ],
+      "chunk_type": "explanation",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Comparing 2-opt Optimizations"
+      ],
+      "markdown_anchor": "comparing-2-opt-optimizations",
+      "start_line": 616,
+      "end_line": 660
+    },
+    {
+      "chunk_id": "chunk-40-greedy-tsp-algorithm-introduction",
+      "topic": "Introduction to the Greedy TSP Algorithm",
+      "text": "# Greedy TSP Algorithm: `greedy_tsp`\n\nLet's return to the **greedy strategy**. The Nearest Neighbor Algorithm followed the greedy strategy in always choosing the neighbor that is nearest to the previous city in the tour. Another way to be greedy is to at each step incorporate the shortest possible link, **anywhere** in the map, not just from the previous city in the partial tour. It works like this: ",
+      "concepts": [
+        "greedy-tsp-algorithm",
+        "greedy-strategy",
+        "nearest-neighbor-algorithm"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-41-greedy-algorithm-definition",
+      "topic": "Definition of the Greedy Algorithm for TSP",
+      "text": "> **Greedy Algorithm:** *Maintain a set of **segments**; intially each city defines its own 1-city segment. Find the shortest possible link that connects two endpoints of two different segments, and join those segments with that link. Repeat until we form a single segment that tours all the cities.*",
+      "concepts": [
+        "greedy-algorithm",
+        "segments",
+        "shortest-link"
+      ],
+      "chunk_type": "definition",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-42-greedy-algorithm-explanation",
+      "topic": "Explanation of the Greedy Algorithm's Steps",
+      "text": "On each step of the algorithm, we want to *\"find the shortest possible link that connects two endpoints.\"* That seems like an expensive operation to do on each step. So we will add some data structures  to speed up the computation:  \n\n1.  Pre-compute a list of links, sorted by shortest link first. A link is a pair of cities: `(A, B)`. \n2.  Maintain a dict that maps **endpoints** to **segments**, e.g. `{A: [A, B, C], C: [A, B, C], D: [D]}` means that `A` and `C` are the endpoints of segment `[A, B, C]` and `D` is the only endpoint of a 1-city segment. \n3.  Go through the links in shortest-distance-first order. Given the dict listed above, suppose the next shortest link is:\n    - `(B, D)`: We can't use it, because `B` is in the middle of a segment; it is already attached to `A` and `C`, and by definition, those are shorter links. \n    - `(A, C)`: We can't use it; that would make `[A, B, C]` into a closed loop. \n    - `(C, D)`: We will use it: join the two segments together, giving the updated endpoints dict: `{A: [A, B, C, D], D: [A, B, C, D]}`.\n4.  Stop when the newly created segment contains all the cities.",
+      "concepts": [
+        "shortest-link",
+        "endpoints",
+        "segments",
+        "data-structures"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-43-greedy-tsp-code-implementation",
+      "topic": "Code Implementation of the Greedy TSP Algorithm",
+      "text": "Here is the code:\n\n\n```python\ndef greedy_tsp(cities):\n    \"\"\"Go through links, shortest first. If a link can join segments, do it.\"\"\"\n    endpoints = {C: [C] for C in cities} # A dict of {endpoint: segment}\n    links = itertools.combinations(cities, 2)\n    for (A, B) in shortest_links_first(cities):\n        if A in endpoints and B in endpoints and endpoints[A] != endpoints[B]:\n            joined_segment = join_segments(endpoints, A, B)\n            if len(joined_segment) == len(cities):\n                return joined_segment\n            \ndef shortest_links_first(cities) -> List[Link]:\n    \"Return all links between cities, sorted shortest first.\"\n    return sorted(itertools.combinations(cities, 2), key=lambda link: distance(*link))\n            \n# TODO: join_segments\n```",
+      "concepts": [
+        "greedy-tsp-algorithm",
+        "endpoints",
+        "segments",
+        "shortest-link"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-44-endpoints-dictionary-explanation",
+      "topic": "Explanation of the Endpoints Dictionary",
+      "text": "**Note:** The `endpoints` dict serves two purposes. First, the keys of the dict are cities that are endpoints of some segment, making it possible to ask \"`A in endpoints`\" to see if city `A` is an endpoint. Second, the value of `endpoints[A]` is the segment that `A` is an endpoint of, making it possible to ask \"`endpoints[A] != endpoints[B]`\" to make sure that the two cities are endpoints of different segments, not of the same segment (we don't want to join a segment to itself and form a loop).",
+      "concepts": [
+        "endpoints",
+        "segments"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-45-join-segments-function-implementation",
+      "topic": "Implementation of the Join Segments Function",
+      "text": "For the `join_segments` function, I first make sure that `A` is the last element of one segment and `B` is the first element of the other, by reversing segments if necessary.  Then I add the B segment on to the end of the A segment. Finally, I update the `endpoints` dict by deleting `A` and `B` and then adding the two endpoints of the new segment: \n\n\n```python\ndef join_segments(endpoints, A, B):\n    \"Join segments [...,A] + [B,...] into one segment. Maintain `endpoints`.\"\n    Aseg, Bseg = endpoints[A], endpoints[B]\n    if Aseg[-1] is not A: Aseg.reverse()\n    if Bseg[0]  is not B: Bseg.reverse()\n    Aseg += Bseg\n    del endpoints[A], endpoints[B] \n    endpoints[Aseg[0]] = endpoints[Aseg[-1]] = Aseg\n    return Aseg\n```",
+      "concepts": [
+        "join-segments",
+        "endpoints",
+        "segments"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-46-greedy-tsp-algorithm-evaluation",
+      "topic": "Evaluation of the Greedy TSP Algorithm on the USA Map",
+      "text": "Let's try out the `greedy_tsp` algorithm, with and without 2-opt, on the USA map:\n\n\n```python\nruns([greedy_tsp], USA)\n```\n\n\n\n    [     rep_opt2_nearest_tsp: length 44,317 tour (100.0%) in 16.662 secs,\n     rep_opt2_nearest_tsp+opt2: length 44,317 tour (100.0%) in 16.995 secs,\n               greedy_tsp+opt2: length 44,417 tour (100.2%) in  2.162 secs,\n          rep_nearest_tsp+opt2: length 44,473 tour (100.4%) in  2.137 secs,\n              nearest_tsp+opt2: length 45,105 tour (101.8%) in  1.768 secs,\n                     list+opt2: length 46,460 tour (104.8%) in  2.929 secs,\n               rep_nearest_tsp: length 50,915 tour (114.9%) in  0.798 secs,\n                    greedy_tsp: length 51,129 tour (115.4%) in  0.407 secs,\n                   nearest_tsp: length 53,364 tour (120.4%) in  0.080 secs,\n                          list: length 1,122,001 tour (2531.8%) in  0.000 secs]",
+      "concepts": [
+        "greedy-tsp-algorithm",
+        "2-opt",
+        "usa-map"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-47-greedy-tsp-algorithm-performance-analysis",
+      "topic": "Performance Analysis of the Greedy TSP Algorithm",
+      "text": "\n\n\n    \n![png](TSP_files/TSP_69_1.png)\n    \n\n\nThis time I notice that:\n- Without 2-opt, the greedy algorithm performs poorly, but better than nearest neighbors.\n- With 2-opt, the greedy algorithm is comparable (in run time and tour length) to the 10-repetition nearest neighbors algorithm.\n- To really decide which algorithm is better, we'll need more than just one problem. Latter we will **benchmark** algorithms on multiple problems.\n\nWhat about a repetitive greedy algorithm?  That might be a good idea, but there is no obvious way to do it, because the greedy algorithm as it stands doesn't have a parameter that can be varied on each repeated run.",
+      "concepts": [
+        "greedy-algorithm",
+        "2-opt",
+        "nearest-neighbors-algorithm",
+        "benchmarking"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-48-visualizing-greedy-algorithm-introduction",
+      "topic": "Introduction to Visualizing the Greedy Algorithm",
+      "text": "## Visualizing the Greedy Algorithm\n\nI would like to visualize the process of joining segments.  Although I dislike copy-and-paste (because it violates the [*Don't Repeat Yourself*](http://en.wikipedia.org/wiki/Don%27t_repeat_yourself) principle), I'll  make a new version of `greedy_tsp` called `greedy_tsp_generator` that yields the `endpoints` dict on every iteration. Then I'll define `plot_greedy_tsp` to plot progressive versions of the map when the number of segments hits certain milestones.",
+      "concepts": [
+        "greedy-algorithm",
+        "segments",
+        "endpoints",
+        "greedy-tsp-generator",
+        "plot-greedy-tsp"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-49-greedy-tsp-generator-code",
+      "topic": "Code for the Greedy TSP Generator and Plotting Function",
+      "text": "\n```python\ndef greedy_tsp_generator(cities) -> Iterable[Dict[City, Segment]]:\n    \"\"\"Go through links, shortest first. If a link can join segments, do it.\n    Yield the dict of {endpoint: segment} on each iteration.\"\"\"\n    endpoints = {C: [C] for C in cities} # A dict of {endpoint: segment}\n    links = itertools.combinations(cities, 2)\n    for (A, B) in sorted(links, key=lambda link: distance(*link)):\n        if A in endpoints and B in endpoints and endpoints[A] != endpoints[B]:\n            joined_segment = join_segments(endpoints, A, B)\n            yield endpoints\n            if len(joined_segment) == len(cities):\n                return\n\ndef plot_greedy_tsp(cities, plot_sizes=(1000, 500, 250, 125, 60, 30, 15, 10, 5, 2, 1)):\n    \"\"\"Plot segments during the process of `greedy_tsp`, at specified plot_sizes.\"\"\"\n    for endpoints in greedy_tsp_generator(cities):\n        segments = set(map(tuple, endpoints.values()))\n        if len(segments) in plot_sizes:\n            for s in segments:\n                plot_segment(s, style='o-')\n            plt.title(f'{len(segments)} segments:')\n            plt.show()\n```",
+      "concepts": [
+        "greedy-tsp-generator",
+        "endpoints",
+        "segments",
+        "plot-greedy-tsp"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-50-visualizing-greedy-algorithm-results",
+      "topic": "Visualizing the Greedy Algorithm on a Sample of US Cities",
+      "text": "The full USA map would be too busy to see what's going on, so I'll sample about 1/3 of the cities:\n\n\n```python\nUSA360 = Cities(sample(USA, 360))\n\nplot_greedy_tsp(USA360)\n```\n\n\n    \n![png](TSP_files/TSP_73_0.png)\n    \n\n\n    \n![png](TSP_files/TSP_73_1.png)\n    \n\n\n    \n![png](TSP_files/TSP_73_2.png)\n    \n\n\n    \n![png](TSP_files/TSP_73_3.png)\n    \n\n\n    \n![png](TSP_files/TSP_73_4.png)\n    \n\n\n    \n![png](TSP_files/TSP_73_5.png)\n    \n\n\n    \n![png](TSP_files/TSP_73_6.png)\n    \n\n\n    \n![png](TSP_files/TSP_73_7.png)\n    \n\n\n    \n![png](TSP_files/TSP_73_8.png)",
+      "concepts": [
+        "greedy-algorithm",
+        "usa-map",
+        "plot-greedy-tsp"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Greedy TSP Algorithm: `greedy_tsp`",
+        "Visualizing the Greedy Algorithm"
+      ],
+      "markdown_anchor": "greedy-tsp-algorithm-greedy_tsp",
+      "start_line": 661,
+      "end_line": 843
+    },
+    {
+      "chunk_id": "chunk-51-divide-and-conquer-introduction",
+      "topic": "Introduction to Divide and Conquer strategy for TSP",
+      "text": "# Divide and Conquer: `divide_tsp`\n\nThe next general strategy to consider is **divide and conquer**.  Suppose we have an algorithm, like `exhaustive_tsp`, that is too slow to apply to a large set of cities. We could divide the problem into smaller pieces, and then combine those pieces:\n\n1. Split the set of cities in half.\n2. Find a tour for each half.\n3. Join those two tours into one.\n\nWhen the number of cities, *n*, is small, step 2 can be done directly by the exhaustive search algorithm.  But when *n* is large, step 2 is done with a recursive call, breaking each half into two smaller pieces.",
+      "concepts": [
+        "divide-and-conquer",
+        "traveling-salesperson-problem",
+        "exhaustive-search-algorithm",
+        "recursion"
+      ],
+      "chunk_type": "overview",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Divide and Conquer: `divide_tsp`"
+      ],
+      "markdown_anchor": "divide-and-conquer-divide_tsp",
+      "start_line": 844,
+      "end_line": 1004
+    },
+    {
+      "chunk_id": "chunk-52-divide-and-conquer-example",
+      "topic": "Example of Divide and Conquer with six cities",
+      "text": "\nHere's an example with six cities. We split them into two halves of 3 cities each, for which we can easily create tours:\n\n\n```python\nA, B, C, D, E, F = A2F = [City(*p) for p in ((0, 0), (1, 1), (0, 2), (2, 2), (3, 0), (4, 2))]\n\nplt.figure(figsize=(3, 2))\nplot_segment([A, B, C, A], 'bo-')\nplot_segment([D, E, F, D], 'gs-')\n```\n\n\n    \n![png](TSP_files/TSP_75_0.png)\n    \n\nNow to join the two halves together, the first thing I do is delete a link from each half. There are 3 &times; 3 ways to do that; here's one:\n\n\n```python\nplt.figure(figsize=(3, 2))\nplot_segment([C, A, B], 'bo-')\nplot_segment([D, F, E], 'gs-')\n```\n\n\n    \n![png](TSP_files/TSP_77_0.png)\n    \n\nNow connect the two halves back together. There are two ways to do that; this is the better way:\n\n\n```python\nplt.figure(figsize=(3, 2))\nplot_segment([D, C, A, B], 'bo-')\nplot_segment([D, F, E, B], 'gs-')\n```\n\n\n    \n![png](TSP_files/TSP_79_0.png)\n    ",
+      "concepts": [
+        "divide-and-conquer",
+        "traveling-salesperson-problem",
+        "tour",
+        "city"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Divide and Conquer: `divide_tsp`"
+      ],
+      "markdown_anchor": "divide-and-conquer-divide_tsp",
+      "start_line": 844,
+      "end_line": 1004
+    },
+    {
+      "chunk_id": "chunk-53-divide-tsp-algorithm-definition",
+      "topic": "Definition of the divide_tsp algorithm",
+      "text": "\nNow we have a feel for what we have to do.  I'll name the divide and conquer algorithm `divide_tsp`.  If the size of the set of cities is less than *split*, then find the shortest tour using `exhaustive_tsp`. If there are *split* cities or more, then split the cities in half (with `split_cities`), find a tour for each half (using `divide_tsp` recursively), and join the two tours together (with `join_tours`):\n\n\n```python\ndef divide_tsp(cities, split=7) -> Tour:\n    \"\"\"Find a tour by divide and conquer: if number of cities is `split` or more, then split\n    the cities in half, solve each half recursively, then join those two tours together.\n    Otherwise solve with `exhaustive_tsp`.\"\"\"\n    if len(cities) < split:\n        return exhaustive_tsp(cities)\n    else:\n        half1, half2 = split_cities(cities)\n        return join_tours(divide_tsp(half1, split), divide_tsp(half2, split))\n    \n# TODO: split_cities, join_tours\n```",
+      "concepts": [
+        "divide-and-conquer",
+        "divide-tsp",
+        "exhaustive-tsp",
+        "split-cities",
+        "join-tours",
+        "recursion",
+        "tour"
+      ],
+      "chunk_type": "definition",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Divide and Conquer: `divide_tsp`"
+      ],
+      "markdown_anchor": "divide-and-conquer-divide_tsp",
+      "start_line": 844,
+      "end_line": 1004
+    },
+    {
+      "chunk_id": "chunk-54-splitting-cities-explanation",
+      "topic": "Explanation of how to split cities",
+      "text": "How do we split a set of cities?  In the non-Euclidean case, there would be no easy way to make a good split. But with each city having *x* and *y* coordinates, \nmy approach is to imagine drawing an axis-aligned rectangle that is just big enough to contain all the cities. If the rectangle  is wider than it is tall, then order all the cities by *x* coordinate and split that ordered list in half.  If the rectangle is taller than it is wide, order and split the cities by *y* coordinate.\n\n\n```python\ndef X_(city) -> int: \"X coordinate\"; return city.real\ndef Y_(city) -> int: \"Y coordinate\"; return city.imag\n\ndef split_cities(cities) -> Tuple[List[City], List[City]]:\n    \"Split cities vertically if map is wider; horizontally if map is taller.\"\n    coord  = (X_ if (extent(Xs(cities)) > extent(Ys(cities))) else Y_)\n    cities = sorted(cities, key=coord)\n    middle = len(cities) // 2\n    return cities[:middle], cities[middle:]\n\ndef extent(numbers) -> float: return max(numbers) - min(numbers)\n```",
+      "concepts": [
+        "split-cities",
+        "x-coordinate",
+        "y-coordinate",
+        "axis-aligned-rectangle",
+        "city"
+      ],
+      "chunk_type": "explanation",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Divide and Conquer: `divide_tsp`"
+      ],
+      "markdown_anchor": "divide-and-conquer-divide_tsp",
+      "start_line": 844,
+      "end_line": 1004
+    },
+    {
+      "chunk_id": "chunk-55-joining-tours-explanation",
+      "topic": "Explanation of how to join two tours together",
+      "text": "Now for the tricky part: joining two tours together. First we consider all ways of deleting one link from each of the two tours.  If we delete a link from a tour we get a segment.  We are representing segments as lists of cities, the same surface representation as tours.  But there is a difference in their interpretation.  The tour `[C, A, B]` is a triangle of three links, but the segment `[C, A, B]` consists of only two links, from `C` to `A` and from `A` to `B`. The segments that result from deleting a link from the tour `[C, A, B]` are:\n\n     [C, A, B],  [A, B, C],  [B, C, A]\n\nYou may recognize these as the *rotations* of the segment `[C, A, B]`. So any candidate combined tour consists of taking a rotation of the first tour, and appending to it a rotation of the second tour, with one caveat: when we go to append the two segments, there are two ways of doing it: either keep the second segment as is, or reverse the second segment.\n\n\n```python\ndef join_tours(tour1, tour2):\n    \"Consider all ways of joining the two tours together, and pick the shortest.\"\n    segments1, segments2 = rotations(tour1), rotations(tour2)\n    return shortest(s1 + s3\n                    for s1 in segments1\n                    for s2 in segments2\n                    for s3 in (s2, s2[::-1]))\n\ndef rotations(sequence):\n    \"All possible rotations of a sequence.\"\n    # A rotation is some suffix of the sequence followed by the rest of the sequence.\n    return [sequence[i:] + sequence[:i] for i in range(len(sequence))]\n```",
+      "concepts": [
+        "join-tours",
+        "tour",
+        "segment",
+        "rotations",
+        "shortest"
+      ],
+      "chunk_type": "explanation",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Divide and Conquer: `divide_tsp`"
+      ],
+      "markdown_anchor": "divide-and-conquer-divide_tsp",
+      "start_line": 844,
+      "end_line": 1004
+    },
+    {
+      "chunk_id": "chunk-56-divide-tsp-performance-evaluation",
+      "topic": "Evaluating the performance of the divide_tsp algorithm",
+      "text": "Let's divide and conquer! First the 6 cities `A` to `F`:\n\n\n```python\nruns([divide_tsp], Cities(A2F))\n```\n\n\n    [               divide_tsp: length 12 tour (100.0%) in  0.000 secs,\n               divide_tsp+opt2: length 12 tour (100.0%) in  0.000 secs]\n\n\n    \n![png](TSP_files/TSP_87_1.png)\n    \n\nNow the USA map. But the `divide_tsp` algorithm, as I have written it, is slow. So I'll use the smaller sample of cities from USA, and compare `divide_tsp` to `greedy_tsp`, with and without `opt2`:\n\n\n```python\nruns([divide_tsp, greedy_tsp], USA360)\n```\n\n\n    [          greedy_tsp+opt2: length 26,089 tour (100.0%) in  0.176 secs,\n               divide_tsp+opt2: length 27,108 tour (103.9%) in  4.848 secs,\n                    greedy_tsp: length 28,926 tour (110.9%) in  0.025 secs,\n                    divide_tsp: length 29,177 tour (111.8%) in  4.654 secs]\n\n\n    \n![png](TSP_files/TSP_89_1.png)\n    \n\nThe conclusion: `divide_tsp` does not perform as well as `greedy_tsp` on this example, and is much slower.",
+      "concepts": [
+        "divide-tsp",
+        "greedy-tsp",
+        "traveling-salesperson-problem",
+        "tour",
+        "performance-evaluation"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Divide and Conquer: `divide_tsp`"
+      ],
+      "markdown_anchor": "divide-and-conquer-divide_tsp",
+      "start_line": 844,
+      "end_line": 1004
+    },
+    {
+      "chunk_id": "chunk-57-minimum-spanning-tree-algorithm-introduction",
+      "topic": "Introduction to Minimum Spanning Tree Algorithm",
+      "text": "# Shoulders of Giants: Minimum Spanning Tree Algorithm\n\n\n| ![Joseph Kruskal (Wikipedia)](http://people.inf.elte.hu/hytruongson/Kruskal/J.Kruskal.jpg) |\n|----|\n| [Joseph Kruskal (Wikipedia)](https://en.wikipedia.org/wiki/Joseph_Kruskal) |\n\n\n\nI hope you now believe that you could have come up with some ideas for solving the TSP, using the set of **strategies**. But even if you can't come up with something all on your own, you can follow the **Stand on the Shoulders of Giants Strategy**, also known as the **[Just Google it Strategy](http://bit.ly/XNGt2y)**, in which case you'll no doubt find a giant of a mathematician, [Joseph Kruskal](http://en.wikipedia.org/wiki/Joseph_Kruskal), who, in 1956, published [a paper](http://www.cmat.edu.uy/~marclan/TAG/Sellanes/Kruskal.pdf) that led to an algorithm that\nmost people would not have thought of on their own (I know I wouldn't have):\n> **Minimum Spanning Tree Traversal Algorithm:** *Construct a Minimum Spanning Tree, then do a pre-order traversal.  That will give you a tour that is guaranteed to be no more than twice as long as the minimal tour.*",
+      "concepts": [
+        "traveling-salesperson-problem",
+        "minimum-spanning-tree-traversal-algorithm",
+        "pre-order-traversal"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Shoulders of Giants: Minimum Spanning Tree Algorithm"
+      ],
+      "markdown_anchor": "shoulders-of-giants-minimum-spanning-tree-algorithm",
+      "start_line": 1005,
+      "end_line": 1036
+    },
+    {
+      "chunk_id": "chunk-58-graph-theory-glossary",
+      "topic": "Graph Theory Glossary",
+      "text": "What does all this jargon mean? It is part of *[graph theory](https://en.wikipedia.org/wiki/Graph_theory)*, the study of vertexes and links.  Here is a glossary of terms:\n\n* A **graph** is a collection of vertexes and links.\n* A **vertex** is a point (such as a city).\n* A **link** is an edge between two vertexes. Links have lengths.\n* A **directed graph** is a graph where the links have a direction.  We say that the link goes from the **parent** vertex to the **child** vertex.\n* A **tree** is a directed graph in which there is one distinguished vertex called the **root** that has no parent; every other vertex has exactly one parent. \n* A **spanning tree** (of a set of vertexes) is a tree that contains all the vertexes.    \n* A **minimum spanning tree** is a spanning tree with the smallest  sum of link lengths.\n* A **traversal** of a tree is a way of visiting all the vertexes in some order.\n* A **pre-order traversal** means that you visit the root first, then do a pre-order traversal of each of the children.",
+      "concepts": [
+        "graph-theory",
+        "graph",
+        "vertex",
+        "link",
+        "directed-graph",
+        "parent-vertex",
+        "child-vertex",
+        "tree",
+        "root",
+        "spanning-tree",
+        "minimum-spanning-tree",
+        "traversal",
+        "pre-order-traversal"
+      ],
+      "chunk_type": "definition",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Shoulders of Giants: Minimum Spanning Tree Algorithm"
+      ],
+      "markdown_anchor": "shoulders-of-giants-minimum-spanning-tree-algorithm",
+      "start_line": 1005,
+      "end_line": 1036
+    },
+    {
+      "chunk_id": "chunk-59-minimum-spanning-tree-implementation-plan",
+      "topic": "Implementation Plan for Minimum Spanning Tree Algorithm",
+      "text": "\nWe will implement a directed graph as a dict of `{parent: [child, ...]}`. Now our plan is:\n\n1. Implement an algorithm to create a minimum spanning tree, `mst`.\n2. Implement a tree traversal; that will give us our `mst_tsp` algorithm.\n3. Understand the guarantee.",
+      "concepts": [
+        "directed-graph",
+        "minimum-spanning-tree",
+        "tree-traversal",
+        "mst-tsp-algorithm"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Shoulders of Giants: Minimum Spanning Tree Algorithm"
+      ],
+      "markdown_anchor": "shoulders-of-giants-minimum-spanning-tree-algorithm",
+      "start_line": 1005,
+      "end_line": 1036
+    },
+    {
+      "chunk_id": "chunk-60-mst-tsp-introduction",
+      "topic": "Introduction to using a Minimum Spanning Tree for TSP",
+      "text": "# Turning a Minimum Spanning Tree into a Tour (`mst_tsp`)\n\nGiven a minimum spanning tree, we can generate a tour by doing a pre-order traversal, which means the tour starts at the root, then visits all the cities in the pre-order traversal of the first child of the root, followed by the pre-order traversals of any other children.",
+      "concepts": [
+        "minimum-spanning-tree",
+        "traveling-salesperson-problem",
+        "pre-order-traversal",
+        "mst-tsp"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Turning a Minimum Spanning Tree into a Tour (`mst_tsp`)"
+      ],
+      "markdown_anchor": "turning-a-minimum-spanning-tree-into-a-tour-mst_tsp",
+      "start_line": 1099,
+      "end_line": 1153
+    },
+    {
+      "chunk_id": "chunk-61-mst-tsp-implementation",
+      "topic": "Python implementation of mst_tsp and preorder_traversal",
+      "text": "```python\ndef mst_tsp(cities) -> Tour:\n    \"\"\"Create a minimum spanning tree and walk it in pre-order.\"\"\"\n    return Tour(preorder_traversal(mst(cities), first(cities)))\n\ndef preorder_traversal(tree, root):\n    \"\"\"Traverse tree in pre-order, starting at root of tree.\"\"\"\n    yield root\n    for child in tree.get(root, ()):\n        yield from preorder_traversal(tree, child)\n```\n\nYou can think of this as starting at the root of the tree and going around the outside of the tree, as if you were walking with your hand always touching a link, but skipping cities you have already been to.",
+      "concepts": [
+        "mst-tsp",
+        "pre-order-traversal",
+        "minimum-spanning-tree",
+        "graph-traversal"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Turning a Minimum Spanning Tree into a Tour (`mst_tsp`)"
+      ],
+      "markdown_anchor": "turning-a-minimum-spanning-tree-into-a-tour-mst_tsp",
+      "start_line": 1099,
+      "end_line": 1153
+    },
+    {
+      "chunk_id": "chunk-62-mst-tsp-performance-analysis",
+      "topic": "Performance comparison of mst_tsp with other TSP algorithms",
+      "text": "Let's see what `mst_tsp` can do on the USA map:\n\n\n```python\nruns([mst_tsp], USA)\n```\n\n\n\n    [     rep_opt2_nearest_tsp: length 44,317 tour (100.0%) in 16.662 secs,\n     rep_opt2_nearest_tsp+opt2: length 44,317 tour (100.0%) in 16.995 secs,\n               greedy_tsp+opt2: length 44,417 tour (100.2%) in  2.162 secs,\n          rep_nearest_tsp+opt2: length 44,473 tour (100.4%) in  2.137 secs,\n              nearest_tsp+opt2: length 45,105 tour (101.8%) in  1.768 secs,\n                  mst_tsp+opt2: length 45,250 tour (102.1%) in  2.878 secs,\n                     list+opt2: length 46,460 tour (104.8%) in  2.929 secs,\n               rep_nearest_tsp: length 50,915 tour (114.9%) in  0.798 secs,\n                    greedy_tsp: length 51,129 tour (115.4%) in  0.407 secs,\n                   nearest_tsp: length 53,364 tour (120.4%) in  0.080 secs,\n                       mst_tsp: length 58,201 tour (131.3%) in  0.485 secs,\n                          list: length 1,122,001 tour (2531.8%) in  0.000 secs]\n\n\n\n\n    \n![png](TSP_files/TSP_97_1.png)\n    \n\nWe see that `mst_tsp` performs poorly compared to the other algorithms. \n\nWhy would anyone want to use the minimum spanning tree algorithm, when the nearest neighbor algorithm is simpler to describe, simpler to implement, runs faster, and produces shorter tours?",
+      "concepts": [
+        "mst-tsp",
+        "nearest-neighbor-algorithm",
+        "minimum-spanning-tree",
+        "greedy-tsp",
+        "opt2"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Turning a Minimum Spanning Tree into a Tour (`mst_tsp`)"
+      ],
+      "markdown_anchor": "turning-a-minimum-spanning-tree-into-a-tour-mst_tsp",
+      "start_line": 1099,
+      "end_line": 1153
+    },
+    {
+      "chunk_id": "chunk-63-guaranteed-tour-length-introduction",
+      "topic": "Introduction to the guarantee provided by the minimum spanning tree algorithm",
+      "text": "The \"giant\" thing about the minimum spanning tree algorithm is that it comes with a *guarantee*, which none of the other algorithms offer (except for `exhaustive_tsp`, which is guaranteed to find the optimal algorithm, if it has enough time to complete). The algorithm  guarantees that the tour length will be no worse than twice as long as the optimal tour.  (And, with a bit more [complication](https://en.wikipedia.org/wiki/Christofides_algorithm), you can modify it to give a guarantee of 1.5 times longer.)  The guarantee works like this:",
+      "concepts": [
+        "minimum-spanning-tree",
+        "tour-length-guarantee",
+        "optimal-tour"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Guaranteed Tour Length"
+      ],
+      "markdown_anchor": "guaranteed-tour-length",
+      "start_line": 1154,
+      "end_line": 1165
+    },
+    {
+      "chunk_id": "chunk-64-guarantee-explanation",
+      "topic": "Detailed explanation of how the tour length guarantee works",
+      "text": "1. The minimum spanning tree, by definition, connects all the cities with the shortest possible total link length.\n2. So if you could follow each link in the spanning tree just once, and that formed a legal tour, then that would be guaranteed to be\na minimal tour.  \n3. But you can't do that in general; in general there will be places where you skip to the next city without following the spanning tree.  Any such skip, however, is a straight line, and thus will be less than you would take if you went to the next city by following along the spanning tree.\n4. If you did follow along the spanning tree, you would follow some links twice, and some links once.  Hence the total length of the tour would be at most twice the spanning tree, and thus at most twice the minimal tour.",
+      "concepts": [
+        "minimum-spanning-tree",
+        "tour-length-guarantee",
+        "shortest-path",
+        "minimal-tour"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Guaranteed Tour Length"
+      ],
+      "markdown_anchor": "guaranteed-tour-length",
+      "start_line": 1154,
+      "end_line": 1165
+    },
+    {
+      "chunk_id": "chunk-65-practical-considerations",
+      "topic": "Practical performance of minimum spanning tree compared to other algorithms",
+      "text": "A guarantee is great from a theoretical point of view, but in practice the greedy or nearest neighbor algorithms almost always do better than the minimum spanning tree,  on the maps that we actually see.",
+      "concepts": [
+        "minimum-spanning-tree",
+        "greedy-algorithm",
+        "nearest-neighbor-algorithm",
+        "algorithm-performance"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Guaranteed Tour Length"
+      ],
+      "markdown_anchor": "guaranteed-tour-length",
+      "start_line": 1154,
+      "end_line": 1165
+    },
+    {
+      "chunk_id": "chunk-66-held-karp-algorithm-introduction",
+      "topic": "Introduction to the Held-Karp Algorithm",
+      "text": "# Shoulders of Giants: Held-Karp Algorithm: `held_karp_tsp`\n\n| ![](http://archive.computerhistory.org/resources/still-image/IBM/IBM_People/IBM.3_mathematicians_Held_Shareshian_Karp.ca1964.102650390.lg.jpg) |\n|----|\n| [Held, Shareshian, Karp (Computer History Museum)](http://www.computerhistory.org/collections/catalog/102650390) |\n\n| ![](http://imgs.xkcd.com/comics/travelling_salesman_problem.png) |\n|----|\n| [xkcd 399](http://xkcd.com/399/) |\n\n\nAnother algorithm that shows up with a literature search is the [Held-Karp Dynamic Programming Algorithm](http://en.wikipedia.org/wiki/Held%E2%80%93Karp_algorithm), named after giants [Michael Held](http://www.computerhistory.org/collections/catalog/102650390) and [Richard Karp](http://en.wikipedia.org/wiki/Richard_M._Karp). It is an algorithm for finding optimal tours, not approximate ones, so it is not appropriate for large *n*.  But even in its simplest form, without any complex programming tricks, it can go quite a bit further than `exhaustive_tsp`.  That is because `exhaustive_tsp` is O(*n*!), while the Held-Karp algorithm is only O(*n*<sup>2</sup> 2<sup>*n*</sup>).  How did Held and Karp achieve this speedup?  They noticed that `exhaustive_tsp` wastes a lot of time with permutations that can't possibly be optimal tours.  Here's the key idea:\n\n- **Key idea**: *Given a start city A, an end city C, and a set of middle cities Bs, then out of all the possible segments that start in A, end in C, and go through all and only the cities in Bs, only the shortest of those segments could ever be part of an optimal tour.*",
+      "concepts": [
+        "held-karp-algorithm",
+        "dynamic-programming",
+        "optimal-tour",
+        "exhaustive-search",
+        "time-complexity",
+        "permutations"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Shoulders of Giants: Held-Karp Algorithm: `held_karp_tsp`"
+      ],
+      "markdown_anchor": "shoulders-of-giants-held-karp-algorithm-held_karp_tsp",
+      "start_line": 1166,
+      "end_line": 1283
+    },
+    {
+      "chunk_id": "chunk-67-held-karp-algorithm-explanation",
+      "topic": "Explanation of the Held-Karp Algorithm's Efficiency",
+      "text": "Of course, we don't know that the optimal tour goes through exactly those Bs cities before hitting C.  But if it does, then we need only consider the permutation of Bs that leads to the shortest segment.  Why is that such a big deal? Suppose we are considering segments of the form:\n\n     [A, {B1, ... B10}, C, {D1, ... D10}, E]\n     \nThat is, segments that start with A, then have have 10 B<sub>i</sub> cities in some order, then C, then 10 D<sub>j</sub> cities in some order, then E. With the Exhaustive Search algorithm, we have to consider all orderings of B<sub>i</sub> and all orderings of D<sub>j</sub>, so overall there would be (10!)<sup>2</sup> &approx; 13 trillion orderings of this form. But with Held-Karp, we consider the B<sub>i</sub> and D<sub>j</sub> separately, and chose the best segment from each, giving us only 2 &times; 10! &approx; 7 million orderings to consider. (Actually it is even better than that, because we use Held-Karp recursively to split the B<sub>i</sub> and D<sub>j</sub> into pieces.) \n\nSo far we have only been talking about segments.  We know that the TSP is defined for tours, not segments. So even if we find the shortest possible segment, it might not be the shortest possible tour.  But here's something we do know: a tour has to end somewhere.  So we have:\n\n- **Held-Karp algorithm**: *Find the shortest segment from the start city, `A`, to each possible end city, `C`, using the key idea above.   Out of those segments, choose the one that is the shortest tour.*",
+      "concepts": [
+        "held-karp-algorithm",
+        "optimal-tour",
+        "exhaustive-search",
+        "permutations",
+        "segments",
+        "traveling-salesman-problem"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Shoulders of Giants: Held-Karp Algorithm: `held_karp_tsp`"
+      ],
+      "markdown_anchor": "shoulders-of-giants-held-karp-algorithm-held_karp_tsp",
+      "start_line": 1166,
+      "end_line": 1283
+    },
+    {
+      "chunk_id": "chunk-68-held-karp-algorithm-implementation",
+      "topic": "Implementation of the Held-Karp Algorithm",
+      "text": "```python\ndef held_karp_tsp(cities) -> Tour:\n    \"\"\"The Held-Karp shortest tour of this set of cities.\n    For each end city C, find the shortest segment from A (the start) to C.\n    Out of all these shortest segments, pick the one that is the shortest tour.\"\"\"\n    A = first(cities)\n    shortest_segment.cache_clear() # Clear cache for a new problem\n    return shortest(shortest_segment(A, cities - {A, C}, C)\n                    for C in cities - {A})\n\n# TO DO: function: shortest_segment(A, Bs, C)\n```\n\nNow for `shortest_segment(A, Bs, C)`, the shortest segment that starts in city `A`, ends in `C`, and visits some permutation of `Bs` cities in the middle.  If there are no `Bs` cities, then of course the shortest segment is to go directly from `A` to `C`.  If there are `Bs` cities, then one of them has to be the last `B` city visited (just before visiting `C`). So for each `B`, find the shortest segment that first goes from `A`, through all the other `Bs` cities, then to `B`, and finally to `C`.  Out of all these candidate segments, return the one with the minimum segment length.\n\n**Note:** the decorator `@cache` makes this a **dynamic programming** algorithm, which is a fancy name meaning that we cache the results of sub-computations because we will re-use them multiple times. In the function `held_karp_tsp` we clear the cache at the start of each new problem.",
+      "concepts": [
+        "held-karp-algorithm",
+        "shortest-segment",
+        "dynamic-programming",
+        "caching",
+        "recursion"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Shoulders of Giants: Held-Karp Algorithm: `held_karp_tsp`"
+      ],
+      "markdown_anchor": "shoulders-of-giants-held-karp-algorithm-held_karp_tsp",
+      "start_line": 1166,
+      "end_line": 1283
+    },
+    {
+      "chunk_id": "chunk-69-shortest-segment-function",
+      "topic": "Implementation of the shortest_segment function",
+      "text": "```python\n@cache\ndef shortest_segment(A, Bs, C) -> Segment:\n    \"The shortest segment starting at A, going through all Bs, and ending at C.\"\n    if not Bs:\n        return [A, C]\n    else:\n        return min((shortest_segment(A, Bs - {B}, B) + [C] for B in Bs),\n                   key=segment_length)\n            \ndef segment_length(segment):\n    \"The total of distances between each pair of consecutive cities in the segment.\"\n    # Same as tour_length, but without distance(tour[0], tour[-1])\n    return sum(distance(segment[i], segment[i-1]) \n               for i in range(1, len(segment)))\n```",
+      "concepts": [
+        "shortest-segment",
+        "segment-length",
+        "recursion",
+        "caching"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Shoulders of Giants: Held-Karp Algorithm: `held_karp_tsp`"
+      ],
+      "markdown_anchor": "shoulders-of-giants-held-karp-algorithm-held_karp_tsp",
+      "start_line": 1166,
+      "end_line": 1283
+    },
+    {
+      "chunk_id": "chunk-70-held-karp-algorithm-example-run",
+      "topic": "Example Run and Performance Comparison",
+      "text": "That's all there is to it.  Let's try a run:\n\n\n```python\nruns([held_karp_tsp, exhaustive_tsp], random_cities(10), [None])\n```\n\n\n\n    [            held_karp_tsp: length 23,013 tour (100.0%) in  0.040 secs,\n                exhaustive_tsp: length 23,013 tour (100.0%) in  0.973 secs]\n\n\n\n    \n![png](TSP_files/TSP_104_1.png)\n    \n\nWe see that `held_karp_tsp` is a lot faster.  We can extend into uncharted territory  beyond the reach of  `exhaustive_tsp`:\n\n\n```python\nruns([held_karp_tsp], random_cities(15), [None])\n```\n\n\n\n    [            held_karp_tsp: length 26,200 tour (100.0%) in  2.092 secs]\n\n\n\n    \n![png](TSP_files/TSP_106_1.png)\n    \n\nNot bad! To see how much time we save using `held_karp_tsp` over `exhaustive_tsp`, we can extrapolate from the timings we've done, using the fact that Held-Karp is *O*(*n*<sup>2</sup> 2<sup>*n*</sup>) while Exhaustive Search is *O*(*n*!), to get this table:",
+      "concepts": [
+        "held-karp-algorithm",
+        "exhaustive-search",
+        "performance-comparison",
+        "time-complexity"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Shoulders of Giants: Held-Karp Algorithm: `held_karp_tsp`"
+      ],
+      "markdown_anchor": "shoulders-of-giants-held-karp-algorithm-held_karp_tsp",
+      "start_line": 1166,
+      "end_line": 1283
+    },
+    {
+      "chunk_id": "chunk-71-held-karp-algorithm-performance-table",
+      "topic": "Performance Comparison Table",
+      "text": "|*n*|Exhaustive Search|Held Karp|\n|---|---|---|\n|10| 2 secs                | 0.04 secs |\n|12|&approx; 4 mins   | 0.25 secs|\n|15|&approx; 8 days |2 secs|\n|25|&approx; <a href=\"https://www.google.com/search?q=2+seconds*25!+%2F+10!+in+years\">270 billion years</a>|&approx; 95 minutes|\n\n\n\nSo if we had the patience to wait 95 minutes, `held_karp_tsp` could give us an answer on a 25-city problem that saves 270 billion years of computing compared to `exhaustive_tsp`.  The original Held-Karp algorithm had refinements that allowed it to handle 50-city sets in hours, not centuries, and could do so even with 1970s-era computing power! See **Branch and Cut** below.",
+      "concepts": [
+        "held-karp-algorithm",
+        "exhaustive-search",
+        "performance-comparison",
+        "time-complexity",
+        "branch-and-cut"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Shoulders of Giants: Held-Karp Algorithm: `held_karp_tsp`"
+      ],
+      "markdown_anchor": "shoulders-of-giants-held-karp-algorithm-held_karp_tsp",
+      "start_line": 1166,
+      "end_line": 1283
+    },
+    {
+      "chunk_id": "chunk-72-tsp-algorithms-review",
+      "topic": "Review of TSP Algorithms by Strategy",
+      "text": "# Review\n\nHere are the algorithms we developed, grouped by strategy:\n\n- **Brute Force Strategy**: `exhaustive_tsp`\n- **Greedy Strategy**: `nearest_tsp`, `greedy_tsp`\n- **Ensemble Strategy**: `rep_nearest_tsp`, `rep_opt2_nearest_tsp`\n- **Improvement Strategy**: `opt2`\n- **Divide and Conquer Strategy**: `divide_tsp`\n- **Giant Shoulders Strategy**: `mst_tsp`, `held_karp_tsp`",
+      "concepts": [
+        "tsp-algorithms",
+        "brute-force-strategy",
+        "exhaustive-tsp",
+        "greedy-strategy",
+        "nearest-tsp",
+        "greedy-tsp",
+        "ensemble-strategy",
+        "rep-nearest-tsp",
+        "rep-opt2-nearest-tsp",
+        "improvement-strategy",
+        "opt2",
+        "divide-and-conquer-strategy",
+        "divide-tsp",
+        "giant-shoulders-strategy",
+        "mst-tsp",
+        "held-karp-tsp"
+      ],
+      "chunk_type": "overview",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Review"
+      ],
+      "markdown_anchor": "review",
+      "start_line": 1284,
+      "end_line": 1294
+    },
+    {
+      "chunk_id": "chunk-73-benchmark-experiments-introduction",
+      "topic": "Introduction to benchmarking algorithms",
+      "text": "# Benchmark Experiments on Algorithms\n\nWhich algorithm is best? I can't tell by trying them on only one or two problems. What I need to do is **benchmark** each algorithm on a standard **test set** of problems, and look at **statistical tests** to compare the algorithms. If the test set is large enough, the results will have statistical significance. If the test set is representative of the problems we want to solve, the results will have relevance. I'll build the following tools:\n- `test_set`: A function to build a test set of *s* random sets of cities, each set with *n* cities.\n- `benchmark`: A function to run an algorithm on a test set and record the results.\n- `boxplots`: A function to plot the benchmark results of several algorithms.\n- `rankings`: A function to print results of how many time each algorithm had the shortest tour, the second shortest, etc.\n\nFirst the test sets:",
+      "concepts": [
+        "benchmarking",
+        "test-set",
+        "statistical-tests",
+        "statistical-significance",
+        "relevance"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmark Experiments on Algorithms"
+      ],
+      "markdown_anchor": "benchmark-experiments-on-algorithms",
+      "start_line": 1295,
+      "end_line": 1378
+    },
+    {
+      "chunk_id": "chunk-74-test-set-function-definition",
+      "topic": "Definition of the test_set function",
+      "text": "```python\nTestSet = Tuple[Cities]\n\ndef test_set(s: int, n: int) -> TestSet:\n    \"\"\"Return `s` different sets of `n` random cities.\"\"\"\n    return tuple(random_cities(n, seed=(s, i)) for i in range(s))\n```",
+      "concepts": [
+        "test-set",
+        "random-cities"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmark Experiments on Algorithms"
+      ],
+      "markdown_anchor": "benchmark-experiments-on-algorithms",
+      "start_line": 1295,
+      "end_line": 1378
+    },
+    {
+      "chunk_id": "chunk-75-benchmark-function-definition",
+      "topic": "Definition of the benchmark function",
+      "text": "Next, the function `benchmark` takes as input a TSP function and a test set. It does a `run` of the function on each problem in the test set (possibly passing along `opt` and `kwds` values), and returns the list of `run` results.\n\n\n```python\n@cache\ndef benchmark(algorithm, tests, opt=None, **kwds) -> List[run]:\n    \"\"\"Benchmark one TSP algorithm on a test suite; return a list of `run`s.\"\"\"\n    return [run(algorithm, test, opt=opt, **kwds) for test in tests]\n```",
+      "concepts": [
+        "benchmark",
+        "tsp-function",
+        "test-set",
+        "run"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmark Experiments on Algorithms"
+      ],
+      "markdown_anchor": "benchmark-experiments-on-algorithms",
+      "start_line": 1295,
+      "end_line": 1378
+    },
+    {
+      "chunk_id": "chunk-76-boxplot-function-definition",
+      "topic": "Definition of the boxplots function",
+      "text": "A **boxplot** is a standard statistical visualization tool. I'll explain them when we see the output.\n\n\n```python\ndef boxplots(algorithms, tests: TestSet, opt=None, **kwds):\n    \"\"\"Draw a boxplot for each of the algorithms executing the tests.\"\"\"\n    runslists = [benchmark(tsp, tests, opt=opt, **kwds) for tsp in algorithms]\n    lengthlists = [[length(r) for r in runs] for runs in runslists]\n    timelists   = [[r.secs for r in runs] for runs in runslists]\n    best   = min(map(mean, lengthlists))\n    labels = [boxplot_label(A, L, T, best) for (A, L, T) in zip(algorithms, lengthlists, timelists)]\n    plt.figure(figsize=(15, 7.5))\n    plt.grid(axis='y'); plt.ylabel('Mean Tour Length')\n    plt.tick_params(axis='x', which='major', labelsize=12)\n    plt.boxplot(lengthlists, labels=labels, showmeans=True, whis=(10, 90), sym='o', notch=True)\n    plt.title(f\"{len(tests)} sets of {len(tests[0])} cities with {opt.__name__ if opt else 'no'} optimization\")\n\ndef boxplot_label(tsp, lengths, times, best):\n    \"\"\"A label for the bottom of the boxplot.\"\"\"\n    return '{}\\n{:.0f} ± {:.1f} msec\\n{:,d} med len\\n{:,d} ± {:,d} mean\\n{:.2%} mean'.format(\n           name(tsp), mean(times) * 1000, stdev(times) * 1000, \n           round(median(lengths)), round(mean(lengths)), round(stdev(lengths)), mean(lengths) / best)\n\ndef unzip(sequences): return zip(*sequences)\n```",
+      "concepts": [
+        "boxplot",
+        "statistical-visualization",
+        "benchmark",
+        "tsp",
+        "mean-tour-length",
+        "median",
+        "standard-deviation"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmark Experiments on Algorithms"
+      ],
+      "markdown_anchor": "benchmark-experiments-on-algorithms",
+      "start_line": 1295,
+      "end_line": 1378
+    },
+    {
+      "chunk_id": "chunk-77-rankings-function-definition",
+      "topic": "Definition of the rankings function",
+      "text": "`rankings` produces a table comparing how many times each algorithm was best, second best etc., on a city-set.\n\n\n```python\ndef rankings(algorithms, tests: TestSet, opt=None, **kwds):\n    \"\"\"Print a table of how often each algorithm had each rank: you get a #1 if you were shortest.\"\"\"\n    N = len(algorithms)\n    runslists = [benchmark(tsp, tests, opt=opt, **kwds) for tsp in algorithms]\n    lengthlists = [[round(length(r)) for r in runs] for runs in runslists]\n    # ordered[i] is all tour lengths (for all algorithms) for the i-th problem, sorted\n    ordered = [sorted(L) for L in zip(*lengthlists)]\n    fmt = ('{:>4}' * len(algorithms) + ' | {}').format\n    print(fmt(*['#' + str(i + 1) for i in range(N)], 'Algorithm'))\n    print(' ---' * N + ' | ---------')\n    for alg, lengths in zip(algorithms, lengthlists):\n        ranks = Counter(ordered[i].index(lengths[i]) for i in range(len(tests)))\n        print(fmt(*[ranks[i] for i in range(N)], name(alg)))\n```",
+      "concepts": [
+        "rankings",
+        "algorithm-comparison",
+        "benchmark",
+        "tsp",
+        "tour-length",
+        "counter"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmark Experiments on Algorithms"
+      ],
+      "markdown_anchor": "benchmark-experiments-on-algorithms",
+      "start_line": 1295,
+      "end_line": 1378
+    },
+    {
+      "chunk_id": "chunk-78-compare-function-definition",
+      "topic": "Definition of the compare function",
+      "text": "Finally, the function `compare` does both `rankings` and `boxplots`:\n\n\n```python\ndef compare(algorithms, tests=test_set(50, 200), opt=None):\n    \"\"\"Compare algorithms with boxplots and rankings.\"\"\"\n    rankings(algorithms, tests, opt=opt)\n    boxplots(algorithms, tests, opt=opt)\n```",
+      "concepts": [
+        "compare",
+        "rankings",
+        "boxplots",
+        "algorithm-comparison"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmark Experiments on Algorithms"
+      ],
+      "markdown_anchor": "benchmark-experiments-on-algorithms",
+      "start_line": 1295,
+      "end_line": 1378
+    },
+    {
+      "chunk_id": "chunk-79-ensemble-strategy-introduction",
+      "topic": "Introduction to the Ensemble Strategy",
+      "text": "Since no one algorithm always dominates the others, maybe it is time for the **ensemble strategy**: try a bunch of TSP algorithms and choose the best tour that the bunch produces. There is a tradeoff of how much time you want to spend on this; I've included in the ensemble only the three algorithms with the best combination of short tours and fast run times on the benchmarks above.",
+      "concepts": [
+        "ensemble-strategy",
+        "traveling-salesperson-problem",
+        "tsp-algorithms"
+      ],
+      "chunk_type": "overview",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Ensemble Strategy: `ensemble_tsp`"
+      ],
+      "markdown_anchor": "ensemble-strategy-ensemble_tsp",
+      "start_line": 1437,
+      "end_line": 1474
+    },
+    {
+      "chunk_id": "chunk-80-ensemble-tsp-implementation",
+      "topic": "Implementation of the ensemble_tsp function",
+      "text": "```python\nensemble = [rep_nearest_tsp, greedy_tsp, mst_tsp]\n\ndef ensemble_tsp(cities, algorithms=ensemble, opt=opt2): \n    \"\"\"Apply an ensemble of algorithms to cities and take the shortest resulting tour.\"\"\"\n    return shortest(run(tsp, cities, opt=opt).tour for tsp in algorithms)\n```\n\nThe ensemble is doing more work, so I'll use a somewhat smaller test set.",
+      "concepts": [
+        "ensemble-strategy",
+        "ensemble-tsp-function",
+        "rep-nearest-tsp",
+        "greedy-tsp",
+        "mst-tsp",
+        "shortest-tour"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Ensemble Strategy: `ensemble_tsp`"
+      ],
+      "markdown_anchor": "ensemble-strategy-ensemble_tsp",
+      "start_line": 1437,
+      "end_line": 1474
+    },
+    {
+      "chunk_id": "chunk-81-ensemble-tsp-comparison",
+      "topic": "Comparing ensemble_tsp with other TSP algorithms",
+      "text": "```python\ncompare([ensemble_tsp] + ensemble, test_set(40, 200), opt=opt2)\n```\n\n      #1  #2  #3  #4 | Algorithm\n     --- --- --- --- | ---------\n      40   0   0   0 | ensemble_tsp\n      12   0  17  11 | rep_nearest_tsp\n      24   0  10   6 | greedy_tsp\n       4   0  13  23 | mst_tsp\n\n\n\n    \n![png](TSP_files/TSP_126_1.png)\n    \n\n\nFor the rankings, note that there are only 40 problems, but 80 entries in the `#1` column. That's because for ties, the co-winners both appear in the `#1` column, and by definition, the `ensemble_tsp` will always tie with one of the components of the ensemble. All three component algorithms contribute to the ensemble.\n\nFor tour lengths, `ensemble_tsp` is the best (by definition), but only by a small amount. Is it worth it to more than triple the run time to get less than a 1% improvement in tour length over `greedy_tsp` alone?",
+      "concepts": [
+        "ensemble-strategy",
+        "ensemble-tsp-function",
+        "rep-nearest-tsp",
+        "greedy-tsp",
+        "mst-tsp",
+        "tour-length",
+        "algorithm-performance"
+      ],
+      "chunk_type": "explanation",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Ensemble Strategy: `ensemble_tsp`"
+      ],
+      "markdown_anchor": "ensemble-strategy-ensemble_tsp",
+      "start_line": 1437,
+      "end_line": 1474
+    },
+    {
+      "chunk_id": "chunk-82-city-set-size-comparison",
+      "topic": "Comparing TSP algorithms with different city set sizes",
+      "text": "Let's see if the results are different for different-sized city sets. We had been doing 50 samples of 200-city sets; let's try 40 samples of 500-city sets. I'll just look at the three top (individual) algorithms, with `opt2` optimization:\n\n```python\ncompare(ensemble, test_set(40, 500), opt=opt2)\n```\n\n      #1  #2  #3 | Algorithm\n     --- --- --- | ---------\n       7  29   4 | rep_nearest_tsp\n      32   7   1 | greedy_tsp\n       1   4  35 | mst_tsp\n\n\n\n    \n![png](TSP_files/TSP_129_1.png)\n    \n\nAt this size `greedy_tsp` is a more clear winner.",
+      "concepts": [
+        "traveling-salesperson-problem",
+        "tsp-algorithms",
+        "greedy-tsp",
+        "rep-nearest-tsp",
+        "mst-tsp",
+        "opt2-optimization",
+        "city-sets"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Different Sizes of City Sets"
+      ],
+      "markdown_anchor": "different-sizes-of-city-sets",
+      "start_line": 1475,
+      "end_line": 1544
+    },
+    {
+      "chunk_id": "chunk-83-usa-map-city-sets",
+      "topic": "Testing TSP algorithms with cities sampled from the USA map",
+      "text": "What if the samples were not picked randomly from the 2-D plane, but rather from the USA map?\n\n\n```python\nUSA_test_set = tuple(Cities(sample(USA, 500, i)) for i in range(40))\n\ncompare(ensemble, USA_test_set, opt=opt2)\n```\n\n      #1  #2  #3 | Algorithm\n     --- --- --- | ---------\n      12  15  13 | rep_nearest_tsp\n      25  11   4 | greedy_tsp\n       3  14  23 | mst_tsp\n\n\n\n    \n![png](TSP_files/TSP_131_1.png)\n    \n\n`greedy_tsp` still has the lead.",
+      "concepts": [
+        "traveling-salesperson-problem",
+        "tsp-algorithms",
+        "greedy-tsp",
+        "rep-nearest-tsp",
+        "mst-tsp",
+        "opt2-optimization",
+        "city-sets",
+        "sampling"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Different Sizes of City Sets"
+      ],
+      "markdown_anchor": "different-sizes-of-city-sets",
+      "start_line": 1475,
+      "end_line": 1544
+    },
+    {
+      "chunk_id": "chunk-84-thousand-city-sets",
+      "topic": "Testing TSP algorithms with 1000-city sets",
+      "text": "What happens when we go up to 1,000-city sets?\n\n\n```python\ncompare(ensemble, test_set(20, 1000), opt=opt2)\n```\n\n      #1  #2  #3 | Algorithm\n     --- --- --- | ---------\n       1  18   1 | rep_nearest_tsp\n      19   1   0 | greedy_tsp\n       0   1  19 | mst_tsp\n\n\n\n    \n![png](TSP_files/TSP_133_1.png)\n    \n\nWe get a similar picture, with `greedy_tsp` showing an even bigger lead. I'll stop here.",
+      "concepts": [
+        "traveling-salesperson-problem",
+        "tsp-algorithms",
+        "greedy-tsp",
+        "rep-nearest-tsp",
+        "mst-tsp",
+        "opt2-optimization",
+        "city-sets"
+      ],
+      "chunk_type": "example",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Different Sizes of City Sets"
+      ],
+      "markdown_anchor": "different-sizes-of-city-sets",
+      "start_line": 1475,
+      "end_line": 1544
+    },
+    {
+      "chunk_id": "chunk-85-benchmarking-exact-algorithms",
+      "topic": "Benchmarking Exhaustive Search and Held-Karp algorithms",
+      "text": "# Benchmarking Exact Algorithms\n\nHere I compare the two exact algorithms, Exhaustive Search and Held-Karp, to the (approximate) ensemble algorithm. I'll try both 9 and 10-city test suites:",
+      "concepts": [
+        "benchmarking",
+        "exact-algorithms",
+        "exhaustive-search",
+        "held-karp",
+        "ensemble-algorithm"
+      ],
+      "chunk_type": "overview",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmarking Exact Algorithms"
+      ],
+      "markdown_anchor": "benchmarking-exact-algorithms",
+      "start_line": 1545,
+      "end_line": 1587
+    },
+    {
+      "chunk_id": "chunk-86-9-city-test-suite-comparison",
+      "topic": "Comparing algorithms on a 9-city test suite",
+      "text": "```python\ncompare([exhaustive_tsp, held_karp_tsp, ensemble_tsp], test_set(50, 9))\n```\n\n      #1  #2  #3 | Algorithm\n     --- --- --- | ---------\n      50   0   0 | exhaustive_tsp\n      50   0   0 | held_karp_tsp\n      43   0   7 | ensemble_tsp\n\n\n\n    \n![png](TSP_files/TSP_135_1.png)",
+      "concepts": [
+        "exhaustive-tsp",
+        "held-karp-tsp",
+        "ensemble-tsp",
+        "test-set"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmarking Exact Algorithms"
+      ],
+      "markdown_anchor": "benchmarking-exact-algorithms",
+      "start_line": 1545,
+      "end_line": 1587
+    },
+    {
+      "chunk_id": "chunk-87-10-city-test-suite-comparison",
+      "topic": "Comparing algorithms on a 10-city test suite",
+      "text": "```python\ncompare([exhaustive_tsp, held_karp_tsp, ensemble_tsp], test_set(30, 10))\n```\n\n      #1  #2  #3 | Algorithm\n     --- --- --- | ---------\n      30   0   0 | exhaustive_tsp\n      30   0   0 | held_karp_tsp\n      29   0   1 | ensemble_tsp\n\n\n\n    \n![png](TSP_files/TSP_136_1.png)",
+      "concepts": [
+        "exhaustive-tsp",
+        "held-karp-tsp",
+        "ensemble-tsp",
+        "test-set"
+      ],
+      "chunk_type": "example",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmarking Exact Algorithms"
+      ],
+      "markdown_anchor": "benchmarking-exact-algorithms",
+      "start_line": 1545,
+      "end_line": 1587
+    },
+    {
+      "chunk_id": "chunk-88-ensemble-tsp-performance-analysis",
+      "topic": "Analysis of ensemble_tsp performance",
+      "text": "This says that while `ensemble_tsp` does not give a guarantee of an optimal tour, in practice on small random city sets it performs almost as well as the exact algorithms (within 0.1%), only much faster.",
+      "concepts": [
+        "ensemble-tsp",
+        "optimal-tour",
+        "exact-algorithms"
+      ],
+      "chunk_type": "explanation",
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Benchmarking Exact Algorithms"
+      ],
+      "markdown_anchor": "benchmarking-exact-algorithms",
+      "start_line": 1545,
+      "end_line": 1587
+    },
+    {
+      "chunk_id": "chunk-89-further-explorations-overview",
+      "topic": "Further explorations of the Traveling Salesperson Problem",
+      "text": "# Further Explorations\n\n\nThat's all I'm going to write for now.  But there are still plenty of open questions for you to explore:\n\n* **Branch and Cut**: this is a technique to cut off a search early, when a partial solution is obviously not optimal.  We saw how Held-Karp cuts off some permutations of cities when another permutation is better.  A refinement on that is to keep track of, say, the best total length of the segment going through all the Bs cities.  Then, any time you have a partial segment through some of the Bs cities that exceeds the best total, we can stop right there, before even finishing all the Bs.  With this technique, you can find optimal tours for around 50 cities.\n* **Linear programming**: Look up the topic \"linear programming\" and see how it applies to TSP.\n* **Heuristic Algorithms**: There are many approaches for using heurisitic estimates to find good (but not optimal) tours.  For example, *ant colony optimization algorithms* make random choices of which link to follow, and then the links that occur in the best tours get reinforced with some virtual pheromones, and other ants tend to follow those pheromones. *Simulated annealing* takes its inspiration from metallurgy.\n* The **[Lin-Kernighan heuristic](http://akira.ruc.dk/~keld/research/LKH/LKH-1.3/DOC/LKH_REPORT.pdf)** is a generalization of `opt2` that can split the tour into more than two pieces, and considers all ways to put it back together. With such tricks, approximate algorithms  can handle hundreds of thousands of cities and come within 0.01% of the shortest possible tour.\n* The **[Christofides algorithm](https://en.wikipedia.org/wiki/Christofides_algorithm)** gives a guarantee of 3/2 the optimal tour length (improving on the minimum-spanning-tree guarantee of 2).\n* Can you explain why `mst_tsp` produces a guaranteed result, while `greedy_tsp` does not, even though the two algorithms have similar structure in the way they iterate over `shortest_links_first`?\n* The code in this notebook was designed for clarity, not efficiency.  Can you make the code faster?\n* **[William Cook](https://www.math.uwaterloo.ca/~bico/)** has a comprehensive \n[web page](http://www.math.uwaterloo.ca/tsp/) on the TSP, as well as a great \n[book](https://press.princeton.edu/titles/9531.html) and a\n[draft chapter](http://www.math.uwaterloo.ca/~bico/papers/comp_chapter1.pdf) on Discrete Optimization featuring TSP. Like my notebook here, Cook's chapter goes through a variety of algorithms for TSP, describing each one in prose and code. His coding style is different because he uses C (in an imperative style) while I used Python (in a mostly functional style).  His code is much more efficient (but if it is 100 times faster, that might only mean two more cities on `exhaustive_tsp`). Cook  chooses a different set of algorithms to explore, with\nmore emphasis on optimizing algorithms that find guaranteed shortest tours. I find his explanations and code\nare both beautiful and concise, and I think it is very interesting that\nthere can be two quite different approaches, which (in my opinion) both turn out very well. \n* If you are heavily into math, there's a [taxonomy](http://cstheory.stackexchange.com/questions/9241/approximation-algorithms-for-metric-tsp) of solutions.\n* What else are you interested in?",
+      "concepts": [
+        "branch-and-cut",
+        "linear-programming",
+        "heuristic-algorithms",
+        "ant-colony-optimization",
+        "simulated-annealing",
+        "lin-kernighan-heuristic",
+        "christofides-algorithm",
+        "mst_tsp",
+        "greedy_tsp"
+      ],
+      "chunk_type": "overview",
+      "section": null,
+      "source_file": "tsp.md",
+      "heading_path": [
+        "Further Explorations"
+      ],
+      "markdown_anchor": "further-explorations",
+      "start_line": 1588,
+      "end_line": 1609
+    }
+  ],
+  "metadata": {
+    "total_chunks": 89,
+    "source_file": "tsp.md",
+    "chunked_at": "2025-11-10T19:08:28.724Z"
+  }
+}

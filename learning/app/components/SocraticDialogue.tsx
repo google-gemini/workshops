@@ -19,6 +19,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import PythonScratchpad from './PythonScratchpad';
+import { MarkdownViewer } from './MarkdownViewer';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -96,6 +97,8 @@ export default function SocraticDialogue({
   } | null>(null);
   const [lastSentCode, setLastSentCode] = useState<string>('');
   const [lastSentEvaluation, setLastSentEvaluation] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<'python' | 'source'>('python');
+  const [sourceAnchor, setSourceAnchor] = useState<string | undefined>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -131,6 +134,8 @@ export default function SocraticDialogue({
       setEvaluation(null);
       setLastSentCode('');
       setLastSentEvaluation(null);
+      setActiveTab('python');
+      setSourceAnchor(undefined);
     }
   }, [open]);
 
@@ -513,16 +518,16 @@ export default function SocraticDialogue({
                                 {source.start_line && ` (lines ${source.start_line}-${source.end_line})`}
                               </span>
                               {source.markdown_anchor && (
-                                <a
-                                  href={`#${source.markdown_anchor}`}
-                                  className="text-blue-500 hover:text-blue-700 underline"
+                                <button
+                                  className="text-blue-500 hover:text-blue-700 underline text-left"
                                   onClick={(e) => {
                                     e.preventDefault();
-                                    alert(`Would navigate to: ${source.source_file}#${source.markdown_anchor}\n\nNext: implement a markdown viewer!`);
+                                    setSourceAnchor(source.markdown_anchor);
+                                    setActiveTab('source');
                                   }}
                                 >
                                   View in context →
-                                </a>
+                                </button>
                               )}
                             </div>
                           )}
@@ -580,11 +585,38 @@ export default function SocraticDialogue({
             </div>
           </div>
 
-          {/* Python Scratchpad (right side) - shown by default */}
+          {/* Right side: Tabbed pane (Python / Source) - shown by default */}
           {showPythonEditor && (
             <div className="flex-1 min-w-0 border-l pl-3 flex flex-col">
-              <PythonScratchpad
-                starterCode={`# 🧮 Python scratchpad for exploring ${conceptData.name}
+              {/* Tab Headers */}
+              <div className="flex border-b border-slate-200 bg-slate-50 mb-2">
+                <button
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'python' 
+                      ? 'border-b-2 border-blue-500 text-blue-600 bg-white -mb-px' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('python')}
+                >
+                  🐍 Python
+                </button>
+                <button
+                  className={`px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'source' 
+                      ? 'border-b-2 border-blue-500 text-blue-600 bg-white -mb-px' 
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  onClick={() => setActiveTab('source')}
+                >
+                  📚 Source
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="flex-1 overflow-hidden">
+                {activeTab === 'python' ? (
+                  <PythonScratchpad
+                    starterCode={`# 🧮 Python scratchpad for exploring ${conceptData.name}
 # 
 # Feel free to experiment here! You can:
 # - Test out ideas in code
@@ -593,13 +625,20 @@ export default function SocraticDialogue({
 # 
 # Your code and output will be visible to your tutor.
 `}
-                onExecute={(execCode, output, error) => {
-                  setEvaluation({ output, error });
-                }}
-                onCodeChange={(newCode) => {
-                  setCode(newCode);
-                }}
-              />
+                    onExecute={(execCode, output, error) => {
+                      setEvaluation({ output, error });
+                    }}
+                    onCodeChange={(newCode) => {
+                      setCode(newCode);
+                    }}
+                  />
+                ) : (
+                  <MarkdownViewer 
+                    sourceFile="/data/pytudes/tsp.md"
+                    scrollToAnchor={sourceAnchor}
+                  />
+                )}
+              </div>
             </div>
           )}
         </div>

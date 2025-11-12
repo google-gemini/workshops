@@ -223,10 +223,18 @@ function splitIntoSections(markdown: string, sourceFile: string): Section[] {
   let currentContent: string[] = [];
   let headingStack: Array<{ level: number; text: string }> = [];
   let sectionStartLine = 0;
+  let insideCodeFence = false;  // Track whether we're inside a code block
   
   for (let lineNum = 0; lineNum < lines.length; lineNum++) {
     const line = lines[lineNum];
-    const heading = parseHeading(line);
+    
+    // Track code fence state (```)
+    if (line.trim().startsWith('```')) {
+      insideCodeFence = !insideCodeFence;
+    }
+    
+    // Only parse headings when NOT inside a code fence
+    const heading = !insideCodeFence ? parseHeading(line) : null;
     
     if (heading && heading.level === 1) {  // Main section header
       // Save previous section if it has content
