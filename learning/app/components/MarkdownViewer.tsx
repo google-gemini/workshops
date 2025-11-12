@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeSlug from 'rehype-slug';
+import rehypeRaw from 'rehype-raw'; // Add this import
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -81,7 +82,7 @@ export function MarkdownViewer({ sourceFile, scrollToAnchor }: MarkdownViewerPro
       <div className="prose prose-sm max-w-none prose-headings:text-slate-900 prose-p:text-slate-700">
         <ReactMarkdown
           remarkPlugins={[remarkGfm, remarkMath]}
-          rehypePlugins={[rehypeKatex, rehypeSlug]}
+          rehypePlugins={[rehypeKatex, rehypeSlug, rehypeRaw]} // Add rehypeRaw here
           components={{
             code({ node, inline, className, children, ...props }: any) {
               const match = /language-(\w+)/.exec(className || '');
