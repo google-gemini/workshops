@@ -1,6 +1,18 @@
 {
   "name": "Learning",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  // Use node:current rather than current-alpine because many VSC things require glibc
+  "image": "node:current",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": false,
+      "upgradePackages": true,
+      "username": "node"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "installGitLFS": true
+    }
+  },
   "remoteEnv": {
     "GOOGLE_API_KEY": "${localEnv:GOOGLE_API_KEY}"
   },
