@@ -25,5 +25,6 @@
       "requireLocalPort": true
     }
   },
-  "postCreateCommand": "cd learning && npm install && npm run build && cp -R .next/standalone/* . && node server.js"
+  "postCreateCommand": "cd learning && npm install && npm run build && cp -R .next/standalone/* .",
+  "postStartCommand": "cd learning && node server.js"
 }
