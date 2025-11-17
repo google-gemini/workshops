@@ -1,0 +1,29 @@
+{
+  "name": "Learning",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "workspaceFolder": "/workspaces/gemini-workshops",
+  "remoteEnv": {
+    "GOOGLE_API_KEY": "${localEnv:GOOGLE_API_KEY}"
+  },
+  "secrets": {
+    "GOOGLE_API_KEY": {
+      "description": "Your Google API key for accessing Google services in GitHub Codespaces.",
+      "documentationUrl": "https://docs.github.com/en/codespaces/managing-your-codespaces/managing-your-account-specific-secrets-for-github-codespaces"
+    }
+  },
+  "containerEnv": {
+    "HOSTNAME": "0.0.0.0",
+    "PORT": "3000",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "forwardPorts": [
+    3000
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "Learning",
+      "requireLocalPort": true
+    }
+  },
+  "postCreateCommand": "cd learning && npm install && npm run build && cp -R .next/standalone/* . && node server.js"
+}
