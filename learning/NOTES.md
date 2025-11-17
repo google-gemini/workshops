@@ -5488,7 +5488,78 @@ generationConfig: {
 
 ---
 
-*Last updated: 2025-10-30*
+## 🎙️ YouTube Batch Transcription: TypeScript Type Fix (2025-01-17)
+
+### Problem: Build-Time Type Error Blocking Production
+
+**Error encountered:**
+```
+TSError: ⨯ Unable to compile TypeScript:
+scripts/youtube/transcribe-audio.ts:146:36 - error TS2339: Property 'progressPercent' does not exist on type 'Metadata'.
+
+146         const progress = metadata?.progressPercent || 0;
+                                       ~~~~~~~~~~~~~~~
+```
+
+**Context:** The batch transcription script was working in development but failing during TypeScript compilation for production builds.
+
+**Root cause:** TypeScript couldn't recognize `progressPercent` property on the `Metadata` type returned by `checkBatchRecognizeProgress()`, even though it exists in the runtime protobuf-generated types.
+
+### Solution: Type Assertion
+
+**Fix applied:**
+```typescript
+// Cast metadata to any to access progressPercent (protobuf-generated types)
+const metadata = operation.metadata as any;
+const progress = metadata?.progressPercent || 0;
+```
+
+**Why this works:**
+- The property definitely exists at runtime (confirmed by Google Cloud Speech API documentation)
+- TypeScript's type definitions for the SDK don't fully expose all protobuf properties
+- `as any` is safe here because we're accessing a documented, stable API property
+- We still use optional chaining (`?.`) for safety
+
+### Impact
+
+**Before:**
+- ❌ Production build failed with TypeScript error
+- ❌ Could not deploy batch transcription feature
+- ❌ Script worked in dev but not in prod
+
+**After:**
+- ✅ TypeScript compilation succeeds
+- ✅ Real-time progress polling works: `⏳ Progress: 3%`
+- ✅ Clean polling output with heartbeat indicators
+- ✅ Production-ready batch transcription pipeline
+
+### Polling Output Example
+
+```
+💓 Polling... (0.3 min elapsed, status: running)
+💓 Polling... (0.7 min elapsed, status: running)
+⏳ Progress: 1%
+💓 Polling... (1.0 min elapsed, status: running)
+⏳ Progress: 2%
+💓 Polling... (1.3 min elapsed, status: running)
+⏳ Progress: 3%
+```
+
+### Files Modified
+
+- `learning/scripts/youtube/transcribe-audio.ts` - Added `as any` cast for metadata type
+
+### Key Insight
+
+Sometimes TypeScript's type safety can be overly restrictive with third-party SDKs, especially those using code generation (like protobuf). Strategic use of `as any` is acceptable when:
+1. You've verified the property exists in runtime/documentation
+2. The SDK's TypeScript definitions are incomplete
+3. You maintain safety with optional chaining
+4. The alternative is disabling type checking entirely (worse)
+
+---
+
+*Last updated: 2025-01-17*
 *See CONTEXT.md for complete project design document*
 
 ---
@@ -5628,6 +5699,401 @@ Based on Norvig's feedback, decide on:
 4. **Deployment:** Share publicly vs keep private for testing
 
 The meeting will provide strategic direction on whether this project should scale horizontally (more content, automation) or vertically (deeper features, better UX).
+
+---
+
+## YouTube Video Integration - New Direction (2025-01-07)
+
+### Context from Abelson/Norvig Meeting
+
+New strategic direction: In addition to textbooks (PAIP) and Python notebooks (Pytudes), support **YouTube videos** as learning content. 
+
+**First target:** Andrej Karpathy's "Let's build GPT from scratch" (https://www.youtube.com/watch?v=kCc8FmEb1nY)
+
+**Key requirements:**
+1. Apply same 3-pass extraction approach (concepts → prerequisites → enrichment)
+2. Handle code that appears on screen
+3. Link to specific timestamps in video (not just page numbers)
+
+---
+
+### Can the 3-Pass Approach Work for Videos?
+
+**Yes!** The structure translates naturally:
+
+#### Pass 1: Temporal Concept Extraction
+- Extract major concepts from transcript
+- Track **time ranges** (not page numbers) for each concept
+- Video teaching style makes concepts explicit ("Now we're going to implement attention...")
+- **Advantage:** Temporal order gives natural hints about prerequisites
+
+#### Pass 2: Prerequisites
+- Same as before: identify dependencies
+- **Easier with video:** Chronological teaching order directly suggests prerequisites
+- Teachers explicitly say things like "Before we do X, we need Y"
+
+#### Pass 3: Enrichment
+- Examples: Extract from transcript
+- Misconceptions: Videos often explicitly address these ("A common mistake is...")
+- Code: See challenges below
+
+---
+
+### Challenge 1: Code/Visual Content
+
+**Problem:** Text and code appear on screen, not in transcript.
+
+**Solutions (ranked by feasibility):**
+
+#### Option A: Companion GitHub Repos ⭐ *Best for Karpathy*
+- Karpathy typically provides code on GitHub
+- Map transcript timestamps → code files/commits
+- Most accurate, no hallucination risk
+- Example: https://github.com/karpathy/nanoGPT
+
+**Implementation:**
+```json
+{
+  "chunk_id": "chunk-23-attention-mechanism",
+  "topic": "Implementing multi-head attention",
+  "start_time": 5025,
+  "end_time": 5312,
+  "youtube_link": "https://youtu.be/kCc8FmEb1nY?t=5025",
+  "github_link": "https://github.com/karpathy/nanoGPT/blob/master/model.py#L42",
+  "code_snippet": "class MultiHeadAttention(nn.Module):\n    ..."
+}
+```
+
+#### Option B: Gemini Vision (Multimodal)
+- Extract key frames at important moments
+- Use Gemini 2.0's vision capabilities to "read" code from screen
+- **Pro:** Actually sees what's displayed
+- **Con:** Requires video processing, higher API cost
+
+#### Option C: LLM World Knowledge
+- For famous videos, Gemini may have seen the content
+- Ask it to reconstruct code based on transcript
+- **Pro:** Simple, no extra processing
+- **Con:** May hallucinate details
+
+#### Option D: Hybrid
+- Use GitHub as ground truth
+- Gemini vision for validation/key moments
+- Transcript for context
+
+**Recommendation:** Start with Option A (GitHub) for Karpathy videos. Fall back to vision for videos without companion repos.
+
+---
+
+### Challenge 2: Timestamped Transcripts
+
+**Problem:** Need to link to specific moments in video, not just "page 42."
+
+**Solution:** YES! Multiple approaches available.
+
+#### Option A: YouTube's Built-in API ⭐ *Easiest*
+
+```python
+from youtube_transcript_api import YouTubeTranscriptApi
+
+transcript = YouTubeTranscriptApi.get_transcript('kCc8FmEb1nY')
+# Returns: [{'text': '...', 'start': 12.5, 'duration': 3.2}, ...]
+```
+
+**Features:**
+- Free, no API key required
+- Timestamps to the second (or better)
+- Auto-generated or manual captions
+- Direct linking: `https://youtu.be/kCc8FmEb1nY?t=5025` (jumps to 1:23:45)
+
+#### Option B: Whisper API
+- Higher quality transcription
+- Word-level timestamps
+- Cost: ~$0.006/minute (3-hour video ≈ $1)
+
+#### Option C: Assembly AI / Google Speech-to-Text
+- Similar quality/pricing to Whisper
+- Speaker diarization (useful for interviews)
+
+**Recommendation:** Start with Option A (YouTube API). It's free and good enough for most videos.
+
+---
+
+### Proposed Data Structure
+
+```json
+{
+  "video_id": "kCc8FmEb1nY",
+  "title": "Let's build GPT from scratch, in code, spelled out",
+  "author": "Andrej Karpathy",
+  "duration_seconds": 9296,
+  "github_repo": "https://github.com/karpathy/nanoGPT",
+  
+  "chunks": [
+    {
+      "chunk_id": "chunk-23-attention-mechanism",
+      "topic": "Implementing multi-head attention",
+      "text": "So what we're doing here is creating multiple attention heads...",
+      "start_time": 5025,
+      "end_time": 5312,
+      "youtube_link": "https://youtu.be/kCc8FmEb1nY?t=5025",
+      "concepts": ["attention", "multi-head", "transformer"],
+      "code_snippet": "class MultiHeadAttention(nn.Module):\n    ...",
+      "github_link": "https://github.com/karpathy/nanoGPT/blob/master/model.py#L42"
+    }
+  ],
+  
+  "concepts": [
+    {
+      "id": "multi_head_attention",
+      "name": "Multi-Head Attention",
+      "time_range": [5025, 5980],
+      "prerequisites": ["single_head_attention", "linear_projections"],
+      "code_files": ["model.py"],
+      "learning_objectives": [...],
+      "mastery_indicators": [...]
+    }
+  ]
+}
+```
+
+**Key differences from textbook/notebook format:**
+- `start_time` / `end_time` instead of `section` or `line_numbers`
+- `youtube_link` for direct video jumping
+- `github_link` for companion code
+- `duration_seconds` for overall video length
+
+---
+
+### Implementation Strategy
+
+#### Phase 1: Proof of Concept (1-2 days)
+
+**Project structure:**
+```
+learning/youtube/karpathy-gpt/
+├── transcript.json          # Downloaded from YouTube
+├── video-chunks.json        # Semantic chunks with timestamps
+├── embeddings.json          # Vector embeddings
+├── concept-graph.json       # Extracted PCG
+└── code/                    # Code from GitHub repo
+```
+
+**New scripts needed:**
+```
+learning/scripts/youtube/
+├── download-transcript.ts   # Uses youtube-transcript-api
+├── chunk-video.ts          # Adapts chunk-paip.ts for timestamps
+├── link-code.ts            # Maps timestamps → GitHub code
+└── embed-video.ts          # Same as embed-chunks.ts
+```
+
+**Workflow:**
+1. Download transcript: `npx ts-node scripts/youtube/download-transcript.ts kCc8FmEb1nY`
+2. Chunk semantically: `npx ts-node scripts/youtube/chunk-video.ts transcript.json video-chunks.json`
+3. Link to GitHub: `npx ts-node scripts/youtube/link-code.ts video-chunks.json`
+4. Embed chunks: `npx ts-node scripts/youtube/embed-video.ts video-chunks.json embeddings.json`
+
+#### Phase 2: Integration (1 day)
+
+- RAG with timestamp links
+- Source citations show video link + GitHub link
+- Socratic dialogue references specific video moments
+- Python scratchpad pre-populated with Karpathy's actual code
+
+#### Phase 3: UI Enhancement (optional)
+
+- Embedded YouTube player in tab next to scratchpad
+- Click source → video jumps to timestamp
+- Synchronized learning: watch + code + dialogue
+
+---
+
+### Example User Experience
+
+**User starts learning "Transformer Architecture":**
+
+1. **Socratic dialogue begins:**
+   ```
+   Tutor: "Let's explore how attention mechanisms work. 
+          What do you think 'attention' means in this context?"
+   ```
+
+2. **Sources shown:**
+   ```
+   📹 Andrej Karpathy - Let's build GPT (1:23:45)
+      "So attention is a communication mechanism..."
+      [Watch moment] [View code]
+   
+   💻 nanoGPT/model.py (lines 42-67)
+      class MultiHeadAttention(nn.Module):
+          ...
+   ```
+
+3. **Student can:**
+   - Watch the exact moment Karpathy explains it
+   - See the actual code he wrote
+   - Experiment in scratchpad with his implementation
+   - Ask tutor questions grounded in video content
+
+---
+
+### Challenges & Solutions
+
+| Challenge | Solution |
+|-----------|----------|
+| **3-hour videos = huge transcripts** | Chunk by natural sections (Karpathy has clear breaks) |
+| **"As you can see on screen"** | Link to GitHub or use vision API for key frames |
+| **Code accuracy** | Prefer GitHub ground truth over transcript |
+| **Conversational style** | LLMs are good at extracting structure from unstructured content |
+| **Multiple concepts per segment** | Allow chunks to have multiple concept tags |
+| **Timestamp precision** | YouTube API provides second-level timestamps |
+| **Missing companion code** | Fall back to Gemini vision or world knowledge |
+
+---
+
+### Comparison: Textbook vs Notebook vs Video
+
+| Aspect | PAIP (Textbook) | Pytudes (Notebook) | YouTube (Video) |
+|--------|-----------------|-------------------|-----------------|
+| **Source format** | Markdown prose | Jupyter cells | Transcript + video |
+| **Structure** | Manual chapters | Code + markdown cells | Temporal segments |
+| **Code location** | In text | In notebook | GitHub or on-screen |
+| **Navigation** | Page/section numbers | Line numbers | Timestamps (seconds) |
+| **Chunking** | Manual by topic | By cell or section | By natural breaks |
+| **Total chunks** | 92 | 90 | Est. 80-120 |
+| **Embedding dims** | 3072 | 3072 | 3072 |
+| **Visual content** | None | Matplotlib plots | Video frames |
+| **Teaching style** | Formal, written | Exploratory, code | Conversational, live |
+
+---
+
+### Estimated Effort
+
+#### Manual First Pass (Validate Approach)
+**Time:** 4-6 hours
+
+**Steps:**
+1. Download Karpathy GPT transcript (30 minutes)
+2. Extract 10-15 key concepts manually (2 hours)
+3. Map to GitHub code (1 hour)
+4. Test in existing app (1 hour)
+
+**Deliverable:** Proof that video content works in Little PAIPer
+
+#### Full Automation
+**Time:** 2-3 days
+
+**Steps:**
+1. Automated concept extraction from transcript
+2. Prerequisite inference (chronological hints)
+3. Code linking (GitHub API or manual mapping)
+4. Embeddings generation (reuse existing pipeline)
+5. UI integration (video player, timestamp links)
+
+**Deliverable:** Scalable pipeline for any YouTube video
+
+---
+
+### Strategic Questions for Abelson/Norvig
+
+Before building, clarify:
+
+1. **Scope:** One video (Karpathy GPT) or multiple sources?
+2. **Code strategy:** Link to GitHub acceptable, or must extract from video frames?
+3. **Quality bar:** How accurate must code extraction be?
+4. **Video player:** Embed in app or external links to YouTube?
+5. **Automation priority:** Manual curation (higher quality) vs. automated pipeline (scalability)?
+6. **Target audience:** Who is this for? Students learning from videos? Teachers creating content?
+
+---
+
+### Recommendation: Start Simple
+
+**Mirrors the Pytudes strategy that worked:**
+
+#### Week 1: Manual Proof of Concept
+1. Download Karpathy GPT transcript (free, 30 minutes)
+2. Manual 3-pass extraction (4-6 hours)
+3. Link to his GitHub for code (he provides it)
+4. Test in existing app (should just work!)
+
+**Why this approach:**
+- ✅ Validates video content works with existing infrastructure
+- ✅ Fast feedback loop (can show to Abelson/Norvig)
+- ✅ Identifies real problems before investing in automation
+- ✅ Proves value before building complex pipeline
+
+#### Week 2+: If Successful
+- Automate extraction pipeline
+- Add Gemini vision for videos without GitHub
+- Scale to more YouTube content (3Blue1Brown, FastAI, etc.)
+- Build video player integration
+
+---
+
+### Files to Create
+
+**New directory structure:**
+```
+learning/youtube/
+├── karpathy-gpt/
+│   ├── transcript.json          # YouTube transcript with timestamps
+│   ├── video-chunks.json        # Semantic chunks
+│   ├── embeddings.json          # Vector embeddings
+│   ├── concept-graph.json       # PCG (3-pass output)
+│   └── code/                    # nanoGPT code from GitHub
+└── README.md                    # Video learning documentation
+```
+
+**New scripts:**
+```
+learning/scripts/youtube/
+├── download-transcript.ts       # Fetch from YouTube API
+├── chunk-video.ts              # Adapt chunk-paip.ts for timestamps
+├── link-code.ts                # Map timestamps to GitHub
+└── embed-video.ts              # Reuse embed-chunks.ts
+```
+
+---
+
+### Key Insights
+
+1. **Temporal structure is pedagogically valuable:** Video teaching follows a natural progression that hints at prerequisites
+
+2. **GitHub companion repos solve code accuracy:** No need for complex vision processing when code is already available
+
+3. **YouTube API is surprisingly good:** Free transcripts with second-level timestamps are sufficient
+
+4. **Existing infrastructure is reusable:** RAG pipeline, chunking approach, embedding generation all work for videos
+
+5. **Manual first, automate later:** Same strategy that worked for Pytudes - validate before scaling
+
+6. **Multiple modalities complement each other:** Video explanation + GitHub code + scratchpad + Socratic dialogue = powerful learning experience
+
+---
+
+### Success Metrics
+
+**How will we know this works?**
+
+1. **Technical:** Can we extract coherent concept graphs from video transcripts?
+2. **Pedagogical:** Do students learn better with video + interactive scratchpad?
+3. **Scalability:** Can we process 10+ videos without manual work?
+4. **User feedback:** Do learners prefer this to watching videos alone?
+
+**Comparison baseline:** Learning by watching Karpathy's video passively vs. using Little PAIPer
+
+**Target:**
+- Extract 80%+ of major concepts accurately
+- Timestamp links work reliably
+- Code examples match GitHub ground truth
+- Students report "deeper understanding" vs. passive watching
+
+---
+
+*Last updated: 2025-01-07*
+*Next: Manual extraction of Karpathy GPT video to validate approach*
 # Pedagogical Concept Graph (PCG) - Visualization Notes
 
 ## Overview
