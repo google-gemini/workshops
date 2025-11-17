@@ -1,7 +1,7 @@
 {
   "name": "Learning",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
-  "workspaceFolder": "/workspaces/gemini-workshops",
+  "workspaceFolder": "${localWorkspaceFolder}",
   "remoteEnv": {
     "GOOGLE_API_KEY": "${localEnv:GOOGLE_API_KEY}"
   },
