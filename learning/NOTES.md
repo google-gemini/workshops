@@ -6129,6 +6129,209 @@ Socratic dialogue: "Why do you think Andrej is showing us the git log?"
 
 ---
 
+## 🎯 Strategic Decision: Concept Extraction Methodology (2025-01-17)
+
+### The Question
+
+For YouTube video concept extraction, should we:
+1. **Prime with frame concepts** - Give Gemini a histogram of concepts detected in frames
+2. **Pure transcript** - Let Gemini analyze the full transcript without frame-level priming
+
+### The Decision: Pure Transcript (No Priming) ⭐
+
+**Rationale:**
+
+#### 1. Frame Concepts Are Too Literal (Not Pedagogical)
+
+Frame-level concepts capture **what's visible**, not **what's being taught**.
+
+**Example from segment 859:**
+- **Frame concepts:** `["VS Code", "Python", "Git log", "PyTorch", "Optimizer"]`
+- **Actual concept taught:** "Iterative development methodology for ML"
+
+Priming with literal tool names would anchor Gemini to surface-level observations rather than deep pedagogical insights.
+
+#### 2. Pedagogical Concepts Are Emergent
+
+The best teaching concepts emerge from the **full teaching arc**, not individual moments:
+- "Loss landscape intuition" - built up over 30 minutes
+- "Attention mechanism design patterns" - evolved through multiple implementations
+- "Debugging through experimentation" - demonstrated via live coding flow
+
+These require **holistic context** that priming with frame histograms would disrupt.
+
+#### 3. Proven Approach from PAIP/TSP
+
+Both successful extractions used **pure text → Gemini → concept graph**:
+- No pre-filtering
+- No concept seeding
+- Full freedom for the model to discover structure
+
+Why change what works?
+
+#### 4. Frame Data Serves RAG, Not Structure
+
+Frame-level concepts have a different purpose:
+
+**Frame concepts are for:**
+- ✅ RAG retrieval ("show me where PyTorch is used")
+- ✅ Timestamp linking (jump to specific moments)
+- ✅ Code extraction (actual implementations)
+- ✅ Source citations in dialogue
+
+**NOT for:**
+- ❌ Seeding concept graph structure
+- ❌ Constraining pedagogical discovery
+- ❌ Pre-filtering what Gemini should consider
+
+### Implementation Strategy
+
+#### Pass 1: Pure Transcript Extraction
+
+```typescript
+const prompt = `Analyze this 3-hour programming tutorial transcript.
+
+${fullTranscript}
+
+Extract 20-30 salient PEDAGOGICAL concepts taught (not just tools mentioned).
+
+For each concept, include:
+- Precise pedagogical description
+- Prerequisites (based on teaching order)
+- Time ranges where it's taught (cite timestamps)
+- Difficulty level (basic/intermediate/advanced)
+
+Distinguish "concepts taught deeply" from "tools used incidentally".
+
+Example distinction:
+- ✅ "Attention Mechanism" - taught in depth over 30 minutes
+- ❌ "Git" - mentioned once in passing
+
+Return JSON matching this structure:
+{
+  "metadata": {
+    "title": "Let's build GPT from scratch",
+    "author": "Andrej Karpathy",
+    "source": "YouTube video kCc8FmEb1nY",
+    "total_concepts": 25
+  },
+  "nodes": [
+    {
+      "id": "attention_mechanism",
+      "name": "Attention Mechanism",
+      "description": "...",
+      "prerequisites": ["neural_networks", "matrix_multiplication"],
+      "difficulty": "intermediate",
+      "time_ranges": [
+        {"start": 1205, "end": 1450, "focus": "introduction"},
+        {"start": 2200, "end": 2680, "focus": "implementation"}
+      ]
+    }
+  ]
+}`;
+```
+
+**Key feature:** Requesting **time_ranges** forces Gemini to scan the entire transcript thoroughly, mitigating "lost in the middle" concerns.
+
+#### Pass 2: Optional Validation (Lightweight)
+
+After extraction, optionally validate that pedagogical concepts have supporting evidence:
+
+```typescript
+// Check if concepts have visual/code evidence
+const validatedConcepts = concepts.filter(concept => {
+  const hasVisualSupport = videoAnalysis.results.some(segment => 
+    segment.analysis.key_concepts.some(c => 
+      c.toLowerCase().includes(concept.id.toLowerCase())
+    )
+  );
+  
+  return hasVisualSupport || concept.is_abstract_theory;
+});
+```
+
+But generally: **trust Gemini**. The transcript contains everything the instructor says, including explicit announcements of what's being taught.
+
+### Architecture: Two Complementary Layers
+
+```
+Layer 1: Concept Graph (from full transcript)
+├─ Purpose: Learning structure, navigation, prerequisites
+├─ Granularity: 20-30 high-level concepts
+├─ Output: youtube/kCc8FmEb1nY/concept-graph.json
+└─ Example: "Attention Mechanism", "Transformer Architecture"
+
+Layer 2: Frame-Level Segments (from multimodal analysis)
+├─ Purpose: RAG retrieval, source citations, timestamp links
+├─ Granularity: 150 detailed moments
+├─ Output: youtube/kCc8FmEb1nY/video-embeddings.json
+└─ Example: [20:05] "So attention is a communication mechanism..."
+```
+
+**How they work together in Socratic dialogue:**
+
+1. **User starts learning "Attention Mechanism"** (from Layer 1 concept graph)
+2. **First dialogue turn:** RAG search across Layer 2 embeddings
+3. **Retrieve top 5 most relevant segments** with timestamp links
+4. **Gemini sees actual video moments:**
+   ```
+   [20:05] "So attention is a communication mechanism..."
+   Visual: Diagram showing attention weights matrix
+   Code: class Attention(nn.Module):
+   Link: https://youtu.be/kCc8FmEb1nY?t=1205
+   ```
+5. **Gemini asks question grounded in actual content**
+
+### Why This Approach Works
+
+✅ **Holistic salience detection** - Full context reveals what's central vs. peripheral
+✅ **Temporal prerequisite inference** - Teaching order hints at dependencies
+✅ **Pedagogical discovery** - Emergent concepts that frames can't capture
+✅ **Proven methodology** - Same approach that worked for PAIP/TSP
+✅ **Visual grounding via RAG** - Frame data used where it excels
+
+### The Counter-Concern: "Lost in the Middle"
+
+**Concern:** Will Gemini miss concepts in the middle of a 20k-word transcript?
+
+**Mitigation:**
+1. **Gemini 2.5 is trained for long contexts** - 1M token window, good attention
+2. **Timestamp citation requirement** - Forces scanning entire transcript
+3. **Pedagogical structure** - Teachers explicitly announce major concepts
+4. **Validation pass** - Optional check for visual evidence
+
+**Empirical test:** If this fails, we'll see concepts with missing time_ranges or no frame support. Then we can iterate.
+
+### Complete Pipeline
+
+```
+✅ Stage 1: Media Download
+   └─ download-media.sh
+
+✅ Stage 2: Audio Transcription
+   └─ transcribe-audio.ts → audio-transcript.json
+
+✅ Stage 3: Multimodal Frame Analysis
+   └─ analyze-frames.ts → video-analysis.json (150 segments)
+
+⏭️ Stage 4: Concept Graph Extraction (NEXT)
+   └─ extract-concepts.ts → concept-graph.json (20-30 concepts)
+   
+⏭️ Stage 5: Embedding Generation
+   └─ embed-video-frames.ts → video-embeddings.json (150 embeddings)
+
+⏭️ Stage 6: App Integration
+   └─ RAG retrieval + concept graph navigation
+```
+
+### Key Insight
+
+**Frame concepts are autistic (literal object detection). Pedagogical concepts are emergent (understanding teaching intent).**
+
+Don't constrain the creative part of concept extraction. Save frame data for what it excels at: **grounding specific moments during learning.**
+
+---
+
 *Last updated: 2025-01-17*
 *See CONTEXT.md for complete project design document*
 

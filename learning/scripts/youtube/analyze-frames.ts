@@ -15,6 +15,7 @@ import { z } from "zod";
 import * as fs from "fs/promises";
 import * as path from "path";
 import ffmpeg from "fluent-ffmpeg";
+import { zodToGeminiSchema } from "../../lib/gemini-utils.js";
 
 // Schema for structured frame analysis
 const frameAnalysisSchema = z.object({
@@ -85,42 +86,6 @@ interface FailedFrame {
   audio_text: string;
   error_type: string;
   error_message: string;
-}
-
-/**
- * Convert Zod schema to Gemini-compatible JSON schema
- * Only includes fields that Gemini API accepts (type, properties, description, enum, items, required)
- */
-function zodToGeminiSchema(zodSchema: z.ZodType): any {
-  const jsonSchema = z.toJSONSchema(zodSchema);
-  
-  function cleanSchema(schema: any): any {
-    if (typeof schema !== 'object' || schema === null) {
-      return schema;
-    }
-    
-    // Start with empty object and only add supported fields
-    const cleaned: any = {};
-    
-    // Fields that Gemini API accepts
-    if ('type' in schema) cleaned.type = schema.type;
-    if ('description' in schema) cleaned.description = schema.description;
-    if ('enum' in schema) cleaned.enum = schema.enum;
-    if ('items' in schema) cleaned.items = cleanSchema(schema.items);
-    if ('required' in schema) cleaned.required = schema.required;
-    
-    // Recursively clean properties
-    if ('properties' in schema) {
-      cleaned.properties = {};
-      for (const [key, value] of Object.entries(schema.properties)) {
-        cleaned.properties[key] = cleanSchema(value);
-      }
-    }
-    
-    return cleaned;
-  }
-  
-  return cleanSchema(jsonSchema);
 }
 
 /**
