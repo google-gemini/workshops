@@ -5559,6 +5559,252 @@ Sometimes TypeScript's type safety can be overly restrictive with third-party SD
 
 ---
 
+## 🔮 Future: GitHub-Based Content Ownership (Peter's Vision)
+
+### Core Principle: Authors Own Their Work
+
+**Problem:** When we generate knowledge graphs and embeddings from someone's content, they should have control over the artifacts.
+
+**Peter's Vision:** The entire artifact pipeline should be GitHub-based:
+
+#### 1. Content Repository Structure
+```
+author/work-name/              # Git repository for each work
+├── source/
+│   └── content.md             # Original content (book, notebook, video transcript)
+├── knowledge-graph.json       # Generated pedagogical concept graph
+├── chunks.json                # Semantic chunks
+├── embeddings.json            # Vector embeddings
+├── prompts/                   # THE KEY INNOVATION
+│   ├── chunk-generation.md    # Prompt used to create chunks
+│   ├── concept-extraction.md  # Prompt used to extract concepts
+│   └── pedagogy-enrichment.md # Prompt used to add learning objectives
+└── README.md                  # How to regenerate artifacts
+```
+
+#### 2. Modifiable Prompts = User Control
+
+**Key insight:** The prompts by which we generate knowledge graphs should be **modifiable by the author**.
+
+**Why this matters:**
+- Authors can tune how their content is chunked
+- They can adjust what concepts are extracted
+- They can modify pedagogical enrichment to match their teaching style
+- They maintain ownership and control over the representation
+
+**Workflow:**
+```bash
+# Author modifies prompts/concept-extraction.md
+# Then regenerates:
+./regenerate.sh
+
+# Or selectively:
+npm run generate-concepts
+npm run enrich-pedagogy
+```
+
+#### 3. Works List as Git Submodules
+
+**Potential architecture:**
+
+```
+little-paiper-content/           # Main content registry
+├── works/
+│   ├── norvig-paip/            # Git submodule → author's repo
+│   ├── norvig-pytudes/         # Git submodule → author's repo
+│   ├── karpathy-gpt/           # Git submodule → author's repo
+│   └── abelson-sicp/           # Git submodule → author's repo
+└── index.json                  # Metadata registry
+```
+
+**Benefits:**
+- Each work is its own git repo (author maintains)
+- Little PAIPer references via submodules
+- Authors can update, regenerate, iterate
+- Community can fork and contribute improvements
+- Version control for knowledge graph evolution
+
+#### 4. Authentication via GitHub
+
+**When this is ready for multiple authors:**
+- GitHub OAuth for authentication
+- Authors claim their content repos
+- Edit permissions tied to GitHub repo access
+- Public works = public repos, private works = private repos
+
+#### 5. Why This Approach?
+
+**Ownership:**
+- Authors feel true ownership over pedagogical representation
+- Not just "we processed your content" but "you control how it's taught"
+
+**Transparency:**
+- Prompts are visible and editable
+- Anyone can see how knowledge graphs are generated
+- Reproducible science for learning engineering
+
+**Community:**
+- Others can suggest prompt improvements via PRs
+- Best practices emerge from shared prompt evolution
+- Quality improves through collective iteration
+
+**Future-Proof:**
+- As LLMs improve, re-run with new models
+- Adjust prompts as pedagogy research advances
+- Content stays relevant without re-authoring
+
+#### 6. Open Questions
+
+- **Versioning:** How to handle breaking changes in prompt structure?
+- **Defaults:** Should we provide default prompts, or require custom ones?
+- **Validation:** How to ensure generated knowledge graphs meet quality standards?
+- **Deployment:** How does Little PAIPer consume content from many git repos?
+- **Caching:** Store generated artifacts in app, or regenerate on-demand?
+- **Conflicts:** What if author's manual edits conflict with prompt regeneration?
+
+#### 7. Implementation Phases
+
+**Phase 1: Single-Author Proof of Concept**
+- Put PAIP artifacts in a git repo
+- Include prompts used to generate them
+- Document regeneration process
+- Test: Modify prompt → regenerate → verify changes
+
+**Phase 2: Multi-Work Registry**
+- Create content registry repo with submodules
+- Build CLI tools for adding new works
+- Index metadata (title, author, topics, language)
+
+**Phase 3: Author Authentication**
+- GitHub OAuth integration
+- Claim/link content repos
+- Permission checks before modifications
+
+**Phase 4: Community Features**
+- PR workflow for prompt improvements
+- Discussion forum for pedagogical approaches
+- Showcase: "Best knowledge graphs" gallery
+
+### Status: Discussion Phase
+
+This is a future direction, not currently implemented. When we're ready to support multiple authors and enable community contribution, this architecture provides a path forward.
+
+**Next conversation:** Design the prompt template structure and regeneration workflow.
+
+---
+
+## 📥 Parallel Media Download: Audio + Video (2025-01-17)
+
+### Problem Solved
+
+When downloading YouTube videos for transcript extraction + frame analysis, downloading audio and video sequentially was slow:
+- Audio download: ~2-3 minutes
+- Video download: ~5-8 minutes  
+- **Total sequential time: 7-11 minutes**
+
+### Solution: Parallel Downloads with Bash
+
+**Created:** `learning/scripts/youtube/download-media.sh`
+
+**Key features:**
+1. Downloads audio and video **simultaneously** using background processes
+2. Real-time progress updates prefixed with `[AUDIO]` and `[VIDEO]`
+3. Waits for both to complete before exiting
+4. Error handling for individual stream failures
+5. Reports final file sizes
+
+**Usage:**
+```bash
+uv run scripts/youtube/download-media.sh kCc8FmEb1nY
+```
+
+**Output:**
+```
+📹 Downloading media for: kCc8FmEb1nY
+🔗 URL: https://www.youtube.com/watch?v=kCc8FmEb1nY
+
+🎵 Starting audio download...
+🎬 Starting video download (no audio)...
+
+⏳ Waiting for downloads to complete...
+   Audio PID: 12345
+   Video PID: 12346
+
+[AUDIO] [download] 100% of 15.2MiB in 00:03
+[VIDEO] [download] 100% of 85.4MiB in 00:12
+✅ Audio download complete!
+✅ Video download complete!
+
+🎉 Both downloads completed successfully!
+   📊 Audio: 15M
+   📊 Video: 86M
+
+📁 Files saved to: youtube/kCc8FmEb1nY/
+```
+
+**Time savings:** ~50% reduction (downloads overlap instead of sequential)
+
+### Implementation Details
+
+**Background processes:**
+```bash
+# Audio downloads in background
+(yt-dlp ... 2>&1 | while read line; do echo "[AUDIO] $line"; done) &
+AUDIO_PID=$!
+
+# Video downloads in background  
+(yt-dlp ... 2>&1 | while read line; do echo "[VIDEO] $line"; done) &
+VIDEO_PID=$!
+
+# Wait for both
+wait $AUDIO_PID
+wait $VIDEO_PID
+```
+
+**Format selection:**
+- Audio: `bestaudio[ext=m4a]/bestaudio` (fallback for compatibility)
+- Video: `bestvideo[height<=720][ext=mp4]` (720p max, no audio track)
+
+**Why 720p?** Balance between:
+- Frame quality for code extraction
+- Download speed
+- Storage efficiency
+
+### The Simplicity Lesson
+
+**Initial mistake:** Suggested overcomplicated solutions:
+- Modifying bash script to use `uv run yt-dlp` inside
+- Rewriting in Python with ThreadPoolExecutor
+- Creating wrapper scripts
+
+**Reality:** Just run the bash script with `uv run`:
+```bash
+uv run scripts/youtube/download-media.sh VIDEO_ID
+```
+
+**Why this works:**
+- `uv run` executes commands in the project's environment context
+- Bash script inherits the PATH with `yt-dlp` available
+- No modifications needed to the script itself
+
+**Key insight:** Don't overthink tooling. If you have a tool that "just works," use it. The internet is full of overcomplicated workarounds that ignore simple solutions.
+
+### Files Created
+
+- `learning/scripts/youtube/download-media.sh` - Parallel downloader (replaces sequential approach)
+
+### Future Enhancements
+
+**Potential improvements:**
+- Progress bars instead of raw yt-dlp output
+- Configurable video quality (480p/720p/1080p)
+- Resume capability for interrupted downloads
+- Automatic cleanup on failure
+
+**Not needed for now:** The simple approach works great for our use case.
+
+---
+
 *Last updated: 2025-01-17*
 *See CONTEXT.md for complete project design document*
 

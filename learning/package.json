@@ -33,7 +33,8 @@
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0",
     "tailwind-merge": "^3.3.1",
-    "youtube-transcript": "^1.2.1"
+    "youtube-transcript": "^1.2.1",
+    "youtubei.js": "^16.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

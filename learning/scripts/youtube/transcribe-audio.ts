@@ -5,15 +5,15 @@
  *   npx ts-node scripts/youtube/transcribe-audio.ts youtube/kCc8FmEb1nY/audio.mp3
  */
 
-import { v2 } from '@google-cloud/speech';
+import { v2, protos } from '@google-cloud/speech';
 import { Storage } from '@google-cloud/storage';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-interface WordInfo {
-  word: string;
-  start: number;  // seconds
-  end: number;    // seconds
+interface SegmentInfo {
+  text: string;
+  start: number;  // seconds (start time of this segment)
+  end: number;    // seconds (end time of this segment)
   confidence: number;
 }
 
@@ -21,7 +21,7 @@ interface TranscriptResult {
   video_id?: string;
   audio_file: string;
   total_duration: number;
-  words: WordInfo[];
+  segments: SegmentInfo[];
   full_transcript: string;
   transcribed_at: string;
 }
@@ -71,9 +71,9 @@ async function transcribeAudio(audioFile: string): Promise<TranscriptResult> {
   let audioUri: string | undefined;
   let audioContent: Buffer | undefined;
   
-  // Use GCS for files > 9 MB (leave some buffer under 10 MB limit)
-  if (fileSizeMB > 9) {
-    console.log(`⚠️  File exceeds 9 MB, using Google Cloud Storage...\n`);
+  // Force batch mode for all files (testing batch code path)
+  if (fileSizeMB > 0) {
+    console.log(`🧪 Forcing batch mode for testing...\n`);
     audioUri = await uploadToGCS(audioFile, projectId);
   } else {
     console.log(`✅ File size OK for direct upload\n`);
@@ -88,7 +88,6 @@ async function transcribeAudio(audioFile: string): Promise<TranscriptResult> {
       languageCodes: ['en-US'],
       model: 'long',  // Optimized for long-form content (videos)
       features: {
-        enableWordTimeOffsets: true,
         enableAutomaticPunctuation: true,
       },
     },
@@ -159,7 +158,19 @@ async function transcribeAudio(audioFile: string): Promise<TranscriptResult> {
         // Check if operation is complete
         if (done) {
           clearInterval(pollInterval);
-          batchResponse = operation.response;
+          
+          // Response is wrapped in google.protobuf.Any - need to decode it
+          const anyResponse = operation.response as any;
+          if (anyResponse && anyResponse.value) {
+            const responseBuffer = Buffer.isBuffer(anyResponse.value)
+              ? anyResponse.value
+              : Buffer.from(anyResponse.value.data || anyResponse.value);
+            
+            batchResponse = protos.google.cloud.speech.v2.BatchRecognizeResponse.decode(responseBuffer);
+          } else {
+            throw new Error('Operation completed but no response value found');
+          }
+          
           console.log('\n✅ Batch operation complete!\n');
         }
       } catch (err) {
@@ -180,9 +191,9 @@ async function transcribeAudio(audioFile: string): Promise<TranscriptResult> {
     
     console.log('✅ Batch operation complete!\n');
     
-    // Extract results from batch response - matches Python structure
-    // response.results[audio_uri].transcript.results
-    const transcriptResults = batchResponse.results?.[audioUri]?.transcript;
+    // Extract results from batch response
+    const audioResult = batchResponse.results?.[audioUri];
+    const transcriptResults = audioResult?.transcript;
     
     if (!transcriptResults?.results) {
       throw new Error('No transcript results found in batch response');
@@ -196,47 +207,49 @@ async function transcribeAudio(audioFile: string): Promise<TranscriptResult> {
     [response] = await client.recognize(request);
   }
 
-  // Process results
-  const words: WordInfo[] = [];
+  // Process results - extract segments with result-level timing
+  const segments: SegmentInfo[] = [];
   let fullTranscript = '';
+  let lastEndTime = 0;
 
   for (const result of response.results || []) {
     const alternative = result.alternatives?.[0];
     if (!alternative) continue;
 
-    fullTranscript += alternative.transcript + ' ';
+    const text = alternative.transcript || '';
+    fullTranscript += text + ' ';
 
-    // Extract word time offsets
-    for (const wordInfo of alternative.words || []) {
-      const startSecs = Number(wordInfo.startOffset?.seconds || 0) + 
-                       Number(wordInfo.startOffset?.nanos || 0) / 1e9;
-      const endSecs = Number(wordInfo.endOffset?.seconds || 0) + 
-                     Number(wordInfo.endOffset?.nanos || 0) / 1e9;
-      
-      words.push({
-        word: wordInfo.word || '',
-        start: startSecs,
-        end: endSecs,
-        confidence: alternative.confidence || 0,
-      });
-    }
+    // Extract result-level end time
+    const endSecs = Number(result.resultEndOffset?.seconds || 0) + 
+                   Number(result.resultEndOffset?.nanos || 0) / 1e9;
+    
+    segments.push({
+      text,
+      start: lastEndTime,
+      end: endSecs,
+      confidence: alternative.confidence || 0,
+    });
+    
+    lastEndTime = endSecs;
   }
 
-  const totalDuration = words.length > 0 ? words[words.length - 1].end : 0;
+  const totalDuration = segments.length > 0 ? segments[segments.length - 1].end : 0;
 
-  console.log(`✅ Transcribed ${words.length} words`);
+  console.log(`✅ Transcribed ${segments.length} segments`);
   console.log(`⏱️  Duration: ${formatDuration(totalDuration)}`);
-  console.log(`📊 Average confidence: ${(words.reduce((sum, w) => sum + w.confidence, 0) / words.length * 100).toFixed(1)}%\n`);
+  console.log(`📊 Average confidence: ${(segments.reduce((sum, s) => sum + s.confidence, 0) / segments.length * 100).toFixed(1)}%\n`);
 
   // Show sample
-  console.log('📝 Sample (first 50 words):\n');
-  const sampleWords = words.slice(0, 50).map(w => w.word).join(' ');
-  console.log(`  "${sampleWords}..."\n`);
+  console.log('📝 Sample (first 3 segments):\n');
+  segments.slice(0, 3).forEach((seg, i) => {
+    console.log(`  [${i + 1}] ${seg.text}`);
+  });
+  console.log();
 
   return {
     audio_file: audioFile,
     total_duration: totalDuration,
-    words,
+    segments,
     full_transcript: fullTranscript.trim(),
     transcribed_at: new Date().toISOString(),
   };
