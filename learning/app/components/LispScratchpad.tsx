@@ -36,20 +36,18 @@ export default function LispScratchpad({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
-  const jsclRef = useRef<any>(null);
+  const jsclRef = useRef<typeof window.jscl | null>(null);
 
   // Initialize JSCL on mount
   useEffect(() => {
     async function loadJSCL() {
       try {
-        // @ts-ignore - JSCL loads from CDN
         if (typeof window.jscl === 'undefined') {
           setError('JSCL not loaded from CDN');
           setIsLoading(false);
           return;
         }
         
-        // @ts-ignore
         jsclRef.current = window.jscl;
         setIsLoading(false);
         console.log('✅ JSCL loaded successfully');
@@ -94,8 +92,8 @@ export default function LispScratchpad({
       setOutput(outputStr || '(no output)');
       onExecute?.(code, outputStr, null);
       
-    } catch (err: any) {
-      const errorMsg = err.message || 'Execution error';
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Execution error';
       setError(errorMsg);
       onExecute?.(code, '', errorMsg);
     } finally {
