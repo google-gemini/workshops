@@ -6332,6 +6332,123 @@ Don't constrain the creative part of concept extraction. Save frame data for wha
 
 ---
 
+## 🎯 Code Examples Inform Enrichment (But Aren't Copied Back) (2025-01-17)
+
+### The Efficient Design
+
+When enriching concepts with pedagogical content, we use code examples strategically:
+
+**The Flow:**
+1. ✅ **Extract code examples deterministically** from `code-concept-mappings.json`
+2. ✅ **Send them TO Gemini as context** (input prompt)
+3. ✅ **Gemini returns ONLY pedagogy** (no code in output)
+4. ✅ **Merge code examples back deterministically** (TypeScript)
+
+### Implementation in `enrich-concepts.ts`
+
+**Step 1: Extract examples (pure code)**
+```typescript
+const codeExamples = getCodeExamplesForConcept(concept.id, codeMappings);
+```
+
+**Step 2: Include in prompt for context**
+```typescript
+const codeExamplesText = codeExamples.length > 0
+  ? codeExamples
+      .map(ex => `
+[${formatTime(ex.timestamp)}] ${ex.teaching_context}
+
+\`\`\`python
+${ex.code}
+\`\`\`
+
+Why this matters: ${ex.rationale}
+`)
+      .join("\n---\n")
+  : "No code examples identified for this concept.";
+
+const prompt = `...
+**Code examples related to this concept:**
+${codeExamplesText}
+
+**Your task:**
+Generate comprehensive pedagogical enrichment based on these examples...
+`;
+```
+
+**Step 3: Gemini returns pedagogy ONLY**
+```typescript
+// Response schema has NO code_examples field
+const pedagogicalEnrichmentSchema = z.object({
+  learning_objectives: z.array(z.string()),
+  mastery_indicators: z.array(...),
+  misconceptions: z.array(...),
+  // NO code_examples here!
+});
+```
+
+**Step 4: Merge deterministically**
+```typescript
+const enriched: EnrichedConcept = {
+  id: concept.id,
+  name: concept.name,
+  description: concept.description,
+  prerequisites: concept.prerequisites,
+  difficulty: concept.difficulty,
+  time_ranges: concept.time_ranges || [],
+  code_examples: codeExamples,  // ← From Step 1, NOT from Gemini
+  ...pedagogicalEnrichment,      // ← From Gemini (pedagogy only)
+};
+```
+
+### Why This Design Works
+
+**Benefits:**
+- ✅ **Informed enrichment:** Gemini sees real code, creates better learning objectives
+- ✅ **Token efficiency:** Don't waste output tokens copying code back
+- ✅ **No hallucination:** Code examples are ground truth from video
+- ✅ **Grounded pedagogy:** Mastery indicators reference actual implementations
+- ✅ **Realistic misconceptions:** Based on what the code actually shows
+
+**Example of informed enrichment:**
+```json
+{
+  "mastery_indicators": [
+    {
+      "skill": "data_preparation_for_lm",
+      "description": "Student can explain how continuous text becomes (context, target) pairs",
+      "test_method": "Given 'HELLO WORLD' and block_size=3, list all (context, target) pairs, similar to Karpathy's explanation at [17:03]"
+    }
+  ]
+}
+```
+
+The `[17:03]` timestamp reference exists because Gemini saw that exact code example in the prompt!
+
+### Token Economics
+
+**Without this approach:**
+- Input: 5KB prompt + 15KB code examples = 20KB
+- Output: 10KB pedagogy + 15KB copied code = 25KB
+- **Total: 45KB** (~11K tokens)
+
+**With this approach:**
+- Input: 5KB prompt + 15KB code examples = 20KB
+- Output: 10KB pedagogy only = 10KB
+- **Total: 30KB** (~7.5K tokens)
+
+**Savings: 33% fewer tokens** (output tokens cost 3-5x more than input!)
+
+### Key Insight
+
+**Code examples play dual roles:**
+1. **During enrichment:** Teaching context for Gemini
+2. **In final output:** Pedagogical examples for students
+
+By sending them once (input) and merging deterministically (code), we avoid the waste of having Gemini copy them back (expensive output tokens).
+
+---
+
 *Last updated: 2025-01-17*
 *See CONTEXT.md for complete project design document*
 
