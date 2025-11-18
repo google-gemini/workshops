@@ -9,6 +9,8 @@
       "embeddingsPath": "data/paip-ch1/paip-embeddings.json",
       "description": "Learn Lisp programming fundamentals through Paradigms of AI Programming",
       "color": "blue",
+      "workspaceType": "lisp",
+      "sourceFile": "data/paip-ch1/text.md",
       "stats": {
         "totalConcepts": 42,
         "estimatedHours": 8
@@ -23,6 +25,8 @@
       "embeddingsPath": "data/pytudes/tsp-embeddings.json",
       "description": "Explore algorithm design strategies through TSP variations",
       "color": "green",
+      "workspaceType": "python",
+      "sourceFile": "data/pytudes/tsp.md",
       "stats": {
         "totalConcepts": 25,
         "estimatedHours": 5

@@ -19,6 +19,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import PythonScratchpad from './PythonScratchpad';
+import LispScratchpad from './LispScratchpad';
 import { MarkdownViewer } from './MarkdownViewer';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -67,6 +68,8 @@ type SocraticDialogueProps = {
   onOpenChange: (open: boolean) => void;
   conceptData: any;
   embeddingsPath: string;
+  workspaceType?: 'python' | 'lisp';
+  sourceFile?: string;
   onMasteryAchieved?: (conceptId: string) => void;
 };
 
@@ -75,6 +78,8 @@ export default function SocraticDialogue({
   onOpenChange,
   conceptData,
   embeddingsPath,
+  workspaceType = 'python',
+  sourceFile = '/data/pytudes/tsp.md',
   onMasteryAchieved,
 }: SocraticDialogueProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -97,7 +102,7 @@ export default function SocraticDialogue({
   } | null>(null);
   const [lastSentCode, setLastSentCode] = useState<string>('');
   const [lastSentEvaluation, setLastSentEvaluation] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'python' | 'source'>('python');
+  const [activeTab, setActiveTab] = useState<'workspace' | 'source'>('workspace');
   const [sourceAnchor, setSourceAnchor] = useState<string | undefined>();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -134,7 +139,7 @@ export default function SocraticDialogue({
       setEvaluation(null);
       setLastSentCode('');
       setLastSentEvaluation(null);
-      setActiveTab('python');
+      setActiveTab('workspace');
       setSourceAnchor(undefined);
     }
   }, [open]);
@@ -220,13 +225,15 @@ export default function SocraticDialogue({
     const evalChanged = JSON.stringify(currentEval) !== JSON.stringify(lastSentEvaluation);
 
     // For UI display: just show the text (code is already visible in workspace)
-    const displayContent = hasText ? currentInput : '(working in Python workspace)';
+    const workspaceName = workspaceType === 'lisp' ? 'Lisp' : 'Python';
+    const displayContent = hasText ? currentInput : `(working in ${workspaceName} workspace)`;
     
     // For API: only include code/evaluation if they changed
     let apiContent = currentInput || '(sharing code)';
     
     if (codeChanged && currentCode) {
-      apiContent += `\n\n**My Code:**\n\`\`\`python\n${currentCode}\n\`\`\``;
+      const codeLanguage = workspaceType === 'lisp' ? 'lisp' : 'python';
+      apiContent += `\n\n**My Code:**\n\`\`\`${codeLanguage}\n${currentCode}\n\`\`\``;
     }
     
     if (evalChanged && currentEval) {
@@ -585,20 +592,20 @@ export default function SocraticDialogue({
             </div>
           </div>
 
-          {/* Right side: Tabbed pane (Python / Source) - shown by default */}
+          {/* Right side: Tabbed pane (Workspace / Source) - shown by default */}
           {showPythonEditor && (
             <div className="flex-1 min-w-0 border-l pl-3 flex flex-col">
               {/* Tab Headers */}
               <div className="flex border-b border-slate-200 bg-slate-50 mb-2">
                 <button
                   className={`px-4 py-2 text-sm font-medium transition-colors ${
-                    activeTab === 'python' 
+                    activeTab === 'workspace' 
                       ? 'border-b-2 border-blue-500 text-blue-600 bg-white -mb-px' 
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
-                  onClick={() => setActiveTab('python')}
+                  onClick={() => setActiveTab('workspace')}
                 >
-                  🐍 Python
+                  {workspaceType === 'lisp' ? '🎨 Lisp' : '🐍 Python'}
                 </button>
                 <button
                   className={`px-4 py-2 text-sm font-medium transition-colors ${
@@ -614,9 +621,28 @@ export default function SocraticDialogue({
 
               {/* Tab Content */}
               <div className="flex-1 overflow-hidden">
-                {activeTab === 'python' ? (
-                  <PythonScratchpad
-                    starterCode={`# 🧮 Python scratchpad for exploring ${conceptData.name}
+                {activeTab === 'workspace' ? (
+                  workspaceType === 'lisp' ? (
+                    <LispScratchpad
+                      starterCode={`;;; Common Lisp scratchpad for exploring ${conceptData.name}
+;;; 
+;;; Feel free to experiment here! You can:
+;;; - Test out ideas in code
+;;; - Answer questions by implementing solutions
+;;; - Work through examples
+;;; 
+;;; Your code and output will be visible to your tutor.
+`}
+                      onExecute={(execCode, output, error) => {
+                        setEvaluation({ output, error });
+                      }}
+                      onCodeChange={(newCode) => {
+                        setCode(newCode);
+                      }}
+                    />
+                  ) : (
+                    <PythonScratchpad
+                      starterCode={`# 🧮 Python scratchpad for exploring ${conceptData.name}
 # 
 # Feel free to experiment here! You can:
 # - Test out ideas in code
@@ -625,16 +651,17 @@ export default function SocraticDialogue({
 # 
 # Your code and output will be visible to your tutor.
 `}
-                    onExecute={(execCode, output, error) => {
-                      setEvaluation({ output, error });
-                    }}
-                    onCodeChange={(newCode) => {
-                      setCode(newCode);
-                    }}
-                  />
+                      onExecute={(execCode, output, error) => {
+                        setEvaluation({ output, error });
+                      }}
+                      onCodeChange={(newCode) => {
+                        setCode(newCode);
+                      }}
+                    />
+                  )
                 ) : (
                   <MarkdownViewer 
-                    sourceFile="/data/pytudes/tsp.md"
+                    sourceFile={sourceFile}
                     scrollToAnchor={sourceAnchor}
                   />
                 )}

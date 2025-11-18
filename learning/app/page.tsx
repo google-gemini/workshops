@@ -31,6 +31,8 @@ type Library = {
   embeddingsPath: string;
   description: string;
   color: string;
+  workspaceType?: 'python' | 'lisp';
+  sourceFile?: string;
   stats: {
     totalConcepts: number;
     estimatedHours: number;
@@ -304,6 +306,8 @@ export default function Home() {
           onOpenChange={setDialogueOpen}
           conceptData={selectedConcept}
           embeddingsPath={selectedLibrary.embeddingsPath}
+          workspaceType={selectedLibrary.workspaceType || 'python'}
+          sourceFile={selectedLibrary.sourceFile || '/data/pytudes/tsp.md'}
           onMasteryAchieved={handleMasteryAchieved}
         />
       )}
