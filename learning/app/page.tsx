@@ -241,7 +241,7 @@ function HomeContent() {
       </header>
 
       {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Graph (70%) */}
         <div className="flex-[7] border-r">
           <ConceptGraph 
@@ -255,7 +255,28 @@ function HomeContent() {
         </div>
 
         {/* Details sidebar (30%) */}
-        <div className="flex-[3] p-4 overflow-auto">
+        {/* On mobile: full-screen overlay when concept selected */}
+        {/* On desktop: fixed sidebar */}
+        <div className={`
+          flex-[3] p-4 overflow-auto
+          md:relative md:block
+          ${selectedConcept 
+            ? 'fixed inset-0 z-50 w-full bg-white' 
+            : 'hidden md:block'
+          }
+        `}>
+          {/* Mobile close button */}
+          {selectedConcept && (
+            <button
+              onClick={() => setSelectedConceptId(null)}
+              className="md:hidden fixed top-4 right-4 z-10 bg-white rounded-full p-2 shadow-lg border border-slate-200 hover:bg-slate-100"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          
           {/* Stats Dashboard */}
           <div className="mb-6 p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200 shadow-sm">
             <h3 className="text-lg font-bold mb-3 text-slate-800">Learning Progress</h3>
