@@ -20,51 +20,52 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
-type PythonScratchpadProps = {
+type LispScratchpadProps = {
   starterCode?: string;
   onExecute?: (code: string, output: string, error: string | null) => void;
   onCodeChange?: (code: string) => void;
 };
 
-export default function PythonScratchpad({ 
+export default function LispScratchpad({ 
   starterCode = '', 
   onExecute,
   onCodeChange
-}: PythonScratchpadProps) {
+}: LispScratchpadProps) {
   const [code, setCode] = useState('');
   const [output, setOutput] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
-  const pyodideRef = useRef<PyodideInterface | null>(null);
+  const jsclRef = useRef<typeof window.jscl | null>(null);
 
-  // Initialize Pyodide on mount
+  // Initialize JSCL on mount
   useEffect(() => {
-    async function loadPyodide() {
+    async function loadJSCL() {
       try {
-        const pyodide = await window.loadPyodide({
-          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
-        });
+        if (typeof window.jscl === 'undefined') {
+          setError('JSCL not loaded from CDN');
+          setIsLoading(false);
+          return;
+        }
         
-        // Load commonly used packages for math/algorithms
-        await pyodide.loadPackage(['numpy', 'micropip']);
-        
-        pyodideRef.current = pyodide;
+        jsclRef.current = window.jscl;
         setIsLoading(false);
-        console.log('✅ Pyodide loaded successfully');
+        console.log('✅ JSCL loaded successfully');
       } catch (err) {
-        console.error('Failed to load Pyodide:', err);
-        setError('Failed to initialize Python environment');
+        console.error('Failed to load JSCL:', err);
+        setError('Failed to initialize Common Lisp environment');
         setIsLoading(false);
       }
     }
 
-    loadPyodide();
+    // Add a small delay to ensure script is loaded
+    const timer = setTimeout(loadJSCL, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const runCode = async () => {
-    if (!pyodideRef.current) {
-      setError('Python environment not ready');
+    if (!jsclRef.current) {
+      setError('Common Lisp environment not ready');
       return;
     }
 
@@ -73,23 +74,23 @@ export default function PythonScratchpad({
     setOutput('');
 
     try {
-      const pyodide = pyodideRef.current;
+      const jscl = jsclRef.current;
       
-      // Capture stdout
-      pyodide.runPython(`
-import sys
-from io import StringIO
-sys.stdout = StringIO()
-      `);
-
-      // Run user code
-      await pyodide.runPythonAsync(code);
-
-      // Get captured output
-      const stdout = String(pyodide.runPython('sys.stdout.getvalue()') || '');
+      // Capture output by evaluating code and getting the result
+      // JSCL's evaluateString returns the result of the last expression
+      const result = jscl.evaluateString(code);
       
-      setOutput(stdout || '(no output)');
-      onExecute?.(code, stdout, null);
+      // Convert result to string for display
+      let outputStr = '';
+      if (result !== undefined && result !== null) {
+        // JSCL results are JavaScript values
+        outputStr = String(result);
+      } else {
+        outputStr = 'NIL';
+      }
+      
+      setOutput(outputStr || '(no output)');
+      onExecute?.(code, outputStr, null);
       
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Execution error';
@@ -114,11 +115,11 @@ sys.stdout = StringIO()
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
       
-      setCode(code.substring(0, start) + '    ' + code.substring(end));
+      setCode(code.substring(0, start) + '  ' + code.substring(end));
       
       // Move cursor after inserted spaces
       setTimeout(() => {
-        textarea.selectionStart = textarea.selectionEnd = start + 4;
+        textarea.selectionStart = textarea.selectionEnd = start + 2;
       }, 0);
     }
   };
@@ -126,14 +127,14 @@ sys.stdout = StringIO()
   return (
     <div className="flex flex-col h-full border rounded-lg bg-slate-50">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b bg-slate-800 text-white rounded-t-lg">
-        <span className="text-sm font-medium">🐍 Python Workspace</span>
+      <div className="flex items-center justify-between p-3 border-b bg-purple-900 text-white rounded-t-lg">
+        <span className="text-sm font-medium">🎨 Lisp Workspace</span>
         <div className="flex gap-2">
           <Button
             onClick={runCode}
             disabled={isLoading || isRunning}
             size="sm"
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-purple-600 hover:bg-purple-700"
           >
             {isRunning ? '⏳ Running...' : '▶️ Run (Ctrl+Enter)'}
           </Button>
@@ -145,7 +146,7 @@ sys.stdout = StringIO()
             }}
             size="sm"
             variant="outline"
-            className="text-slate-300 border-slate-600 hover:bg-slate-700"
+            className="text-slate-300 border-slate-600 hover:bg-purple-800"
           >
             🔄 Reset
           </Button>
@@ -170,7 +171,7 @@ sys.stdout = StringIO()
             }
           }}
           onKeyDown={handleKeyDown}
-          placeholder={isLoading ? "Loading Python..." : starterCode}
+          placeholder={isLoading ? "Loading Common Lisp..." : starterCode}
           disabled={isLoading}
           className="font-mono text-sm h-full resize-none bg-white"
           style={{ minHeight: '200px' }}
@@ -184,15 +185,15 @@ sys.stdout = StringIO()
           {error ? (
             <pre className="text-xs text-red-400 font-mono whitespace-pre-wrap">{error}</pre>
           ) : (
-            <pre className="text-xs text-green-400 font-mono whitespace-pre-wrap">{output || '(no output)'}</pre>
+            <pre className="text-xs text-purple-400 font-mono whitespace-pre-wrap">{output || '(no output)'}</pre>
           )}
         </div>
       )}
 
       {/* Loading indicator */}
       {isLoading && (
-        <div className="border-t p-3 bg-yellow-50 text-yellow-800 text-sm">
-          ⏳ Loading Python environment... (first time only, ~10-15 seconds)
+        <div className="border-t p-3 bg-purple-50 text-purple-800 text-sm">
+          ⏳ Loading Common Lisp environment... (first time only)
         </div>
       )}
     </div>
