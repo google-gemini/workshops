@@ -1,52 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
-import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
 import { zodToGeminiSchema } from "../../lib/gemini-utils.js";
-
-// ============================================================================
-// Type Definitions
-// ============================================================================
-
-interface AudioTranscript {
-  audio_file: string;
-  total_duration: number;
-  segments: Array<{
-    text: string;
-    start: number;
-    end: number;
-    confidence: number;
-  }>;
-  full_transcript: string;
-  transcribed_at: string;
-}
-
-// ============================================================================
-// Zod Schema for Gemini Structured Output
-// ============================================================================
-
-const conceptNodeSchema = z.object({
-  id: z.string().describe("Snake_case identifier"),
-  name: z.string().describe("Human-readable concept name"),
-  description: z.string().describe("Clear pedagogical description"),
-  prerequisites: z.array(z.string()).describe("IDs of prerequisite concepts"),
-  difficulty: z.enum(["basic", "intermediate", "advanced"]),
-});
-
-const conceptGraphSchema = z.object({
-  metadata: z.object({
-    title: z.string(),
-    author: z.string(),
-    source: z.string(),
-    video_id: z.string(),
-    total_duration: z.number(),
-    total_concepts: z.number(),
-    extracted_at: z.string(),
-  }),
-  nodes: z.array(conceptNodeSchema),
-});
-
-type ConceptGraph = z.infer<typeof conceptGraphSchema>;
+import {
+  audioTranscriptSchema,
+  conceptGraphSchema,
+  type AudioTranscript,
+  type ConceptGraph,
+} from "./types.js";
 
 // ============================================================================
 // Prompt Construction
@@ -106,9 +67,8 @@ async function extractConcepts(videoId: string): Promise<void> {
   }
 
   console.log(`📖 Reading transcript...`);
-  const transcriptData: AudioTranscript = JSON.parse(
-    fs.readFileSync(transcriptPath, "utf-8")
-  );
+  const raw = JSON.parse(fs.readFileSync(transcriptPath, "utf-8"));
+  const transcriptData = audioTranscriptSchema.parse(raw);
 
   console.log(`   Duration: ${Math.floor(transcriptData.total_duration / 60)} minutes`);
   console.log(`   Segments: ${transcriptData.segments.length}`);
