@@ -4249,6 +4249,107 @@ Right Pane Layout:
 
 ---
 
+## 🎥 Video Source Integration: YouTube Embeddings Working! (2025-01-07)
+
+### Achievement: Video Sources Now Playable in Dialogue
+
+**Problem Solved:** Video sources were showing metadata but no way to actually watch the video. The Video tab was blank by default, requiring users to click sources to see anything.
+
+**Solution Implemented:** Smart auto-loading with conditional autoplay
+
+#### How It Works Now
+
+**1. First video source auto-loads** (but doesn't autoplay)
+```typescript
+// Auto-load first video source for video libraries (but don't autoplay)
+useEffect(() => {
+  if (libraryType === 'video' && messages.length > 0) {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role === 'assistant' && lastMessage.sources) {
+      const firstVideoSource = lastMessage.sources.find(s => s.video_id);
+      if (firstVideoSource && firstVideoSource.video_id) {
+        setSourceVideoId(firstVideoSource.video_id);
+        setSourceTimestamp(firstVideoSource.timestamp);
+        setVideoAutoplay(false); // Don't autoplay on auto-load
+        setSourceFile(undefined);
+        setSourceAnchor(undefined);
+      }
+    }
+  }
+}, [messages, libraryType]);
+```
+
+**2. Autoplay triggered on user interaction**
+- **Clicking "View in context →"**: Loads timestamp + autoplays
+- **Clicking Video tab**: If video loaded, starts playing
+
+**3. Conditional autoplay in iframe**
+```typescript
+<iframe
+  src={`https://www.youtube.com/embed/${sourceVideoId}?start=${Math.floor(sourceTimestamp || 0)}${videoAutoplay ? '&autoplay=1' : ''}`}
+  ...
+/>
+```
+
+#### User Experience
+
+**Before:**
+- Video tab: Empty/blank
+- Had to click source to see anything
+- Unclear that video content was available
+
+**After:**
+- Video tab: Shows most relevant video (paused) immediately
+- Click tab → video starts playing (if loaded)
+- Click source → jumps to timestamp + autoplays
+- Clear visual feedback that video sources exist
+
+#### Why videoAutoplay State Is Necessary
+
+**Question:** Can we simplify the autoplay logic?
+
+**Answer:** No, the current code is already minimal!
+
+**Why we need the state:**
+- YouTube iframe `autoplay` parameter only works on initial load
+- To make a paused video play, we must change the URL (trigger reload)
+- `videoAutoplay` state controls whether `&autoplay=1` appears in URL
+- Without it, we'd need YouTube Player API (much more complex)
+
+**The logic:**
+1. Auto-load: Video appears but `videoAutoplay=false` → paused
+2. User clicks: Set `videoAutoplay=true` → URL changes → iframe reloads with autoplay
+3. Clean UX: Video preview without blaring audio until user shows interest
+
+#### Implementation Details
+
+**Files modified:**
+- `learning/app/components/SocraticDialogue.tsx` - Auto-load logic, conditional autoplay
+- `learning/app/page.tsx` - Pass libraryType to component
+
+**Key features:**
+- ✅ Auto-loads best matching video on first response
+- ✅ Doesn't autoplay until user interacts
+- ✅ Tab click starts playback (if video loaded)
+- ✅ Source click jumps + plays
+- ✅ Works for video libraries (Karpathy GPT)
+- ✅ Gracefully falls back for book libraries
+
+#### Success Metrics
+
+**User feedback:** "Jesus Christ, bro, it fucking works!"
+
+**Impact:**
+- ✅ Video sources immediately useful (not blank)
+- ✅ Natural interaction model (click = play)
+- ✅ Grounded teaching with visual context
+- ✅ Students can see exactly what Karpathy showed on screen
+- ✅ Professional, polished experience
+
+**Status:** Video embedding complete and working beautifully! 🎉
+
+---
+
 ### Other TODOs (Carried Forward)
 
 From earlier sections, still pending:

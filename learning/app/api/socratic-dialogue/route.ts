@@ -93,15 +93,24 @@ async function loadConceptContext(
     );
     const embeddings = embeddingsData;
     
-    console.log(`   📊 Searching ${embeddings.chunks.length} chunks using semantic similarity...`);
+    // Support both markdown embeddings (chunks) and video embeddings (segments)
+    const items = embeddings.chunks || embeddings.segments;
+    const itemType = embeddings.chunks ? 'chunks' : 'segments';
+    
+    if (!items || items.length === 0) {
+      console.log(`   ⚠️ No ${itemType} found in embeddings file`);
+      return {text: '(No textbook sections found for this concept)', chunks: []};
+    }
+    
+    console.log(`   📊 Searching ${items.length} ${itemType} using semantic similarity...`);
     
     // Get embedding for the concept query
     const conceptEmbedding = await embedConceptQuery(conceptData.name, apiKey);
     
     console.log(`   🧮 Computing similarities (embedding dims: ${conceptEmbedding.length})...`);
     
-    // Compute similarity scores for all chunks
-    const rankedChunks = embeddings.chunks
+    // Compute similarity scores for all items
+    const rankedChunks = items
       .map((chunk: any) => ({
         chunk,
         similarity: cosineSimilarity(conceptEmbedding, chunk.embedding)
@@ -113,17 +122,28 @@ async function loadConceptContext(
       return {text: '(No textbook sections found for this concept)', chunks: []};
     }
     
-    console.log(`   ✅ Top ${rankedChunks.length} chunks by similarity:`);
+    console.log(`   ✅ Top ${rankedChunks.length} ${itemType} by similarity:`);
     rankedChunks.forEach((item: any, i: number) => {
-      console.log(`      ${i + 1}. [${item.similarity.toFixed(3)}] ${item.chunk.topic}`);
-      console.log(`         Tags: ${item.chunk.concepts.join(', ')}`);
+      const label = item.chunk.topic || item.chunk.audio_text?.substring(0, 60) || 'Untitled';
+      console.log(`      ${i + 1}. [${item.similarity.toFixed(3)}] ${label}`);
+      if (item.chunk.concepts) {
+        console.log(`         Tags: ${item.chunk.concepts.join(', ')}`);
+      } else if (item.chunk.key_concepts) {
+        console.log(`         Key concepts: ${item.chunk.analysis?.key_concepts?.join(', ') || 'N/A'}`);
+      }
     });
     
     // Format the most relevant chunks for LLM
     const formattedText = rankedChunks
       .map((item: any) => {
         const chunk = item.chunk;
-        return `**[${chunk.chunk_type.toUpperCase()}] ${chunk.topic}** (similarity: ${(item.similarity * 100).toFixed(1)}%)\n${chunk.text}`;
+        
+        // Handle both markdown chunks and video segments
+        const chunkType = chunk.chunk_type || 'VIDEO';
+        const title = chunk.topic || `Timestamp ${Math.floor(chunk.timestamp / 60)}:${String(Math.floor(chunk.timestamp % 60)).padStart(2, '0')}`;
+        const content = chunk.text || chunk.audio_text || '(no content)';
+        
+        return `**[${chunkType.toUpperCase()}] ${title}** (similarity: ${(item.similarity * 100).toFixed(1)}%)\n${content}`;
       })
       .join('\n\n---\n\n');
     
@@ -135,12 +155,22 @@ async function loadConceptContext(
         topic: item.chunk.topic,
         chunk_type: item.chunk.chunk_type,
         similarity: item.similarity,
-        // Provenance metadata
+        
+        // Markdown metadata (if present)
         source_file: item.chunk.source_file,
         heading_path: item.chunk.heading_path,
         markdown_anchor: item.chunk.markdown_anchor,
         start_line: item.chunk.start_line,
         end_line: item.chunk.end_line,
+        
+        // Video metadata (if present)
+        video_id: item.chunk.video_id,
+        timestamp: item.chunk.timestamp,
+        segment_index: item.chunk.segment_index,
+        frame_path: item.chunk.frame_path,
+        audio_text: item.chunk.audio_text,
+        audio_start: item.chunk.audio_start,
+        audio_end: item.chunk.audio_end,
       }))
     };
       

@@ -45,7 +45,8 @@ type Edge = {
 
 type ConceptGraphData = {
   metadata: any;
-  concepts: Concept[];
+  concepts?: Concept[];
+  nodes?: Concept[];
   edges: Edge[];
 };
 

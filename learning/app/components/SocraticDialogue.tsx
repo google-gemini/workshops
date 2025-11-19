@@ -41,11 +41,22 @@ type ChunkSource = {
   topic: string;
   chunk_type: string;
   similarity: number;
+  
+  // Markdown metadata
   source_file?: string;
   heading_path?: string[];
   markdown_anchor?: string;
   start_line?: number;
   end_line?: number;
+  
+  // Video metadata
+  video_id?: string;
+  timestamp?: number;
+  segment_index?: number;
+  frame_path?: string;
+  audio_text?: string;
+  audio_start?: number;
+  audio_end?: number;
 };
 
 type Message = {
@@ -67,6 +78,7 @@ type SocraticDialogueProps = {
   onOpenChange: (open: boolean) => void;
   conceptData: any;
   embeddingsPath: string;
+  libraryType?: string;
   onMasteryAchieved?: (conceptId: string) => void;
 };
 
@@ -75,6 +87,7 @@ export default function SocraticDialogue({
   onOpenChange,
   conceptData,
   embeddingsPath,
+  libraryType,
   onMasteryAchieved,
 }: SocraticDialogueProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -99,6 +112,10 @@ export default function SocraticDialogue({
   const [lastSentEvaluation, setLastSentEvaluation] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'python' | 'source'>('python');
   const [sourceAnchor, setSourceAnchor] = useState<string | undefined>();
+  const [sourceFile, setSourceFile] = useState<string | undefined>();
+  const [sourceVideoId, setSourceVideoId] = useState<string | undefined>();
+  const [sourceTimestamp, setSourceTimestamp] = useState<number | undefined>();
+  const [videoAutoplay, setVideoAutoplay] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -106,6 +123,23 @@ export default function SocraticDialogue({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-load first video source for video libraries (but don't autoplay)
+  useEffect(() => {
+    if (libraryType === 'video' && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant' && lastMessage.sources) {
+        const firstVideoSource = lastMessage.sources.find(s => s.video_id);
+        if (firstVideoSource && firstVideoSource.video_id) {
+          setSourceVideoId(firstVideoSource.video_id);
+          setSourceTimestamp(firstVideoSource.timestamp);
+          setVideoAutoplay(false); // Don't autoplay on auto-load
+          setSourceFile(undefined);
+          setSourceAnchor(undefined);
+        }
+      }
+    }
+  }, [messages, libraryType]);
 
   // Auto-focus textarea when loading completes
   useEffect(() => {
@@ -136,6 +170,10 @@ export default function SocraticDialogue({
       setLastSentEvaluation(null);
       setActiveTab('python');
       setSourceAnchor(undefined);
+      setSourceFile(undefined);
+      setSourceVideoId(undefined);
+      setSourceTimestamp(undefined);
+      setVideoAutoplay(false);
     }
   }, [open]);
 
@@ -371,6 +409,11 @@ export default function SocraticDialogue({
   // Send button: enabled if text OR code exists
   const canSend = !isLoading && (input.trim().length > 0 || code.trim().length > 0);
 
+  // Dynamic source tab label based on library type
+  const sourceTabLabel = libraryType === 'video' ? '🎥 Video' : 
+                         libraryType === 'book' ? '📚 Source' : 
+                         '📖 Reference';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={`${showPythonEditor ? '!max-w-[96vw] w-[96vw]' : 'max-w-3xl'} !h-[90vh] flex flex-col p-4`}>
@@ -511,6 +554,31 @@ export default function SocraticDialogue({
                             </div>
                           )}
                           
+                          {/* Video source */}
+                          {source.video_id && source.timestamp !== undefined && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-slate-400">
+                                📹 Video @ {Math.floor(source.timestamp / 60)}:{String(Math.floor(source.timestamp % 60)).padStart(2, '0')}
+                                {source.audio_text && ` - "${source.audio_text.substring(0, 50)}..."`}
+                              </span>
+                              <button
+                                className="text-blue-500 hover:text-blue-700 underline text-left"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSourceVideoId(source.video_id);
+                                  setSourceTimestamp(source.timestamp);
+                                  setVideoAutoplay(true); // Autoplay when user explicitly clicks
+                                  setSourceAnchor(undefined); // Clear markdown state
+                                  setSourceFile(undefined);
+                                  setActiveTab('source');
+                                }}
+                              >
+                                View in context →
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* Markdown source */}
                           {source.source_file && (
                             <div className="flex items-center gap-2 text-xs">
                               <span className="text-slate-400">
@@ -523,6 +591,10 @@ export default function SocraticDialogue({
                                   onClick={(e) => {
                                     e.preventDefault();
                                     setSourceAnchor(source.markdown_anchor);
+                                    setSourceFile(source.source_file);
+                                    setSourceVideoId(undefined); // Clear video state
+                                    setSourceTimestamp(undefined);
+                                    setVideoAutoplay(false);
                                     setActiveTab('source');
                                   }}
                                 >
@@ -606,9 +678,15 @@ export default function SocraticDialogue({
                       ? 'border-b-2 border-blue-500 text-blue-600 bg-white -mb-px' 
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
-                  onClick={() => setActiveTab('source')}
+                  onClick={() => {
+                    setActiveTab('source');
+                    // Autoplay video when switching to Video tab (if video is loaded)
+                    if (sourceVideoId) {
+                      setVideoAutoplay(true);
+                    }
+                  }}
                 >
-                  📚 Source
+                  {sourceTabLabel}
                 </button>
               </div>
 
@@ -632,11 +710,45 @@ export default function SocraticDialogue({
                       setCode(newCode);
                     }}
                   />
-                ) : (
+                ) : sourceVideoId ? (
+                  <div className="w-full h-full flex flex-col bg-black rounded-lg overflow-hidden">
+                    <iframe
+                      className="w-full h-full"
+                      src={`https://www.youtube.com/embed/${sourceVideoId}?start=${Math.floor(sourceTimestamp || 0)}${videoAutoplay ? '&autoplay=1' : ''}`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                    <div className="p-2 bg-slate-800 text-white text-sm flex items-center justify-between">
+                      <span>
+                        📹 {sourceVideoId} @ {Math.floor((sourceTimestamp || 0) / 60)}:{String(Math.floor((sourceTimestamp || 0) % 60)).padStart(2, '0')}
+                      </span>
+                      <a
+                        href={`https://www.youtube.com/watch?v=${sourceVideoId}&t=${Math.floor(sourceTimestamp || 0)}s`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline"
+                      >
+                        Open in YouTube →
+                      </a>
+                    </div>
+                  </div>
+                ) : sourceFile ? (
                   <MarkdownViewer 
-                    sourceFile="/data/pytudes/tsp.md"
+                    sourceFile={sourceFile}
                     scrollToAnchor={sourceAnchor}
                   />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+                    <div className="text-center p-8">
+                      <div className="text-4xl mb-4">📚</div>
+                      <h3 className="text-lg font-semibold mb-2">No Source Selected</h3>
+                      <p className="text-slate-600">
+                        Click <span className="text-blue-500 font-medium">"View in context →"</span> on any source below the assistant's messages to view it here.
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>

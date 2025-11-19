@@ -16,7 +16,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import ConceptGraph from './components/ConceptGraph';
 import ConceptDetails from './components/ConceptDetails';
 import SocraticDialogue from './components/SocraticDialogue';
@@ -39,7 +40,8 @@ type Library = {
 
 type ConceptGraphData = {
   metadata: any;
-  concepts: any[];
+  concepts?: any[];
+  nodes?: any[];
   edges: any[];
 };
 
@@ -48,7 +50,9 @@ type MasteryRecord = {
   masteredAt: number;
 };
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [libraries, setLibraries] = useState<Library[]>([]);
   const [selectedLibraryId, setSelectedLibraryId] = useState<string | null>(null);
   const [conceptGraphData, setConceptGraphData] = useState<ConceptGraphData | null>(null);
@@ -62,16 +66,21 @@ export default function Home() {
       .then(res => res.json())
       .then(data => {
         setLibraries(data.libraries);
-        // Auto-select from localStorage or first library
-        const saved = localStorage.getItem('selectedLibrary');
-        if (saved && data.libraries.find((l: Library) => l.id === saved)) {
-          setSelectedLibraryId(saved);
-        } else if (data.libraries.length > 0) {
-          setSelectedLibraryId(data.libraries[0].id);
+        
+        // Priority: URL param > localStorage > show selector
+        const urlLibrary = searchParams.get('library');
+        if (urlLibrary && data.libraries.find((l: Library) => l.id === urlLibrary)) {
+          setSelectedLibraryId(urlLibrary);
+        } else {
+          const saved = localStorage.getItem('selectedLibrary');
+          if (saved && data.libraries.find((l: Library) => l.id === saved)) {
+            setSelectedLibraryId(saved);
+          }
+          // No fallback - show library selector if nothing is set
         }
       })
       .catch(err => console.error('Failed to load libraries:', err));
-  }, []);
+  }, [searchParams]);
 
   // Load concept graph when library changes
   useEffect(() => {
@@ -85,8 +94,15 @@ export default function Home() {
       .then(data => setConceptGraphData(data))
       .catch(err => console.error('Failed to load concept graph:', err));
     
+    // Update localStorage
     localStorage.setItem('selectedLibrary', selectedLibraryId);
-  }, [selectedLibraryId, libraries]);
+    
+    // Only update URL if it's different from current URL param
+    const currentUrlLibrary = searchParams.get('library');
+    if (currentUrlLibrary !== selectedLibraryId) {
+      router.replace(`?library=${selectedLibraryId}`, { scroll: false });
+    }
+  }, [selectedLibraryId, libraries, router, searchParams]);
 
   // Load mastered concepts from localStorage on mount
   useEffect(() => {
@@ -125,6 +141,10 @@ export default function Home() {
   }
 
   const selectedLibrary = libraries.find(l => l.id === selectedLibraryId)!;
+  
+  // Accept both 'concepts' and 'nodes' field names
+  const concepts = conceptGraphData.concepts || conceptGraphData.nodes || [];
+  
   const selectedConcept = selectedConceptId
     ? concepts.find((c) => c.id === selectedConceptId) || null
     : null;
@@ -154,9 +174,6 @@ export default function Home() {
     });
   };
 
-  // Accept both 'concepts' and 'nodes' field names
-  const concepts = conceptGraphData.concepts || conceptGraphData.nodes || [];
-  
   // Calculate statistics
   const totalConcepts = concepts.length;
   const masteredCount = masteredConcepts.size;
@@ -209,7 +226,11 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div>
             <button 
-              onClick={() => setSelectedLibraryId(null)}
+              onClick={() => {
+                setSelectedLibraryId(null);
+                localStorage.removeItem('selectedLibrary');
+                router.replace('/', { scroll: false });
+              }}
               className="text-sm text-slate-300 hover:text-white mb-1 transition-colors"
             >
               ← Back to Libraries
@@ -307,9 +328,18 @@ export default function Home() {
           onOpenChange={setDialogueOpen}
           conceptData={selectedConcept}
           embeddingsPath={selectedLibrary.embeddingsPath}
+          libraryType={selectedLibrary.type}
           onMasteryAchieved={handleMasteryAchieved}
         />
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }
