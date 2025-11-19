@@ -36,13 +36,12 @@ export default function PythonScratchpad({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRunning, setIsRunning] = useState(false);
-  const pyodideRef = useRef<any>(null);
+  const pyodideRef = useRef<PyodideInterface | null>(null);
 
   // Initialize Pyodide on mount
   useEffect(() => {
     async function loadPyodide() {
       try {
-        // @ts-ignore - Pyodide loads from CDN
         const pyodide = await window.loadPyodide({
           indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/',
         });
@@ -87,13 +86,13 @@ sys.stdout = StringIO()
       await pyodide.runPythonAsync(code);
 
       // Get captured output
-      const stdout = pyodide.runPython('sys.stdout.getvalue()');
+      const stdout = String(pyodide.runPython('sys.stdout.getvalue()') || '');
       
       setOutput(stdout || '(no output)');
       onExecute?.(code, stdout, null);
       
-    } catch (err: any) {
-      const errorMsg = err.message || 'Execution error';
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Execution error';
       setError(errorMsg);
       onExecute?.(code, '', errorMsg);
     } finally {

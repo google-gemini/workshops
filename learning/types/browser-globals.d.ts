@@ -18,9 +18,15 @@
  * Type declarations for browser globals loaded from CDN
  */
 
+interface PyodideInterface {
+  loadPackage(packages: string | string[]): Promise<void>;
+  runPython(code: string): unknown;
+  runPythonAsync(code: string): Promise<unknown>;
+}
+
 interface Window {
   // Pyodide - Python in the browser
-  loadPyodide: (config?: { indexURL: string }) => Promise<unknown>;
+  loadPyodide: (config?: { indexURL: string }) => Promise<PyodideInterface>;
   
   // JSCL - Common Lisp in the browser
   jscl?: {
