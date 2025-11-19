@@ -90,7 +90,7 @@ export default function Home() {
 
   // Load mastered concepts from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('pcg-mastery');
+    const saved = localStorage.getItem(`pcg-mastery-${selectedLibraryId}`);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -110,9 +110,9 @@ export default function Home() {
     if (masteredConcepts.size > 0) {
       // Convert Map to object for JSON storage
       const obj = Object.fromEntries(masteredConcepts.entries());
-      localStorage.setItem('pcg-mastery', JSON.stringify(obj));
+      localStorage.setItem(`pcg-mastery-${selectedLibraryId}`, JSON.stringify(obj));
     }
-  }, [masteredConcepts]);
+  }, [masteredConcepts, selectedLibraryId]);
 
   // Show library selector if not ready
   if (!selectedLibraryId || !conceptGraphData || libraries.length === 0) {
@@ -126,7 +126,7 @@ export default function Home() {
 
   const selectedLibrary = libraries.find(l => l.id === selectedLibraryId)!;
   const selectedConcept = selectedConceptId
-    ? conceptGraphData.concepts.find((c) => c.id === selectedConceptId) || null
+    ? concepts.find((c) => c.id === selectedConceptId) || null
     : null;
 
   // Determine status of selected concept
@@ -154,19 +154,22 @@ export default function Home() {
     });
   };
 
+  // Accept both 'concepts' and 'nodes' field names
+  const concepts = conceptGraphData.concepts || conceptGraphData.nodes || [];
+  
   // Calculate statistics
-  const totalConcepts = conceptGraphData.concepts.length;
+  const totalConcepts = concepts.length;
   const masteredCount = masteredConcepts.size;
   const masteredPercent = Math.round((masteredCount / totalConcepts) * 100);
 
   // Ready concepts: all prerequisites mastered, but not yet mastered itself
-  const readyConcepts = conceptGraphData.concepts.filter(c => 
+  const readyConcepts = concepts.filter(c => 
     !masteredConcepts.has(c.id) &&
     c.prerequisites.every((p: string) => masteredConcepts.has(p))
   );
 
   // Locked concepts: missing at least one prerequisite
-  const lockedConcepts = conceptGraphData.concepts.filter(c =>
+  const lockedConcepts = concepts.filter(c =>
     !masteredConcepts.has(c.id) &&
     c.prerequisites.some((p: string) => !masteredConcepts.has(p))
   );
@@ -181,7 +184,7 @@ export default function Home() {
   };
 
   const countUnlocks = (conceptId: string): number => {
-    return conceptGraphData.concepts.filter(c =>
+    return concepts.filter(c =>
       c.prerequisites.includes(conceptId)
     ).length;
   };
@@ -287,7 +290,7 @@ export default function Home() {
             onStartLearning={handleStartLearning}
             masteryRecord={selectedConceptId ? masteredConcepts.get(selectedConceptId) || null : null}
             conceptStatus={getConceptStatus(selectedConceptId)}
-            allConcepts={conceptGraphData.concepts}
+            allConcepts={concepts}
             masteredConcepts={masteredConcepts}
             recommendedConcepts={recommendedConceptIds}
             readyConcepts={new Set(readyConcepts.map(c => c.id))}

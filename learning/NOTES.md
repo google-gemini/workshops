@@ -4721,6 +4721,94 @@ jobs:
 
 ---
 
+## 🚨 CRITICAL FINDING: Two-Pass Prerequisite Extraction Failed (2025-01-17)
+
+### The Hypothesis
+
+We theorized that separating concept extraction (Pass 1) from prerequisite assignment (Pass 2) would improve quality by:
+- Allowing focused attention on each task
+- Preventing "orphaned" concepts with no prerequisites
+- Giving the model clearer instructions
+
+### The Reality: It Made Things Worse
+
+**The two-pass approach created a fundamentally worse graph structure:**
+
+#### Problem 1: Shallow Star Graph
+Everything became a dependency of `pytorch_tensors`, flattening pedagogical progression:
+
+```json
+// Nearly every concept:
+"prerequisites": ["pytorch_tensors"]
+```
+
+**Lost:** The rich, layered learning progressions that existed in one-pass (e.g., `residual_connections → layer_normalization → transformer_block`)
+
+#### Problem 2: Wrong Conceptual Dependencies
+```json
+{
+  "id": "context_window",
+  "prerequisites": ["pytorch_tensors"]  // ❌ Should be ["tokenization"]!
+}
+```
+
+The model focused on **implementation dependencies** ("what do you need to code this?") instead of **pedagogical dependencies** ("what do you need to understand this?").
+
+#### Problem 3: Backwards Relationships
+```json
+{
+  "id": "dropout_regularization",  // A simple, foundational technique
+  "prerequisites": ["transformer_decoder_block"]  // ❌ A complex architecture that USES dropout!
+}
+```
+
+This is like saying "to understand wheels, you must first understand cars."
+
+#### Problem 4: Lost Teaching Order
+The transcript explicitly shows Karpathy's teaching sequence, but the two-pass model couldn't leverage it effectively when focusing only on prerequisites.
+
+### Why Did Two-Pass Fail?
+
+**The Counter-Intuitive Insight:**
+
+When the model sees the full gestalt (concepts + transcript + teaching order) **simultaneously**, it makes better pedagogical decisions. Separating the tasks actually **reduced** quality by removing context.
+
+**Hypothesis:** Both artifacts (transcript) and prerequisites are essentially **linear/sequential structures**. The model needs to see them together to understand:
+- Teaching order → prerequisite hints
+- Concept A appears before B → A is likely a prerequisite for B
+- Temporal flow → pedagogical flow
+
+**When you split into two passes:**
+- ❌ Pass 1: Concepts extracted without thinking about relationships
+- ❌ Pass 2: Prerequisites assigned without full teaching context
+- ❌ Result: Technical dependencies, not pedagogical ones
+
+### The One-Pass Approach Was Better
+
+**Evidence from original extraction:**
+- ✅ `context_window` → `tokenization` (conceptually correct)
+- ✅ Linear progressions preserved (basic → intermediate → advanced)
+- ✅ Teaching order respected
+- ❌ Occasional orphan nodes (e.g., "Train/Validation Split")
+
+**The orphans were probably correct!** Some concepts ARE legitimately foundational or standalone. Forcing everything to have prerequisites created false dependencies.
+
+### Lessons Learned
+
+1. **Don't over-decompose tasks**: Sometimes "one prompt to rule them all" is better than staged extraction
+2. **Context matters more than focus**: Removing context in the name of focus can backfire
+3. **Linear artifacts need holistic processing**: Transcripts and prerequisites are both sequential - the model needs to see them together
+4. **Trust the first instinct**: The occasional orphan is better than a degenerate star graph
+5. **Validation reveals truth**: We only discovered this by comparing outputs, not by reasoning about prompts
+
+### Decision
+
+**Revert to one-pass concept extraction** that assigns prerequisites during initial extraction. Accept occasional orphaned nodes as the cost of maintaining pedagogically sound graph structure.
+
+**Status:** Documented for future reference. Two-pass approach archived as failed experiment.
+
+---
+
 ## 🐍 Python Scratchpad Integration (2025-10-30)
 
 ### Overview
@@ -7337,13 +7425,219 @@ if (!mapping) {
 ### Next Steps
 
 1. ✅ Segment-to-concept mapping complete
-2. ⏭️ Merge duplicate concept IDs (case normalization)
-3. ⏭️ Generate embeddings for all 859 segments
+2. ✅ Generate embeddings for all 859 segments
+3. ⏭️ Merge duplicate concept IDs (case normalization)
 4. ⏭️ Build RAG retrieval with timestamp links
 5. ⏭️ UI: Click concept → view relevant video segments with timestamps
 6. ⏭️ Scratchpad: Auto-populate with code from specific video moments
 
-**Status:** Video segment mapping pipeline production-ready! 🎉
+**Status:** Video segment embeddings complete! Ready for RAG integration. 🎉
+
+---
+
+## 🎯 Video Segment Embeddings Success (2025-01-17)
+
+### Achievement: 859 Segments Embedded with Full Multimodal Content
+
+**Problem Solved:** Need semantic search across video segments that preserves YouTube provenance (video_id, timestamp, frame path) for UI rendering.
+
+### Results
+
+**Performance:**
+- ✅ **859/859 segments embedded** successfully (100% success rate)
+- ✅ **3072-dimensional vectors** (gemini-embedding-001)
+- ✅ **35.50 MB output file** with full metadata
+- ✅ **Batched processing** (10 segments per batch, 86 batches total)
+- ✅ **Rich embedding text** from audio + visuals + code + slides + concepts
+
+**Embedding coverage by concept:**
+```
+Self-Attention Mechanism: 132 segments (15.4%)
+PyTorch Tensors: 70 segments (8.1%)
+Text Generation (Sampling): 64 segments (7.4%)
+Weighted Aggregation: 60 segments (7.0%)
+Data Batching: 44 segments (5.1%)
+Layer Normalization: 38 segments (4.4%)
+Language Modeling: 36 segments (4.2%)
+Tokenization: 34 segments (4.0%)
+Multi-Head Attention: 32 segments (3.7%)
+Transformer Architecture: 29 segments (3.4%)
+```
+
+### Implementation Details
+
+**Multimodal embedding text creation:**
+```typescript
+function createEmbeddingText(segment: VideoSegment, conceptName?: string): string {
+  const parts: string[] = [];
+  
+  // Audio transcript
+  if (segment.audio_text) {
+    parts.push(`Transcript: ${segment.audio_text}`);
+  }
+  
+  // Visual description from frame analysis
+  if (segment.analysis?.visual_description) {
+    parts.push(`Visual: ${segment.analysis.visual_description}`);
+  }
+  
+  // Code content (high value for technical videos)
+  if (segment.analysis?.code_content) {
+    parts.push(`Code: ${segment.analysis.code_content}`);
+  }
+  
+  // Slide content
+  if (segment.analysis?.slide_content) {
+    parts.push(`Slides: ${segment.analysis.slide_content}`);
+  }
+  
+  // Key concepts from frame analysis
+  if (segment.analysis?.key_concepts) {
+    parts.push(`Key Concepts: ${segment.analysis.key_concepts.join(', ')}`);
+  }
+  
+  // Mapped concept name for richer semantics
+  if (conceptName) {
+    parts.push(`Teaching: ${conceptName}`);
+  }
+  
+  return parts.join('\n\n');
+}
+```
+
+**YouTube provenance preserved:**
+```json
+{
+  "segment_index": 432,
+  "video_id": "kCc8FmEb1nY",
+  "timestamp": 3366.68,
+  "audio_text": "And then we're going to divide by the sum...",
+  "frame_path": "youtube/kCc8FmEb1nY/frames/frame_432.jpg",
+  "embedding": [-0.0191, 0.0103, 0.0296, ...],
+  "embedding_model": "gemini-embedding-001",
+  "concept_mapping": {
+    "concept_id": "self_attention_mechanism",
+    "confidence": 0.85
+  }
+}
+```
+
+### Use Cases Now Enabled
+
+**1. Semantic search with video provenance:**
+```typescript
+// Find relevant video moments for a concept
+const results = await semanticSearch(
+  "How does scaled dot-product attention work?",
+  topK: 5
+);
+
+// Results include YouTube links:
+// https://youtu.be/kCc8FmEb1nY?t=3366
+```
+
+**2. Concept-based video navigation:**
+- Click "Self-Attention" in concept graph
+- See 132 embedded video moments teaching that concept
+- Each with thumbnail, transcript, and jump-to-timestamp link
+
+**3. RAG-grounded Socratic dialogue:**
+```typescript
+// Retrieve top 5 relevant video segments
+const context = await retrieveVideoContext(userQuestion);
+
+// Gemini sees:
+// [56:06] Visual: Code editor showing attention mechanism
+//         Transcript: "And then we're going to divide by the sum..."
+//         Link: https://youtu.be/kCc8FmEb1nY?t=3366
+```
+
+**4. Code examples from video:**
+- Extract actual code Karpathy wrote on screen
+- Link to exact timestamp where it's explained
+- Pre-populate scratchpad with that code
+
+### Quality Observations
+
+**Strengths:**
+- ✅ Rich multimodal embeddings (audio + visual + code + slides)
+- ✅ Full YouTube provenance (video_id + timestamp + frame_path)
+- ✅ Concept-enriched embeddings (includes mapped concept names)
+- ✅ High-value content preserved (code, key concepts, visual descriptions)
+- ✅ Perfect for UI rendering (has all primitives: video_id, timestamp, frame_path)
+
+**Data structure optimized for:**
+- Semantic search (rich embedding text)
+- UI rendering (video_id + timestamp for embedded players)
+- Thumbnail generation (frame_path for preview images)
+- Deep linking (YouTube URLs with timestamp parameters)
+
+### Complete Pipeline Status
+
+```
+✅ Stage 1: Media Download (download-media.sh)
+   └─ Audio + video files with YouTube metadata
+
+✅ Stage 2: Audio Transcription (transcribe-audio.ts)
+   └─ 150 audio segments with timestamps + confidence scores
+
+✅ Stage 3: Multimodal Frame Analysis (analyze-frames.ts)
+   └─ 859 segments with visual + code + audio analysis
+
+✅ Stage 4: Segment-to-Concept Mapping (map-segments-to-concepts.ts)
+   └─ 859 segments mapped to 29 concepts (batched processing)
+
+✅ Stage 5: Embedding Generation (embed-video-segments.ts)
+   └─ 859 embeddings (3072-dim) with full YouTube provenance
+
+⏭️ Stage 6: RAG Integration
+   └─ Semantic search + UI rendering with embedded YouTube players
+
+⏭️ Stage 7: Socratic Dialogue Integration
+   └─ Video-grounded teaching with timestamp citations
+```
+
+### Files Generated
+
+**Complete data pipeline:**
+```
+learning/youtube/kCc8FmEb1nY/
+├── audio.mp3                          # Downloaded audio
+├── video.mp4                          # Downloaded video (no audio)
+├── audio-transcript.json              # 150 audio segments
+├── frames/                            # 859 extracted frames
+│   ├── frame_0.jpg
+│   ├── frame_1.jpg
+│   └── ...
+├── video-analysis.json                # Multimodal analysis (859 segments)
+├── segment-concept-mappings.json      # Concept mappings (859 segments)
+└── segment-embeddings.json            # 3072-dim embeddings (859 segments) ← NEW
+```
+
+### Key Insights
+
+1. **Multimodal embeddings are powerful:** Combining audio + visual + code + concepts creates rich semantic representations
+
+2. **YouTube provenance is essential:** Storing video_id + timestamp + frame_path enables flexible UI rendering (embedded players, thumbnails, deep links)
+
+3. **Concept enrichment improves search:** Including mapped concept names in embedding text helps semantic search find relevant teaching moments
+
+4. **Batching scales well:** Processing 10 segments per batch handled 859 segments smoothly with minimal API latency
+
+5. **Storage is reasonable:** 35.50 MB for 859 × 3072-dim embeddings with full metadata is acceptable for modern systems
+
+### Next: RAG Integration
+
+**Ready to build:**
+- Cosine similarity search across segment embeddings
+- Top-K retrieval with YouTube deep links
+- Thumbnail previews from frame_path
+- Embedded YouTube player with timestamp jumping
+- Source citations in Socratic dialogue with video provenance
+
+**Status:** All data artifacts ready for Little PAIPer integration! 🚀
+
+---
 
 ---
 

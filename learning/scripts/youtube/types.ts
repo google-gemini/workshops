@@ -39,6 +39,12 @@ export const conceptNodeSchema = z.object({
   common_misconceptions: z.array(z.string()).optional(),
 });
 
+export const edgeSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  type: z.string(),
+});
+
 export const conceptGraphSchema = z.object({
   metadata: z.object({
     title: z.string(),
@@ -52,6 +58,7 @@ export const conceptGraphSchema = z.object({
     enrichment_version: z.string().optional(),
   }),
   nodes: z.array(conceptNodeSchema),
+  edges: z.array(edgeSchema).optional(), // Deprecated - generated from prerequisites
 });
 
 // ============================================================================
@@ -115,6 +122,7 @@ export const segmentMappingsSchema = z.object({
 
 export type TranscriptSegment = z.infer<typeof transcriptSegmentSchema>;
 export type AudioTranscript = z.infer<typeof audioTranscriptSchema>;
+export type Edge = z.infer<typeof edgeSchema>;
 export type ConceptNode = z.infer<typeof conceptNodeSchema>;
 export type ConceptGraph = z.infer<typeof conceptGraphSchema>;
 export type VideoSegment = z.infer<typeof videoSegmentSchema>;
