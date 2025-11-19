@@ -118,6 +118,11 @@ async function loadConceptContext(
       .sort((a: any, b: any) => b.similarity - a.similarity)
       .slice(0, topK);
     
+    // Re-sort chronologically for natural learning flow (video segments)
+    if (rankedChunks.length > 0 && rankedChunks[0].chunk.timestamp !== undefined) {
+      rankedChunks.sort((a: any, b: any) => a.chunk.timestamp - b.chunk.timestamp);
+    }
+    
     if (rankedChunks.length === 0) {
       return {text: '(No textbook sections found for this concept)', chunks: []};
     }

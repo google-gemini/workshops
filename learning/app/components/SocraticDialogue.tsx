@@ -543,9 +543,6 @@ export default function SocraticDialogue({
                         <div key={sourceIdx} className="bg-slate-50 rounded p-2 space-y-1">
                           <div className="font-medium text-slate-700">
                             {source.topic}
-                            <span className="ml-2 text-slate-400">
-                              ({(source.similarity * 100).toFixed(0)}% match)
-                            </span>
                           </div>
                           
                           {source.heading_path && source.heading_path.length > 0 && (

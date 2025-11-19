@@ -76,7 +76,7 @@ export default function ConceptGraph({
   const cyRef = useRef<Core | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [layout, setLayout] = useState('dagre');
+  const [layout, setLayout] = useState('breadthfirst');
 
   // Load saved layout preference from localStorage
   useEffect(() => {
