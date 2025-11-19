@@ -58,9 +58,26 @@ export default function LispScratchpad({
       }
     }
 
-    // Add a small delay to ensure script is loaded
-    const timer = setTimeout(loadJSCL, 500);
-    return () => clearTimeout(timer);
+    // Poll for JSCL to be loaded, with a timeout.
+    const pollId = setInterval(() => {
+      if (typeof window.jscl !== 'undefined') {
+        clearInterval(pollId);
+        loadJSCL();
+      }
+    }, 100);
+
+    const timeoutId = setTimeout(() => {
+      clearInterval(pollId);
+      if (!jsclRef.current) {
+        setError('Failed to initialize Common Lisp (JSCL) environment (timeout).');
+        setIsLoading(false);
+      }
+    }, 60000); // 60-second timeout
+
+    return () => {
+      clearInterval(pollId);
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const runCode = async () => {
