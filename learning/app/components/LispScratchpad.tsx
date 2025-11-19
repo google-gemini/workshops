@@ -76,21 +76,18 @@ export default function LispScratchpad({
     try {
       const jscl = jsclRef.current;
       
-      // Capture output by evaluating code and getting the result
-      // JSCL's evaluateString returns the result of the last expression
-      const result = jscl.evaluateString(code);
+      // Wrap the user code to capture both the result and format it properly
+      // We use prin1-to-string which gives us proper Lisp representation
+      const wrappedCode = `
+        (let ((result (progn ${code})))
+          (prin1-to-string result))
+      `;
       
-      // Convert result to string for display
-      let outputStr = '';
-      if (result !== undefined && result !== null) {
-        // JSCL results are JavaScript values
-        outputStr = String(result);
-      } else {
-        outputStr = 'NIL';
-      }
+      const outputStr = jscl.evaluateString(wrappedCode);
       
-      setOutput(outputStr || '(no output)');
-      onExecute?.(code, outputStr, null);
+      // The result is already a properly formatted Lisp string
+      setOutput(String(outputStr) || '(no output)');
+      onExecute?.(code, String(outputStr), null);
       
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Execution error';
