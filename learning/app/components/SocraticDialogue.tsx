@@ -132,7 +132,7 @@ export default function SocraticDialogue({
         const firstVideoSource = lastMessage.sources.find(s => s.video_id);
         if (firstVideoSource && firstVideoSource.video_id) {
           setSourceVideoId(firstVideoSource.video_id);
-          setSourceTimestamp(firstVideoSource.timestamp);
+          setSourceTimestamp(firstVideoSource.audio_start);
           setVideoAutoplay(false); // Don't autoplay on auto-load
           setSourceFile(undefined);
           setSourceAnchor(undefined);
@@ -552,10 +552,10 @@ export default function SocraticDialogue({
                           )}
                           
                           {/* Video source */}
-                          {source.video_id && source.timestamp !== undefined && (
+                          {source.video_id && source.audio_start !== undefined && (
                             <div className="flex items-center gap-2 text-xs">
                               <span className="text-slate-400">
-                                📹 Video @ {Math.floor(source.timestamp / 60)}:{String(Math.floor(source.timestamp % 60)).padStart(2, '0')}
+                                📹 Video @ {Math.floor(source.audio_start / 60)}:{String(Math.floor(source.audio_start % 60)).padStart(2, '0')}
                                 {source.audio_text && ` - "${source.audio_text.substring(0, 50)}..."`}
                               </span>
                               <button
@@ -563,7 +563,7 @@ export default function SocraticDialogue({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   setSourceVideoId(source.video_id);
-                                  setSourceTimestamp(source.timestamp);
+                                  setSourceTimestamp(source.audio_start);
                                   setVideoAutoplay(true); // Autoplay when user explicitly clicks
                                   setSourceAnchor(undefined); // Clear markdown state
                                   setSourceFile(undefined);
