@@ -975,6 +975,7 @@ httpx[http2]==0.27.0 \
     #   cohere
     #   fastapi
     #   groq
+    #   langsmith
     #   openai
     #   qdrant-client
 httpx-sse==0.4.0 \
@@ -1149,9 +1150,9 @@ langchain-community==0.2.10 \
     #   -r requirements.in
     #   embedchain
     #   langchain-experimental
-langchain-core==0.2.23 \
-    --hash=sha256:ac8165f283d8f5214576ffc38387106ef0de7eb8d2c52576d06e8dd3285294b0 \
-    --hash=sha256:ef0b4184b37e356a27182514aedcc8c41ffacbd6348a801bc775c1ce1f608637
+langchain-core==0.2.43 \
+    --hash=sha256:42c2ef6adedb911f4254068b6adc9eb4c4075f6c8cb3d83590d3539a815695f5 \
+    --hash=sha256:619601235113298ebf8252a349754b7c28d3cf7166c7c922da24944b78a9363a
     # via
     #   langchain
     #   langchain-cohere
@@ -1176,9 +1177,9 @@ langchain-text-splitters==0.2.2 \
     --hash=sha256:1c80d4b11b55e2995f02d2a326c0323ee1eeff24507329bb22924e420c782dff \
     --hash=sha256:a1e45de10919fa6fb080ef0525deab56557e9552083600455cb9fa4238076140
     # via langchain
-langsmith==0.1.93 \
-    --hash=sha256:285b6ad3a54f50fa8eb97b5f600acc57d0e37e139dd8cf2111a117d0435ba9b4 \
-    --hash=sha256:811210b9d5f108f36431bd7b997eb9476a9ecf5a2abd7ddbb606c1cdcf0f43ce
+langsmith==0.1.147 \
+    --hash=sha256:2e933220318a4e73034657103b3b1a3a6109cc5db3566a7e8e03be8d6d7def7a \
+    --hash=sha256:7166fc23b965ccf839d64945a78e9f1157757add228b086141eb03a60d699a15
     # via
     #   langchain
     #   langchain-community
@@ -2348,12 +2349,17 @@ requests==2.32.3 \
     #   opentelemetry-exporter-otlp-proto-http
     #   posthog
     #   requests-oauthlib
+    #   requests-toolbelt
     #   tiktoken
     #   together
 requests-oauthlib==2.0.0 \
     --hash=sha256:7dd8a5c40426b779b0868c404bdef9768deccf22749cde15852df527e6269b36 \
     --hash=sha256:b3dffaebd884d8cd778494369603a9e7b58d29111bf6b41bdc2dcd87203af4e9
     # via kubernetes
+requests-toolbelt==1.0.0 \
+    --hash=sha256:7681a0a3d047012b5bdc0ee37d7f8f07ebe76ab08caeccfc3921ce23c88d5bc6 \
+    --hash=sha256:cccfdd665f0a24fcf4726e690f65639d272bb0637b9b92dfd91a5568ccf6bd06
+    # via langsmith
 retry==0.9.2 \
     --hash=sha256:ccddf89761fa2c726ab29391837d4327f819ea14d244c232a1d24c67a2f98606 \
     --hash=sha256:f8bfa8b99b69c4506d6f5bd3b0aabf77f98cdb17f3c9fc3f5ca820033336fba4
@@ -2722,6 +2728,7 @@ typing-extensions==4.12.2 \
     #   google-generativeai
     #   groq
     #   huggingface-hub
+    #   langchain-core
     #   openai
     #   opentelemetry-sdk
     #   pydantic
