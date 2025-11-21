@@ -2202,9 +2202,9 @@ python-dotenv==1.0.1 \
     #   crewai
     #   embedchain
     #   uvicorn
-python-multipart==0.0.9 \
-    --hash=sha256:03f54688c663f1b7977105f021043b0793151e4cb1c1a9d4a11fc13d622c4026 \
-    --hash=sha256:97ca7b8ea7b05f977dc3849c3ba99d51689822fab725c3703af7c866a0c2b215
+python-multipart==0.0.18 \
+    --hash=sha256:7a68db60c8bfb82e460637fa4750727b45af1d5e2ed215593f917f64694d34fe \
+    --hash=sha256:efe91480f485f6a361427a541db4796f9e1591afc0fb8e7a4ba06bfbc6708996
     # via fastapi
 pytube==15.0.0 \
     --hash=sha256:076052efe76f390dfa24b1194ff821d4e86c17d41cb5562f3a276a8bcbfc9d1d \
