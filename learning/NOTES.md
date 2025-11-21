@@ -4063,6 +4063,118 @@ class VoiceEnabledDialogue {
 
 ---
 
+### 🎤 TODO: Audio Transcription & Transcript Persistence
+
+**New capability:** Gemini Live API now supports `output_audio_transcriptions` and `input_audio_transcriptions`!
+- **Docs:** https://ai.google.dev/gemini-api/docs/live-guide#audio-transcription
+
+**Peter's Proposal:** Allow oral interaction but provide a transcript
+
+**Implementation ideas:**
+
+**1. Real-time transcript display**
+```typescript
+geminiLiveSession.configure({
+  input_audio_transcriptions: true,
+  output_audio_transcriptions: true
+});
+
+// Show live transcript alongside voice conversation
+onInputTranscript((text) => appendToTranscript('Student', text));
+onOutputTranscript((text) => appendToTranscript('Tutor', text));
+```
+
+**2. Transcript persistence in GitHub**
+- Save full dialogue transcript to student's repo
+- Format: `transcripts/lesson-{concept}-{timestamp}.md`
+- Auto-commit after each learning session
+- Students can review what they discussed
+
+**3. Resume from saved transcript**
+```typescript
+// Load previous session
+const lastTranscript = await loadTranscript(conceptId);
+
+// Prime Gemini with context
+const prompt = `Previous conversation with this student:
+${lastTranscript}
+
+Student is resuming their learning. Continue from where you left off.`;
+```
+
+**4. Commit frequency options:**
+
+**Option A: After every interaction** (Fine-grained)
+- ✅ Never lose progress
+- ✅ Full git history of learning journey
+- ❌ Noisy commit log
+- ❌ API rate limits?
+
+**Option B: Regular intervals** (Batched)
+- Commit every 5 minutes or 10 interactions
+- ✅ Cleaner git history
+- ✅ Better performance
+- ⚠️ Small risk of data loss
+
+**Option C: Session-based** (Coarse) ⭐ Recommended
+- Commit when mastery achieved or session ends
+- ✅ Meaningful commit messages ("Mastered recursion")
+- ✅ Natural checkpoints
+- ✅ Matches user's mental model
+
+**Implementation sketch:**
+```typescript
+class TranscriptManager {
+  transcript: Message[] = [];
+  
+  addMessage(role, content) {
+    this.transcript.push({ role, content, timestamp: Date.now() });
+    
+    // Autosave to localStorage (fast backup)
+    localStorage.setItem(`transcript-${conceptId}`, JSON.stringify(this.transcript));
+  }
+  
+  async saveToGitHub() {
+    const markdown = this.formatAsMarkdown();
+    
+    await github.commit({
+      repo: `${username}/little-paiper-${workId}`,
+      path: `transcripts/lesson-${conceptId}-${Date.now()}.md`,
+      message: `Learning session: ${conceptName}`,
+      content: markdown
+    });
+  }
+  
+  formatAsMarkdown() {
+    return this.transcript.map(msg => 
+      `**${msg.role}** (${formatTime(msg.timestamp)}):\n${msg.content}\n`
+    ).join('\n---\n\n');
+  }
+}
+```
+
+**Benefits:**
+- ✅ Students can review their learning conversations
+- ✅ Instructors can see where students struggled
+- ✅ Portfolio artifact ("Look at my Socratic dialogues!")
+- ✅ Resume learning across devices
+- ✅ Spaced repetition: review old transcripts
+
+**Open questions:**
+- Privacy: Should transcripts be in private repos by default?
+- Search: Index transcripts for "find where I learned about X"?
+- Analytics: Extract learning insights from transcript patterns?
+
+**Priority:** High (enables Peter's vision of oral + written learning)
+
+**Estimated effort:** 1-2 weeks
+- Audio transcription: 2-3 days
+- GitHub persistence: 2-3 days
+- Resume from transcript: 2-3 days
+- Polish & testing: 2-3 days
+
+---
+
 ### 🎛️ Model Selector: Optimize Experience Per Use Case
 
 **Problem:** Different Gemini models have vastly different characteristics:
