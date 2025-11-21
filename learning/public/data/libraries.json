@@ -27,6 +27,20 @@
         "totalConcepts": 25,
         "estimatedHours": 5
       }
+    },
+    {
+      "id": "karpathy-transformers",
+      "title": "Let's Build GPT from Scratch",
+      "author": "Andrej Karpathy",
+      "type": "video",
+      "conceptGraphPath": "data/karpathy-transformers/concept-graph.json",
+      "embeddingsPath": "data/karpathy-transformers/karpathy-embeddings.json",
+      "description": "Build a GPT transformer from scratch with attention mechanism and training loop",
+      "color": "purple",
+      "stats": {
+        "totalConcepts": 29,
+        "estimatedHours": 2.5
+      }
     }
   ]
 }

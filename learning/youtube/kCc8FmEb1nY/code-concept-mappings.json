@@ -1,0 +1,2659 @@
+{
+  "unique_snippets": [
+    {
+      "primary_segment": 23,
+      "timestamp": 288.32,
+      "code": "python sample_streaming.py --out_dir=out-shakespeare-char",
+      "concepts": [
+        "text_generation_sampling",
+        "character_level_language_modeling"
+      ],
+      "rationale": "This command line snippet is used to execute a Python script that generates text, specifically mentioning 'shakespeare-char', indicating character-level text generation from the trained model.",
+      "teaching_context": "This demonstrates how to run the text generation utility after the model has been trained, illustrating the practical application of a language model to produce new content.",
+      "duplicate_segments": []
+    },
+    {
+      "primary_segment": 40,
+      "timestamp": 474.485,
+      "code": "# We always start with a dataset to train on. Let's download the tiny shakespeare dataset!wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt-2023-01-14 19:10:31--  https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txtResolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.108.133, 185.199.109.133, 185.199.110.133, ...Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.108.133|:443... connected.HTTP request sent, awaiting response... 200 OKLength: 1115394 (1.1M) [text/plain]Saving to: 'input.txt'input.txt             100%[===================>]   1.06M  --.-KB/s    in 0.06s2023-01-14 19:10:33 (16.4 MB/s) - 'input.txt' saved [1115394/1115394]# read it in to inspect itwith open('input.txt', 'r', encoding='utf-8') as f:    text = f.read()print(\"length of dataset in characters: \", len(text))length of dataset in characters:  1115394# let's look at the first 1000 charactersprint(text[:1000])First Citizen:\nBefore we proceed any further, hear me speak.\n\nAll:\nSpeak, speak.",
+      "concepts": [
+        "character_level_language_modeling"
+      ],
+      "rationale": "This snippet demonstrates how to download a text dataset (Tiny Shakespeare) and load it into memory. This raw text data will be used for character-level language modeling.",
+      "teaching_context": "This is the initial setup for any language modeling task, showing how to acquire and perform a basic inspection of the raw text data before processing it further.",
+      "duplicate_segments": [
+        41,
+        42,
+        43,
+        44
+      ]
+    },
+    {
+      "primary_segment": 56,
+      "timestamp": 595.135,
+      "code": "# here are all the unique characters that occur in this text\nchars = sorted(list(set(text)))\nvocab_size = len(chars)\nprint(''.join(chars))\nprint(vocab_size)\n\n# create a mapping from characters to integers\nstoi = { ch:i for i,ch in enumerate(chars) }\nitos = { i:ch for i,ch in enumerate(chars) }\nencode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers\ndecode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string\n\nprint(encode(\"hii there\"))\nprint(decode(encode(\"hii there\")))",
+      "concepts": [
+        "tokenization",
+        "character_level_language_modeling"
+      ],
+      "rationale": "This code creates a vocabulary of unique characters from the text, then defines `encode` and `decode` functions to convert strings to lists of integers and back, which is a fundamental step in character-level tokenization.",
+      "teaching_context": "This is a core demonstration of character-level tokenization, explaining how raw text is converted into numerical representations that a neural network can process, and vice-versa for human readability.",
+      "duplicate_segments": [
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        72
+      ]
+    },
+    {
+      "primary_segment": 67,
+      "timestamp": 700.325,
+      "code": "print('woot')\n\nimport tiktoken\nenc = tiktoken.get_encoding('gpt2')\nenc.n_vocab\nenc.encode(\"hii there\")\nenc.decode([71, 4178, 612])",
+      "concepts": [
+        "tokenization",
+        "gpt_pretraining"
+      ],
+      "rationale": "This snippet introduces the `tiktoken` library, which implements the tokenization scheme used by GPT-2, demonstrating how real-world large language models tokenize text into sub-word units rather than just characters.",
+      "teaching_context": "This provides a contrast to character-level tokenization, showing a more advanced and efficient tokenization method used by models like GPT, highlighting the concept of a larger vocabulary and shorter encoded sequences.",
+      "duplicate_segments": [
+        65,
+        66,
+        68,
+        69,
+        70,
+        71
+      ]
+    },
+    {
+      "primary_segment": 74,
+      "timestamp": 778.05,
+      "code": "# create a mapping from characters to integers\nstoi = { ch:i for i,ch in enumerate(chars) }\nitos = { i:ch for i,ch in enumerate(chars) }\nencode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers\ndecode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string\n\nprint(encode(\"hii there\"))\nprint(decode(encode(\"hii there\")))\n\n[46, 47, 47, 1, 58, 46, 43, 56, 43]\nhii there\n\n# let's now encode the entire text dataset and store it into a torch.Tensor\nimport torch # we use PyTorch: https://pytorch.org\ndata = torch.tensor(encode(text), dtype=torch.long)\nprint(data.shape, data.dtype)\nprint(data[:1000]) # the 1000 characters we looked at earlier will to the GPT look like this",
+      "concepts": [
+        "pytorch_tensors",
+        "tokenization"
+      ],
+      "rationale": "This code converts the entire character-level encoded dataset into a PyTorch tensor, which is the fundamental data structure used in PyTorch for deep learning computations.",
+      "teaching_context": "This bridges the gap between raw tokenized data and the format required for neural network processing, demonstrating the use of `torch.tensor` to handle large numerical datasets efficiently.",
+      "duplicate_segments": [
+        73,
+        75,
+        77
+      ]
+    },
+    {
+      "primary_segment": 78,
+      "timestamp": 838.8,
+      "code": "# Let's now split up the data into train and validation sets\nn = int(0.9*len(data)) # first 90% will be train, rest val\ntrain_data = data[:n]\nval_data = data[n:]",
+      "concepts": [
+        "train_validation_split"
+      ],
+      "rationale": "This snippet divides the entire dataset into a training set (first 90%) and a validation set (remaining 10%), a standard practice in machine learning.",
+      "teaching_context": "This illustrates the importance of separating data for model training and unbiased evaluation to prevent overfitting and ensure the model generalizes well to unseen data.",
+      "duplicate_segments": []
+    },
+    {
+      "primary_segment": 86,
+      "timestamp": 925.865,
+      "code": "# Let's now split up the data into train and validation sets\nn = int(0.9*len(data)) # first 90% will be train, rest val\ntrain_data = data[:n]\nval_data = data[n:]\n\nblock_size = 8\ntrain_data[:block_size+1]\n\ntensor([18, 47, 56, 57, 58, 1, 15, 47, 58])",
+      "concepts": [
+        "context_window"
+      ],
+      "rationale": "This code introduces `block_size` (also known as context window), defining the fixed maximum sequence length that the language model will consider for predictions, and shows how to slice data accordingly.",
+      "teaching_context": "This explains the concept of a limited context in language models, where predictions are made based on a fixed number of preceding tokens, which is crucial for computational efficiency and model architecture.",
+      "duplicate_segments": [
+        85,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94
+      ]
+    },
+    {
+      "primary_segment": 103,
+      "timestamp": 1023.4350000000001,
+      "code": "n = int(0.9*len(data)) # first 90% will be train, rest val\ntrain_data = data[:n]\nval_data = data[n:]\n\nblock_size = 8\ntrain_data[:block_size+1]\n\ntensor([18, 47, 56, 57, 58, 1, 15, 47, 58])\n\nx = train_data[:block_size]\ny = train_data[1:block_size+1]\nfor t in range(block_size):\n    context = x[:t+1]\n    target = y[t]\n    print(f\"when input is {context} the target: {target}\")\n\nwhen input is tensor([18]) the target: 47\nwhen input is tensor([18, 47]) the target: 56\nwhen input is tensor([18, 47, 56]) the target: 57\nwhen input is tensor([18, 47, 56, 57]) the target: 58\nwhen input is tensor([18, 47, 56, 57, 58]) the target: 1\nwhen input is tensor([18, 47, 56, 57, 58, 1]) the target: 15\nwhen input is tensor([18, 47, 56, 57, 58, 1, 15]) the target: 47\nwhen input is tensor([18, 47, 56, 57, 58, 1, 15, 47]) the target: 58",
+      "concepts": [
+        "language_modeling",
+        "context_window"
+      ],
+      "rationale": "This snippet explicitly shows how a single chunk of input data (X) is used to generate multiple (context, target) pairs. For each position `t`, the context is `X[:t+1]` and the target is `Y[t]`, demonstrating the core language modeling task of predicting the next token given the preceding sequence within the defined `block_size`.",
+      "teaching_context": "This is a fundamental illustration of how training data is prepared for autoregressive language models. It visualizes how different prediction tasks are derived from a continuous sequence, making the concept of 'predicting the next character' concrete.",
+      "duplicate_segments": [
+        95,
+        96,
+        97,
+        98,
+        99,
+        100,
+        101,
+        102,
+        104,
+        105,
+        106,
+        107,
+        108,
+        109
+      ]
+    },
+    {
+      "primary_segment": 110,
+      "timestamp": 1128.28,
+      "code": "torch.manual_seed(1337)\nbatch_size = 4 # how many independent sequences will we process in parallel?\nblock_size = 8 # what is the maximum context length for predictions?\n\ndef get_batch(split):\n    # generate a small batch of data of inputs x and targets y\n    data = train_data if split == 'train' else val_data\n    ix = torch.randint(len(data) - block_size, (batch_size,))\n    x = torch.stack([data[i:i+block_size] for i in ix])\n    y = torch.stack([data[i+1:i+block_size+1] for i in ix])\n    return x, y\n\nxb, yb = get_batch('train')\nprint('inputs:')\nprint(xb.shape)\nprint(xb)\nprint('targets:')\nprint(yb.shape)\nprint(yb)\nprint('----')\nfor b in range(batch_size): # batch dimension\n    for t in range(block_size): # time dimension\n        context = xb[b, :t+1]\n        target = yb[b,t]\n        print(f\"when input is {context.tolist()} the target: {target}\")",
+      "concepts": [
+        "data_batching",
+        "pytorch_tensors",
+        "context_window"
+      ],
+      "rationale": "This `get_batch` function generates batches of data by randomly sampling `batch_size` independent sequences (chunks) from the dataset, each of `block_size` length. It then stacks these 1D sequences into 2D PyTorch tensors (`xb`, `yb`) to enable parallel processing.",
+      "teaching_context": "This demonstrates how data is batched for efficient neural network training, utilizing `torch.stack` to create multi-dimensional tensors. It highlights how multiple independent sequences can be processed in parallel, a key technique for GPU acceleration.",
+      "duplicate_segments": [
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        118,
+        119,
+        120,
+        121,
+        122,
+        123,
+        124,
+        125,
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        136,
+        137,
+        138,
+        139
+      ]
+    },
+    {
+      "primary_segment": 140,
+      "timestamp": 1307.19,
+      "code": "for b in range(batch_size): # batch dimensionfor t in range(block_size): # time dimensioncontext = xb[b, :t+1]target = yb[b,t]print(f\"when input is {context.tolist()} the target: {target}\")inputs:torch.Size([4, 8])tensor([[24, 43, 58, 5, 57, 1, 46, 43],[44, 53, 56, 1, 58, 46, 39, 58],[52, 58, 1, 58, 46, 39, 58, 1],[25, 17, 27, 10, 0, 21, 1, 54]])targets:torch.Size([4, 8])tensor([[43, 58, 5, 57, 1, 46, 43, 39],[53, 56, 1, 58, 46, 39, 58, 1],[58, 1, 58, 46, 39, 58, 1, 46],[17, 27, 10, 0, 21, 1, 54, 39]])-------when input is [24] the target: 43when input is [24, 43] the target: 58when input is [24, 43, 58] the target: 5when input is [24, 43, 58, 5] the target: 57when input is [24, 43, 58, 5, 57] the target: 1when input is [24, 43, 58, 5, 57, 1] the target: 46when input is [24, 43, 58, 5, 57, 1, 46] the target: 43when input is [24, 43, 58, 5, 57, 1, 46, 43] the target: 39when input is [44] the target: 53when input is [44, 53] the target: 56when input is [44, 53, 56] the target: 1when input is [44, 53, 56, 1] the target: 58when input is [44, 53, 56, 1, 58] the target: 46",
+      "concepts": [
+        "character_level_language_modeling",
+        "data_batching",
+        "context_window",
+        "pytorch_tensors"
+      ],
+      "rationale": "The nested loops iterate through a batch (`batch_size`) and time dimension (`block_size`), extracting `context` (input sequence up to `t+1`) and `target` (the character at `t`). This explicitly shows how multiple independent sequences are batched and how context windows are formed for character-level prediction. The printed outputs confirm this process by showing numerical input contexts and their corresponding single-character targets. The `inputs` and `targets` tensors demonstrate PyTorch's multidimensional arrays.",
+      "teaching_context": "This code segment teaches how raw text data is transformed into numerical input-target pairs for a character-level language model. It demonstrates the fundamental concepts of data batching and defining a context window (block size) for sequence processing, showing how input sequences are created with their corresponding next-character targets.",
+      "duplicate_segments": [
+        141,
+        142,
+        143,
+        144,
+        159,
+        226
+      ]
+    },
+    {
+      "primary_segment": 145,
+      "timestamp": 1359.2,
+      "code": "tensor([[24, 43, 58, 5, 57, 1, 46, 43],\n [44, 53, 56, 1, 58, 46, 39, 58],\n [52, 58, 1, 58, 46, 39, 58, 1],\n [25, 17, 27, 10, 0, 21, 1, 54]])\n\nimport torch\nimport torch.nn as nn\nfrom torch.nn import functional as F\ntorch.manual_seed(1337)\n\nclass BigramLanguageModel(nn.Module):\n\n    def __init__(self, vocab_size):\n        super().__init__()\n        # each token directly reads off the logits for the next token from a lookup table\n        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)\n\n    def forward(self, idx, targets):\n\n        # idx and targets are both (B,T) tensor of integers\n        logits = self.token_embedding_table(idx) # (B,T,C)\n\n        return logits\n\nm = BigramLanguageModel(vocab_size)\nout = m(xb, yb)\nprint(out.shape)",
+      "concepts": [
+        "bigram_language_model",
+        "pytorch_tensors",
+        "token_embeddings"
+      ],
+      "rationale": "This code defines a `BigramLanguageModel` class inheriting from `nn.Module`. Its core is `self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)`, which acts as a direct lookup table where each input token (index `idx`) directly retrieves its corresponding embedding vector (which serves as logits for the next token), characteristic of a bigram model. The output `print(out.shape)` demonstrates the tensor dimensions (Batch, Time, Channels/Vocab Size).",
+      "teaching_context": "This code introduces the fundamental implementation of a basic Bigram Language Model in PyTorch. It demonstrates how to define a neural network module, specifically using `nn.Embedding` to create a lookup table for token embeddings that directly map to prediction logits, showcasing how numerical tokens are processed by the model to produce output scores.",
+      "duplicate_segments": [
+        146,
+        147,
+        148,
+        149,
+        151,
+        152,
+        153,
+        154,
+        155,
+        156,
+        157,
+        158,
+        160
+      ]
+    },
+    {
+      "primary_segment": 161,
+      "timestamp": 1512.855,
+      "code": "import torch\nimport torch.nn as nn\nfrom torch.nn import functional as F\ntorch.manual_seed(1337)\n\nclass BigramLanguageModel(nn.Module):\n\n    def __init__(self, vocab_size):\n        super().__init__()\n        # each token directly reads off the logits for the next token from a lookup table\n        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)\n\n    def forward(self, idx, targets):\n        # idx and targets are both (B,T) tensor of integers\n        logits = self.token_embedding_table(idx) # (B,T,C)\n\n        loss = F.cross_entropy(logits, targets)\n\n        return logits\n\nm = BigramLanguageModel(vocab_size)\nout = m(xb, yb)\nprint(out.shape)\n\ntorch.Size([4, 8, 65])",
+      "concepts": [
+        "cross_entropy_loss",
+        "bigram_language_model"
+      ],
+      "rationale": "This snippet updates the `forward` method of the `BigramLanguageModel` to include the computation of `loss` using `F.cross_entropy`. This demonstrates the crucial step of evaluating the model's performance by quantifying the difference between its predicted `logits` and the true `targets`.",
+      "teaching_context": "This code teaches how to integrate a loss function into a neural network's forward pass. Specifically, it shows how to use PyTorch's `F.cross_entropy` to calculate the loss for a language model, illustrating how the model's predictions are compared against ground truth to measure accuracy.",
+      "duplicate_segments": [
+        162,
+        163,
+        165,
+        166
+      ]
+    },
+    {
+      "primary_segment": 167,
+      "timestamp": 1557.51,
+      "code": "import torch\nimport torch.nn as nn\nfrom torch.nn import functional as F\ntorch.manual_seed(1337)\n\nclass BigramLanguageModel(nn.Module):\n    def __init__(self, vocab_size):\n        super().__init__()\n        # each token directly reads off the logits for the next token from a lookup table\n        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)\n\n    def forward(self, idx, targets):\n        # idx and targets are both (B,T) tensor of integers\n        logits = self.token_embedding_table(idx) # (B,T,C)\n        loss = F.cross_entropy(logits, targets)\n        return logits, loss\n\nm = BigramLanguageModel(vocab_size)\nlogits, loss = m(xb, yb)\nprint(logits.shape)\n\n---------------------------------------------------------------------------\nRuntimeError                              Traceback (most recent call last)\n<ipython-input-36-b4d2268c40bd> in <module>\n     21 \n     22 m = BigramLanguageModel(vocab_size)\n---> 23 logits, loss = m(xb, yb)\n     24 print(logits.shape)",
+      "concepts": [
+        "pytorch_tensors",
+        "cross_entropy_loss"
+      ],
+      "rationale": "This segment captures a `RuntimeError` that occurs when `F.cross_entropy` is called with `logits` and `targets` tensors that do not conform to its expected dimensions. It explicitly highlights a common pitfall in PyTorch when handling multi-dimensional outputs (B, T, C) for sequence-to-sequence loss calculations, showing the importance of proper tensor reshaping.",
+      "teaching_context": "This code teaches a common `RuntimeError` encountered in PyTorch when applying `F.cross_entropy` to batched sequence data. It demonstrates the problem that arises from incorrect tensor dimensions, setting the stage for subsequent lessons on how to correctly reshape tensors for loss computation.",
+      "duplicate_segments": [
+        174
+      ]
+    },
+    {
+      "primary_segment": 177,
+      "timestamp": 1629.6399999999999,
+      "code": "import torch\nimport torch.nn as nn\nfrom torch.nn import functional as F\ntorch.manual_seed(1337)\n\nclass BigramLanguageModel(nn.Module):\n    def __init__(self, vocab_size):\n        super().__init__()\n        # each token directly reads off the logits for the next token from a lookup table\n        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)\n\n    def forward(self, idx, targets):\n        # idx and targets are both (B,T) tensor of integers\n        logits = self.token_embedding_table(idx) # (B,T,C)\n\n        B, T, C = logits.shape\n        logits = logits.view(B*T, C)\n        loss = F.cross_entropy(logits, targets)\n\n        return logits, loss\n\nm = BigramLanguageModel(vocab_size)\nlogits, loss = m(xb, yb)\nprint(logits.shape)\n\nRuntimeError                                Traceback (most recent call last)\n<ipython-input-36-b4d2268c40bd> in <module>\n     21 \n     22 m = BigramLanguageModel(vocab_size)\n---> 23 logits, loss = m(xb, yb)\n     24 print(logits.shape)",
+      "concepts": [
+        "pytorch_tensors",
+        "cross_entropy_loss"
+      ],
+      "rationale": "This code demonstrates a partial fix for the `RuntimeError` by reshaping `logits` from `(B, T, C)` to `(B*T, C)` using `.view()`. However, `targets` are still not reshaped, leading to a continued `RuntimeError` but with a different message, highlighting the iterative debugging process for tensor shape mismatches.",
+      "teaching_context": "This teaches an intermediate step in resolving tensor dimension errors for cross-entropy loss in PyTorch. It shows how to correctly reshape a 3D logits tensor, preparing it for the loss function, and implicitly illustrates that all inputs to the loss function must conform to expected shapes.",
+      "duplicate_segments": [
+        178,
+        179,
+        180,
+        181,
+        182
+      ]
+    },
+    {
+      "primary_segment": 188,
+      "timestamp": 1691.74,
+      "code": "from torch.nn import functional as F\ntorch.manual_seed(1337)\n\nclass BigramLanguageModel(nn.Module):\n\n    def __init__(self, vocab_size):\n        super().__init__()\n        # each token directly reads off the logits for the next token from a lookup table\n        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)\n\n    def forward(self, idx, targets):\n        # idx and targets are both (B,T) tensor of integers\n        logits = self.token_embedding_table(idx) # (B,T,C)\n\n        B, T, C = logits.shape\n        logits = logits.view(B*T, C)\n        targets = targets.view(B*T)\n        loss = F.cross_entropy(logits, targets)\n\n        return logits, loss\n\nm = BigramLanguageModel(vocab_size)\nlogits, loss = m(xb, yb)\nprint(logits.shape)\nprint(loss)\n\ntorch.Size([32, 65])\ntensor(4.8786, grad_fn=<NllLossBackward0>)",
+      "concepts": [
+        "pytorch_tensors",
+        "cross_entropy_loss",
+        "bigram_language_model"
+      ],
+      "rationale": "This code presents the complete and correct implementation of the `forward` method for calculating cross-entropy loss. It successfully reshapes both `logits` (from B, T, C to B*T, C) and `targets` (from B, T to B*T) before passing them to `F.cross_entropy`, resolving the previous `RuntimeError`. The printed shape and loss value confirm correct execution.",
+      "teaching_context": "This teaches the correct and complete approach to preparing and passing `logits` and `targets` tensors to PyTorch's `F.cross_entropy` for sequence-level predictions. It emphasizes the necessary tensor reshaping to flatten batch and time dimensions, ensuring compatibility with the loss function and demonstrating how to calculate and inspect the resulting loss.",
+      "duplicate_segments": [
+        185,
+        187,
+        190,
+        191,
+        192
+      ]
+    },
+    {
+      "primary_segment": 216,
+      "timestamp": 1913.83,
+      "code": "torch.manual_seed(1337)\n\nclass BigramLanguageModel(nn.Module):\n\n    def __init__(self, vocab_size):\n        super().__init__()\n        # each token directly reads off the logits for the next token from a lookup table\n        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)\n\n    def forward(self, idx, targets=None):\n        # idx and targets are both (B,T) tensor of integers\n        logits = self.token_embedding_table(idx) # (B,T,C)\n\n        if targets is None:\n            loss = None\n        else:\n            B, T, C = logits.shape\n            logits = logits.view(B*T, C)\n            targets = targets.view(B*T)\n            loss = F.cross_entropy(logits, targets)\n\n        return logits, loss\n\n    def generate(self, idx, max_new_tokens):\n        # idx is (B, T) array of indices in the current context\n        for _ in range(max_new_tokens):\n            # get the predictions\n            logits, loss = self(idx)\n            # focus only on the last time step\n            logits = logits[:, -1, :] # becomes (B, C)\n            # apply softmax to get probabilities\n            probs = F.softmax(logits, dim=-1) # (B, C)\n            # sample from the distribution",
+      "concepts": [
+        "bigram_language_model",
+        "pytorch_tensors",
+        "token_embeddings",
+        "cross_entropy_loss",
+        "text_generation_sampling",
+        "model_evaluation_practices"
+      ],
+      "rationale": "This comprehensive code defines the complete `BigramLanguageModel` class. It includes the `nn.Embedding` for token embeddings and a flexible `forward` pass that handles conditional `cross_entropy_loss` calculation (using reshaped tensors) based on whether `targets` are provided. Crucially, it adds the `generate` method, which iteratively produces new text by predicting the next token using `softmax` probabilities and `torch.multinomial` sampling. Making `targets` optional in `forward` is a key `model_evaluation_practices` for inference.",
+      "teaching_context": "This code teaches how to build a fully functional PyTorch `nn.Module` for a Bigram Language Model, covering its architecture, forward pass logic with conditional loss calculation for both training and inference, and the complete text generation process. It showcases how different components of a language model work together to learn from data and generate new sequences.",
+      "duplicate_segments": [
+        193,
+        194,
+        195,
+        196,
+        197,
+        198,
+        199,
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207,
+        208,
+        209,
+        210,
+        211,
+        212,
+        213,
+        214,
+        217,
+        218,
+        219,
+        220,
+        236
+      ]
+    },
+    {
+      "primary_segment": 234,
+      "timestamp": 2016.0149999999999,
+      "code": "logits = logits.view(B*T, C)\ntargets = targets.view(B*T)\nloss = F.cross_entropy(logits, targets)\n\nreturn logits, loss\n\ndef generate(self, idx, max_new_tokens):\n    # idx is (B, T) array of indices in the current context\n    for _ in range(max_new_tokens):\n        # get the predictions\n        logits, loss = self(idx)\n        # focus only on the last time step\n        logits = logits[:, -1, :] # becomes (B, C)\n        # apply softmax to get probabilities\n        probs = F.softmax(logits, dim=-1) # (B, C)\n        # sample from the distribution\n        idx_next = torch.multinomial(probs, num_samples=1) # (B, 1)\n        # append sampled index to the running sequence\n        idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)\n    return idx\n\nm = BigramLanguageModel(vocab_size)\nlogits, loss = m(xb, yb)\nprint(logits.shape)\nprint(loss)\n\nprint(decode(m.generate(idx = torch.zeros((1, 1), dtype=torch.long), max_new_tokens=100)[0].tolist()))\n\ntorch.Size([32, 65])\ntensor(4.8786, grad_fn=<NllLossBackward0>)",
+      "concepts": [
+        "text_generation_sampling",
+        "pytorch_tensors",
+        "character_level_language_modeling"
+      ],
+      "rationale": "This code snippet demonstrates the practical application of text generation. It initializes the input `idx` as a `torch.zeros` tensor (representing a starting token like a newline character), then calls the model's `generate` method to produce a sequence of 100 new tokens. Finally, it uses a `decode` function to convert these numerical tokens back into human-readable text.",
+      "teaching_context": "This code teaches how to prompt a generative language model and obtain its output. It illustrates how to set up an initial input (seed) using PyTorch tensors and then leverage the model's `generate` method to produce an extended sequence of text, which can then be decoded and displayed.",
+      "duplicate_segments": [
+        221,
+        222,
+        223,
+        224,
+        225,
+        227,
+        228,
+        229,
+        230,
+        231,
+        232,
+        233
+      ]
+    },
+    {
+      "primary_segment": 272,
+      "timestamp": 2301.89,
+      "code": "import torch\nimport torch.nn as nn\nfrom torch.nn import functional as F\n\n# hyperparameters\nbatch_size = 32 # how many independent sequences will we process in parallel?\nblock_size = 8 # what is the maximum context length for predictions?\nmax_iters = 3000\neval_interval = 300\nlearning_rate = 1e-2\ndevice = 'cuda' if torch.cuda.is_available() else 'cpu'\neval_iters = 200\n\ntorch.manual_seed(1337)\n\nwith open('input.txt', 'r', encoding='utf-8') as f:\n    text = f.read()\n\nchars = sorted(list(set(text)))\nvocab_size = len(chars)\nstoi = { ch:i for i,ch in enumerate(chars) }\nitos = { i:ch for i,ch in enumerate(chars) }\nencode = lambda s: [stoi[c] for c in s]\ndecode = lambda l: ''.join([itos[i] for i in l])\n\ndata = torch.tensor(encode(text), dtype=torch.long)\nn = int(0.9*len(data))\ntrain_data = data[:n]\nval_data = data[n:]\n\ndef get_batch(split):\n    data = train_data if split == 'train' else val_data\n    ix = torch.randint(len(data) - block_size, (batch_size,))\n    x = torch.stack([data[i:i+block_size] for i in ix])\n    y = torch.stack([data[i+1:i+block_size+1] for i in ix])\n    x, y = x.to(device), y.to(device)\n    return x, y",
+      "concepts": [
+        "character_level_language_modeling",
+        "tokenization",
+        "pytorch_tensors",
+        "train_validation_split",
+        "data_batching",
+        "gpu_acceleration",
+        "context_window"
+      ],
+      "rationale": "This comprehensive snippet sets up the entire data pipeline for a character-level language model. It defines hyperparameters like batch size and block size (context window), initializes the device for GPU acceleration if available, loads the raw text, performs character-level tokenization (encoding and decoding functions), splits the data into training and validation sets, and defines a utility function (`get_batch`) to generate batches of input (`x`) and target (`y`) tensors.",
+      "teaching_context": "How to prepare text data for a character-level language model, including setting up hyperparameters, tokenization (mapping characters to integers), creating training and validation datasets, efficiently loading batches of data, and handling device placement (CPU/GPU) for PyTorch tensors.",
+      "duplicate_segments": [
+        270,
+        271,
+        273,
+        280,
+        283
+      ]
+    },
+    {
+      "primary_segment": 277,
+      "timestamp": 2323.3999999999996,
+      "code": "class BigramLanguageModel(nn.Module):\n    def __init__(self, vocab_size):\n        super().__init__()\n        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)\n\n    def forward(self, idx, targets=None):\n        logits = self.token_embedding_table(idx)\n\n        if targets is None:\n            loss = None\n        else:\n            B, T, C = logits.shape\n            logits = logits.view(B*T, C)\n            targets = targets.view(B*T)\n            loss = F.cross_entropy(logits, targets)\n\n        return logits, loss\n\n    def generate(self, idx, max_new_tokens):\n        for _ in range(max_new_tokens):\n            logits, loss = self(idx)\n            logits = logits[:, -1, :]\n            probs = F.softmax(logits, dim=-1)\n            idx_next = torch.multinomial(probs, num_samples=1)\n            idx = torch.cat((idx, idx_next), dim=1)",
+      "concepts": [
+        "bigram_language_model",
+        "token_embeddings",
+        "cross_entropy_loss",
+        "text_generation_sampling",
+        "pytorch_tensors"
+      ],
+      "rationale": "This snippet defines the core `BigramLanguageModel` class, showcasing its `__init__` method for creating `nn.Embedding` (token embeddings), its `forward` method for computing logits and `F.cross_entropy` loss, and its `generate` method, which implements an autoregressive text generation process using `softmax` for probabilities and `torch.multinomial` for sampling the next token.",
+      "teaching_context": "The fundamental structure of a neural network-based bigram language model, including how tokens are embedded, how predictions are made (`forward` pass), how to compute the loss (`F.cross_entropy`), and how to generate new sequences from the model using sampling.",
+      "duplicate_segments": [
+        241,
+        242,
+        243,
+        244,
+        245,
+        246,
+        256,
+        263,
+        274,
+        275,
+        276,
+        281,
+        284,
+        291,
+        292,
+        293,
+        294
+      ]
+    },
+    {
+      "primary_segment": 288,
+      "timestamp": 2410.9049999999997,
+      "code": "@torch.no_grad()\ndef estimate_loss():\n    out = {}\n    model.eval()\n    for split in ['train', 'val']:\n        losses = torch.zeros(eval_iters)\n        for k in range(eval_iters):\n            X, Y = get_batch(split)\n            logits, loss = model(X, Y)\n            losses[k] = loss.item()\n        out[split] = losses.mean()\n    model.train()\n    return out",
+      "concepts": [
+        "model_evaluation_practices",
+        "train_validation_split",
+        "pytorch_tensors"
+      ],
+      "rationale": "This function demonstrates standard practices for model evaluation. It uses `@torch.no_grad()` to disable gradient calculations for efficiency, sets the model to evaluation mode (`model.eval()`) to ensure consistent behavior of layers like Dropout, iterates over both 'train' and 'val' splits to calculate average loss, and returns the model to training mode (`model.train()`).",
+      "teaching_context": "How to properly evaluate a neural network's performance on both training and validation datasets to obtain reliable loss metrics, monitor for overfitting, and use PyTorch's `no_grad` context manager and `eval`/`train` modes for inference.",
+      "duplicate_segments": [
+        274,
+        275,
+        276,
+        284,
+        289,
+        291,
+        292,
+        293,
+        294
+      ]
+    },
+    {
+      "primary_segment": 257,
+      "timestamp": 2200.835,
+      "code": "# create a PyTorch optimizer\noptimizer = torch.optim.AdamW(m.parameters(), lr=1e-3)\n\nbatch_size = 32\nfor steps in range(1000):\n    # sample a batch of data\n    xb, yb = get_batch('train')\n\n    # evaluate the loss\n    logits, loss = m(xb, yb)\n    optimizer.zero_grad(set_to_none=True)\n    loss.backward()\n    optimizer.step()",
+      "concepts": [
+        "adamw_optimizer",
+        "data_batching",
+        "pytorch_tensors"
+      ],
+      "rationale": "This snippet illustrates the fundamental training loop in PyTorch. It shows how the `AdamW` optimizer is initialized, how batches of data are sampled (`get_batch`), how the model's loss is computed, how gradients are zeroed out (`optimizer.zero_grad`), how backpropagation occurs (`loss.backward`), and how model parameters are updated (`optimizer.step`).",
+      "teaching_context": "The core mechanics of training a neural network using an optimization algorithm (AdamW), including fetching data in batches, performing a forward pass, calculating the loss, computing gradients, and updating model weights to minimize the loss.",
+      "duplicate_segments": [
+        247,
+        248,
+        249,
+        250,
+        251,
+        253,
+        255,
+        258,
+        259,
+        260,
+        261,
+        262,
+        263,
+        264,
+        266,
+        268,
+        285,
+        286
+      ]
+    },
+    {
+      "primary_segment": 278,
+      "timestamp": 2327.88,
+      "code": "model = BigramLanguageModel(vocab_size)\nm = model.to(device)\n\noptimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)\n\nfor iter in range(max_iters):\n    if iter % eval_interval == 0:\n        losses = estimate_loss()\n        print(f\"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}\")\n\n    xb, yb = get_batch('train')\n    logits, loss = model(xb, yb)\n    optimizer.zero_grad(set_to_none=True)\n    loss.backward()\n    optimizer.step()\n\ncontext = torch.zeros((1, 1), dtype=torch.long, device=device)\nprint(decode(m.generate(context, max_new_tokens=500)[0].tolist()))",
+      "concepts": [
+        "adamw_optimizer",
+        "gpu_acceleration",
+        "model_evaluation_practices",
+        "data_batching",
+        "pytorch_tensors",
+        "text_generation_sampling"
+      ],
+      "rationale": "This integrated script demonstrates the complete workflow for training and evaluating a language model. It shows how the model is initialized and moved to the specified device (CPU/GPU), how the `AdamW` optimizer is configured, how the main training loop runs with periodic calls to `estimate_loss` for evaluation, and how the trained model is finally used to generate new text.",
+      "teaching_context": "The end-to-end process of training a language model, encompassing model and optimizer initialization, device placement (CPU/GPU acceleration), performing training iterations, incorporating periodic model evaluation with train/validation loss reporting, and executing text generation with the trained model.",
+      "duplicate_segments": [
+        279,
+        282,
+        287,
+        290,
+        295,
+        296,
+        297,
+        298
+      ]
+    },
+    {
+      "primary_segment": 317,
+      "timestamp": 2707.44,
+      "code": "# We want x[b,t] = mean_{i<=t} x[b,i]\nxbow = torch.zeros((B,T,C))\nfor b in range(B):\n    for t in range(T):\n        xprev = x[b,:t+1] # (t,C)\n        xbow[b,t] = torch.mean(xprev, 0)",
+      "concepts": [
+        "pytorch_tensors",
+        "weighted_aggregation_using_matrix_multiplication"
+      ],
+      "rationale": "This code explicitly demonstrates an inefficient, loop-based approach to computing a 'bag-of-words' average, where each token's representation is the mean of itself and all preceding tokens within its sequence. This serves as a conceptual introduction to token interaction and aggregation that will later be optimized with matrix multiplication.",
+      "teaching_context": "Demonstrating how to aggregate information from preceding tokens in a sequence using simple loops and mean operations. This establishes a foundational understanding of how context can be built, before introducing more efficient (matrix-based) methods for attention.",
+      "duplicate_segments": [
+        299,
+        300,
+        301,
+        302,
+        303,
+        304,
+        305,
+        306,
+        307,
+        308,
+        309,
+        310,
+        311,
+        312,
+        313,
+        314,
+        315,
+        316,
+        318,
+        319,
+        320,
+        321,
+        322,
+        323,
+        324,
+        325,
+        326,
+        327,
+        328,
+        329,
+        330,
+        331,
+        332,
+        333,
+        334,
+        335
+      ]
+    },
+    {
+      "primary_segment": 336,
+      "timestamp": 2843.59,
+      "code": "torch.manual_seed(42)\na = torch.ones(3, 3)\nb = torch.randint(0,10,(3,2)).float()\nc = a @ b\nprint('a=')\nprint(a)\nprint('---')\nprint('b=')\nprint(b)\nprint('---')\nprint('c=')\nprint(c)",
+      "concepts": [
+        "weighted_aggregation_using_matrix_multiplication",
+        "pytorch_tensors"
+      ],
+      "rationale": "This snippet demonstrates the core mathematical trick of using matrix multiplication (`a @ b`) for efficient weighted aggregation. It uses a simple example where a matrix of ones acts as weights to sum the values from another matrix, illustrating the concept before applying it to more complex attention mechanisms.",
+      "teaching_context": "Introducing matrix multiplication as a powerful and highly efficient method for aggregating information across tensors, which is a fundamental technique underlying modern deep learning architectures, particularly in Transformer attention mechanisms.",
+      "duplicate_segments": [
+        337,
+        338,
+        339,
+        340,
+        341
+      ]
+    },
+    {
+      "primary_segment": 344,
+      "timestamp": 2881.765,
+      "code": "torch.manual_seed(42)a = torch.ones(3, 3)b = torch.randint(0,10,(3,2)).float()c = a @ b",
+      "concepts": [
+        "pytorch_tensors",
+        "weighted_aggregation_using_matrix_multiplication"
+      ],
+      "rationale": "This snippet demonstrates fundamental PyTorch tensor creation (`torch.ones`, `torch.randint`) and basic matrix multiplication (`@` operator). It's a foundational step to understanding how linear algebra operations are performed in PyTorch, which is critical for neural networks and the subsequent weighted aggregation concepts.",
+      "teaching_context": "The code teaches how to perform a simple matrix multiplication operation using PyTorch tensors. The output shows how each element in the resulting matrix 'c' is derived from the dot product of rows from 'a' and columns from 'b'. This is a precursor to more complex weighted aggregations.",
+      "duplicate_segments": [
+        342,
+        343,
+        345,
+        346,
+        347,
+        348,
+        349,
+        350
+      ]
+    },
+    {
+      "primary_segment": 351,
+      "timestamp": 2938.21,
+      "code": "import torch\ntorch.tril(torch.ones(3, 3))",
+      "concepts": [
+        "pytorch_tensors",
+        "weighted_aggregation_using_matrix_multiplication"
+      ],
+      "rationale": "This snippet introduces `torch.tril`, which creates a lower triangular matrix. This function is essential for constructing causal masks in attention mechanisms, allowing information flow only from past to present positions. The concept of using a specialized matrix for masking sets the stage for weighted aggregation where certain inputs are ignored.",
+      "teaching_context": "The code demonstrates how to use `torch.tril` to generate a lower triangular matrix from a matrix of ones. This matrix will later be used as a mask to control which elements contribute to a sum or average, embodying a causal relationship where only preceding elements are considered.",
+      "duplicate_segments": [
+        353
+      ]
+    },
+    {
+      "primary_segment": 354,
+      "timestamp": 2956.235,
+      "code": "import torch\ntorch.manual_seed(42)\na = torch.tril(torch.ones(3, 3))\nb = torch.randint(0,10,(3,2)).float()\nc = a @ b",
+      "concepts": [
+        "pytorch_tensors",
+        "weighted_aggregation_using_matrix_multiplication",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This code combines `torch.tril` with matrix multiplication to demonstrate how a lower triangular matrix can be used to perform a specific type of weighted aggregation. The resulting `c` matrix shows that each row of `b` is either fully included or zeroed out based on the '1's in the `tril` matrix, mimicking a causal aggregation where only past/current elements are considered, a core idea in transformer decoder blocks.",
+      "teaching_context": "This snippet teaches how applying a `torch.tril` (lower triangular) matrix in matrix multiplication effectively performs a causal summation. The matrix 'a' now acts as a mask, causing each row in the output 'c' to aggregate information only from the corresponding and preceding rows of 'b', illustrating how a causal context window can be implemented.",
+      "duplicate_segments": [
+        355,
+        356,
+        357,
+        358,
+        359,
+        360,
+        361,
+        362,
+        363,
+        364,
+        365
+      ]
+    },
+    {
+      "primary_segment": 371,
+      "timestamp": 3063.665,
+      "code": "import torch\ntorch.manual_seed(42)\na = torch.tril(torch.ones(3, 3))\na = a / torch.sum(a, 1, keepdim=True)\nb = torch.randint(0, 10, (3,2)).float()\nc = a @ b",
+      "concepts": [
+        "pytorch_tensors",
+        "weighted_aggregation_using_matrix_multiplication",
+        "transformer_decoder_block"
+      ],
+      "rationale": "Building on the previous snippet, this code normalizes the rows of the `tril` matrix `a` so they sum to one. When this normalized `a` is then multiplied with `b`, it performs a weighted *average* of the preceding elements in `b`. This explicitly demonstrates how weights are created and applied for averaging, a crucial component of attention mechanisms within Transformer decoder blocks.",
+      "teaching_context": "This snippet demonstrates normalizing the `tril` matrix rows so that they sum to 1. This transforms the matrix multiplication into an operation that calculates the *average* of the preceding elements for each position. This is directly applicable to self-attention where each token computes a weighted average of past (and current) tokens' values.",
+      "duplicate_segments": [
+        366,
+        368,
+        370,
+        372,
+        373,
+        374,
+        375,
+        376,
+        377
+      ]
+    },
+    {
+      "primary_segment": 388,
+      "timestamp": 3163.005,
+      "code": "import torch\n\ntorch.manual_seed(1337)\nB, T, C = 4, 8, 2 \nx = torch.randn(B, T, C)\n\nxbow = torch.zeros(B, T, C)\nfor b in range(B):\n    for t in range(T):\n        xprev = x[b,:t+1]\n        xbow[b,t] = torch.mean(xprev, 0)\n\nwei = torch.tril(torch.ones(T, T))\nwei = wei / wei.sum(1, keepdim=True)\nxbow2 = wei @ x\n\ncomparison_result = torch.allclose(xbow, xbow2)",
+      "concepts": [
+        "pytorch_tensors",
+        "data_batching",
+        "weighted_aggregation_using_matrix_multiplication",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This comprehensive snippet demonstrates how to vectorize the causal weighted averaging across an entire batch of sequences. It contrasts a slow Python `for` loop implementation (`xbow`) with an efficient batched matrix multiplication (`xbow2 = wei @ x`). The `wei` matrix, created using `torch.tril` and normalization, serves as the causal mask. This efficient computation is fundamental to Transformer decoder blocks and utilizes PyTorch's tensor and batching capabilities.",
+      "teaching_context": "This code explicitly teaches the critical concept of vectorization in PyTorch. It shows how the incremental averaging previously done with nested loops can be replaced by a single batched matrix multiplication. This is a crucial optimization for performance in deep learning and introduces the idea of an 'attention mask' (represented by `wei`) that enforces causality in sequence processing.",
+      "duplicate_segments": [
+        378,
+        379,
+        380,
+        381,
+        382,
+        383,
+        384,
+        385,
+        386,
+        389,
+        390,
+        391,
+        392,
+        393,
+        394,
+        395,
+        396,
+        397,
+        398,
+        400,
+        401,
+        402,
+        404,
+        405,
+        406,
+        407,
+        408,
+        409
+      ]
+    },
+    {
+      "primary_segment": 410,
+      "timestamp": 3291.36,
+      "code": "import torch\nimport torch.nn.functional as F\n\n# Assume B, T, C and x, xbow are set up as in the previous example\ntorch.manual_seed(1337)\nB, T, C = 4, 8, 2\nx = torch.randn(B, T, C)\nxbow = torch.zeros(B, T, C)\nfor b in range(B):\n    for t in range(T):\n        xprev = x[b,:t+1]\n        xbow[b,t] = torch.mean(xprev, 0)\n\ntril = torch.tril(torch.ones(T, T))\nwei_initial = torch.zeros((T,T))\nwei_masked = wei_initial.masked_fill(tril == 0, float('-inf'))\nwei_final = F.softmax(wei_masked, dim=-1)\nxbow3 = wei_final @ x\n\ncomparison_result = torch.allclose(xbow, xbow3)",
+      "concepts": [
+        "pytorch_tensors",
+        "weighted_aggregation_using_matrix_multiplication",
+        "self_attention_mechanism",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This snippet introduces the use of `masked_fill` with `float('-inf')` followed by `F.softmax` to create the causal attention mask. This is a direct implementation of how causal self-attention is computed in Transformer decoders. By setting future token positions to negative infinity before softmax, their corresponding attention weights become zero, ensuring that a token only attends to previous tokens in the sequence, thus embodying the core `self_attention_mechanism` within a `transformer_decoder_block`.",
+      "teaching_context": "This code demonstrates the standard, more generalizable way to implement causal masking for self-attention. It highlights how setting irrelevant 'scores' to negative infinity before a softmax operation effectively turns them into zero probability, preventing a token from attending to future tokens. This method is foundational for understanding the 'masked self-attention' component of a GPT-like (decoder-only) Transformer.",
+      "duplicate_segments": [
+        411,
+        412,
+        413,
+        414,
+        415,
+        416,
+        417,
+        418,
+        419,
+        420,
+        421,
+        422,
+        423,
+        424,
+        425,
+        426,
+        427,
+        428,
+        429,
+        431,
+        432,
+        433,
+        434,
+        435,
+        436,
+        438,
+        439,
+        440,
+        441
+      ]
+    },
+    {
+      "primary_segment": 442,
+      "timestamp": 3445.6949999999997,
+      "code": "wei = torch.zeros((T, T))\nwei = wei.masked_fill(tril == 0, float('-inf'))\nwei = F.softmax(wei, dim=-1)\nxbow3 = wei @ x",
+      "concepts": [
+        "pytorch_tensors",
+        "weighted_aggregation",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This snippet demonstrates the initial concept of weighted aggregation of past elements, which is a precursor to self-attention. It uses `torch.tril` to create a lower-triangular matrix (`tril`), which is then used with `masked_fill` to prevent attention to future tokens by setting their weights to negative infinity. Finally, `F.softmax` normalizes these weights, and matrix multiplication (`wei @ x`) performs the weighted aggregation.",
+      "teaching_context": "This code teaches a foundational mechanism for processing sequential data where each element can only 'look back' at previous elements. It's a simplified form of causal masking and weighted sum, crucial for understanding decoder-only architectures like GPT.",
+      "duplicate_segments": [
+        443,
+        444,
+        445,
+        446,
+        447,
+        448,
+        449,
+        483,
+        484,
+        485,
+        486,
+        487,
+        488,
+        489,
+        490,
+        491,
+        492,
+        493,
+        494,
+        495,
+        496,
+        497,
+        498,
+        499,
+        500,
+        501,
+        502,
+        503,
+        504,
+        505,
+        506,
+        507
+      ]
+    },
+    {
+      "primary_segment": 455,
+      "timestamp": 3545.71,
+      "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n# hyperparameters\nbatch_size = 32\nblock_size = 8\nmax_iters = 3000\neval_interval = 300\nlearning_rate = 1e-2\ndevice = 'cuda' if torch.cuda.is_available() else 'cpu'\neval_iters = 200\nn_embd = 32\n\ntorch.manual_seed(1337)\n\nwith open('input.txt', 'r', encoding='utf-8') as f:\n    text = f.read()\n\nchars = sorted(list(set(text)))\nvocab_size = len(chars)\nstoi = { ch:i for i,ch in enumerate(chars) }\nitos = { i:ch for i,ch in enumerate(chars) }\nencode = lambda s: [stoi[c] for c in s]\ndecode = lambda l: ''.join([itos[i] for i in l])",
+      "concepts": [
+        "pytorch_tensors",
+        "character_level_language_modeling",
+        "tokenization",
+        "gpu_acceleration"
+      ],
+      "rationale": "This snippet covers essential initial setup: importing PyTorch modules, defining key hyperparameters (like batch size, block size, learning rate), setting up device acceleration, loading a text dataset (Tiny Shakespeare), creating a vocabulary, and defining character-to-integer (and vice-versa) encoding/decoding functions.",
+      "teaching_context": "This code lays the groundwork for training a language model. It introduces how to configure basic training settings, handle text data, and convert it into numerical tokens suitable for neural networks, specifically in a character-level modeling context.",
+      "duplicate_segments": [
+        456
+      ]
+    },
+    {
+      "primary_segment": 464,
+      "timestamp": 3592.6949999999997,
+      "code": "class BigramLanguageModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)\n        self.lm_head = nn.Linear(n_embd, vocab_size)\n\n    def forward(self, idx, targets=None):\n        tok_emb = self.token_embedding_table(idx) # (B,T,C)\n        logits = self.lm_head(tok_emb) # (B, T, C)\n\n        if targets is None:\n            loss = None\n        else:\n            B, T, C = logits.shape\n            targets = targets.view(B*T)\n            loss = F.cross_entropy(logits.view(B*T, C), targets)\n        return logits, loss",
+      "concepts": [
+        "bigram_language_model",
+        "token_embeddings",
+        "pytorch_tensors",
+        "cross_entropy_loss"
+      ],
+      "rationale": "This code defines a `BigramLanguageModel` that uses `nn.Embedding` to convert input token IDs into dense `n_embd` dimensional vectors (`token_embedding_table`). It then uses a `nn.Linear` layer (`lm_head`) to project these embeddings back to `vocab_size` to produce logits for the next token. The `forward` method demonstrates how these components are chained and calculates `F.cross_entropy` loss when targets are provided.",
+      "teaching_context": "This snippet teaches the foundational architecture of a neural network-based language model, moving beyond simple statistical bigrams. It introduces token embeddings as learnable representations and a linear layer to predict the next token, along with the application of cross-entropy for training classification tasks.",
+      "duplicate_segments": [
+        450,
+        451,
+        452,
+        453,
+        454,
+        457,
+        458,
+        459,
+        460,
+        461,
+        462,
+        463,
+        465,
+        466,
+        467,
+        468,
+        469,
+        470,
+        471
+      ]
+    },
+    {
+      "primary_segment": 479,
+      "timestamp": 3679.445,
+      "code": "class BigramLanguageModel(nn.Module):\n    def __init__(self, vocab_size, n_embd, block_size):\n        super().__init__()\n        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)\n        self.position_embedding_table = nn.Embedding(block_size, n_embd)\n        self.lm_head = nn.Linear(n_embd, vocab_size)\n\n    def forward(self, idx, targets=None):\n        B, T = idx.shape\n        tok_emb = self.token_embedding_table(idx) # (B,T,C)\n        pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)\n        x = tok_emb + pos_emb # (B,T,C)\n        logits = self.lm_head(x) # (B,T,vocab_size)\n\n        if targets is None:\n            loss = None\n        else:\n            B, T, C = logits.shape\n            logits = logits.view(B*T, C)\n            targets = targets.view(B*T)\n            loss = F.cross_entropy(logits, targets)",
+      "concepts": [
+        "positional_embeddings",
+        "token_embeddings",
+        "pytorch_tensors",
+        "bigram_language_model"
+      ],
+      "rationale": "This code extends the `BigramLanguageModel` by adding `position_embedding_table` to capture positional information. In the `forward` pass, it creates positional embeddings using `torch.arange(T)` (representing positions 0 to T-1) and adds them element-wise to the token embeddings. This combined `x` vector, now enriched with both token identity and position, is then used to predict logits.",
+      "teaching_context": "This teaches a critical component of Transformer architectures: positional embeddings. It shows how to inject information about the relative or absolute position of tokens into their representations, enabling the model to understand sequence order, which is not inherently handled by attention mechanisms alone.",
+      "duplicate_segments": [
+        472,
+        473,
+        475,
+        476,
+        477,
+        478,
+        480,
+        481,
+        482
+      ]
+    },
+    {
+      "primary_segment": 515,
+      "timestamp": 3954.4700000000003,
+      "code": "B, T, C = 4, 8, 32 # batch, time, channels\nx = torch.randn(B, T, C)\n\nhead_size = 16\nkey = nn.Linear(C, head_size, bias=False)\nquery = nn.Linear(C, head_size, bias=False)\nk = key(x) # (B, T, 16)\nq = query(x) # (B, T, 16)",
+      "concepts": [
+        "self_attention_mechanism",
+        "pytorch_tensors"
+      ],
+      "rationale": "This snippet introduces the core components for self-attention: Query and Key linear layers. It initializes `nn.Linear` modules to project the input `x` (representing token embeddings possibly with positional information) into `k` (keys) and `q` (queries) vectors, each with `head_size` dimensions. The `bias=False` indicates these are pure matrix multiplications without an offset.",
+      "teaching_context": "This code teaches the initial step of the self-attention mechanism, demonstrating how Query and Key vectors are generated from the input representation. These vectors are crucial because their dot product will determine the 'attention' or 'affinity' between different tokens in the sequence.",
+      "duplicate_segments": [
+        508,
+        509,
+        510,
+        511,
+        512,
+        513,
+        514
+      ]
+    },
+    {
+      "primary_segment": 525,
+      "timestamp": 4026.495,
+      "code": "B, T, C = 4, 8, 32 # batch, time, channels\nx = torch.randn(B, T, C)\n\nhead_size = 16\nkey = nn.Linear(C, head_size, bias=False)\nquery = nn.Linear(C, head_size, bias=False)\nk = key(x) # (B, T, 16)\nq = query(x) # (B, T, 16)\n\nwei = q @ k.transpose(-2, -1) # (B, T, 16) @ (B, 16, T) ---> (B, T, T)\n\ntril = torch.tril(torch.ones(T, T))\nwei = wei.masked_fill(tril == 0, float('-inf'))\nwei = F.softmax(wei, dim=-1)\nout = wei @ x",
+      "concepts": [
+        "scaled_dot_product_attention",
+        "self_attention_mechanism",
+        "pytorch_tensors",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This snippet combines the creation of Query and Key vectors with the calculation of attention weights and their application. It computes raw attention scores (`wei`) by matrix multiplying queries (`q`) with the transpose of keys (`k.transpose(-2, -1)`). It then applies causal masking using `tril` and `masked_fill`, normalizes the scores with `F.softmax`, and finally uses these normalized weights to perform a weighted aggregation (`wei @ x`), producing the output of a single self-attention head.",
+      "teaching_context": "This code demonstrates the full forward pass of a single self-attention head in a Transformer decoder. It shows how tokens 'query' other tokens ('keys') to determine relevance, how future information is masked, how attention weights are normalized, and how a weighted sum of input values (implied by `x` here) is formed based on these weights.",
+      "duplicate_segments": [
+        516,
+        517,
+        518,
+        519,
+        520,
+        521,
+        522,
+        523,
+        524,
+        526,
+        527,
+        528,
+        529
+      ]
+    },
+    {
+      "primary_segment": 530,
+      "timestamp": 4054.785,
+      "code": "# Code to calculate wei (from previous snippet):\n# wei = q @ k.transpose(-2, -1)\n# tril = torch.tril(torch.ones(T, T))\n# wei = wei.masked_fill(tril == 0, float('-inf'))\n# wei = F.softmax(wei, dim=-1)\n\n# Example output for 'wei' (first batch element), illustrating data-dependent weights:\n# tensor([[1.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],\n#         [0.1574, 0.8426, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],\n#         [0.2088, 0.1646, 0.6266, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],\n#         [0.5792, 0.1187, 0.1889, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],\n#         [0.0294, 0.0820, 0.1048, 0.7838, 0.0000, 0.0000, 0.0000, 0.0000],\n#         [0.0176, 0.2689, 0.0215, 0.6812, 0.0000, 0.0000, 0.0000, 0.0000],\n#         [0.1691, 0.4066, 0.0438, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000],\n#         [0.0210, 0.0843, 0.0555, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000]])",
+      "concepts": [
+        "scaled_dot_product_attention",
+        "self_attention_mechanism"
+      ],
+      "rationale": "While the accompanying code is a duplicate of the self-attention mechanism, this snippet's primary value lies in the explicit display of the `wei` tensor (attention weights) as output. Unlike the simple uniform weighted average from earlier examples, these weights are now dynamically calculated (data-dependent) based on the dot products of Query and Key vectors. The varying non-zero values in each row demonstrate how different tokens attend to preceding tokens with varying degrees of importance.",
+      "teaching_context": "This visual output is crucial for understanding the 'attention' aspect of self-attention. It concretely shows that the model learns to prioritize information from different past tokens, rather than uniformly averaging them, allowing for more nuanced contextual understanding during text generation.",
+      "duplicate_segments": [
+        531,
+        532,
+        533,
+        534,
+        535,
+        536,
+        537,
+        538,
+        539,
+        540,
+        541
+      ]
+    },
+    {
+      "primary_segment": 545,
+      "timestamp": 4149.51,
+      "code": "B, T, C = 4, 8, 32 # batch, time, channels\nx = torch.randn(B, T, C)\n\n# let's see a single Head perform self-attention\nhead_size = 16\nkey = nn.Linear(C, head_size, bias=False)\nquery = nn.Linear(C, head_size, bias=False)\nk = key(x) # (B, T, 16)\nq = query(x) # (B, T, 16)\nwei = q @ k.transpose(-2, -1) # (B, T, 16) @ (B, 16, T) ---> (B, T, T)\n\ntril = torch.tril(torch.ones(T, T))\n#wei = torch.zeros((T, T))\n#wei = wei.masked_fill(tril == 0, float('-inf'))\n#wei = F.softmax(wei, dim=-1)\nout = wei @ x",
+      "concepts": [
+        "self_attention_mechanism",
+        "pytorch_tensors"
+      ],
+      "rationale": "This code demonstrates the initial step of self-attention where Query and Key vectors are computed via linear transformations and then multiplied to get raw attention scores (`wei`). The context provided with the original output (`wei[0]` showing negative and positive values) explicitly illustrates these unnormalized, unmasked scores.",
+      "teaching_context": "This teaches how the raw \"affinity\" or \"interaction strength\" between tokens is calculated in self-attention using dot products of Query and Key vectors, before any normalization or masking. It shows that these raw scores can take on arbitrary positive and negative values.",
+      "duplicate_segments": [
+        544,
+        546,
+        547
+      ]
+    },
+    {
+      "primary_segment": 550,
+      "timestamp": 4182.885,
+      "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\ntorch.manual_seed(1337)\nB,T,C = 4,8,32 # batch, time, channels\nx = torch.randn(B,T,C)\n# let's see a single Head perform self-attention\nhead_size = 16\nkey = nn.Linear(C, head_size, bias=False)\nquery = nn.Linear(C, head_size, bias=False)\nk = key(x) # (B, T, 16)\nq = query(x) # (B, T, 16)\nwei = q @ k.transpose(-2, -1) # (B, T, 16) @ (B, 16, T) ---> (B, T, T)\ntril = torch.tril(torch.ones(T, T))\n#wei = torch.zeros((T,T))\nwei = wei.masked_fill(tril == 0, float('-inf'))\n#wei = F.softmax(wei, dim=-1)\nout = wei @ x",
+      "concepts": [
+        "self_attention_mechanism",
+        "transformer_decoder_block",
+        "pytorch_tensors"
+      ],
+      "rationale": "This snippet extends the raw attention scores by applying causal masking using `torch.tril` and `masked_fill`. The original output `wei[0]` (containing `-inf` values for future tokens) clearly demonstrated how a decoder block prevents information flow from future to past tokens.",
+      "teaching_context": "This demonstrates the causal masking mechanism essential for decoder-only transformers (like GPT) in language modeling, ensuring that a token can only attend to previous tokens and itself. It visually shows how future connections are 'masked out' by setting their attention scores to negative infinity.",
+      "duplicate_segments": [
+        548,
+        549
+      ]
+    },
+    {
+      "primary_segment": 560,
+      "timestamp": 4253.075000000001,
+      "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nB, T, C = 4, 8, 32 # batch, time, channels\nx = torch.randn(B,T,C)\n\n# let's see a single Head perform self-attention\nhead_size = 16\nkey = nn.Linear(C, head_size, bias=False)\nquery = nn.Linear(C, head_size, bias=False)\nvalue = nn.Linear(C, head_size, bias=False)\nk = key(x) # (B, T, 16)\nq = query(x) # (B, T, 16)\nwei = q @ k.transpose(-2, -1) # (B, T, 16) @ (B, 16, T) ---> (B, T, T)\n\ntril = torch.tril(torch.ones(T, T))\n#wei = torch.zeros((T,T))\nwei = wei.masked_fill(tril == 0, float('-inf'))\nwei = F.softmax(wei, dim=-1)\n\nv = value(x)\nout = wei @ v # Weighted aggregation of values",
+      "concepts": [
+        "self_attention_mechanism",
+        "transformer_decoder_block",
+        "pytorch_tensors",
+        "weighted_aggregation"
+      ],
+      "rationale": "This code brings together all components of a single self-attention head for a decoder: linear projections for Query, Key, and Value; calculating attention weights via dot products; causal masking; softmax normalization; and finally, weighted aggregation of the Value vectors to produce the output. It correctly uses `v = value(x)` for aggregation, and the `out.shape` correctly reflects `head_size`.",
+      "teaching_context": "This snippet teaches the complete flow of how a single self-attention head processes input sequences to produce an output that incorporates information from preceding tokens. It highlights the distinct roles of Query, Key, and Value projections, causal masking for autoregressive models, softmax normalization for attention weights, and the final weighted summation of Value vectors.",
+      "duplicate_segments": [
+        542,
+        543,
+        551,
+        552,
+        553,
+        554,
+        555,
+        556,
+        557,
+        558,
+        559,
+        561,
+        562,
+        563,
+        564,
+        565,
+        566,
+        567,
+        568,
+        569,
+        570,
+        571,
+        572,
+        573,
+        574,
+        575,
+        576,
+        577,
+        578,
+        579,
+        580,
+        581,
+        582,
+        583,
+        584,
+        585,
+        586,
+        597,
+        598,
+        600
+      ]
+    },
+    {
+      "primary_segment": 595,
+      "timestamp": 4669.77,
+      "code": "import torch\n\n# Assuming B, T, head_size are defined\nk = torch.randn(B, T, head_size)\nq = torch.randn(B, T, head_size)\nwei = q @ k.transpose(-2, -1) * head_size**-0.5 # Scaling applied",
+      "concepts": [
+        "scaled_dot_product_attention",
+        "pytorch_tensors"
+      ],
+      "rationale": "This code demonstrates `scaled_dot_product_attention` by applying a scaling factor (`head_size**-0.5`) to the dot product of Query and Key. The original output clearly showed the practical effect of this scaling: stabilizing the variance of attention scores (`wei.var()` was close to 1), which is crucial for preventing softmax from becoming too peaky.",
+      "teaching_context": "This teaches the importance and implementation of the scaling factor in self-attention. It explains how scaling by the inverse square root of the head size helps maintain stable gradients and ensures a more diffused (and thus more informative) attention distribution, particularly during initial training, by preventing large dot products from dominating the softmax output.",
+      "duplicate_segments": [
+        590,
+        591,
+        592,
+        594
+      ]
+    },
+    {
+      "primary_segment": 601,
+      "timestamp": 4705.1849999999995,
+      "code": "import torch\n\n# Assuming B, T, head_size are defined\nk = torch.randn(B, T, head_size)\nq = torch.randn(B, T, head_size)\nwei = q @ k.transpose(-2, -1) * head_size**-0.5\nk.var()\nq.var()\nwei.var()\ntorch.softmax(torch.tensor([0.1, -0.2, 0.3, -0.2, 0.5]), dim=-1) # Diffuse softmax\ntorch.softmax(torch.tensor([0.1, -0.2, 0.3, -0.2, 0.5])*8, dim=-1) # Sharp softmax",
+      "concepts": [
+        "scaled_dot_product_attention",
+        "cross_entropy_loss"
+      ],
+      "rationale": "This snippet illustrates the effect of input magnitude on the `softmax` function. It explicitly shows that small, diffuse inputs lead to a more spread-out probability distribution, while larger inputs (even if relatively proportional) lead to a sharper, more 'peaky' distribution, with one value dominating. This context explains *why* `scaled_dot_product_attention` is necessary to prevent this saturation.",
+      "teaching_context": "This code snippet teaches how the magnitude of input values affects the output of the softmax function, demonstrating that larger input values lead to a more 'peaky' or saturated softmax distribution. This motivates the need for scaling attention scores to keep them diffuse, especially at initialization, to ensure all tokens can contribute meaningfully to the weighted sum, thus promoting better learning.",
+      "duplicate_segments": [
+        602,
+        603,
+        604
+      ]
+    },
+    {
+      "primary_segment": 607,
+      "timestamp": 4773.775,
+      "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass Head(nn.Module):\n    \"\"\" one head of self-attention \"\"\"\n    def __init__(self, n_embd, head_size):\n        super().__init__()\n        self.key = nn.Linear(n_embd, head_size, bias=False)\n        self.query = nn.Linear(n_embd, head_size, bias=False)\n        self.value = nn.Linear(n_embd, head_size, bias=False)\n        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))\n\n    def forward(self, x):\n        B, T, C = x.shape\n        k = self.key(x) # (B, T, head_size)\n        q = self.query(x) # (B, T, head_size)\n        v = self.value(x) # (B, T, head_size)\n        # compute attention scores (\"affinities\")\n        wei = q @ k.transpose(-2, -1) * head_size**-0.5 # (B, T, T)\n        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))\n        wei = F.softmax(wei, dim=-1) # (B, T, T)\n        # perform the weighted aggregation of the values\n        out = wei @ v # (B, T, head_size)\n        return out",
+      "concepts": [
+        "self_attention_mechanism",
+        "scaled_dot_product_attention",
+        "transformer_decoder_block",
+        "pytorch_tensors"
+      ],
+      "rationale": "This defines a `Head` PyTorch module that encapsulates the complete logic of a single self-attention head. It includes Query, Key, Value linear projections, scaled dot-product attention calculation, causal masking, softmax normalization, and weighted aggregation of values. The `n_embd` argument in `__init__` makes it a more robust module definition.",
+      "teaching_context": "This teaches how to implement a self-attention mechanism as a reusable PyTorch module. It covers initializing linear layers for QKV projections, registering the causal mask as a buffer, and performing the full forward pass with scaled dot-product attention, demonstrating a foundational building block for Transformer decoders.",
+      "duplicate_segments": [
+        605,
+        606,
+        608,
+        610,
+        611,
+        612,
+        613
+      ]
+    },
+    {
+      "primary_segment": 614,
+      "timestamp": 4821.34,
+      "code": "import torch\nimport torch.nn as nn\n\n# Assuming Head module is defined and vocab_size, n_embd, block_size, device are defined\n\nclass BigramLanguageModel(nn.Module):\n    def __init__(self, vocab_size, n_embd, block_size):\n        super().__init__()\n        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)\n        self.position_embedding_table = nn.Embedding(block_size, n_embd)\n        self.sa_head = Head(n_embd, n_embd) # n_embd as head_size for now\n        self.lm_head = nn.Linear(n_embd, vocab_size)\n\n    def forward(self, idx, targets=None):\n        B, T = idx.shape\n\n        tok_emb = self.token_embedding_table(idx) # (B,T,C)\n        pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)\n        x = tok_emb + pos_emb # (B,T,C)\n        x = self.sa_head(x) # apply one head of self-attention. (B,T,C)\n        logits = self.lm_head(x) # (B,T,vocab_size)\n\n        if targets is None:\n            loss = None\n        else:\n            # ... loss calculation (truncated) ...\n            pass # Placeholder for actual loss calculation\n        return logits, loss",
+      "concepts": [
+        "positional_embeddings",
+        "self_attention_mechanism",
+        "transformer_architecture",
+        "token_embeddings"
+      ],
+      "rationale": "This code demonstrates how token embeddings and positional embeddings are combined (summed) before being fed into the self-attention mechanism (`self.sa_head`). This is a fundamental step in the Transformer architecture to provide sequence order information to attention layers, as attention itself is permutation-invariant.",
+      "teaching_context": "This snippet teaches how to enrich token representations with positional information using positional embeddings, which are then summed with the token embeddings. The combined embeddings serve as the input to the self-attention head, demonstrating a core aspect of how Transformers process sequential data while retaining positional awareness.",
+      "duplicate_segments": [
+        615
+      ]
+    },
+    {
+      "primary_segment": 617,
+      "timestamp": 4864.475,
+      "code": "import torch\nimport torch.nn.functional as F\n\n# Assuming BigramLanguageModel (with positional embeddings) is defined, and block_size, device are defined\n\nclass BigramLanguageModel(torch.nn.Module):\n    # ... (init and forward methods) ...\n\n    def generate(self, idx, max_new_tokens):\n        # idx is (B, T) array of indices in the current context\n        for _ in range(max_new_tokens):\n            # crop idx to the last block_size tokens\n            idx_cond = idx[:, -block_size:]\n            # get the predictions\n            logits, loss = self(idx_cond)\n            # focus only on the last time step\n            logits = logits[:, -1, :] # becomes (B, C)\n            # apply softmax to get probabilities\n            probs = F.softmax(logits, dim=-1) # (B, C)\n            # sample from the distribution\n            idx_next = torch.multinomial(probs, num_samples=1) # (B, 1)\n            # append sampled index to the running sequence\n            idx = torch.cat((idx, idx_next), dim=1) # (B, T+1)\n        return idx",
+      "concepts": [
+        "text_generation_sampling",
+        "context_window"
+      ],
+      "rationale": "This `generate` method demonstrates how a language model iteratively predicts the next token. Crucially, it shows `idx_cond = idx[:, -block_size:]` which ensures that the input context fed into the model never exceeds the defined `block_size` (context window), necessary when using positional embeddings to prevent out-of-bounds indexing.",
+      "teaching_context": "This snippet teaches the practical implementation of text generation, specifically focusing on how to manage the `context_window` during autoregressive decoding. It highlights the importance of cropping the input sequence to fit the model's `block_size` when positional embeddings are used, preventing out-of-bounds indexing for positional embeddings.",
+      "duplicate_segments": [
+        616,
+        618,
+        619
+      ]
+    },
+    {
+      "primary_segment": 620,
+      "timestamp": 4909.4349999999995,
+      "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n# hyperparameters\nbatch_size = 32 # how many independent sequences will we process in parallel?\nblock_size = 8 # what is the maximum context length for predictions?\nmax_iters = 5000\neval_interval = 500\nlearning_rate = 1e-3\ndevice = 'cuda' if torch.cuda.is_available() else 'cpu'\neval_iters = 200\nn_embd = 32\n# -----\n\ntorch.manual_seed(1337)\n\n# wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt\nwith open('input.txt', 'r', encoding='utf-8') as f:\n    text = f.read()\n\n# here are all the unique characters that occur in this text\nchars = sorted(list(set(text)))\nvocab_size = len(chars)\n# create a mapping from characters to integers\nstoi = { ch:i for i,ch in enumerate(chars) }\nitos = { i:ch for i,ch in enumerate(chars) }\nencode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers\ndecode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string",
+      "concepts": [
+        "pytorch_tensors",
+        "character_level_language_modeling",
+        "tokenization",
+        "gpu_acceleration"
+      ],
+      "rationale": "This code sets up the environment and hyperparameters for a character-level language model. It includes loading and processing text data, creating a vocabulary and tokenization functions (encode/decode), and specifying device for GPU acceleration if available. This is foundational for the subsequent model building.",
+      "teaching_context": "This teaches the initial setup for a character-level language modeling project in PyTorch, covering essential steps like defining hyperparameters, data loading, character-to-integer tokenization, and preparing for efficient computation by detecting and utilizing GPU hardware.",
+      "duplicate_segments": []
+    },
+    {
+      "primary_segment": 623,
+      "timestamp": 4947.49,
+      "code": "import torch\nimport torch.nn as nn\n\n# Assuming Head module is defined (e.g., from segment 607)\n\nclass MultiHeadAttention(nn.Module):\n    \"\"\" multiple heads of self-attention in parallel \"\"\"\n    def __init__(self, n_embd, num_heads, head_size):\n        super().__init__()\n        self.heads = nn.ModuleList([Head(n_embd, head_size) for _ in range(num_heads)])\n        # Optional: Add a final linear projection after concatenation\n        # self.proj = nn.Linear(num_heads * head_size, n_embd)\n\n    def forward(self, x):\n        out = torch.cat([h(x) for h in self.heads], dim=-1)\n        # Optional: return self.proj(out)\n        return out",
+      "concepts": [
+        "multi_head_attention",
+        "self_attention_mechanism",
+        "pytorch_tensors"
+      ],
+      "rationale": "This code defines a `MultiHeadAttention` module that instantiates multiple `Head` (self-attention) modules in parallel using `nn.ModuleList`. The `forward` method then processes the input `x` through each head and concatenates their outputs along the feature dimension (`dim=-1`), demonstrating how multiple attention 'perspectives' are combined.",
+      "teaching_context": "This snippet teaches the concept and implementation of Multi-Head Attention, a key component of the Transformer architecture. It shows how to run several independent self-attention mechanisms in parallel and combine their outputs, allowing the model to focus on different aspects of the input simultaneously and enriching its representational capacity.",
+      "duplicate_segments": [
+        622,
+        624,
+        625,
+        626,
+        627,
+        628,
+        629,
+        630,
+        631,
+        632
+      ]
+    },
+    {
+      "primary_segment": 636,
+      "timestamp": 5062.045,
+      "code": "import torch\nimport torch.nn as nn\n\n# Assuming Head and MultiHeadAttention modules are defined (e.g., from segments 607 and 623)\n# Also, assume vocab_size, n_embd, block_size, device are defined\n\nclass BigramLanguageModel(nn.Module):\n    def __init__(self, vocab_size, n_embd, block_size, n_head):\n        super().__init__()\n        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)\n        self.position_embedding_table = nn.Embedding(block_size, n_embd)\n        self.sa_heads = MultiHeadAttention(n_embd, n_head, n_embd // n_head) # Corrected head_size calculation\n        self.lm_head = nn.Linear(n_embd, vocab_size)\n\n    def forward(self, idx, targets=None):\n        B, T = idx.shape\n\n        tok_emb = self.token_embedding_table(idx) # (B, T, C)\n        pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T, C)\n        x = tok_emb + pos_emb # (B, T, C)\n        x = self.sa_heads(x) # apply multi-head self-attention. (B, T, C)\n        logits = self.lm_head(x) # (B, T, vocab_size)\n        \n        if targets is None:\n            loss = None\n        else:\n            # ... loss calculation (truncated) ...\n            pass # Placeholder for actual loss calculation\n        return logits, loss",
+      "concepts": [
+        "multi_head_attention",
+        "positional_embeddings",
+        "token_embeddings",
+        "transformer_architecture"
+      ],
+      "rationale": "This code defines a `BigramLanguageModel` that integrates `MultiHeadAttention` along with `token_embeddings` and `positional_embeddings`. This shows a more complete model structure incorporating these key Transformer components into a generative language model. The `__init__` is also more explicit with its arguments.",
+      "teaching_context": "This snippet teaches how to build a basic Transformer-like language model by combining token embeddings, positional embeddings, and a Multi-Head Attention layer. It demonstrates the overall architectural pattern and data flow within such a model, leading to improved next-token prediction capabilities.",
+      "duplicate_segments": [
+        628,
+        629,
+        630,
+        631,
+        632,
+        634,
+        635
+      ]
+    },
+    {
+      "primary_segment": 644,
+      "timestamp": 5119.875,
+      "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass FeedForward(nn.Module):\n    \"\"\" a simple linear layer followed by a non-linearity \"\"\"\n    def __init__(self, n_embd):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(n_embd, 4 * n_embd),\n            nn.ReLU(),\n            nn.Linear(4 * n_embd, n_embd) # Projection back to original dimension\n        )\n\n    def forward(self, x):\n        return self.net(x)",
+      "concepts": [
+        "position_wise_feed_forward_network",
+        "transformer_architecture",
+        "pytorch_tensors"
+      ],
+      "rationale": "This code defines a `FeedForward` module, which is a position-wise feed-forward network, a standard component in Transformer blocks. It consists of two linear layers with a ReLU non-linearity in between, first expanding the feature dimension (e.g., `n_embd` to `4 * n_embd`) and then projecting it back to `n_embd`. This module operates independently on each token's representation.",
+      "teaching_context": "This snippet teaches the implementation of the Position-wise Feed-Forward Network, a crucial component of Transformer blocks. It demonstrates how a simple Multi-Layer Perceptron (MLP), applied identically and independently to each token's representation, processes the aggregated information locally for each position, adding non-linearity and increasing model capacity.",
+      "duplicate_segments": [
+        642,
+        643,
+        646,
+        647,
+        650
+      ]
+    },
+    {
+      "primary_segment": 645,
+      "timestamp": 5129.945,
+      "code": "import torch\nimport torch.nn as nn\n\n# Assuming FeedForward module is defined (e.g., from segment 644)\n# Assuming Head and MultiHeadAttention modules are defined (e.g., from segments 607 and 623)\n# Also, assume vocab_size, n_embd, block_size, n_head, device are defined\n\nclass BigramLanguageModel(nn.Module):\n    def __init__(self, vocab_size, n_embd, block_size, n_head):\n        super().__init__()\n        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)\n        self.position_embedding_table = nn.Embedding(block_size, n_embd)\n        self.sa_heads = MultiHeadAttention(n_embd, n_head, n_embd // n_head)\n        self.ffwd = FeedForward(n_embd) # Initialized\n        self.lm_head = nn.Linear(n_embd, vocab_size)\n\n    def forward(self, idx, targets=None):\n        B, T = idx.shape\n\n        tok_emb = self.token_embedding_table(idx)\n        pos_emb = self.position_embedding_table(torch.arange(T, device=device))\n        x = tok_emb + pos_emb\n        x = self.sa_heads(x) # Multi-Head Attention applied\n        x = self.ffwd(x) # Feed-Forward Network applied\n        logits = self.lm_head(x)\n        \n        if targets is None:\n            loss = None\n        else:\n            # ... loss calculation (truncated) ...\n            pass # Placeholder for actual loss calculation\n        return logits, loss",
+      "concepts": [
+        "position_wise_feed_forward_network",
+        "multi_head_attention",
+        "transformer_architecture"
+      ],
+      "rationale": "This snippet extends the `BigramLanguageModel` by integrating the `FeedForward` network after the `MultiHeadAttention` layer in the `forward` pass. This represents a more complete Transformer block structure, showcasing the sequential application of these two core mechanisms.",
+      "teaching_context": "This teaches how the `Position-wise Feed-Forward Network` is sequentially applied after the `Multi-Head Attention` layer within a Transformer block. It demonstrates the complete flow of information through these core components, showing how initial embeddings are first enriched by attention and then further processed by an independent MLP.",
+      "duplicate_segments": [
+        648,
+        649
+      ]
+    },
+    {
+      "primary_segment": 651,
+      "timestamp": 5177.8,
+      "code": "class BigramLanguageModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        # each token directly reads off the logits for the next token from a lookup table\n        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)\n        self.position_embedding_table = nn.Embedding(block_size, n_embd)\n        self.sa_heads = MultiHeadAttention(4, n_embd//4) # i.e. 4 heads of 8-dimensional self-attention\n        self.ffwd = FeedForward(n_embd)\n        self.lm_head = nn.Linear(n_embd, vocab_size)\n\n    def forward(self, idx, targets=None):\n        B, T = idx.shape\n\n        # idx and targets are both (B,T) tensor of integers\n        tok_emb = self.token_embedding_table(idx) # (B, T, C)\n        pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T, C)\n        x = tok_emb + pos_emb # (B,T,C)\n        x = self.sa_heads(x) # apply one head of self-attention. (B,T,C)\n        x = self.ffwd(x) # (B,T,C)\n        logits = self.lm_head(x) # (B,T,vocab_size)\n\n        if targets is None:\n            loss = None\n        else:\n            B, T, C = logits.shape",
+      "concepts": [
+        "token_embeddings",
+        "positional_embeddings",
+        "multi_head_attention",
+        "position_wise_feed_forward_network"
+      ],
+      "rationale": "This snippet defines the `BigramLanguageModel`'s `__init__` and `forward` methods, showcasing the initial integration of token and positional embeddings, followed by `MultiHeadAttention` and `FeedForward` layers. It illustrates how these foundational components are combined to process input sequences.",
+      "teaching_context": "This code introduces the first version of the `BigramLanguageModel` that incorporates self-attention and feed-forward networks, moving beyond a simple bigram model towards a Transformer-like architecture by explicitly defining embedding tables, attention heads, and a feed-forward layer, and then applying them sequentially in the forward pass.",
+      "duplicate_segments": [
+        652,
+        653
+      ]
+    },
+    {
+      "primary_segment": 655,
+      "timestamp": 5211.9400000000005,
+      "code": "def __init__(self, n_embd):super().__init__()self.net = nn.Sequential(nn.Linear(n_embd, n_embd),nn.ReLU(),)def forward(self, x):return self.net(x)class Block(nn.Module):\"\"\" Transformer block: communication followed by computation \"\"\"def __init__(self, n_embd, n_head):# n_embd: embedding dimension, n_head: the number of heads we'd likesuper().__init__()head_size = n_embd // n_headself.sa = MultiHeadAttention(n_head, head_size)self.ffwd = FeedForward(n_embd)def forward(self, x):x = self.sa(x)x = self.ffwd(x)return x# super simple bigram modelclass BigramLanguageModel(nn.Module):",
+      "concepts": [
+        "transformer_decoder_block",
+        "multi_head_attention",
+        "position_wise_feed_forward_network"
+      ],
+      "rationale": "This snippet defines the `Block` class, which encapsulates the `MultiHeadAttention` and `FeedForward` layers. This abstraction represents a single Transformer block, demonstrating how these two core components are sequentially applied.",
+      "teaching_context": "This code introduces the `Block` class as a fundamental building block of the Transformer, combining the 'communication' (self-attention) and 'computation' (feed-forward network) aspects into a single reusable module. It shows how these layers are instantiated and applied within the block's `__init__` and `forward` methods, respectively.",
+      "duplicate_segments": [
+        657,
+        658
+      ]
+    },
+    {
+      "primary_segment": 659,
+      "timestamp": 5244.280000000001,
+      "code": "class Block(nn.Module):\n    \"\"\" Transformer block: communication followed by computation \"\"\"\n    def __init__(self, n_embd, n_head):\n        # n_embd: embedding dimension, n_head: the number of heads we'd like\n        super().__init__()\n        head_size = n_embd // n_head\n        self.sa = MultiHeadAttention(n_head, head_size)\n        self.ffwd = FeedForward(n_embd)\n\n    def forward(self, x):\n        x = self.sa(x)\n        x = self.ffwd(x)\n        return x\n\n# super simple bigram model\nclass BigramLanguageModel(nn.Module):\n    def __init__(self, vocab_size, n_embd):\n        super().__init__()\n        # each token directly reads off the logits for the next token from a lookup table\n        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)\n        self.position_embedding_table = nn.Embedding(block_size, n_embd)\n        self.blocks = nn.Sequential(\n            Block(n_embd, n_head=4),\n            Block(n_embd, n_head=4),\n            Block(n_embd, n_head=4),\n            Block(n_embd, n_head=4),\n        )\n        self.lm_head = nn.Linear(n_embd, vocab_size)",
+      "concepts": [
+        "transformer_architecture",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This snippet demonstrates how multiple `Block` instances are stacked using `nn.Sequential` within the `BigramLanguageModel`'s `__init__` method. This illustrates the creation of a deeper Transformer architecture by repeating the basic Transformer block.",
+      "teaching_context": "This code updates the `BigramLanguageModel` to incorporate a stack of Transformer `Block` modules, effectively creating a multi-layer Transformer. It shows how `nn.Sequential` simplifies the construction of deep networks by chaining these custom blocks.",
+      "duplicate_segments": [
+        660,
+        661,
+        663,
+        664
+      ]
+    },
+    {
+      "primary_segment": 662,
+      "timestamp": 5271.625,
+      "code": "def forward(self, x):x = self.sa(x)x = self.ffwd(x)return x# super simple bigram model# You, 37 seconds ago 1 author (You)class BigramLanguageModel(nn.Module):    def __init__(self):        super().__init__()        # each token directly reads off the logits for the next token from a lookup table        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)        self.position_embedding_table = nn.Embedding(block_size, n_embd)        self.blocks = nn.Sequential(            Block(n_embd, n_head=4),            Block(n_embd, n_head=4),            Block(n_embd, n_head=4),            Block(n_embd, n_head=4),        )        self.lm_head = nn.Linear(n_embd, vocab_size)    def forward(self, idx, targets=None):        B, T = idx.shape        # idx and targets are both (B,T) tensor of integers        tok_emb = self.token_embedding_table(idx) # (B,T,C)        pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)        x = tok_emb + pos_emb # (B,T,C)        x = self.blocks(x) # (B,T,C)        logits = self.lm_head(x) # (B,T,vocab_size)",
+      "concepts": [
+        "transformer_decoder_block",
+        "token_embeddings",
+        "positional_embeddings"
+      ],
+      "rationale": "This snippet shows the `forward` method of the `BigramLanguageModel` after `Block` instances have been stacked. It demonstrates how token and positional embeddings are combined and then passed through the sequence of Transformer blocks.",
+      "teaching_context": "This code illustrates the data flow through the `BigramLanguageModel` once multiple `Block`s are introduced. It highlights how the combined token and positional embeddings are processed by the `self.blocks` (the sequential stack of Transformer blocks) before the final prediction layer.",
+      "duplicate_segments": []
+    },
+    {
+      "primary_segment": 677,
+      "timestamp": 5434.615,
+      "code": "107 class Block(nn.Module):\n108     \"\"\" Transformer block: communication followed by computation \"\"\"\n109 \n110     def __init__(self, n_embd, n_head):\n111         # n_embd: embedding dimension, n_head: the number of heads we'd like\n112         super().__init__()\n113         head_size = n_embd // n_head\n114         self.sa = MultiHeadAttention(n_head, head_size)\n115         self.ffwd = FeedForward(n_embd)\n116 \n117     def forward(self, x):\n118         x = x + self.sa(x)\n119         x = x + self.ffwd(x)\n120         return x",
+      "concepts": [
+        "residual_connections",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This snippet modifies the `Block` class's `forward` method to include residual connections by adding the input `x` to the output of both the self-attention (`self.sa(x)`) and feed-forward (`self.ffwd(x)`) sub-layers.",
+      "teaching_context": "This code introduces residual connections (also known as skip connections) into the Transformer `Block`. It demonstrates how the input to each sub-layer is added to its output, which is a critical technique for enabling the training of much deeper neural networks by facilitating better gradient flow.",
+      "duplicate_segments": [
+        678,
+        679
+      ]
+    },
+    {
+      "primary_segment": 682,
+      "timestamp": 5456.465,
+      "code": "class MultiHeadAttention(nn.Module):\n\"\"\" multiple heads of self-attention in parallel \"\"\"\n\ndef __init__(self, num_heads, head_size):\nsuper().__init__()\nself.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])\nself.proj = nn.Linear(num_heads * head_size, n_embd)\n\ndef forward(self, x):\nreturn torch.cat([h(x) for h in self.heads], dim=-1)\n\nclass FeedForward(nn.Module):\n\"\"\" a simple linear layer followed by a non-linearity \"\"\"\n\ndef __init__(self, n_embd):\nsuper().__init__()\nself.net = nn.Sequential(\nnn.Linear(n_embd, n_embd),\nnn.ReLU(),\n)\n\ndef forward(self, x):\nreturn self.net(x)\n\nclass Block(nn.Module):\n\"\"\" Transformer block: communication followed by computation \"\"\"",
+      "concepts": [
+        "multi_head_attention",
+        "pytorch_tensors"
+      ],
+      "rationale": "This snippet updates the `MultiHeadAttention` module's `__init__` method to include `self.proj = nn.Linear(num_heads * head_size, n_embd)`. This projection layer is essential for combining the concatenated outputs of multiple attention heads back to the expected embedding dimension.",
+      "teaching_context": "This code shows the implementation of the final linear projection layer within the `MultiHeadAttention` module. It explains how the outputs from individual attention heads, after being concatenated, are linearly transformed to integrate their diverse representations into a unified embedding dimension, preparing the output for subsequent layers or residual connections.",
+      "duplicate_segments": [
+        683,
+        684
+      ]
+    },
+    {
+      "primary_segment": 687,
+      "timestamp": 5472.610000000001,
+      "code": "out = wei @ V #(B, T, C) @ (B, T, C) -> (B, T, C)\nreturn out\n\nclass MultiHeadAttention(nn.Module):\n    \"\"\" multiple heads of self-attention in parallel \"\"\"\n    def __init__(self, num_heads, head_size):\n        super().__init__()\n        self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])\n        self.proj = nn.Linear(n_embd, n_embd)\n\n    def forward(self, x):\n        out = torch.cat([h(x) for h in self.heads], dim=-1)\n        out = self.proj(out)\n        return out\n\nclass FeedForward(nn.Module):\n    \"\"\" a simple linear layer followed by a non-linearity \"\"\"\n    def __init__(self, n_embd):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(n_embd, n_embd),\n            nn.ReLU(),\n        )\n\n    def forward(self, x):\n        return self.net(x)",
+      "concepts": [
+        "multi_head_attention"
+      ],
+      "rationale": "This snippet completes the `forward` method of `MultiHeadAttention`, demonstrating how the concatenated outputs from the individual attention heads are passed through the linear projection layer (`self.proj`) before being returned.",
+      "teaching_context": "This code shows the final step in the `MultiHeadAttention`'s forward pass, where the combined outputs of all attention heads are projected back to the model's main embedding dimension. This projection allows for information mixing across heads and ensures the output dimension matches expectations for subsequent layers.",
+      "duplicate_segments": [
+        685,
+        686
+      ]
+    },
+    {
+      "primary_segment": 696,
+      "timestamp": 5532.4349999999995,
+      "code": "class FeedForward(nn.Module):\n    \"\"\" a simple linear layer followed by a non-linearity \"\"\"\n\n    def __init__(self, n_embed):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(n_embed, 4 * n_embed),\n            nn.ReLU(),\n            nn.Linear(4 * n_embed, n_embed),\n        )\n\n    def forward(self, x):\n        return self.net(x)\n\nclass Block(nn.Module):\n    \"\"\" Transformer block: communication followed by computation \"\"\"\n\n    def __init__(self, n_embed, n_head):\n        # n_embed: embedding dimension, n_head: the number of heads we'd like\n        super().__init__()\n        head_size = n_embed // n_head\n        self.sa = MultiHeadAttention(n_head, head_size)\n        self.ffwd = FeedForward(n_embed)\n\n    def forward(self, x):\n        x = x + self.sa(x)\n        x = x + self.ffwd(x)\n        return x",
+      "concepts": [
+        "position_wise_feed_forward_network"
+      ],
+      "rationale": "This snippet updates the `FeedForward` module's `__init__` method to expand the input embedding dimension by a factor of four (`4 * n_embed`) in the intermediate linear layer before projecting it back down. This is a common design choice in Transformer FFNs.",
+      "teaching_context": "This code demonstrates a common enhancement to the feed-forward network within a Transformer block, where the internal dimensionality is expanded (e.g., by 4x `n_embed`) to increase the model's capacity to learn complex relationships, then projected back to the original dimension.",
+      "duplicate_segments": [
+        697,
+        698
+      ]
+    },
+    {
+      "primary_segment": 702,
+      "timestamp": 5584.9400000000005,
+      "code": "CLASS torch.nn.LayerNorm(normalized_shape, eps=1e-05, elementwise_affine=True, device=None, dtype=None) [SOURCE]",
+      "concepts": [
+        "layer_normalization"
+      ],
+      "rationale": "This snippet directly shows the PyTorch `LayerNorm` class signature, highlighting its parameters and signaling its introduction as a core concept for stabilizing neural network training.",
+      "teaching_context": "This code introduces the `torch.nn.LayerNorm` class, which is a standard PyTorch module for implementing layer normalization. It shows the basic structure and parameters of how to use LayerNorm in a deep learning model, serving as a prelude to its practical application in the Transformer architecture.",
+      "duplicate_segments": [
+        721,
+        731
+      ]
+    },
+    {
+      "primary_segment": 703,
+      "timestamp": 5592.99,
+      "code": "class Linear:\ndef __init__(self, fan_in, fan_out, bias=True):\nself.weight = torch.rand(fan_in, fan_out, generator=g) / fan_in**0.5\nself.bias = torch.zeros(fan_out) if bias else None\n\ndef __call__(self, x):\nself.out = x @ self.weight\nif self.bias is not None:\nself.out += self.bias\nreturn self.out\n\ndef parameters(self):\nreturn [self.weight] + ([self.bias] if self.bias is not None else [])\n\nclass BatchNormld:\ndef __init__(self, dim, eps=1e-5, momentum=0.1):\nself.eps = eps\nself.momentum = momentum\nself.training = True\n# parameters (trained with backprop)\nself.gamma = torch.ones(dim)\nself.beta = torch.zeros(dim)\n# buffers (trained with a running 'momentum update')\nself.running_mean = torch.zeros(dim)\nself.running_var = torch.ones(dim)\n\ndef __call__(self, x):\n# calculate the forward pass\nif self.training:\nxmean = x.mean(0, keepdim=True) # batch mean\nxvar = x.var(0, keepdim=True) # batch variance\nelse:\nxmean = self.running_mean\nxvar = self.running_var\nxhat = (x - xmean) / torch.sqrt(xvar + self.eps) # normalize to unit variance\nself.out = self.gamma * xhat + self.beta\n# update the buffers\nif self.training:\nwith torch.no_grad():\nself.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * xmean\nself.running_var = (1 - self.momentum) * self.running_var + self.momentum * xvar\nreturn self.out\n\ndef parameters(self):\nreturn [self.gamma, self.beta]\n\nclass Tanh:\ndef __call__(self, x):\nself.out = torch.tanh(x)\nreturn self.out\n\ndef parameters(self):\nreturn []\n\nn_embd = 10 # the dimensionality of the character embedding vectors\nn_hidden = 100 # the number of neurons in the hidden layer of the MLP\ng = torch.Generator().manual_seed(2147483647) # for reproducibility\n\nC = torch.rand(vocab_size, n_embd, generator=g)",
+      "concepts": [
+        "data_batching",
+        "pytorch_tensors"
+      ],
+      "rationale": "This extensive snippet provides a custom implementation of `BatchNorm1d`, including its `__init__` and `__call__` methods. It demonstrates how batch normalization computes statistics (mean and variance) across the batch dimension (`dim=0`) and applies affine transformations.",
+      "teaching_context": "This code serves as a detailed re-introduction to Batch Normalization, showing a custom implementation of `BatchNorm1d` from a previous series. It explains the core logic of normalizing features based on batch statistics, including the use of trainable `gamma` and `beta` parameters and running averages for inference.",
+      "duplicate_segments": [
+        704,
+        705
+      ]
+    },
+    {
+      "primary_segment": 707,
+      "timestamp": 5631.305,
+      "code": "xmean = self.running_mean\nxvar = self.running_var\nxhat = (x - xmean) / torch.sqrt(xvar + self.eps) # normalize to unit variance\nself.out = self.gamma * xhat + self.beta\n# update the buffers\nif self.training:\n    with torch.no_grad():\n        self.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * xmean\n        self.running_var = (1 - self.momentum) * self.running_var + self.momentum * xvar\nreturn self.out\n\ndef parameters(self):\n    return [self.gamma, self.beta]\n\ntorch.manual_seed(1337)\nmodule = BatchNorm1d(100)\nx = torch.randn(32, 100) # batch size 32 of 100-dimensional vectors\nx = module(x)\nx.shape\n\nk[:,0].mean(), x[:,0].std() # mean,std of one feature across all batch inputs\n\n(tensor(7.4506e-09), tensor(1.0000))\n\n[182] x[0,:].mean(), x[0,:].std() # mean,std of a single input from the batch, of its features\n(tensor(0.0411), tensor(1.0431))",
+      "concepts": [
+        "pytorch_tensors",
+        "data_batching"
+      ],
+      "rationale": "This snippet demonstrates the application and effect of `BatchNorm1d` on sample data. It shows how features (columns) are normalized to zero mean and unit variance across the batch, while individual samples (rows) are not necessarily normalized.",
+      "teaching_context": "This code illustrates the behavior of `BatchNorm1d` using a concrete example, showing how a batch of 100-dimensional vectors is processed. It specifically highlights that `BatchNorm1d` normalizes individual feature dimensions (columns) across the batch to have a mean of 0 and a standard deviation of 1.",
+      "duplicate_segments": [
+        706,
+        708,
+        709,
+        710
+      ]
+    },
+    {
+      "primary_segment": 712,
+      "timestamp": 5659.549999999999,
+      "code": "# parameters (trained with backprop)\nself.gamma = torch.ones(dim)\nself.beta = torch.zeros(dim)\n# buffers (trained with a running 'momentum update')\nself.running_mean = torch.zeros(dim)\nself.running_var = torch.ones(dim)\ndef __call__(self, x):\n# calculate the forward pass\nif self.training:\nxmean = x.mean(1, keepdim=True) # batch mean\nxvar = x.var(1, keepdim=True) # batch variance\nelse:\nxmean = self.running_mean\nxvar = self.running_var\nxhat = (x - xmean) / torch.sqrt(xvar + self.eps) # normalize to unit variance\nself.out = self.gamma * xhat + self.beta\n# update the buffers\nif self.training:\nwith torch.no_grad():\nself.running_mean = (1 - self.momentum) * self.running_mean + self.momentum * xmean\nself.running_var = (1 - self.momentum) * self.running_var + self.momentum * xvar\nreturn self.out\ndef parameters(self):\nreturn [self.gamma, self.beta]\ntorch.manual_seed(1337)\nmodule = BatchNorm1d(100)\nx = torch.randn(32, 100) # batch size 32 of 100-dimensional vectors\nx = module(x)\nx.shape\ntorch.Size([32, 100])",
+      "concepts": [
+        "layer_normalization"
+      ],
+      "rationale": "This snippet modifies the custom `BatchNorm1d` implementation to compute mean and variance across `dim=1` (features for each example) instead of `dim=0` (batch dimension). This key change transforms it into an equivalent of layer normalization.",
+      "teaching_context": "This code demonstrates the conceptual shift from Batch Normalization to Layer Normalization by modifying where the mean and variance are calculated. Instead of normalizing across the batch (column-wise), it now normalizes across the feature dimension for each individual input example (row-wise), which is the defining characteristic of Layer Normalization.",
+      "duplicate_segments": [
+        713,
+        714,
+        715
+      ]
+    },
+    {
+      "primary_segment": 718,
+      "timestamp": 5702.5599999999995,
+      "code": "class BatchNorm1d:\ndef __init__(self, dim, eps=1e-5, momentum=0.1):\n    self.eps = eps\n    self.momentum = momentum\n    self.training = True\n    # parameters (trained with backprop)\n    self.gamma = torch.ones(dim)\n    self.beta = torch.zeros(dim)\n\ndef __call__(self, x):\n    # calculate the forward pass\n    xmean = x.mean(1, keepdim=True) # batch mean\n    xvar = x.var(1, keepdim=True) # batch variance\n    xhat = (x - xmean) / torch.sqrt(xvar + self.eps) # normalize to unit variance\n    self.out = self.gamma * xhat + self.beta\n    return self.out\n\ndef parameters(self):\n    return [self.gamma, self.beta]\n\ntorch.manual_seed(1337)\nmodule = BatchNorm1d(100)\nx = torch.randn(32, 100) # batch size 32 of 100-dimensional vectors\nx = module(x)\nx.shape\n\ntorch.Size([32, 100])",
+      "concepts": [
+        "layer_normalization"
+      ],
+      "rationale": "This snippet shows the final simplified custom `LayerNorm` implementation by removing the `if self.training` condition, `momentum`, and running buffers (`running_mean`, `running_var`). This highlights that `LayerNorm` does not differentiate between training and evaluation phases.",
+      "teaching_context": "This code represents the fully simplified custom Layer Normalization implementation. By stripping away `self.training` conditions and running buffers, it underscores the key property of Layer Norm: it normalizes each input independently, meaning its behavior is identical during both training and inference, unlike Batch Normalization.",
+      "duplicate_segments": [
+        717,
+        719,
+        720,
+        733
+      ]
+    },
+    {
+      "primary_segment": 725,
+      "timestamp": 5763.465,
+      "code": "class Block(nn.Module):\n    \"\"\" Transformer block: communication followed by computation \"\"\"\n\n    def __init__(self, n_embd, n_head):\n        # n_embd: embedding dimension, n_head: the number of heads we'd like\n        super().__init__()\n        head_size = n_embd // n_head\n        self.sa = MultiHeadAttention(n_head, head_size)\n        self.ffwd = FeedForward(n_embd)\n        self.ln1 = nn.LayerNorm(n_embd)\n        self.ln2 = nn.LayerNorm(n_embd)\n\n    def forward(self, x):\n        x = x + self.sa(x)\n        x = x + self.ffwd(x)\n        return x\n\n# super simple bigram model\nclass BigramLanguageModel(nn.Module):\n    def __init__(self):\n        super().__init__()\n        # each token directly reads off the logits for the next token from a lookup table\n        self.token_embedding_table = nn.Embedding(vocab_size, n_embd)",
+      "concepts": [
+        "layer_normalization",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This snippet integrates two `nn.LayerNorm` modules (`self.ln1`, `self.ln2`) into the `__init__` method of the `Block` class, preparing for their application within the Transformer block's forward pass.",
+      "teaching_context": "This code shows the instantiation of `nn.LayerNorm` modules within the Transformer `Block`'s `__init__` method. It prepares the block for implementing pre-normalization, where inputs to the self-attention and feed-forward sub-layers will be normalized.",
+      "duplicate_segments": [
+        724,
+        726
+      ]
+    },
+    {
+      "primary_segment": 728,
+      "timestamp": 5775.425,
+      "code": "nn.ReLU(),nn.Linear(4 * n_embd, n_embd),def forward(self, x):   return self.net(x)class Block(nn.Module):    \"\"\" Transformer block: communication followed by computation \"\"\"    def __init__(self, n_embd, n_head):        # n_embd: embedding dimension, n_head: the number of heads we'd like        super().__init__()        head_size = n_embd // n_head        self.sa = MultiHeadAttention(n_head, head_size)        self.ffwd = FeedForward(n_embd)        self.ln1 = nn.LayerNorm(n_embd)        self.ln2 = nn.LayerNorm(n_embd)    def forward(self, x):        x = x + self.sa(self.ln1(x))        x = x + self.ffwd(self.ln2(x))        return x# super simple bigram modelclass BigramLanguageModel(nn.Module):    def __init__(self):        super().__init__()        # each token directly reads off the logits for the next token from a lookup table",
+      "concepts": [
+        "layer_normalization",
+        "residual_connections",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This snippet modifies the `Block`'s `forward` method to implement pre-normalization, applying `LayerNorm` to the input `x` *before* it enters the self-attention (`self.sa(self.ln1(x))`) and feed-forward (`self.ffwd(self.ln2(x))`) sub-layers, combined with residual connections.",
+      "teaching_context": "This code demonstrates the \"pre-normalization\" (or Pre-LN) architecture for Transformer blocks, where `LayerNorm` is applied to the input of each sub-layer (self-attention and feed-forward) before computation, and the output is then added back via a residual connection. This contrasts with post-normalization and is common in models like GPT.",
+      "duplicate_segments": [
+        727,
+        729,
+        730,
+        732,
+        735
+      ]
+    },
+    {
+      "primary_segment": 740,
+      "timestamp": 5875.014999999999,
+      "code": "class BigramLanguageModel(nn.Module):\ndef __init__(self):\n super().__init__()\n # each token directly reads off the logits for the next token from a lookup table\n self.token_embedding_table = nn.Embedding(vocab_size, n_embd)\n self.position_embedding_table = nn.Embedding(block_size, n_embd)\n self.blocks = nn.Sequential(*([Block(n_embd, n_head, n_head) for _ in range(n_layer)]))\n self.ln_f = nn.LayerNorm(n_embd) # final layer norm\n self.lm_head = nn.Linear(n_embd, vocab_size)\ndef forward(self, idx, targets=None):\n B, T = idx.shape\n # idx and targets are both (B,T) tensor of integers\n tok_emb = self.token_embedding_table(idx) # (B,T,C)\n pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)\n x = tok_emb + pos_emb # (B,T,C)\n x = self.blocks(x) # (B,T,C)\n x = self.ln_f(x) # (B,T,C)\n logits = self.lm_head(x) # (B,T,vocab_size)\n if targets is None:\n loss = None\n else:\n B, T, C = logits.shape\n logits = logits.view(B*T, C)\n targets = targets.view(B*T)\n loss = F.cross_entropy(logits, targets)",
+      "concepts": [
+        "transformer_architecture",
+        "layer_normalization",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This snippet refactors the `BigramLanguageModel` to dynamically create a stack of `n_layer` Transformer `Block`s and introduces a final `LayerNorm` (`self.ln_f`) before the linear output layer. This makes the architecture more scalable and incorporates a standard Transformer component.",
+      "teaching_context": "This code demonstrates how to make the Transformer model more flexible and scalable by using `n_layer` to determine the number of stacked blocks dynamically. It also introduces a final `LayerNorm` applied to the output of the entire block sequence, which is a common practice in many Transformer architectures to normalize features before the final vocabulary prediction.",
+      "duplicate_segments": [
+        736,
+        737,
+        738,
+        741,
+        742
+      ]
+    },
+    {
+      "primary_segment": 743,
+      "timestamp": 5891.005,
+      "code": "class MultiHeadAttention(nn.Module):    \"\"\" multiple heads of self-attention in parallel \"\"\"    def __init__(self, num_heads, head_size):        super().__init__()        self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])        self.proj = nn.Linear(n_embd, n_embd)        self.dropout = nn.Dropout(dropout)    def forward(self, x):        out = torch.cat([h(x) for h in self.heads], dim=-1)        out = self.dropout(self.proj(out))        return outclass FeedForward(nn.Module):    \"\"\" a simple linear layer followed by a non-linearity \"\"\"    def __init__(self, n_embd):        super().__init__()        self.net = nn.Sequential(            nn.Linear(n_embd, 4 * n_embd),            nn.ReLU(),            nn.Linear(4 * n_embd, n_embd),            nn.Dropout(dropout),        )    def forward(self, x):        return self.net(x)class Block(nn.Module):    \"\"\" Transformer block: communication followed by computation \"\"\"    def __init__(self, n_embd, n_head):",
+      "concepts": [
+        "dropout_regularization",
+        "multi_head_attention",
+        "position_wise_feed_forward_network"
+      ],
+      "rationale": "This snippet introduces `nn.Dropout(dropout)` layers into both the `MultiHeadAttention` (after the projection) and `FeedForward` modules (as the last layer in its sequential block), demonstrating a common regularization technique.",
+      "teaching_context": "This code demonstrates the application of `Dropout` regularization within key Transformer components. It shows how dropout is added to the output of the multi-head attention mechanism (after projection) and to the final layer of the feed-forward network, helping to prevent overfitting by randomly zeroing out activations during training.",
+      "duplicate_segments": [
+        744,
+        745,
+        746,
+        747
+      ]
+    },
+    {
+      "primary_segment": 748,
+      "timestamp": 5911.535,
+      "code": "class Head(nn.Module):\n    \"\"\" one head of self-attention \"\"\"\n    def __init__(self, head_size):\n        super().__init__()\n        self.key = nn.Linear(n_embd, head_size, bias=False)\n        self.query = nn.Linear(n_embd, head_size, bias=False)\n        self.value = nn.Linear(n_embd, head_size, bias=False)\n        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))\n\n        self.dropout = nn.Dropout(dropout)\n\n    def forward(self, x):\n        B, T, C = x.shape\n        k = self.key(x)   # (B, T, C)\n        q = self.query(x) # (B, T, C)\n        # compute attention scores (\"affinities\")\n        wei = q @ k.transpose(-2, -1) * C**-0.5 # (B, T, C) @ (B, C, T) -> (B, T, T)\n        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)\n        wei = F.softmax(wei, dim=-1) # (B, T, T)\n        wei = self.dropout(wei)\n        # perform the weighted aggregation of the values\n        v = self.value(x) # (B, T, C)\n        out = wei @ v # (B, T, T) @ (B, T, C) -> (B, T, C)\n        return out\n\nclass MultiHeadAttention(nn.Module):\n    \"\"\" multiple heads of self-attention in parallel \"\"\"\n    def __init__(self, num_heads, head_size):\n        super().__init__()\n        self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])\n        self.proj = nn.Linear(n_embd, n_embd)\n        self.dropout = nn.Dropout(dropout)",
+      "concepts": [
+        "dropout_regularization",
+        "self_attention_mechanism",
+        "scaled_dot_product_attention"
+      ],
+      "rationale": "This snippet specifically adds `self.dropout(wei)` within the `Head` class's `forward` method, applying dropout directly to the attention weights after the softmax operation. This targets regularization within the attention mechanism itself.",
+      "teaching_context": "This code demonstrates a more granular application of dropout regularization, specifically within a single attention head. By applying dropout to the attention weights (`wei`) after softmax, it prevents the model from relying too heavily on specific attention connections, promoting a more distributed and robust attention mechanism.",
+      "duplicate_segments": [
+        749,
+        750
+      ]
+    },
+    {
+      "primary_segment": 757,
+      "timestamp": 5977.645,
+      "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n# hyperparameters\nbatch_size = 64 # how many independent sequences will we process in parallel?\nblock_size = 256 # what is the maximum context length for predictions?\nmax_iters = 5000\neval_interval = 500\nlearning_rate = 3e-4\ndevice = 'cuda' if torch.cuda.is_available() else 'cpu'\neval_iters = 200\nn_embed = 384\nn_head = 6\nn_layer = 6\ndropout = 0.2\n\ntorch.manual_seed(1337)\n\n# wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt\nwith open('input.txt', 'r', encoding='utf-8') as f:\n    text = f.read()\n\n# here are all the unique characters that occur in this text\nchars = sorted(list(set(text)))\nvocab_size = len(chars)\n# create a mapping from characters to integers\nstoi = { ch:i for i,ch in enumerate(chars) }\nitos = { i:ch for i,ch in enumerate(chars) }\nencode = lambda s: [stoi[c] for c in s] # encoder: take a string, output a list of integers\ndecode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string\n\n# Train and test splits\ndata = torch.tensor(encode(text), dtype=torch.long)\nn = int(0.9*len(data)) # first 90% will be train, rest val",
+      "concepts": [
+        "character_level_language_modeling",
+        "data_batching",
+        "context_window",
+        "tokenization",
+        "dropout_regularization",
+        "gpu_acceleration"
+      ],
+      "rationale": "This comprehensive snippet defines all key hyperparameters (`batch_size`, `block_size`, `n_embd`, `n_head`, `n_layer`, `dropout`), sets up the device (`cuda` or `cpu`), and includes the full data loading and character-level tokenization process for the Shakespeare dataset.",
+      "teaching_context": "This code provides the complete setup for training a character-level Transformer language model. It defines critical hyperparameters like batch size, context window (block size), embedding dimensions, number of attention heads and layers, and dropout rate. It also details the process of loading text data, creating a vocabulary, and tokenizing text into numerical sequences suitable for model input.",
+      "duplicate_segments": [
+        758,
+        759,
+        760,
+        761,
+        762,
+        763,
+        764,
+        765,
+        768
+      ]
+    },
+    {
+      "primary_segment": 814,
+      "timestamp": 6410.315,
+      "code": "model = BigramLanguageModel()m = model.to(device) # create a PyTorch optimizeroptimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)for iter in range(max_iters):    # every once in a while evaluate the loss on train and val sets    if iter % eval_interval == 0 or iter == max_iters - 1:        losses = estimate_loss()        print(f\"step {iter}: train loss {losses['train']:.4f}, val loss {losses['val']:.4f}\")    # sample a batch of data    xb, yb = get_batch('train')    # evaluate the loss    logits, loss = model(xb, yb)    optimizer.zero_grad(set_to_none=True)    loss.backward()    optimizer.step()# generate from the modelcontext = torch.zeros((1, 1), dtype=torch.long, device=device)print(decode(m.generate(context, max_new_tokens=500)[0].tolist()))",
+      "concepts": [
+        "adamw_optimizer",
+        "cross_entropy_loss",
+        "data_batching",
+        "model_evaluation_practices",
+        "text_generation_sampling",
+        "gpu_acceleration"
+      ],
+      "rationale": "This code snippet defines the core training loop, including optimizer initialization (AdamW), batch sampling, forward pass, loss calculation (implicitly Cross-Entropy via `model()` which returns `loss`), gradient backpropagation, parameter updates, and periodic evaluation on train/validation sets. It also shows the final text generation step using multinomial sampling.",
+      "teaching_context": "This snippet teaches the standard process of training a neural network for language modeling, including setting up an optimizer, iterating through data in batches, calculating loss, performing backpropagation, updating model parameters, and generating output from the trained model.",
+      "duplicate_segments": [
+        832,
+        833,
+        834,
+        858,
+        859
+      ]
+    },
+    {
+      "primary_segment": 813,
+      "timestamp": 6397.455,
+      "code": "self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))def dropout = nn.Dropout(dropout)def forward(self, x):B, T, C = x.shapek = self.key(x) # (B,T,C)q = self.query(x) # (B,T,C)# compute attention scores (\"affinities\")wei = q @ k.transpose(-2, -1) * C**-0.5 # (B, T, C) @ (B, C, T) -> (B, T, T)wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf')) # (B, T, T)wei = F.softmax(wei, dim=-1)wei = self.dropout(wei)# perform the weighted aggregation of the valuesv = self.value(x) # (B,T,C)out = wei @ v # (B, T, T) @ (B, T, C) -> (B, T, C)return outclass MultiHeadAttention(nn.Module):\"\"\" multiple heads of self-attention in parallel \"\"\"def __init__(self, num_heads, head_size):super().__init__()self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])self.proj = nn.Linear(n_embd, n_embd)self.dropout = nn.Dropout(dropout)def forward(self, x):out = torch.cat([h(x) for h in self.heads], dim=-1)out = self.dropout(self.proj(out))return out",
+      "concepts": [
+        "self_attention_mechanism",
+        "multi_head_attention",
+        "scaled_dot_product_attention",
+        "pytorch_tensors",
+        "dropout_regularization",
+        "weighted_aggregation"
+      ],
+      "rationale": "This snippet defines both the `Head` class (a single self-attention head) and the `MultiHeadAttention` module. The `Head` class includes Query, Key, Value projections, scaled dot-product attention calculation, causal masking, softmax, dropout, and weighted aggregation. The `MultiHeadAttention` class shows how multiple `Head` instances are run in parallel, their outputs concatenated, and then linearly projected.",
+      "teaching_context": "This code demonstrates the fundamental mechanics of self-attention, explaining how a single attention head processes input and how multiple such heads are combined in Multi-Head Attention to capture diverse relationships within the sequence.",
+      "duplicate_segments": [
+        819,
+        820
+      ]
+    },
+    {
+      "primary_segment": 818,
+      "timestamp": 6447.99,
+      "code": "    def __init__(self, n_embd):        super().__init__()        self.net = nn.Sequential(            nn.Linear(n_embd, 4 * n_embd),            nn.ReLU(),            nn.Linear(4 * n_embd, n_embd),            nn.Dropout(dropout),        )    def forward(self, x):        return self.net(x)class Block(nn.Module):    \"\"\" Transformer block: communication followed by computation \"\"\"    def __init__(self, n_embd, n_head):        # n_embd: embedding dimension, n_head: the number of heads we'd like        super().__init__()        head_size = n_embd // n_head        self.sa = MultiHeadAttention(n_head, head_size)        self.ffwd = FeedForward(n_embd)        self.ln1 = nn.LayerNorm(n_embd)        self.ln2 = nn.LayerNorm(n_embd)    def forward(self, x):        x = x + self.sa(self.ln1(x))        x = x + self.ffwd(self.ln2(x))        return x",
+      "concepts": [
+        "position_wise_feed_forward_network",
+        "residual_connections",
+        "layer_normalization",
+        "dropout_regularization",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This snippet defines the `MLP` (which is named `FeedForward` in the `Block` class instantiation) and the `Block` class itself. The `Block` class demonstrates the full Transformer decoder block structure, including multi-head self-attention, a position-wise feed-forward network, residual connections, and layer normalization.",
+      "teaching_context": "This code teaches the internal structure of a Transformer block, showing how self-attention, feed-forward networks, residual connections, and layer normalization are combined to form a powerful processing unit within the Transformer architecture.",
+      "duplicate_segments": []
+    },
+    {
+      "primary_segment": 816,
+      "timestamp": 6435.35,
+      "code": "def __init__(self, config):    super().__init__()    assert config.n_embed % config.n_head == 0    # key, query, value projections for all heads, but in a batch    self.c_attn = nn.Linear(config.n_embed, 3 * config.n_embed)    # output projection    self.c_proj = nn.Linear(config.n_embed, config.n_embed)    # regularization    self.attn_dropout = nn.Dropout(config.dropout)    self.resid_dropout = nn.Dropout(config.dropout)    # causal mask to ensure that attention is only applied to the left in the input sequence    self.register_buffer(\"bias\", torch.tril(torch.ones(config.block_size, config.block_size))                        .view(1, 1, config.block_size, config.block_size))    self.n_head = config.n_head    self.n_embd = config.n_embddef forward(self, x):    B, T, C = x.size() # batch size, sequence length, embedding dimensionality (n_embd)    # calculate query, key, values for all heads in batch and move head forward to be the batch dim    q, k, v = self.c_attn(x).split(self.n_embd, dim=2)    k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2) # (B, nh, T, hs)    q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2) # (B, nh, T, hs)    v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2) # (B, nh, T, hs)    # causal self-attention: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)    att = (q @ k.transpose(-2, -1)) * (1.0 / math.sqrt(k.size(-1)))    att = att.masked_fill(self.bias[:,:,:T,:T] == 0, float('-inf'))    att = f.softmax(att, dim=-1)    att = self.attn_dropout(att)    y = att @ v # (B, nh, T, hs) @ (B, nh, T, hs) -> (B, nh, T, hs)    y = y.transpose(1, 2).contiguous().view(B, T, C) # re-assemble all head outputs side by side    # output projection    y = self.resid_dropout(self.c_proj(y))    return y",
+      "concepts": [
+        "self_attention_mechanism",
+        "multi_head_attention",
+        "scaled_dot_product_attention",
+        "pytorch_tensors",
+        "dropout_regularization",
+        "context_window"
+      ],
+      "rationale": "This code defines the `CausalSelfAttention` module with a batched implementation for multi-head attention. It shows the QKV projections, splitting and transposing for different heads, scaled dot-product calculation, application of a causal mask, softmax, dropout, and re-assembly of head outputs. This is a highly optimized version of the self-attention mechanism, typically used in production-level Transformer implementations.",
+      "teaching_context": "This snippet teaches the efficient, batched implementation of causal multi-head self-attention within the Transformer, showcasing how tensor operations are structured to handle multiple attention heads and causal masking for auto-regressive decoding.",
+      "duplicate_segments": [
+        817,
+        821,
+        822
+      ]
+    },
+    {
+      "primary_segment": 823,
+      "timestamp": 6491.335,
+      "code": "import mathfrom dataclasses import dataclassimport torchimport torch.nn as nnfrom torch.nn import functional as F@torch.jit.script # good to enable when not not using torch.compile, disable when using (our default)def new_gelu(x):    \"\"\"    Implementation of the GELU activation function currently in Google BERT repo (identical to OpenAI GPT).    Reference: Gaussian Error Linear Units (GELU) paper: https://arxiv.org/abs/1606.08415    \"\"\"    return 0.5 * x * (1.0 + torch.tanh(math.sqrt(2.0 / math.pi) * (x + 0.044715 * torch.pow(x, 3.0))))class CausalSelfAttention(nn.Module):    def __init__(self, config):        super().__init__()        assert config.n_embd % config.n_head == 0        # key, query, value projections for all heads, but in a batch        self.c_attn = nn.Linear(config.n_embd, 3 * config.n_embd)        # output projection        self.c_proj = nn.Linear(config.n_embd, config.n_embd)        # regularization        self.attn_dropout = nn.Dropout(config.dropout)        self.resid_dropout = nn.Dropout(config.dropout)        # causal mask to ensure that attention is only applied to the left in the input sequence        self.register_buffer(\"bias\", torch.tril(torch.ones(config.block_size, config.block_size)) \\                                     .view(1, 1, config.block_size, config.block_size))",
+      "concepts": [
+        "transformer_architecture"
+      ],
+      "rationale": "This snippet defines the `new_gelu` function, a Gaussian Error Linear Unit activation function, which is commonly used in modern Transformer models like GPT as an alternative to ReLU.",
+      "teaching_context": "This teaches about a specific activation function (GELU) used in advanced Transformer architectures, highlighting its mathematical definition and role as a non-linearity.",
+      "duplicate_segments": []
+    },
+    {
+      "primary_segment": 825,
+      "timestamp": 6513.395,
+      "code": "ln_f = nn.LayerNorm(config.n_embd,self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)# with weight tying when using torch.compile() some warnings get generated:# \"UserWarning: functional_call was passed multiple values for tied weights.# This behavior is deprecated and will be an error in future versions\"# not 100% sure what this is, so far seems to be harmless. TODO investigatself.transformer.wte.weight = self.lm_head.weight # https://paperswithcode.com/method/weight-tying# report number of parametersn_params = sum(p.numel() for p in self.parameters())print(\"number of parameters: %.2fM\" % (n_params/1e6,))def forward(self, idx, targets=None):device = idx.deviceb, t = idx.size()assert t <= self.config.block_size, f\"Cannot forward sequence of length {t}, block size is only {self.config.block_size}\"pos = torch.arange(0, t, dtype=torch.long, device=device).unsqueeze(0) # shape (1, t)# forward the GPT model itselftok_emb = self.transformer.wte(idx) # token embeddings of shape (b, t, n_embd)pos_emb = self.transformer.wpe(pos) # position embeddings of shape (1, t, n_embd)x = self.transformer.drop(tok_emb + pos_emb)for block in self.transformer.h:x = block(x)x = self.transformer.ln_f(x)if targets is not None:# if we are given some desired targets also calculate the losslogits = self.lm_head(x)loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1), ignore_index=-1)else:# inference-time mini-optimization: only forward the lm_head on the very last positionlogits = self.lm_head(x[:, [-1], :]) # note: using list [-1] to preserve the time dimloss = Nonereturn logits, lossdef crop_block_size(self, block_size):",
+      "concepts": [
+        "transformer_architecture",
+        "token_embeddings",
+        "positional_embeddings",
+        "language_modeling",
+        "cross_entropy_loss",
+        "transformer_decoder_block"
+      ],
+      "rationale": "This code defines the `GPT` class structure, including the initialization of token and positional embeddings, a stack of Transformer blocks, and the language modeling head. The `forward` method demonstrates how inputs are processed through embeddings, stacked Transformer blocks, layer normalization, and the final linear layer to produce logits for next-token prediction, including loss calculation during training and optimized inference.",
+      "teaching_context": "This snippet illustrates the complete architecture and forward pass of a decoder-only GPT-style language model, showing how various components (embeddings, attention blocks, linear head) work together for language modeling and generation.",
+      "duplicate_segments": [
+        824
+      ]
+    },
+    {
+      "primary_segment": 826,
+      "timestamp": 6518.88,
+      "code": "# separate out all parameters to those that will and won't experience regularizing weight decaydecay = set()no_decay = set()whitelist_weight_modules = (torch.nn.Linear, )blacklist_weight_modules = (torch.nn.LayerNorm, torch.nn.Embedding)for mn, m in self.named_modules():    for pn, p in m.named_parameters():        fpn = '%s.%s' % (mn, pn) if mn else pn # full param name        # random note: because named_modules and named_parameters are recursive        # we will see the same tensors p many many times. but doing it this way        # allows us to know which parent module any tensor p belongs to...        if pn.endswith('bias'):            # all biases will not be decayed            no_decay.add(fpn)        elif pn.endswith('weight') and isinstance(m, whitelist_weight_modules):            # weights of whitelist modules will be weight decayed            decay.add(fpn)        elif pn.endswith('weight') and isinstance(m, blacklist_weight_modules):            # weights of blacklist modules will NOT be weight decayed            no_decay.add(fpn)# subtle: 'transformer.wte.weight' and 'lm_head.weight' are tied, so they# appear in the no_decay and decay sets respectively after the above.# In addition, because named_parameters() doesn't return duplicates, it# will only return the first occurence, key'd by 'transformer.wte.weight', below.# so let's manually remove 'lm_head.weight' from decay set. This will include# this tensor into optimization via transformer.wte.weight only, and not decayed.decay.remove('lm_head.weight')# validate that we considered every parameterparam_dict = {pn: p for pn, p in self.named_parameters()}inter_params = decay & no_decayunion_params = decay | no_decayassert len(inter_params) == 0, \"parameters %s made it into both decay/no_decay sets!\" % (str(inter_params),)assert len(param_dict.keys() - union_params) == 0, \"parameters %s were not separated into either decay/no_decay sets!\" % (str(param_dict.keys() - union_params),)# create the pytorch optimizer object",
+      "concepts": [
+        "adamw_optimizer",
+        "dropout_regularization"
+      ],
+      "rationale": "This code demonstrates the process of separating model parameters into two groups: those that should undergo weight decay (typically weights of linear layers) and those that should not (biases, LayerNorm weights, embeddings). This is a common practice when using optimizers like AdamW to apply regularization selectively.",
+      "teaching_context": "This snippet teaches advanced optimization techniques, specifically how to configure weight decay in an optimizer like AdamW by explicitly identifying and grouping different types of model parameters, which helps in preventing overfitting.",
+      "duplicate_segments": []
+    },
+    {
+      "primary_segment": 827,
+      "timestamp": 6528.495,
+      "code": "block.attn.bias = block.attn.bias[:,:,:block_size,:block_size]@classmethoddef from_pretrained(cls, model_type, override_args=None):    assert model_type in ['gpt2', 'gpt2-medium', 'gpt2-large', 'gpt2-xl']    override_args = override_args or {} # default to empty dict    # only dropout can be overridden see more notes below    assert all(k == 'dropout' for k in override_args)    from transformers import GPT2LMHeadModel    print(\"loading weights from pretrained gpt: %s\" % model_type)    # n_layer, n_head and n_embd are determined from model_type    config_args = {        'gpt2':         dict(n_layer=12, n_head=12, n_embd=768),  # 124M params        'gpt2-medium':  dict(n_layer=24, n_head=16, n_embd=1024), # 350M params        'gpt2-large':   dict(n_layer=36, n_head=20, n_embd=1280), # 774M params        'gpt2-xl':      dict(n_layer=48, n_head=25, n_embd=1600), # 1558M params    }[model_type]    # we can override the dropout rate    if 'dropout' in override_args:        config_args['dropout'] = override_args['dropout']    # block_size is always 1024 for GPT model checkpoints    # if one wants a lower block_size it has to be done through model surgery    # later, by calling crop_block_size()    # create a from-scratch initialized minGPT model    config = GPTConfig(block_size=1024, **config_args)    model = GPT(config)    sd = model.state_dict()    # init a huggingface/transformers model    model_hf = GPT2LMHeadModel.from_pretrained(model_type)    sd_hf = model_hf.state_dict()    # copy while ensuring all of the parameters are aligned and match in names and shapes    keys = [k for k in sd_hf if not k.endswith('attn.masked_bias')] # ignore these    # basically the openai checkpoints use a \"Conv1D\" module, but we only want to use a vanilla Linear    # this means that we have to transpose these weights when we import them",
+      "concepts": [
+        "gpt_pretraining",
+        "transformer_architecture",
+        "model_evaluation_practices"
+      ],
+      "rationale": "This snippet defines a `from_pretrained` class method for the GPT model, demonstrating how to load pre-trained weights from official GPT-2 models (e.g., from Hugging Face). It shows how to configure the model based on different GPT-2 sizes and handle the mapping and potential transposition of weights between different implementations.",
+      "teaching_context": "This code teaches how to leverage pre-trained large language models, specifically GPT-2, by loading their weights. It highlights the importance of model configuration (e.g., number of layers, heads, embedding dimensions) for different model sizes and the practical steps involved in weight loading and alignment.",
+      "duplicate_segments": []
+    },
+    {
+      "primary_segment": 857,
+      "timestamp": 6893.62,
+      "code": "device = 'cuda' if torch.cuda.is_available() else 'cpu'eval_iters = 200n_embed = 384n_head = 6n_layer = 6dropout = 0.2torch.manual_seed(1337)# wget https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txtwith open('input.txt', 'r', encoding='utf-8') as f:    text = f.read()# here are all the unique characters that occur in this textchars = sorted(list(set(text)))vocab_size = len(chars)# create a mapping from characters to integersstoi = { ch:i for i,ch in enumerate(chars) }itos = { i:ch for i,ch in enumerate(chars) }encode = lambda s: [stoi[c] for s] # encoder: take a string, output a list of integersdecode = lambda l: ''.join([itos[i] for i in l]) # decoder: take a list of integers, output a string# Train and test splitsdata = torch.tensor(encode(text), dtype=torch.long)",
+      "concepts": [
+        "character_level_language_modeling",
+        "tokenization",
+        "train_validation_split",
+        "context_window",
+        "gpu_acceleration"
+      ],
+      "rationale": "This snippet sets up various hyperparameters (e.g., `batch_size`, `block_size`, `learning_rate`, `n_embd`), loads the 'Tiny Shakespeare' dataset, performs character-level tokenization by creating mappings between characters and integers, and then converts the entire text into a PyTorch tensor, preparing it for a character-level language model.",
+      "teaching_context": "This code teaches the initial data preparation steps for training a character-level language model, including defining key hyperparameters, loading raw text data, implementing basic character-level tokenization (encoding and decoding), and converting text into numerical tensors suitable for PyTorch.",
+      "duplicate_segments": [
+        856
+      ]
+    },
+    {
+      "primary_segment": 860,
+      "timestamp": 6908.955,
+      "code": "# version 4: self-attention!torch.manual_seed(1337)B, T, C = 4,8,32 # batch, time, channelsx = torch.randn(B,T,C)# let's see a single Head perform self-attentionhead_size = 16key = nn.Linear(C, head_size, bias=False)query = nn.Linear(C, head_size, bias=False)value = nn.Linear(C, head_size, bias=False)k = key(x) # (B, T, 16)q = query(x) # (B, T, 16)wei = q @ k.transpose(-2, -1) # (B, T, 16) @ (B, 16, T) ---> (B, T, T)tril = torch.tril(torch.ones(T, T))#wei = torch.zeros((T,T))wei = wei.masked_fill(tril == 0, float('-inf'))wei = F.softmax(wei, dim=-1)v = value(x)out = wei @ v#out = wei @ xout.shape",
+      "concepts": [
+        "self_attention_mechanism",
+        "pytorch_tensors",
+        "scaled_dot_product_attention",
+        "weighted_aggregation",
+        "context_window"
+      ],
+      "rationale": "This snippet provides a step-by-step demonstration of a single self-attention head, showing the creation of Query, Key, and Value vectors from an input tensor `x`, the calculation of attention scores via dot product, scaling, application of a causal mask (tril), softmax to get probabilities, and finally the weighted aggregation of Value vectors to produce the output.",
+      "teaching_context": "This code serves as a detailed illustrative example of how a single self-attention head computes its output, making the abstract concepts of Query, Key, Value, scaling, masking, and weighted aggregation concrete with explicit tensor operations and shape transformations.",
+      "duplicate_segments": []
+    }
+  ],
+  "rejected_segments": [
+    {
+      "segment_index": 30,
+      "reason": "Generated Shakespeare output"
+    },
+    {
+      "segment_index": 37,
+      "reason": "Generated Shakespeare output"
+    },
+    {
+      "segment_index": 76,
+      "reason": "Raw tensor output / not teaching code"
+    },
+    {
+      "segment_index": 79,
+      "reason": "Raw tensor output / not teaching code"
+    },
+    {
+      "segment_index": 80,
+      "reason": "Comment only / not teaching code"
+    },
+    {
+      "segment_index": 81,
+      "reason": "Comment only / not teaching code"
+    },
+    {
+      "segment_index": 82,
+      "reason": "Fragment / not a unique teaching snippet"
+    },
+    {
+      "segment_index": 83,
+      "reason": "Fragment / not a unique teaching snippet"
+    },
+    {
+      "segment_index": 84,
+      "reason": "Raw tensor output / not teaching code"
+    },
+    {
+      "segment_index": 141,
+      "reason": "Duplicate code snippet, less complete version of segment 140's output."
+    },
+    {
+      "segment_index": 142,
+      "reason": "Duplicate code snippet, less complete version of segment 140's output."
+    },
+    {
+      "segment_index": 143,
+      "reason": "Duplicate code snippet, contains only output similar to segment 140."
+    },
+    {
+      "segment_index": 144,
+      "reason": "Duplicate code snippet, contains only output similar to segment 140, and is squashed."
+    },
+    {
+      "segment_index": 146,
+      "reason": "Duplicate code snippet, identical to segment 145."
+    },
+    {
+      "segment_index": 147,
+      "reason": "Duplicate code snippet, identical to segment 145."
+    },
+    {
+      "segment_index": 148,
+      "reason": "Duplicate code snippet, heavily squashed and contains a likely typo in the model call (`m(x, yb)`)."
+    },
+    {
+      "segment_index": 149,
+      "reason": "Duplicate code snippet, heavily squashed."
+    },
+    {
+      "segment_index": 150,
+      "reason": "Incomplete/broken code with syntax errors in function signatures (`__init__(self(self, vocab_size)`, `forward(self, (parameter) idx: Any`)."
+    },
+    {
+      "segment_index": 151,
+      "reason": "Duplicate code snippet, identical to segment 145."
+    },
+    {
+      "segment_index": 152,
+      "reason": "Duplicate code snippet, identical to segment 145."
+    },
+    {
+      "segment_index": 153,
+      "reason": "Duplicate code snippet, contains indentation issues and a hardcoded value (65) for vocab_size in nn.Embedding."
+    },
+    {
+      "segment_index": 154,
+      "reason": "Duplicate code snippet, identical to segment 145."
+    },
+    {
+      "segment_index": 155,
+      "reason": "Duplicate code snippet, identical to segment 145, includes print(xb)."
+    },
+    {
+      "segment_index": 156,
+      "reason": "Duplicate code snippet, identical to segment 145, includes print(xb)."
+    },
+    {
+      "segment_index": 157,
+      "reason": "Duplicate code snippet, identical to segment 145, includes print(xb)."
+    },
+    {
+      "segment_index": 158,
+      "reason": "Duplicate code snippet, identical to segment 145."
+    },
+    {
+      "segment_index": 159,
+      "reason": "Duplicate code snippet, a combination of output from segment 140 and model definition from segment 145."
+    },
+    {
+      "segment_index": 160,
+      "reason": "Duplicate code snippet, identical to segment 145."
+    },
+    {
+      "segment_index": 162,
+      "reason": "Duplicate code snippet, identical to segment 161 with minor formatting differences."
+    },
+    {
+      "segment_index": 163,
+      "reason": "Duplicate code snippet, identical to segment 161."
+    },
+    {
+      "segment_index": 164,
+      "reason": "Duplicate concept of cross-entropy loss and tensor reshaping, which is more completely and narratively shown in segments 161, 167, 177, and 188 for pedagogical flow."
+    },
+    {
+      "segment_index": 165,
+      "reason": "Duplicate code snippet, identical to segment 161, adds `return logits, loss` but still has dimension error."
+    },
+    {
+      "segment_index": 166,
+      "reason": "Duplicate code snippet, identical to segment 161, adds `return logits, loss` but still has dimension error."
+    },
+    {
+      "segment_index": 168,
+      "reason": "Documentation/function signature, not executable teaching code."
+    },
+    {
+      "segment_index": 169,
+      "reason": "Documentation/function signature, not executable teaching code."
+    },
+    {
+      "segment_index": 170,
+      "reason": "Documentation/function signature, not executable teaching code."
+    },
+    {
+      "segment_index": 171,
+      "reason": "Documentation/function signature, not executable teaching code."
+    },
+    {
+      "segment_index": 172,
+      "reason": "Documentation/function signature, not executable teaching code."
+    },
+    {
+      "segment_index": 174,
+      "reason": "Duplicate code snippet, identical to segment 167 (demonstrates RuntimeError)."
+    },
+    {
+      "segment_index": 175,
+      "reason": "Incomplete/broken code with a syntax error (`B, T, C = lo`)."
+    },
+    {
+      "segment_index": 176,
+      "reason": "Incomplete/broken code with a logical error (`logits = F.cross_entropy(logits, targets)` overwriting logits)."
+    },
+    {
+      "segment_index": 178,
+      "reason": "Duplicate code snippet, identical to segment 177."
+    },
+    {
+      "segment_index": 179,
+      "reason": "Duplicate code snippet, identical to segment 177, includes print(xb)."
+    },
+    {
+      "segment_index": 180,
+      "reason": "Duplicate code snippet, identical to segment 177."
+    },
+    {
+      "segment_index": 181,
+      "reason": "Duplicate code snippet, identical to segment 177, includes print(xb)."
+    },
+    {
+      "segment_index": 182,
+      "reason": "Duplicate code snippet, identical to segment 177, includes print(xb)."
+    },
+    {
+      "segment_index": 183,
+      "reason": "Incomplete/broken code with a syntax error (`targets = `)."
+    },
+    {
+      "segment_index": 184,
+      "reason": "Incomplete/broken code with a syntax error (`targets = targets.view()`)."
+    },
+    {
+      "segment_index": 185,
+      "reason": "Duplicate code snippet, identical to segment 188 (correct loss fix) but less complete as it doesn't print the loss value."
+    },
+    {
+      "segment_index": 186,
+      "reason": "Documentation/function signature, not executable teaching code."
+    },
+    {
+      "segment_index": 187,
+      "reason": "Duplicate code snippet, identical to segment 188 (correct loss fix) but less complete as it doesn't print the loss value."
+    },
+    {
+      "segment_index": 189,
+      "reason": "Incomplete/broken code with syntax errors (`from torch.nn import import functional as F`, incomplete assignments)."
+    },
+    {
+      "segment_index": 190,
+      "reason": "Duplicate code snippet, identical to segment 188."
+    },
+    {
+      "segment_index": 191,
+      "reason": "Duplicate code snippet, identical to segment 188."
+    },
+    {
+      "segment_index": 192,
+      "reason": "Duplicate code snippet, identical to segment 188."
+    },
+    {
+      "segment_index": 193,
+      "reason": "Duplicate code snippet, less complete version of segment 216 as it doesn't include the optional targets logic in forward."
+    },
+    {
+      "segment_index": 194,
+      "reason": "Duplicate code snippet, squashed and less complete version of segment 216."
+    },
+    {
+      "segment_index": 195,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 196,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 197,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 198,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 199,
+      "reason": "Duplicate code snippet, less complete version of segment 216, includes redundant `B, T = idx.shape`."
+    },
+    {
+      "segment_index": 200,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 201,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 202,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 203,
+      "reason": "Duplicate code snippet, less complete version of segment 216 as it's missing imports and class header."
+    },
+    {
+      "segment_index": 204,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 205,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 206,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 207,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 208,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 209,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 210,
+      "reason": "Duplicate code snippet, squashed and less complete version of segment 216."
+    },
+    {
+      "segment_index": 211,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 212,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 213,
+      "reason": "Duplicate code snippet, less complete version of segment 216."
+    },
+    {
+      "segment_index": 214,
+      "reason": "Duplicate code snippet, identical to segment 216 but without instance creation/call."
+    },
+    {
+      "segment_index": 215,
+      "reason": "Incomplete/broken code with a syntax error (`loss = `)."
+    },
+    {
+      "segment_index": 217,
+      "reason": "Duplicate code snippet, identical to segment 216, contains a likely typo in the model call (`m(xb, vb)`)."
+    },
+    {
+      "segment_index": 218,
+      "reason": "Duplicate code snippet, identical to segment 216."
+    },
+    {
+      "segment_index": 219,
+      "reason": "Duplicate code snippet, identical to segment 216."
+    },
+    {
+      "segment_index": 220,
+      "reason": "Duplicate code snippet, squashed and identical to segment 216."
+    },
+    {
+      "segment_index": 221,
+      "reason": "Duplicate code snippet, less clear version of segment 234 in terms of argument naming."
+    },
+    {
+      "segment_index": 222,
+      "reason": "Duplicate code snippet, less clear version of segment 234."
+    },
+    {
+      "segment_index": 223,
+      "reason": "Duplicate code snippet, less clear version of segment 234 in terms of argument naming and overall context."
+    },
+    {
+      "segment_index": 224,
+      "reason": "Duplicate code snippet, less clear version of segment 234."
+    },
+    {
+      "segment_index": 225,
+      "reason": "Duplicate code snippet, squashed and less clear version of segment 234."
+    },
+    {
+      "segment_index": 227,
+      "reason": "Duplicate code snippet, squashed and less clear version of segment 234."
+    },
+    {
+      "segment_index": 228,
+      "reason": "Duplicate code snippet, squashed and less clear version of segment 234."
+    },
+    {
+      "segment_index": 229,
+      "reason": "Duplicate code snippet, less clear version of segment 234."
+    },
+    {
+      "segment_index": 230,
+      "reason": "Duplicate code snippet, squashed and less clear version of segment 234."
+    },
+    {
+      "segment_index": 231,
+      "reason": "Duplicate code snippet, squashed and less clear version of segment 234."
+    },
+    {
+      "segment_index": 232,
+      "reason": "Duplicate code snippet, squashed and less clear version of segment 234."
+    },
+    {
+      "segment_index": 233,
+      "reason": "Duplicate code snippet, squashed and less clear version of segment 234."
+    },
+    {
+      "segment_index": 235,
+      "reason": "Contains generated model output (garbage text) and is a duplicate of segment 234."
+    },
+    {
+      "segment_index": 237,
+      "reason": "Duplicate code snippet, less complete and unclear context for segment 234."
+    },
+    {
+      "segment_index": 238,
+      "reason": "Incomplete/broken code with syntax errors, fragmented lines, and non-code LaTeX math notation."
+    },
+    {
+      "segment_index": 239,
+      "reason": "Contains generated model output (garbage text) and is a duplicate of segment 234."
+    },
+    {
+      "segment_index": 240,
+      "reason": "Contains generated model output (garbage text) and is a duplicate of segment 234."
+    },
+    {
+      "segment_index": 241,
+      "reason": "Duplicate code (covered by primary segment 277); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 242,
+      "reason": "Duplicate code (covered by primary segment 277); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 243,
+      "reason": "Duplicate code (covered by primary segment 277 and 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 244,
+      "reason": "Duplicate code (covered by primary segment 277 and 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 245,
+      "reason": "Duplicate code (covered by primary segment 277 and 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 246,
+      "reason": "Duplicate code (covered by primary segment 277 and 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 247,
+      "reason": "Duplicate code (covered by primary segment 257)."
+    },
+    {
+      "segment_index": 248,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 249,
+      "reason": "Duplicate code (covered by primary segment 257)."
+    },
+    {
+      "segment_index": 250,
+      "reason": "Duplicate code (covered by primary segment 257)."
+    },
+    {
+      "segment_index": 251,
+      "reason": "Duplicate code (covered by primary segment 257); also contains output values (loss)."
+    },
+    {
+      "segment_index": 252,
+      "reason": "Output values (loss)."
+    },
+    {
+      "segment_index": 253,
+      "reason": "Duplicate code (covered by primary segment 257); also contains output values (loss)."
+    },
+    {
+      "segment_index": 255,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 256,
+      "reason": "Duplicate code (similar to primary segment 257 but using Adam optimizer variant); also contains model-generated gibberish output and output values (loss)."
+    },
+    {
+      "segment_index": 258,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 259,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 260,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 261,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output and output values (loss)."
+    },
+    {
+      "segment_index": 262,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output and output values (loss)."
+    },
+    {
+      "segment_index": 263,
+      "reason": "Duplicate code (covered by primary segment 277 and 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 264,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output and output values (loss)."
+    },
+    {
+      "segment_index": 265,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated Shakespeare output and output values (loss)."
+    },
+    {
+      "segment_index": 266,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output and output values (loss)."
+    },
+    {
+      "segment_index": 267,
+      "reason": "Duplicate content (output values and model-generated Shakespeare output)."
+    },
+    {
+      "segment_index": 268,
+      "reason": "Duplicate code (covered by primary segment 257); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 269,
+      "reason": "Duplicate content (only a call to generate function covered by primary segment 278); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 270,
+      "reason": "Duplicate code (covered by primary segment 272)."
+    },
+    {
+      "segment_index": 271,
+      "reason": "Duplicate code (covered by primary segment 272)."
+    },
+    {
+      "segment_index": 273,
+      "reason": "Duplicate code (covered by primary segment 272)."
+    },
+    {
+      "segment_index": 274,
+      "reason": "Duplicate code (covered by primary segment 277 and 288)."
+    },
+    {
+      "segment_index": 275,
+      "reason": "Duplicate code (covered by primary segment 277 and 288)."
+    },
+    {
+      "segment_index": 276,
+      "reason": "Duplicate code (covered by primary segment 277 and 288)."
+    },
+    {
+      "segment_index": 279,
+      "reason": "Duplicate code (covered by primary segment 278)."
+    },
+    {
+      "segment_index": 280,
+      "reason": "Duplicate code (covered by primary segment 272)."
+    },
+    {
+      "segment_index": 281,
+      "reason": "Duplicate code (covered by primary segment 277); also contains non-teaching code (PyTorch `Embedding` docstring)."
+    },
+    {
+      "segment_index": 282,
+      "reason": "Duplicate code (covered by primary segment 278)."
+    },
+    {
+      "segment_index": 283,
+      "reason": "Duplicate code (covered by primary segment 272)."
+    },
+    {
+      "segment_index": 284,
+      "reason": "Duplicate code (covered by primary segment 277 and 288)."
+    },
+    {
+      "segment_index": 285,
+      "reason": "Duplicate code (covered by primary segment 257 and 278); also contains model-generated Shakespeare output and output values (loss)."
+    },
+    {
+      "segment_index": 286,
+      "reason": "Duplicate code (covered by primary segment 257 and 278); also contains model-generated Shakespeare output and output values (loss)."
+    },
+    {
+      "segment_index": 287,
+      "reason": "Duplicate code (covered by primary segment 278); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 289,
+      "reason": "Duplicate code (covered by primary segment 288)."
+    },
+    {
+      "segment_index": 290,
+      "reason": "Duplicate code (covered by primary segment 278)."
+    },
+    {
+      "segment_index": 291,
+      "reason": "Duplicate code (covered by primary segment 288)."
+    },
+    {
+      "segment_index": 292,
+      "reason": "Duplicate code (covered by primary segment 277 and 288)."
+    },
+    {
+      "segment_index": 293,
+      "reason": "Duplicate code (covered by primary segment 288)."
+    },
+    {
+      "segment_index": 294,
+      "reason": "Duplicate code (covered by primary segment 288)."
+    },
+    {
+      "segment_index": 295,
+      "reason": "Duplicate code (covered by primary segment 278)."
+    },
+    {
+      "segment_index": 296,
+      "reason": "Duplicate code (covered by primary segment 278)."
+    },
+    {
+      "segment_index": 297,
+      "reason": "Duplicate code (covered by primary segment 278); also contains output values (loss) and model-generated gibberish output."
+    },
+    {
+      "segment_index": 298,
+      "reason": "Duplicate code (covered by primary segment 278); also contains model-generated gibberish output."
+    },
+    {
+      "segment_index": 299,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 300,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 301,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 302,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 303,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 304,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 305,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 306,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 307,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 308,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 309,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 310,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 311,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 312,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 313,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 314,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 315,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 316,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 318,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 319,
+      "reason": "Duplicate code (covered by primary segment 317)."
+    },
+    {
+      "segment_index": 320,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 321,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 322,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 323,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output and malformed code for `xbow` initialization."
+    },
+    {
+      "segment_index": 324,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 325,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 326,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 327,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 328,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor output."
+    },
+    {
+      "segment_index": 329,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor output."
+    },
+    {
+      "segment_index": 330,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor output."
+    },
+    {
+      "segment_index": 331,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor output."
+    },
+    {
+      "segment_index": 332,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor output."
+    },
+    {
+      "segment_index": 333,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor output."
+    },
+    {
+      "segment_index": 334,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 335,
+      "reason": "Duplicate code (covered by primary segment 317); also contains tensor shape output."
+    },
+    {
+      "segment_index": 337,
+      "reason": "Duplicate code (covered by primary segment 336); also contains tensor output."
+    },
+    {
+      "segment_index": 338,
+      "reason": "Duplicate code (covered by primary segment 336); also contains tensor output."
+    },
+    {
+      "segment_index": 339,
+      "reason": "Duplicate code (covered by primary segment 336); also contains tensor output."
+    },
+    {
+      "segment_index": 340,
+      "reason": "Duplicate code (covered by primary segment 336); also contains tensor output."
+    },
+    {
+      "segment_index": 341,
+      "reason": "Duplicate code (covered by primary segment 336); also contains tensor output and malformed matrix multiplication."
+    },
+    {
+      "segment_index": 352,
+      "reason": "Contains a typo (`torch.tri` instead of `torch.tril`) making the code incorrect."
+    },
+    {
+      "segment_index": 367,
+      "reason": "Malformed code, `torch.sum` call with incorrect arguments and truncated code, also includes a tooltip."
+    },
+    {
+      "segment_index": 369,
+      "reason": "Incomplete code snippet, `keepdim` argument is not properly specified (`keepdim)` instead of `keepdim=True`)."
+    },
+    {
+      "segment_index": 387,
+      "reason": "Incomplete code snippet, truncated assignment for `xbow2`."
+    },
+    {
+      "segment_index": 399,
+      "reason": "Incomplete code snippet, truncated `torch.allclose` call with syntax errors."
+    },
+    {
+      "segment_index": 403,
+      "reason": "Contains only tensor output, no complete runnable code snippet."
+    },
+    {
+      "segment_index": 430,
+      "reason": "Incomplete code snippet, `F.softmax` line commented out and `xb_w` variable not defined."
+    },
+    {
+      "segment_index": 437,
+      "reason": "Contains a bug (`torch.rand(0,10,(3,2))`) which should be `torch.randint` or `torch.rand` with valid arguments; 0 and 10 are not valid arguments for `rand` for bounds."
+    },
+    {
+      "segment_index": 474,
+      "reason": "Interactive console output/autocompletion, not executable code."
+    },
+    {
+      "segment_index": 633,
+      "reason": "Contains terminal output with generated Shakespeare-like text and git commit messages, which is not teaching code."
+    },
+    {
+      "segment_index": 681,
+      "reason": "Incomplete and fragmented code snippets that are not sufficiently coherent for analysis."
+    },
+    {
+      "segment_index": 699,
+      "reason": "Generated Shakespeare output mixed with incomplete code."
+    },
+    {
+      "segment_index": 734,
+      "reason": "Generated Shakespeare output mixed with code."
+    },
+    {
+      "segment_index": 766,
+      "reason": "Generated Shakespeare output mixed with training logs and code."
+    },
+    {
+      "segment_index": 767,
+      "reason": "Generated Shakespeare output mixed with training logs and code."
+    },
+    {
+      "segment_index": 769,
+      "reason": "Generated Shakespeare output mixed with training logs and code."
+    },
+    {
+      "segment_index": 773,
+      "reason": "Generated Shakespeare output."
+    },
+    {
+      "segment_index": 774,
+      "reason": "Generated Shakespeare output."
+    },
+    {
+      "segment_index": 777,
+      "reason": "Generated Shakespeare output."
+    },
+    {
+      "segment_index": 780,
+      "reason": "Generated Shakespeare output."
+    },
+    {
+      "segment_index": 784,
+      "reason": "Diagnostic output (tensor mean/std) and comments about encoder/decoder architecture, not direct teaching code."
+    },
+    {
+      "segment_index": 785,
+      "reason": "Diagnostic output (tensor mean/std) and comments about encoder/decoder architecture, not direct teaching code."
+    },
+    {
+      "segment_index": 786,
+      "reason": "Diagnostic output (tensor mean/std) and comments about encoder/decoder architecture, not direct teaching code."
+    },
+    {
+      "segment_index": 787,
+      "reason": "Diagnostic output (tensor mean/std) and comments about encoder/decoder architecture, not direct teaching code."
+    },
+    {
+      "segment_index": 788,
+      "reason": "Diagnostic output (tensor mean/std) and comments about encoder/decoder architecture, not direct teaching code."
+    },
+    {
+      "segment_index": 789,
+      "reason": "Diagnostic output (tensor mean/std) and comments about encoder/decoder architecture, not direct teaching code."
+    },
+    {
+      "segment_index": 790,
+      "reason": "Diagnostic output (tensor mean/std) and comments about encoder/decoder architecture, not direct teaching code."
+    },
+    {
+      "segment_index": 791,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 792,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 793,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 794,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 795,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 796,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 797,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 798,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 799,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 800,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 801,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 802,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 803,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 804,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 805,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 806,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 807,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 808,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 809,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 810,
+      "reason": "Code consists primarily of illustrative comments for encoder-decoder models and repetitive basic PyTorch tensor operations (mean/std) not central to the Transformer implementation."
+    },
+    {
+      "segment_index": 815,
+      "reason": "Code is mostly comments, file headers, and imports, not executable teaching code for Transformer components."
+    }
+  ],
+  "statistics": {
+    "total_segments_analyzed": 743,
+    "unique_code_snippets": 79,
+    "rejected_segments": 240
+  }
+}

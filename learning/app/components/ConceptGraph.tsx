@@ -45,7 +45,8 @@ type Edge = {
 
 type ConceptGraphData = {
   metadata: any;
-  concepts: Concept[];
+  concepts?: Concept[];
+  nodes?: Concept[];
   edges: Edge[];
 };
 
@@ -75,7 +76,7 @@ export default function ConceptGraph({
   const cyRef = useRef<Core | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [layout, setLayout] = useState('grid');
+  const [layout, setLayout] = useState('breadthfirst');
 
   // Load saved layout preference from localStorage
   useEffect(() => {
@@ -95,8 +96,9 @@ export default function ConceptGraph({
       advanced: '#F44336',
     };
 
-    // Transform data for Cytoscape
-    const nodes: NodeDefinition[] = data.concepts.map((concept) => {
+    // Transform data for Cytoscape (accept both 'concepts' and 'nodes' field names)
+    const concepts = data.concepts || data.nodes || [];
+    const nodes: NodeDefinition[] = concepts.map((concept) => {
       const isMastered = masteredConcepts?.has(concept.id) || false;
       const isRecommended = recommendedConcepts?.has(concept.id) || false;
       const isReady = readyConcepts?.has(concept.id) || false;
@@ -120,14 +122,17 @@ export default function ConceptGraph({
       };
     });
 
+    // Generate edges from prerequisites (single source of truth)
     // FLIP arrow direction for visual learning flow
-    const edges: EdgeDefinition[] = data.edges.map((edge) => ({
-      data: {
-        source: edge.to, // FLIPPED: prerequisite as source
-        target: edge.from, // FLIPPED: dependent concept as target
-        type: edge.type,
-      },
-    }));
+    const edges: EdgeDefinition[] = concepts.flatMap((concept) =>
+      concept.prerequisites.map((prereq) => ({
+        data: {
+          source: prereq,      // prerequisite as source
+          target: concept.id,  // dependent concept as target
+          type: 'requires',
+        },
+      }))
+    );
 
     // Initialize Cytoscape
     const cy = cytoscape({
