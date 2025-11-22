@@ -1,0 +1,41 @@
+{
+  "name": "Learning",
+  // Use node:current rather than current-alpine because many VSC things require glibc
+  "image": "node:current",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": false,
+      "upgradePackages": true,
+      "username": "node"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "installGitLFS": true
+    }
+  },
+  "remoteEnv": {
+    "GOOGLE_API_KEY": "${localEnv:GOOGLE_API_KEY}"
+  },
+  "secrets": {
+    "GOOGLE_API_KEY": {
+      "description": "Your Google API key for accessing Google services in GitHub Codespaces.",
+      "documentationUrl": "https://docs.github.com/en/codespaces/managing-your-codespaces/managing-your-account-specific-secrets-for-github-codespaces"
+    }
+  },
+  "containerEnv": {
+    "HOSTNAME": "0.0.0.0",
+    "PORT": "3000",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "forwardPorts": [
+    3000
+  ],
+  "portsAttributes": {
+    "3000": {
+      "label": "Learning",
+      "requireLocalPort": true
+    }
+  },
+  "postCreateCommand": "cd learning && npm install && npm run build && cp -R .next/standalone/* .",
+  "postStartCommand": "cd learning && node server.js"
+}
