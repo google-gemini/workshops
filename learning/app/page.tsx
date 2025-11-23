@@ -16,7 +16,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import ConceptGraph from './components/ConceptGraph';
 import ConceptDetails from './components/ConceptDetails';
 import SocraticDialogue from './components/SocraticDialogue';
@@ -41,7 +42,8 @@ type Library = {
 
 type ConceptGraphData = {
   metadata: any;
-  concepts: any[];
+  concepts?: any[];
+  nodes?: any[];
   edges: any[];
 };
 
@@ -50,7 +52,9 @@ type MasteryRecord = {
   masteredAt: number;
 };
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [libraries, setLibraries] = useState<Library[]>([]);
   const [selectedLibraryId, setSelectedLibraryId] = useState<string | null>(null);
   const [conceptGraphData, setConceptGraphData] = useState<ConceptGraphData | null>(null);
@@ -64,16 +68,21 @@ export default function Home() {
       .then(res => res.json())
       .then(data => {
         setLibraries(data.libraries);
-        // Auto-select from localStorage or first library
-        const saved = localStorage.getItem('selectedLibrary');
-        if (saved && data.libraries.find((l: Library) => l.id === saved)) {
-          setSelectedLibraryId(saved);
-        } else if (data.libraries.length > 0) {
-          setSelectedLibraryId(data.libraries[0].id);
+        
+        // Priority: URL param > localStorage > show selector
+        const urlLibrary = searchParams.get('library');
+        if (urlLibrary && data.libraries.find((l: Library) => l.id === urlLibrary)) {
+          setSelectedLibraryId(urlLibrary);
+        } else {
+          const saved = localStorage.getItem('selectedLibrary');
+          if (saved && data.libraries.find((l: Library) => l.id === saved)) {
+            setSelectedLibraryId(saved);
+          }
+          // No fallback - show library selector if nothing is set
         }
       })
       .catch(err => console.error('Failed to load libraries:', err));
-  }, []);
+  }, [searchParams]);
 
   // Load concept graph when library changes
   useEffect(() => {
@@ -87,12 +96,19 @@ export default function Home() {
       .then(data => setConceptGraphData(data))
       .catch(err => console.error('Failed to load concept graph:', err));
     
+    // Update localStorage
     localStorage.setItem('selectedLibrary', selectedLibraryId);
-  }, [selectedLibraryId, libraries]);
+    
+    // Only update URL if it's different from current URL param
+    const currentUrlLibrary = searchParams.get('library');
+    if (currentUrlLibrary !== selectedLibraryId) {
+      router.replace(`?library=${selectedLibraryId}`, { scroll: false });
+    }
+  }, [selectedLibraryId, libraries, router, searchParams]);
 
   // Load mastered concepts from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('pcg-mastery');
+    const saved = localStorage.getItem(`pcg-mastery-${selectedLibraryId}`);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -112,9 +128,9 @@ export default function Home() {
     if (masteredConcepts.size > 0) {
       // Convert Map to object for JSON storage
       const obj = Object.fromEntries(masteredConcepts.entries());
-      localStorage.setItem('pcg-mastery', JSON.stringify(obj));
+      localStorage.setItem(`pcg-mastery-${selectedLibraryId}`, JSON.stringify(obj));
     }
-  }, [masteredConcepts]);
+  }, [masteredConcepts, selectedLibraryId]);
 
   // Show library selector if not ready
   if (!selectedLibraryId || !conceptGraphData || libraries.length === 0) {
@@ -127,8 +143,12 @@ export default function Home() {
   }
 
   const selectedLibrary = libraries.find(l => l.id === selectedLibraryId)!;
+  
+  // Accept both 'concepts' and 'nodes' field names
+  const concepts = conceptGraphData.concepts || conceptGraphData.nodes || [];
+  
   const selectedConcept = selectedConceptId
-    ? conceptGraphData.concepts.find((c) => c.id === selectedConceptId) || null
+    ? concepts.find((c) => c.id === selectedConceptId) || null
     : null;
 
   // Determine status of selected concept
@@ -157,18 +177,18 @@ export default function Home() {
   };
 
   // Calculate statistics
-  const totalConcepts = conceptGraphData.concepts.length;
+  const totalConcepts = concepts.length;
   const masteredCount = masteredConcepts.size;
   const masteredPercent = Math.round((masteredCount / totalConcepts) * 100);
 
   // Ready concepts: all prerequisites mastered, but not yet mastered itself
-  const readyConcepts = conceptGraphData.concepts.filter(c => 
+  const readyConcepts = concepts.filter(c => 
     !masteredConcepts.has(c.id) &&
     c.prerequisites.every((p: string) => masteredConcepts.has(p))
   );
 
   // Locked concepts: missing at least one prerequisite
-  const lockedConcepts = conceptGraphData.concepts.filter(c =>
+  const lockedConcepts = concepts.filter(c =>
     !masteredConcepts.has(c.id) &&
     c.prerequisites.some((p: string) => !masteredConcepts.has(p))
   );
@@ -183,7 +203,7 @@ export default function Home() {
   };
 
   const countUnlocks = (conceptId: string): number => {
-    return conceptGraphData.concepts.filter(c =>
+    return concepts.filter(c =>
       c.prerequisites.includes(conceptId)
     ).length;
   };
@@ -208,7 +228,11 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div>
             <button 
-              onClick={() => setSelectedLibraryId(null)}
+              onClick={() => {
+                setSelectedLibraryId(null);
+                localStorage.removeItem('selectedLibrary');
+                router.replace('/', { scroll: false });
+              }}
               className="text-sm text-slate-300 hover:text-white mb-1 transition-colors"
             >
               ← Back to Libraries
@@ -219,7 +243,7 @@ export default function Home() {
       </header>
 
       {/* Main content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Graph (70%) */}
         <div className="flex-[7] border-r">
           <ConceptGraph 
@@ -233,7 +257,28 @@ export default function Home() {
         </div>
 
         {/* Details sidebar (30%) */}
-        <div className="flex-[3] p-4 overflow-auto">
+        {/* On mobile: full-screen overlay when concept selected */}
+        {/* On desktop: fixed sidebar */}
+        <div className={`
+          flex-[3] p-4 overflow-auto
+          md:relative md:block
+          ${selectedConcept 
+            ? 'fixed inset-0 z-50 w-full bg-white' 
+            : 'hidden md:block'
+          }
+        `}>
+          {/* Mobile close button */}
+          {selectedConcept && (
+            <button
+              onClick={() => setSelectedConceptId(null)}
+              className="md:hidden fixed top-4 right-4 z-10 bg-white rounded-full p-2 shadow-lg border border-slate-200 hover:bg-slate-100"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+          
           {/* Stats Dashboard */}
           <div className="mb-6 p-4 bg-gradient-to-r from-slate-50 to-slate-100 rounded-lg border border-slate-200 shadow-sm">
             <h3 className="text-lg font-bold mb-3 text-slate-800">Learning Progress</h3>
@@ -289,7 +334,7 @@ export default function Home() {
             onStartLearning={handleStartLearning}
             masteryRecord={selectedConceptId ? masteredConcepts.get(selectedConceptId) || null : null}
             conceptStatus={getConceptStatus(selectedConceptId)}
-            allConcepts={conceptGraphData.concepts}
+            allConcepts={concepts}
             masteredConcepts={masteredConcepts}
             recommendedConcepts={recommendedConceptIds}
             readyConcepts={new Set(readyConcepts.map(c => c.id))}
@@ -308,9 +353,18 @@ export default function Home() {
           embeddingsPath={selectedLibrary.embeddingsPath}
           workspaceType={selectedLibrary.workspaceType || 'python'}
           sourceFile={selectedLibrary.sourceFile || '/data/pytudes/tsp.md'}
+          libraryType={selectedLibrary.type}
           onMasteryAchieved={handleMasteryAchieved}
         />
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="h-screen flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

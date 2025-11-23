@@ -42,11 +42,22 @@ type ChunkSource = {
   topic: string;
   chunk_type: string;
   similarity: number;
+  
+  // Markdown metadata
   source_file?: string;
   heading_path?: string[];
   markdown_anchor?: string;
   start_line?: number;
   end_line?: number;
+  
+  // Video metadata
+  video_id?: string;
+  timestamp?: number;
+  segment_index?: number;
+  frame_path?: string;
+  audio_text?: string;
+  audio_start?: number;
+  audio_end?: number;
 };
 
 type Message = {
@@ -70,6 +81,7 @@ type SocraticDialogueProps = {
   embeddingsPath: string;
   workspaceType?: 'python' | 'lisp';
   sourceFile?: string;
+  libraryType?: string;
   onMasteryAchieved?: (conceptId: string) => void;
 };
 
@@ -80,6 +92,7 @@ export default function SocraticDialogue({
   embeddingsPath,
   workspaceType = 'python',
   sourceFile = '/data/pytudes/tsp.md',
+  libraryType,
   onMasteryAchieved,
 }: SocraticDialogueProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -103,7 +116,13 @@ export default function SocraticDialogue({
   const [lastSentCode, setLastSentCode] = useState<string>('');
   const [lastSentEvaluation, setLastSentEvaluation] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<'workspace' | 'source'>('workspace');
+  const [mobileActiveTab, setMobileActiveTab] = useState<'chat' | 'workspace'>('chat');
+  const [objectivesExpanded, setObjectivesExpanded] = useState(false);
   const [sourceAnchor, setSourceAnchor] = useState<string | undefined>();
+  const [sourceFile, setSourceFile] = useState<string | undefined>();
+  const [sourceVideoId, setSourceVideoId] = useState<string | undefined>();
+  const [sourceTimestamp, setSourceTimestamp] = useState<number | undefined>();
+  const [videoAutoplay, setVideoAutoplay] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -111,6 +130,23 @@ export default function SocraticDialogue({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-load first video source for video libraries (but don't autoplay)
+  useEffect(() => {
+    if (libraryType === 'video' && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant' && lastMessage.sources) {
+        const firstVideoSource = lastMessage.sources.find(s => s.video_id);
+        if (firstVideoSource && firstVideoSource.video_id) {
+          setSourceVideoId(firstVideoSource.video_id);
+          setSourceTimestamp(firstVideoSource.audio_start);
+          setVideoAutoplay(false); // Don't autoplay on auto-load
+          setSourceFile(undefined);
+          setSourceAnchor(undefined);
+        }
+      }
+    }
+  }, [messages, libraryType]);
 
   // Auto-focus textarea when loading completes
   useEffect(() => {
@@ -141,6 +177,10 @@ export default function SocraticDialogue({
       setLastSentEvaluation(null);
       setActiveTab('workspace');
       setSourceAnchor(undefined);
+      setSourceFile(undefined);
+      setSourceVideoId(undefined);
+      setSourceTimestamp(undefined);
+      setVideoAutoplay(false);
     }
   }, [open]);
 
@@ -378,17 +418,52 @@ export default function SocraticDialogue({
   // Send button: enabled if text OR code exists
   const canSend = !isLoading && (input.trim().length > 0 || code.trim().length > 0);
 
+  // Dynamic source tab label based on library type
+  const sourceTabLabel = libraryType === 'video' ? '🎥 Video' : 
+                         libraryType === 'book' ? '📚 Source' : 
+                         '📖 Reference';
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={`${showPythonEditor ? '!max-w-[96vw] w-[96vw]' : 'max-w-3xl'} !h-[90vh] flex flex-col p-4`}>
-        <DialogHeader>
-          <DialogTitle>Learning: {conceptData.name}</DialogTitle>
-          <DialogDescription>{conceptData.description}</DialogDescription>
+      <DialogContent className={`
+        ${showPythonEditor ? 'max-w-[100vw] md:!max-w-[96vw] w-[100vw] md:!w-[96vw]' : 'max-w-[100vw] md:max-w-3xl w-[100vw] md:w-auto'}
+        h-[100vh] md:!h-[90vh] 
+        flex flex-col p-2 md:p-4
+      `}>
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-lg md:text-xl">Learning: {conceptData.name}</DialogTitle>
+          <DialogDescription className="text-sm">{conceptData.description}</DialogDescription>
         </DialogHeader>
 
-        {/* Progress indicator */}
+        {/* Mobile-only top-level tabs */}
+        {showPythonEditor && (
+          <div className="flex md:hidden border-b border-slate-200 -mx-2 px-2">
+            <button
+              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                mobileActiveTab === 'chat'
+                  ? 'border-b-2 border-blue-500 text-blue-600 -mb-px'
+                  : 'text-slate-600'
+              }`}
+              onClick={() => setMobileActiveTab('chat')}
+            >
+              💬 Chat
+            </button>
+            <button
+              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                mobileActiveTab === 'workspace'
+                  ? 'border-b-2 border-blue-500 text-blue-600 -mb-px'
+                  : 'text-slate-600'
+              }`}
+              onClick={() => setMobileActiveTab('workspace')}
+            >
+              🐍 Workspace
+            </button>
+          </div>
+        )}
+
+        {/* Progress indicator - always visible */}
         {totalIndicators > 0 ? (
-          <div className="px-4 py-2 bg-slate-50 rounded-lg space-y-2">
+          <div className="px-3 md:px-4 py-2 bg-slate-50 rounded-lg space-y-2 text-sm">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">Progress:</span>
               <span className="text-slate-600">
@@ -440,8 +515,12 @@ export default function SocraticDialogue({
 
         {/* Main content area */}
         <div className="flex-1 flex gap-4 overflow-auto">
-          {/* Messages area (left side or full width) */}
-          <div className={`${showPythonEditor ? 'flex-1 min-w-0' : 'w-full'} flex flex-col`}>
+          {/* Messages area (left side on desktop, full width on mobile when chat tab active) */}
+          <div className={`
+            ${showPythonEditor ? 'md:flex-1 md:min-w-0' : 'w-full'} 
+            ${showPythonEditor && mobileActiveTab === 'workspace' ? 'hidden md:flex' : 'flex'}
+            flex-col w-full
+          `}>
             <div className="flex-1 overflow-y-auto space-y-4 py-4 px-2">
           {messages.map((msg, idx) => (
             <div key={idx} className="space-y-2">
@@ -507,9 +586,6 @@ export default function SocraticDialogue({
                         <div key={sourceIdx} className="bg-slate-50 rounded p-2 space-y-1">
                           <div className="font-medium text-slate-700">
                             {source.topic}
-                            <span className="ml-2 text-slate-400">
-                              ({(source.similarity * 100).toFixed(0)}% match)
-                            </span>
                           </div>
                           
                           {source.heading_path && source.heading_path.length > 0 && (
@@ -518,6 +594,31 @@ export default function SocraticDialogue({
                             </div>
                           )}
                           
+                          {/* Video source */}
+                          {source.video_id && source.audio_start !== undefined && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="text-slate-400">
+                                📹 Video @ {Math.floor(source.audio_start / 60)}:{String(Math.floor(source.audio_start % 60)).padStart(2, '0')}
+                                {source.audio_text && ` - "${source.audio_text.substring(0, 50)}..."`}
+                              </span>
+                              <button
+                                className="text-blue-500 hover:text-blue-700 underline text-left"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setSourceVideoId(source.video_id);
+                                  setSourceTimestamp(source.audio_start);
+                                  setVideoAutoplay(true); // Autoplay when user explicitly clicks
+                                  setSourceAnchor(undefined); // Clear markdown state
+                                  setSourceFile(undefined);
+                                  setActiveTab('source');
+                                }}
+                              >
+                                View in context →
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* Markdown source */}
                           {source.source_file && (
                             <div className="flex items-center gap-2 text-xs">
                               <span className="text-slate-400">
@@ -530,6 +631,10 @@ export default function SocraticDialogue({
                                   onClick={(e) => {
                                     e.preventDefault();
                                     setSourceAnchor(source.markdown_anchor);
+                                    setSourceFile(source.source_file);
+                                    setSourceVideoId(undefined); // Clear video state
+                                    setSourceTimestamp(undefined);
+                                    setVideoAutoplay(false);
                                     setActiveTab('source');
                                   }}
                                 >
@@ -592,11 +697,15 @@ export default function SocraticDialogue({
             </div>
           </div>
 
-          {/* Right side: Tabbed pane (Workspace / Source) - shown by default */}
+          {/* Right side: Tabbed pane (Workspace / Source) - shown by default, controlled by mobile tab on mobile */}
           {showPythonEditor && (
-            <div className="flex-1 min-w-0 border-l pl-3 flex flex-col">
-              {/* Tab Headers */}
-              <div className="flex border-b border-slate-200 bg-slate-50 mb-2">
+            <div className={`
+              md:flex-1 md:min-w-0 md:border-l md:pl-3 flex flex-col
+              ${mobileActiveTab === 'chat' ? 'hidden md:flex' : 'flex'}
+              w-full
+            `}>
+              {/* Tab Headers (Python/Video) - hidden on mobile, shown on desktop */}
+              <div className="hidden md:flex border-b border-slate-200 bg-slate-50 mb-2">
                 <button
                   className={`px-4 py-2 text-sm font-medium transition-colors ${
                     activeTab === 'workspace' 
@@ -613,9 +722,44 @@ export default function SocraticDialogue({
                       ? 'border-b-2 border-blue-500 text-blue-600 bg-white -mb-px' 
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
-                  onClick={() => setActiveTab('source')}
+                  onClick={() => {
+                    setActiveTab('source');
+                    // Autoplay video when switching to Video tab (if video is loaded)
+                    if (sourceVideoId) {
+                      setVideoAutoplay(true);
+                    }
+                  }}
                 >
-                  📚 Source
+                  {sourceTabLabel}
+                </button>
+              </div>
+
+              {/* Mobile: Show active tab selector when in workspace mode */}
+              <div className="flex md:hidden border-b border-slate-200 bg-slate-50 mb-2">
+                <button
+                  className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'python'
+                      ? 'border-b-2 border-blue-500 text-blue-600 -mb-px'
+                      : 'text-slate-600'
+                  }`}
+                  onClick={() => setActiveTab('python')}
+                >
+                  🐍 Python
+                </button>
+                <button
+                  className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
+                    activeTab === 'source'
+                      ? 'border-b-2 border-blue-500 text-blue-600 -mb-px'
+                      : 'text-slate-600'
+                  }`}
+                  onClick={() => {
+                    setActiveTab('source');
+                    if (sourceVideoId) {
+                      setVideoAutoplay(true);
+                    }
+                  }}
+                >
+                  {sourceTabLabel}
                 </button>
               </div>
 
@@ -659,23 +803,67 @@ export default function SocraticDialogue({
                       }}
                     />
                   )
-                ) : (
+                ) : sourceVideoId ? (
+                  <div className="w-full h-full flex flex-col bg-black rounded-lg overflow-hidden">
+                    <iframe
+                      className="w-full h-full"
+                      src={`https://www.youtube.com/embed/${sourceVideoId}?start=${Math.floor(sourceTimestamp || 0)}${videoAutoplay ? '&autoplay=1' : ''}`}
+                      title="YouTube video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                    <div className="p-2 bg-slate-800 text-white text-sm flex items-center justify-between">
+                      <span>
+                        📹 {sourceVideoId} @ {Math.floor((sourceTimestamp || 0) / 60)}:{String(Math.floor((sourceTimestamp || 0) % 60)).padStart(2, '0')}
+                      </span>
+                      <a
+                        href={`https://www.youtube.com/watch?v=${sourceVideoId}&t=${Math.floor(sourceTimestamp || 0)}s`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline"
+                      >
+                        Open in YouTube →
+                      </a>
+                    </div>
+                  </div>
+                ) : sourceFile ? (
                   <MarkdownViewer 
                     sourceFile={sourceFile}
                     scrollToAnchor={sourceAnchor}
                   />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-slate-50 rounded-lg border-2 border-dashed border-slate-300">
+                    <div className="text-center p-8">
+                      <div className="text-4xl mb-4">📚</div>
+                      <h3 className="text-lg font-semibold mb-2">No Source Selected</h3>
+                      <p className="text-slate-600">
+                        Click <span className="text-blue-500 font-medium">"View in context →"</span> on any source below the assistant's messages to view it here.
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Learning objectives reference */}
+        {/* Learning objectives reference - collapsible on mobile */}
         {conceptData.learning_objectives && (
-          <div className="text-xs text-slate-500 pt-2 border-t">
-            <strong>Objectives:</strong>{' '}
-            {conceptData.learning_objectives.join(' • ')}
-          </div>
+          <details 
+            className="text-xs text-slate-500 pt-2 border-t md:open"
+            open={objectivesExpanded}
+            onToggle={(e) => setObjectivesExpanded((e.target as HTMLDetailsElement).open)}
+          >
+            <summary className="cursor-pointer font-semibold mb-1 md:cursor-default md:mb-0">
+              <span className="md:hidden">📋 Objectives</span>
+              <span className="hidden md:inline">Objectives:</span>
+            </summary>
+            <div className="mt-1 md:mt-0 md:inline">
+              <span className="hidden md:inline"> </span>
+              {conceptData.learning_objectives.join(' • ')}
+            </div>
+          </details>
         )}
       </DialogContent>
     </Dialog>
