@@ -352,7 +352,7 @@ function HomeContent() {
           conceptData={selectedConcept}
           embeddingsPath={selectedLibrary.embeddingsPath}
           workspaceType={selectedLibrary.workspaceType || 'python'}
-          sourceFile={selectedLibrary.sourceFile || '/data/pytudes/tsp.md'}
+          initialSourceFile={selectedLibrary.sourceFile || '/data/pytudes/tsp.md'}
           libraryType={selectedLibrary.type}
           onMasteryAchieved={handleMasteryAchieved}
         />

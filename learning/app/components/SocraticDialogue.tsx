@@ -80,7 +80,7 @@ type SocraticDialogueProps = {
   conceptData: any;
   embeddingsPath: string;
   workspaceType?: 'python' | 'lisp';
-  sourceFile?: string;
+  initialSourceFile?: string;
   libraryType?: string;
   onMasteryAchieved?: (conceptId: string) => void;
 };
@@ -91,7 +91,7 @@ export default function SocraticDialogue({
   conceptData,
   embeddingsPath,
   workspaceType = 'python',
-  sourceFile = '/data/pytudes/tsp.md',
+  initialSourceFile = '/data/pytudes/tsp.md',
   libraryType,
   onMasteryAchieved,
 }: SocraticDialogueProps) {
@@ -119,7 +119,7 @@ export default function SocraticDialogue({
   const [mobileActiveTab, setMobileActiveTab] = useState<'chat' | 'workspace'>('chat');
   const [objectivesExpanded, setObjectivesExpanded] = useState(false);
   const [sourceAnchor, setSourceAnchor] = useState<string | undefined>();
-  const [sourceFile, setSourceFile] = useState<string | undefined>();
+  const [sourceFile, setSourceFile] = useState<string | undefined>(initialSourceFile);
   const [sourceVideoId, setSourceVideoId] = useState<string | undefined>();
   const [sourceTimestamp, setSourceTimestamp] = useState<number | undefined>();
   const [videoAutoplay, setVideoAutoplay] = useState<boolean>(false);
@@ -738,13 +738,13 @@ export default function SocraticDialogue({
               <div className="flex md:hidden border-b border-slate-200 bg-slate-50 mb-2">
                 <button
                   className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-                    activeTab === 'python'
+                    activeTab === 'workspace'
                       ? 'border-b-2 border-blue-500 text-blue-600 -mb-px'
                       : 'text-slate-600'
                   }`}
-                  onClick={() => setActiveTab('python')}
+                  onClick={() => setActiveTab('workspace')}
                 >
-                  🐍 Python
+                  {workspaceType === 'lisp' ? '🎨 Lisp' : '🐍 Python'}
                 </button>
                 <button
                   className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
