@@ -19,6 +19,7 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import PythonScratchpad from './PythonScratchpad';
+import LispScratchpad from './LispScratchpad';
 import { MarkdownViewer } from './MarkdownViewer';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -78,6 +79,8 @@ type SocraticDialogueProps = {
   onOpenChange: (open: boolean) => void;
   conceptData: any;
   embeddingsPath: string;
+  workspaceType?: 'python' | 'lisp';
+  initialSourceFile?: string;
   libraryType?: string;
   onMasteryAchieved?: (conceptId: string) => void;
 };
@@ -87,6 +90,8 @@ export default function SocraticDialogue({
   onOpenChange,
   conceptData,
   embeddingsPath,
+  workspaceType = 'python',
+  initialSourceFile = '/data/pytudes/tsp.md',
   libraryType,
   onMasteryAchieved,
 }: SocraticDialogueProps) {
@@ -110,11 +115,11 @@ export default function SocraticDialogue({
   } | null>(null);
   const [lastSentCode, setLastSentCode] = useState<string>('');
   const [lastSentEvaluation, setLastSentEvaluation] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'python' | 'source'>('python');
+  const [activeTab, setActiveTab] = useState<'workspace' | 'source'>('workspace');
   const [mobileActiveTab, setMobileActiveTab] = useState<'chat' | 'workspace'>('chat');
   const [objectivesExpanded, setObjectivesExpanded] = useState(false);
   const [sourceAnchor, setSourceAnchor] = useState<string | undefined>();
-  const [sourceFile, setSourceFile] = useState<string | undefined>();
+  const [sourceFile, setSourceFile] = useState<string | undefined>(initialSourceFile);
   const [sourceVideoId, setSourceVideoId] = useState<string | undefined>();
   const [sourceTimestamp, setSourceTimestamp] = useState<number | undefined>();
   const [videoAutoplay, setVideoAutoplay] = useState<boolean>(false);
@@ -170,7 +175,7 @@ export default function SocraticDialogue({
       setEvaluation(null);
       setLastSentCode('');
       setLastSentEvaluation(null);
-      setActiveTab('python');
+      setActiveTab('workspace');
       setSourceAnchor(undefined);
       setSourceFile(undefined);
       setSourceVideoId(undefined);
@@ -260,13 +265,15 @@ export default function SocraticDialogue({
     const evalChanged = JSON.stringify(currentEval) !== JSON.stringify(lastSentEvaluation);
 
     // For UI display: just show the text (code is already visible in workspace)
-    const displayContent = hasText ? currentInput : '(working in Python workspace)';
+    const workspaceName = workspaceType === 'lisp' ? 'Lisp' : 'Python';
+    const displayContent = hasText ? currentInput : `(working in ${workspaceName} workspace)`;
     
     // For API: only include code/evaluation if they changed
     let apiContent = currentInput || '(sharing code)';
     
     if (codeChanged && currentCode) {
-      apiContent += `\n\n**My Code:**\n\`\`\`python\n${currentCode}\n\`\`\``;
+      const codeLanguage = workspaceType === 'lisp' ? 'lisp' : 'python';
+      apiContent += `\n\n**My Code:**\n\`\`\`${codeLanguage}\n${currentCode}\n\`\`\``;
     }
     
     if (evalChanged && currentEval) {
@@ -690,7 +697,7 @@ export default function SocraticDialogue({
             </div>
           </div>
 
-          {/* Right side: Tabbed pane (Python / Source) - shown by default on desktop, controlled by mobile tab on mobile */}
+          {/* Right side: Tabbed pane (Workspace / Source) - shown by default, controlled by mobile tab on mobile */}
           {showPythonEditor && (
             <div className={`
               md:flex-1 md:min-w-0 md:border-l md:pl-3 flex flex-col
@@ -701,13 +708,13 @@ export default function SocraticDialogue({
               <div className="hidden md:flex border-b border-slate-200 bg-slate-50 mb-2">
                 <button
                   className={`px-4 py-2 text-sm font-medium transition-colors ${
-                    activeTab === 'python' 
+                    activeTab === 'workspace' 
                       ? 'border-b-2 border-blue-500 text-blue-600 bg-white -mb-px' 
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
-                  onClick={() => setActiveTab('python')}
+                  onClick={() => setActiveTab('workspace')}
                 >
-                  🐍 Python
+                  {workspaceType === 'lisp' ? '🎨 Lisp' : '🐍 Python'}
                 </button>
                 <button
                   className={`px-4 py-2 text-sm font-medium transition-colors ${
@@ -731,13 +738,13 @@ export default function SocraticDialogue({
               <div className="flex md:hidden border-b border-slate-200 bg-slate-50 mb-2">
                 <button
                   className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
-                    activeTab === 'python'
+                    activeTab === 'workspace'
                       ? 'border-b-2 border-blue-500 text-blue-600 -mb-px'
                       : 'text-slate-600'
                   }`}
-                  onClick={() => setActiveTab('python')}
+                  onClick={() => setActiveTab('workspace')}
                 >
-                  🐍 Python
+                  {workspaceType === 'lisp' ? '🎨 Lisp' : '🐍 Python'}
                 </button>
                 <button
                   className={`flex-1 px-3 py-2 text-sm font-medium transition-colors ${
@@ -758,9 +765,28 @@ export default function SocraticDialogue({
 
               {/* Tab Content */}
               <div className="flex-1 overflow-hidden">
-                {activeTab === 'python' ? (
-                  <PythonScratchpad
-                    starterCode={`# 🧮 Python scratchpad for exploring ${conceptData.name}
+                {activeTab === 'workspace' ? (
+                  workspaceType === 'lisp' ? (
+                    <LispScratchpad
+                      starterCode={`;;; Common Lisp scratchpad for exploring ${conceptData.name}
+;;; 
+;;; Feel free to experiment here! You can:
+;;; - Test out ideas in code
+;;; - Answer questions by implementing solutions
+;;; - Work through examples
+;;; 
+;;; Your code and output will be visible to your tutor.
+`}
+                      onExecute={(execCode, output, error) => {
+                        setEvaluation({ output, error });
+                      }}
+                      onCodeChange={(newCode) => {
+                        setCode(newCode);
+                      }}
+                    />
+                  ) : (
+                    <PythonScratchpad
+                      starterCode={`# 🧮 Python scratchpad for exploring ${conceptData.name}
 # 
 # Feel free to experiment here! You can:
 # - Test out ideas in code
@@ -769,13 +795,14 @@ export default function SocraticDialogue({
 # 
 # Your code and output will be visible to your tutor.
 `}
-                    onExecute={(execCode, output, error) => {
-                      setEvaluation({ output, error });
-                    }}
-                    onCodeChange={(newCode) => {
-                      setCode(newCode);
-                    }}
-                  />
+                      onExecute={(execCode, output, error) => {
+                        setEvaluation({ output, error });
+                      }}
+                      onCodeChange={(newCode) => {
+                        setCode(newCode);
+                      }}
+                    />
+                  )
                 ) : sourceVideoId ? (
                   <div className="w-full h-full flex flex-col bg-black rounded-lg overflow-hidden">
                     <iframe
