@@ -1,0 +1,20 @@
+{
+    "name": "Gemini Learning - Pedagogical Concept Graph",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:1-20-bullseye",
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "forwardPorts": [
+        3000
+    ],
+    "portsAttributes": {
+        "3000": {
+            "label": "Learning App",
+            "onAutoForward": "notify"
+        }
+    },
+    "postCreateCommand": "npm install",
+    "postStartCommand": "echo '🚀 Ready! Run: npm run dev' && echo '📝 Set GOOGLE_API_KEY in .env.local (copy from .env.example)'",
+    "remoteUser": "node"
+}
