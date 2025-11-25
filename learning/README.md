@@ -103,6 +103,8 @@ learning/
 
 The fastest way to get started is using GitHub Codespaces - no local setup required!
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/google-gemini/workshops)
+
 1. **Open in Codespaces**
    - Navigate to the [workshops repository](https://github.com/google-gemini/workshops)
    - Click **Code** → **Codespaces** → **Create codespace on main**
@@ -110,7 +112,7 @@ The fastest way to get started is using GitHub Codespaces - no local setup requi
 
 2. **Set up your API key**
    ```bash
-   cp .env.example .env.local
+   # A .env.local file is automatically created for you when the Codespace starts.
    # Edit .env.local and add your GOOGLE_API_KEY from https://aistudio.google.com/app/apikey
    ```
 
