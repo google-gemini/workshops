@@ -2,7 +2,7 @@ import { GoogleGenAI } from "@google/genai";
 import { z } from "zod";
 import * as fs from "fs";
 import * as path from "path";
-import { zodToGeminiSchema } from "../../lib/gemini-utils.js";
+import { zodToGeminiSchema } from "../../lib/gemini-utils";
 
 // ============================================================================
 // Schemas
@@ -102,6 +102,10 @@ function loadCodeMappings(videoId: string): any {
     process.cwd(),
     `youtube/${videoId}/code-concept-mappings.json`
   );
+  if (!fs.existsSync(mappingsPath)) {
+    console.log(`   ⚠️  Code mappings not found, continuing without code examples`);
+    return { unique_snippets: [] };
+  }
   return JSON.parse(fs.readFileSync(mappingsPath, "utf-8"));
 }
 
@@ -149,7 +153,8 @@ function buildEnrichmentPrompt(
   concept: any,
   codeExamples: any[],
   fullTranscript: string,
-  prerequisites: any[]
+  prerequisites: any[],
+  videoMetadata: any
 ): string {
   const prerequisiteNames = prerequisites
     .filter(p => p)
@@ -170,7 +175,10 @@ Why this matters: ${ex.rationale}
         .join("\n---\n")
     : "No code examples identified for this concept.";
 
-  return `You are designing comprehensive pedagogical metadata for a programming concept from Andrej Karpathy's GPT tutorial video.
+  const author = videoMetadata?.author || "the instructor";
+  const title = videoMetadata?.title || "this educational video";
+
+  return `You are designing comprehensive pedagogical metadata for a programming concept from ${author}'s ${title}.
 
 **Concept:**
 ${concept.name}
@@ -189,7 +197,7 @@ Generate comprehensive pedagogical enrichment that will power an interactive Soc
 
 1. **Learning Objectives** (3-5 specific, measurable goals)
    - Start with action verbs: "Explain...", "Implement...", "Identify...", "Debug...", "Apply..."
-   - Make them specific to what Karpathy actually teaches
+   - Make them specific to what ${author} actually teaches in this video
    - Progress from understanding → application → mastery
 
 2. **Mastery Indicators** (3-6 assessable skills)
@@ -202,12 +210,12 @@ Generate comprehensive pedagogical enrichment that will power an interactive Soc
 3. **Common Misconceptions** (2-4 realistic errors)
    - What do beginners actually get wrong about this?
    - Include: the misconception, the reality, and how to correct it
-   - Ground in actual transcript if Karpathy addresses these
+   - Ground in actual transcript if ${author} addresses these
 
 4. **Key Insights** (2-4 fundamental truths)
    - The "aha moments" that make this concept click
    - Memorable, foundational understanding
-   - Often things Karpathy explicitly emphasizes
+   - Often things ${author} explicitly emphasizes
 
 **Optional enrichment (add if relevant):**
 - practical_applications: Real-world uses beyond this tutorial
@@ -215,11 +223,12 @@ Generate comprehensive pedagogical enrichment that will power an interactive Soc
 - debugging_tips: How to diagnose and fix issues with this concept
 
 **Guidelines:**
-- Be authentic to Karpathy's teaching style and this video's content
+- Be authentic to ${author}'s teaching style and this video's content
 - Reference actual code examples when relevant (use timestamps)
 - Make mastery indicators TESTABLE via dialogue (not vague)
-- Misconceptions should be realistic for someone learning transformers/GPT
+- Misconceptions should be realistic for someone learning the concepts in this video
 - Balance rigor with accessibility
+- Base all content ONLY on the provided transcript - do not add external knowledge
 
 Return valid JSON matching the schema.`.trim();
 }
@@ -251,7 +260,8 @@ async function enrichConcept(
     concept,
     codeExamples,
     transcript.full_transcript,
-    prerequisites
+    prerequisites,
+    conceptGraph.metadata
   );
   
   // 4. Call Gemini with structured output (ONLY pedagogical enrichment)
@@ -305,16 +315,53 @@ async function enrichConcepts(videoId: string): Promise<void> {
   const codeMappings = loadCodeMappings(videoId);
   const transcript = loadTranscript(videoId);
   
+  // Load existing enriched file if it exists
+  const enrichedPath = path.join(
+    process.cwd(),
+    `youtube/${videoId}/concept-graph-enriched.json`
+  );
+  let existingEnriched: { nodes: EnrichedConcept[] } | null = null;
+  if (fs.existsSync(enrichedPath)) {
+    existingEnriched = JSON.parse(fs.readFileSync(enrichedPath, "utf-8"));
+    if (existingEnriched) {
+      console.log(`📂 Found existing enriched file with ${existingEnriched.nodes.length} concepts`);
+    }
+  }
+  
+  // Create a map of already-enriched concepts (by ID)
+  const enrichedMap = new Map<string, EnrichedConcept>();
+  if (existingEnriched && existingEnriched.nodes) {
+    for (const node of existingEnriched.nodes) {
+      // Only consider it enriched if it has learning_objectives
+      if (node.learning_objectives && node.learning_objectives.length > 0) {
+        enrichedMap.set(node.id, node);
+      }
+    }
+  }
+  
   console.log(`📊 Loaded:`);
   console.log(`   - ${conceptGraph.nodes.length} concepts`);
+  console.log(`   - ${enrichedMap.size} already enriched`);
+  console.log(`   - ${conceptGraph.nodes.length - enrichedMap.size} need enrichment`);
   console.log(`   - ${codeMappings.unique_snippets.length} code snippets`);
-  console.log(`   - Full transcript (${Math.round(transcript.full_transcript.length / 1000)}k chars)`);
+  console.log(`   - Full transcript (${Math.round(transcript.full_transcript.length / 1000)}k chars)\n`);
   
   const enrichedConcepts: EnrichedConcept[] = [];
+  let skipped = 0;
+  let processed = 0;
   
   // Process each concept
   for (const concept of conceptGraph.nodes) {
+    // Skip if already enriched
+    if (enrichedMap.has(concept.id)) {
+      enrichedConcepts.push(enrichedMap.get(concept.id)!);
+      skipped++;
+      continue;
+    }
+    
     try {
+      console.log(`📚 Enriching: ${concept.name}`);
+      processed++;
       const enriched = await enrichConcept(
         concept,
         codeMappings,
@@ -330,7 +377,14 @@ async function enrichConcepts(videoId: string): Promise<void> {
       
     } catch (error) {
       console.error(`   ❌ Failed to enrich ${concept.name}:`, error);
-      // Continue with other concepts even if one fails
+      // Add the concept without enrichment data so we don't lose it
+      enrichedConcepts.push({
+        ...concept,
+        learning_objectives: [],
+        mastery_indicators: [],
+        misconceptions: [],
+        key_insights: [],
+      });
     }
   }
   
@@ -355,10 +409,12 @@ async function enrichConcepts(videoId: string): Promise<void> {
   console.log(`\n✅ Enrichment complete!`);
   console.log(`📄 Saved to: ${outputPath}`);
   console.log(`\n📈 Summary:`);
-  console.log(`   - ${enrichedConcepts.length} concepts enriched`);
-  console.log(`   - ${enrichedConcepts.reduce((sum, c) => sum + c.learning_objectives.length, 0)} total learning objectives`);
-  console.log(`   - ${enrichedConcepts.reduce((sum, c) => sum + c.mastery_indicators.length, 0)} total mastery indicators`);
-  console.log(`   - ${enrichedConcepts.reduce((sum, c) => sum + c.misconceptions.length, 0)} total misconceptions`);
+  console.log(`   - ${skipped} concepts skipped (already enriched)`);
+  console.log(`   - ${processed} concepts processed`);
+  console.log(`   - ${enrichedConcepts.filter(c => c.learning_objectives && c.learning_objectives.length > 0).length} concepts fully enriched`);
+  console.log(`   - ${enrichedConcepts.reduce((sum, c) => sum + (c.learning_objectives?.length || 0), 0)} total learning objectives`);
+  console.log(`   - ${enrichedConcepts.reduce((sum, c) => sum + (c.mastery_indicators?.length || 0), 0)} total mastery indicators`);
+  console.log(`   - ${enrichedConcepts.reduce((sum, c) => sum + (c.misconceptions?.length || 0), 0)} total misconceptions`);
 }
 
 // ============================================================================

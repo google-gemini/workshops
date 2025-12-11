@@ -45,6 +45,20 @@
         "totalConcepts": 29,
         "estimatedHours": 2.5
       }
+    },
+    {
+      "id": "cs221-stanford",
+      "title": "CS221: Artificial Intelligence - Course Introduction and Overview",
+      "author": "Percy Liang",
+      "type": "video",
+      "conceptGraphPath": "data/cs221-stanford/concept-graph.json",
+      "embeddingsPath": "data/cs221-stanford/cs221-embeddings.json",
+      "description": "Introduction to AI course covering expert systems, machine learning foundations, and modern AI approaches",
+      "color": "orange",
+      "stats": {
+        "totalConcepts": 29,
+        "estimatedHours": 1.5
+      }
     }
   ]
 }

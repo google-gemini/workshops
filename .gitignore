@@ -2,3 +2,6 @@ utils/params.py
 .aider*
 .env
 __pycache__/
+.DS_Store
+*.webm
+*.mp3

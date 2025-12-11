@@ -1,0 +1,3236 @@
+{
+  "audio_file": "youtube/J8Eh7RqggsU/audio.mp3",
+  "total_duration": 5238.67,
+  "segments": [
+    {
+      "text": "All right, let's get started.",
+      "start": 0,
+      "end": 9.25,
+      "confidence": 0.86004484
+    },
+    {
+      "text": " Please try to have a seat if you can find a seat and let's get the show on the road. So welcome everyone to cs21. This is artificial intelligence. And if you're new to Stanford, welcome to Stanford. So first, let's do some introduction. So I'm Percy, I'm going to be one of your instructors teaching this class with dorsal over there. So if Dorset wants to say hi,",
+      "start": 9.25,
+      "end": 30.07,
+      "confidence": 0.96358836
+    },
+    {
+      "text": " Stand up.",
+      "start": 30.07,
+      "end": 31.48,
+      "confidence": 0.93593496
+    },
+    {
+      "text": " Great. So we're gonna be trading off throughout the quarter and we also have a wonderful teaching team. So these are your ca. So if all the ca's could stand up, and I'll give you each person an opportunity to say three words about what you're interested in.",
+      "start": 31.48,
+      "end": 55.6,
+      "confidence": 0.9407312
+    },
+    {
+      "text": " Let's start with.",
+      "start": 55.6,
+      "end": 59.48,
+      "confidence": 0.87772936
+    },
+    {
+      "text": " The heads here.",
+      "start": 59.48,
+      "end": 60.86,
+      "confidence": 0.45294785
+    },
+    {
+      "text": "I'm a PhD student and I'm interested in natural language processing. Yeah, I'm a second year, Master's student. I mean, go straight machine learning and data mining.",
+      "start": 60.86,
+      "end": 75.07,
+      "confidence": 0.6589681
+    },
+    {
+      "text": " hi, I'm my second year Masters and I'm interested in machine learning and that's",
+      "start": 75.07,
+      "end": 84.16,
+      "confidence": 0.59049356
+    },
+    {
+      "text": " just,",
+      "start": 84.16,
+      "end": 93.21,
+      "confidence": 0.11314373
+    },
+    {
+      "text": " First year.",
+      "start": 93.21,
+      "end": 112.37,
+      "confidence": 0.6063959
+    },
+    {
+      "text": "I've got an interesting I am over there.",
+      "start": 112.37,
+      "end": 136.84,
+      "confidence": 0.40173984
+    },
+    {
+      "text": " I'm in my name, everyone. I'm also coaching and I'm interested in. Okay?",
+      "start": 136.84,
+      "end": 151.35,
+      "confidence": 0.5916902
+    },
+    {
+      "text": " Well there are on the slide okay so as you can see we kind of have a very diverse team and so when you're thinking about kind of final projects later in the quarter you can tap into the center incredible resource.",
+      "start": 151.35,
+      "end": 175.4,
+      "confidence": 0.92627835
+    },
+    {
+      "text": " So, three quick announcements.",
+      "start": 175.4,
+      "end": 178.3,
+      "confidence": 0.91137016
+    },
+    {
+      "text": " So there's going to be a section every week, which will cover both kind of a review topics and all of advanced topics. So this Thursday there's going to be a overview if you're kind of rusty on python or Rusty on probability, come to this and we'll get you up to speed homework. The first homework is out, it's posted on the website, it's due next Tuesday at 11 p.m. So remember the time that matters all submissions will be on done on great scope. There's going to be a great scope Coast code that will be posted on Piazza. So look out for that later.",
+      "start": 178.3,
+      "end": 209.33,
+      "confidence": 0.8389788
+    },
+    {
+      "text": "Jeopardy or play Go, Dota 2, even poker. All these kind of games at superhuman level performance, it can also read documents and answer questions do speech, recognition, face recognition, even kind of Medical Imaging and all these tasks. Are you read about how successful these technologies have been? And then if you take a look at the kind of the technical circles, there's a lot of people in policy and trying to ask what is going on with AI and you hear about these kind of very broad claims of how transformative AI will be to the future of work and the society and so on and even some kind of boring on a pretty",
+      "start": 209.33,
+      "end": 277.79,
+      "confidence": 0.73668635
+    },
+    {
+      "text": " You know, Castro consequences.",
+      "start": 277.79,
+      "end": 280.4,
+      "confidence": 0.49323353
+    },
+    {
+      "text": " so,",
+      "start": 280.4,
+      "end": 281.42,
+      "confidence": 0.79959816
+    },
+    {
+      "text": " What's going to happen in the future? No one knows. But",
+      "start": 281.42,
+      "end": 285.67,
+      "confidence": 0.9076779
+    },
+    {
+      "text": " It is fair to say that AI will be transformative, but how do we get here and to do that? I want to take a step back to the summer of 1956.",
+      "start": 285.67,
+      "end": 296.29,
+      "confidence": 0.9752041
+    },
+    {
+      "text": "So the place was Dartmouth College, John McCarthy who was then at MIT. And then after that he founded the Stanford, AI lab organized, a workshop at Dartmouth College with some of the best and brightest minds of the Time. Marvin Minsky. Claude Shannon and so on, and they had this not so modest goal of trying to think that every aspect of learning or any feature of intelligence can be precisely captured, so a machine can be just simulate it.",
+      "start": 296.29,
+      "end": 325.53,
+      "confidence": 0.8936797
+    },
+    {
+      "text": " So they were after the big question of, how do you kind of solve AI? So now they didn't make that much progress over the summer, but a lot of programs and interesting artifacts came about from that time there were programs that could play checkers or prove theorems and sometimes even better than what the human proof would look like. And there was a lot of",
+      "start": 325.53,
+      "end": 348.67,
+      "confidence": 0.9349548
+    },
+    {
+      "text": " Optimism people are really, really excited. And you can see these quotes by all these excited, people who Proclaim, that AI would be solved in a matter of years.",
+      "start": 348.67,
+      "end": 357.31,
+      "confidence": 0.95849746
+    },
+    {
+      "text": "But we know that didn't really happen and there's just kind of float. Lore example, people are trying to do machine translation, so you take an English sentence. Like the spirit is willing, but the flesh is weak, you translate into Russian, which is what the choice Language by the US government at that time. And you could translate back into English. And this is what you get. The vodka is good, by the meat is run. So the government didn't think that was too funny, so they cut off the funding and it became the first AI winter.",
+      "start": 357.31,
+      "end": 388.53,
+      "confidence": 0.9153305
+    },
+    {
+      "text": " So, there's a period where, you know, AI research was not very active and was not, well very well funded. So what went wrong here, these were really smart people, right? There's just got a little, maybe a little out of themselves. So, two problems. One is that the compute was simply not there, right? It was millions or even billions of order magnitude compared less than what we have right now. And also the problem is the way they formulated them intrinsically rely on exponential search which no matter how much compute you have. You're never going to you know up when that race they also have a limited information and this is maybe a kind of a more subtle point that if I gave you infinite compute and ask you to translate, I don't think you would be able to figure it out because it's not a computation problem. You just need to learn the language and you need to experience all the subtleties of language to be over to translate.",
+      "start": 388.53,
+      "end": 442.63,
+      "confidence": 0.652359
+    },
+    {
+      "text": "But on the other hand I wasn't solved but a lot of interesting.",
+      "start": 442.63,
+      "end": 447.57,
+      "confidence": 0.9414715
+    },
+    {
+      "text": " Contributions to computer, science came out of it. Lisp was just a lot of ideas that underlay many of the high-level program. Languages we have garbage collection time sharing allowing multiple people to use the same one computer at the same time which is something that we kind of take for granted and also this Paradigm of separating what you want to compute which is modeling and how you do it, which is inference, which we'll get to a little bit later.",
+      "start": 447.57,
+      "end": 474.37,
+      "confidence": 0.949932
+    },
+    {
+      "text": " Okay, so people forget quickly and in the 70s 80s, there was in renewed, generation of people, getting excited about AI again and this time it was all about knowledge, right? Knowledge is power and there were a lot of expert systems which are created and the idea is that if you could encode experts knowledge about the world that you could do kind of amazing things. And at the time, the knowledge was encoded in generally a set of rules and there were a lot of programs I was written. And you notice that the scope is much narrower. Now the goal is to solve it all of AI but to really focus on some choice.",
+      "start": 474.37,
+      "end": 513.5,
+      "confidence": 0.8489076
+    },
+    {
+      "text": "The problems like diagnosing diseases or converting customer's order parts and their parts and a customer orders into parts and this was the first time that AI I think really had a real impact on Industries. So people were actually able to make useful products out of this and knowledge. Did actually play a key ingredient in curbing, this in your exponential growth that people are worried about.",
+      "start": 513.5,
+      "end": 537.23,
+      "confidence": 0.9137895
+    },
+    {
+      "text": " but of course it didn't last long knowledge, as deterministic rules was simply not rich enough to capture all the nuances of the world, a required, a lot of manual effort to maintain and Afghan a pattern of",
+      "start": 537.23,
+      "end": 553.94,
+      "confidence": 0.94733953
+    },
+    {
+      "text": " over-promising and under livering that seems to play AI. People led to the collapse and of the field and the kind of a second AI winter.",
+      "start": 553.94,
+      "end": 563.44,
+      "confidence": 0.89603674
+    },
+    {
+      "text": " Okay, so that's not the end of the story either, but actually, it's not kind of really the beginning either. So, I'm going to step back further in time to 1943. So what happened in 1943?",
+      "start": 563.44,
+      "end": 578.49,
+      "confidence": 0.9739208
+    },
+    {
+      "text": "So there was a neuroscientist McCulloch and a logician pits who are wondering and marveling at how the human brain is able to do all these kind of complicated things and they want to kind of formulate a theory about how this could all happen. So they developed a theory of artificial neural networks and this is kind of you can think about the root as of, you know, deep learning in some sense. And what was interesting is that they looked at neurons and logic which are two things that you might not kind of necessary associated with each other and showed how they were kind of connected mathematically. And a lot of the early work in this era were around artificial neural. Networks was about studying them kind of from a mathematical perspective because at that time the computer was in there, you couldn't really run any kind of training models or",
+      "start": 578.49,
+      "end": 629.98,
+      "confidence": 0.6496844
+    },
+    {
+      "text": " and then 1969, something interesting happens. So there's this book by Minsky and papa called perceptron and this book did a lot of mathematical analysis and it also showed that linear models. One of the results of many was showing that linear classifiers. Couldn't solve the xor problem. The problem is",
+      "start": 629.98,
+      "end": 650.51,
+      "confidence": 0.8836805
+    },
+    {
+      "text": "Another way to think about the problem is basically given two inputs. Can you tell whether the same or not, or different? And so, it kind of not a shouldn't be a hard problem but linear cost value can do it and for some reason, which I don't quite understand it killed off neural Nets research, even though they said nothing about. If you had a deeper Network, what it could do. But it's often cited that this book swung, things from people who are interested in their own networks to Field of AI, being very symbolic and logic driven",
+      "start": 650.51,
+      "end": 681.89,
+      "confidence": 0.85886467
+    },
+    {
+      "text": " But there was always this kind of minority group who were really invested and believes in the power of neural networks and I thought I was just kind of a matter of time.",
+      "start": 681.89,
+      "end": 692.99,
+      "confidence": 0.9577538
+    },
+    {
+      "text": " So in the 80s, there was a new interest.",
+      "start": 692.99,
+      "end": 697.5,
+      "confidence": 0.8618733
+    },
+    {
+      "text": " People got to discover to ReDiscover the back propagation algorithm which allowed our kind of a for a generic algorithm that could train these multi-layer known networks because single layer remember was insufficient to do a lot of things and then one of the kind of the early success stories as Gene and in 1989 apply to convolutional neural network and was able to recognize hand digit ridden digits. And this actually got deployed by the USPS and was reading kind of zip codes. So this was, you know, great.",
+      "start": 697.5,
+      "end": 728.64,
+      "confidence": 0.7761875
+    },
+    {
+      "text": "Um but it wasn't until this decade that the this area of neural networks, really kind of took off under the moniker deep learning and you know alexnet in 2012 was kind of a huge transformation where they show gains on the image, net Benchmark and overnight transformed their computer vision Community. Alpha go as you know, many of, you know, and many kind of other and they were kind of, the rest is history.",
+      "start": 728.64,
+      "end": 756.88,
+      "confidence": 0.91014874
+    },
+    {
+      "text": " Okay, so, so there's these kind of two intellectual Traditions, you know, the name AI has always been associated. With the time John McCarthy, logical division, that's kind of where it started. But as you can see that there was a kind of, this Neuroscience inspired a tradition of AI in a two were kind of really had some deep philosophical differences. And over the decades, fought with each other kind of quite a bit.",
+      "start": 756.88,
+      "end": 782.73,
+      "confidence": 0.89128447
+    },
+    {
+      "text": "But I want to pause for a moment and really think about maybe there are actually to have deeper connections here. Remember McCullum pits, they were studying artificial, neural networks, but the connection was to logic, right? So from even in the very beginning there is kind of this Synergy that, you know, some some people can kind of often overlooked. And if you take a look at alphago, which if you think about the game of Go or many games, it's a mathematically, you can write down the rules of Go in logic and just a few lines. So it's a mathematically, well-defined logical, logic puzzle. And some sense. Let's somehow",
+      "start": 782.73,
+      "end": 818.65,
+      "confidence": 0.8219773
+    },
+    {
+      "text": " The power of neural networks allows you to develop these models that actually play go really, really well.",
+      "start": 818.65,
+      "end": 825.82,
+      "confidence": 0.93985516
+    },
+    {
+      "text": " So this is kind of one of the deep Mysteries that has kind of, I think is a kind of opens standing challenge, you know, in AI",
+      "start": 825.82,
+      "end": 834.1,
+      "confidence": 0.907135
+    },
+    {
+      "text": " as with any story, it's not the full picture, and I want to point out on this slide that",
+      "start": 834.1,
+      "end": 842.33,
+      "confidence": 0.93281555
+    },
+    {
+      "text": "AI has drawn from a lot of different fields, many of the techniques that we're going to look at. For example, maximum likelihood came from your statistics or games came from kind of Economics optimizations gradient descent. Hymns from was you know in the 50s completely unrelated to AI but these techniques kind of developed in a different context. And so AI is kind of like, you know, it's kind of like a New York City. It's it's a Melting Pot where a lot of these techniques get kind of unified and apply to kind of interesting problems. And that's what makes it. I think really interesting because of the new avenues that are opened up by kind of unique combinations of existing techniques",
+      "start": 842.33,
+      "end": 885.28,
+      "confidence": 0.67254966
+    },
+    {
+      "text": " Okay, so that was a really, really brief history of, you know, where how we got here. Now, I want to pause for a moment and think about, you know, what is, what is the goal? What were AI people trying to do?",
+      "start": 885.28,
+      "end": 900.94,
+      "confidence": 0.9329717
+    },
+    {
+      "text": " And again, this is kind of, there's two ways to think about this.",
+      "start": 900.94,
+      "end": 904.73,
+      "confidence": 0.95795625
+    },
+    {
+      "text": " Which and sometimes the conflation of these causes a lot of confusion.",
+      "start": 904.73,
+      "end": 909.53,
+      "confidence": 0.9574612
+    },
+    {
+      "text": " So I like to think about it as AI as agents and AI is a tools. So the first view asks, the kind of the scientific question of how can we create or recreate",
+      "start": 909.53,
+      "end": 922.33,
+      "confidence": 0.9250328
+    },
+    {
+      "text": "Intelligence.",
+      "start": 922.33,
+      "end": 923.86,
+      "confidence": 0.97126126
+    },
+    {
+      "text": " And the second one asked, you know, how can we use technology to kind of benefit, you know, society. And these two are obviously very related and they have a lot of shared technical overlap, but, you know, philosophically they're kind of different. So let me kind of explain this a little bit. So the idea with AI agents is and this is, I think a lot of what gets associated with AI and, you know, with science fiction, that kind of, portrayal certainly kind of encourages this kind of view where,",
+      "start": 923.86,
+      "end": 957.64,
+      "confidence": 0.9176343
+    },
+    {
+      "text": " Your human, we're human beings. And what you do is you look in the mirror and you say, wow, that's a must, that's a really smart person. And you think, okay? How what, what can humans do that is, you know, so you know amazing, well, they can, they can see and they can perceive the world recognize objects, they can grasp cups and drink water and not spill it.",
+      "start": 957.64,
+      "end": 981.23,
+      "confidence": 0.9460593
+    },
+    {
+      "text": " They can communicate using language as I'm doing to you right now, we know facts about the world declarative knowledge such as what's the capital France and procedural knowledge, how to write a bike. We can reason with this knowledge and maybe write a bike to the Capitol France.",
+      "start": 981.23,
+      "end": 998.33,
+      "confidence": 0.95929176
+    },
+    {
+      "text": "And then really importantly, we're not born with all of this, right? We're born with basically nothing, none of these capabilities, but with born with a capacity and potential to acquire these over time through experience and learning, it seems to be kind of this critical ingredient, which drives a lot of a success in AI today. But also, with human intelligence is clear that I learning plays as such a central role in getting us to the level that we are operating at",
+      "start": 998.33,
+      "end": 1026.55,
+      "confidence": 0.92528844
+    },
+    {
+      "text": " so each of these areas has kind of Spawn entire subfields and people in, it are kind of wondering about how to can make artificial systems that have the language or the motor or the visual perceptual capabilities that you know, humans have",
+      "start": 1026.55,
+      "end": 1044.1,
+      "confidence": 0.93775356
+    },
+    {
+      "text": " And I would, I would like to think that we are very far. So if you look at the way that machines are having successful, it's always narrow set of tasks and you know, millions of billions of examples and you're just crunch a lot of computation and you can really kind of optimize",
+      "start": 1044.1,
+      "end": 1066.97,
+      "confidence": 0.9447932
+    },
+    {
+      "text": " Every any task, you're going to come up with?",
+      "start": 1066.97,
+      "end": 1070.91,
+      "confidence": 0.7735372
+    },
+    {
+      "text": "Whereas humans operating a very different regime.",
+      "start": 1070.91,
+      "end": 1074.34,
+      "confidence": 0.9026802
+    },
+    {
+      "text": " They don't necessarily do any, you know, one thing well but they are have such a kind of diverse set of you know, experiences can solve the diverse set of tasks and learn from each individual task from very few examples.",
+      "start": 1074.34,
+      "end": 1088.07,
+      "confidence": 0.9484787
+    },
+    {
+      "text": " And still it's a kind of a Grand Challenge. And from, you know, Congress perspective, how you can build systems with this level of capability in that humans have",
+      "start": 1088.07,
+      "end": 1099.66,
+      "confidence": 0.92448324
+    },
+    {
+      "text": " So the other view is, you know, AI tools. Basically we say, okay, well, you know, it's kind of cool to think about how we can, you know, recreate challenges. But, you know, we don't really care about making more things like humans. We already have a way of, you know, doing that that's called babies. So when it said we really like to do is not making something that's like a human but making system that help humans because you know after all we're humans I guess it's a little bit selfish but we're in charge right now.",
+      "start": 1099.66,
+      "end": 1133.11,
+      "confidence": 0.94323933
+    },
+    {
+      "text": "Um and a lot of these, this View and a lot of the success stories in AI are really different from the things that you expect, you know, this this humanoid robot to comment to your house and be able to do. For example, this is a project from Stefano orman's group. There's a lot of poverty in the world and part of it is just kind of understanding what what's what's going on. And they had us idea of using computer vision on satellite imagery to predict things like, you know, GDP,",
+      "start": 1133.11,
+      "end": 1163.26,
+      "confidence": 0.88289875
+    },
+    {
+      "text": " So this is obviously not a task that, you know, the our ancestors and Africa were like you know, getting really good at but nonetheless use this conversation on networks which is a technique that was inspired by you know, the brain. And so that's that's kind of interesting. You can also have another application for a saving energy by trying to figure out. When to cool data centers, as AI is being deployed in more, kind of mission critical situations such as self-driving, cars or Authentication.",
+      "start": 1163.26,
+      "end": 1196.03,
+      "confidence": 0.879872
+    },
+    {
+      "text": " There are few new issues that come up. So, for example,",
+      "start": 1196.03,
+      "end": 1201.26,
+      "confidence": 0.9616185
+    },
+    {
+      "text": " there are this phenomenon called adversarial examples where you can take",
+      "start": 1201.26,
+      "end": 1207.64,
+      "confidence": 0.938057
+    },
+    {
+      "text": "these cool looking glasses, you can put them on your face and you can fool the computer as save, our face recognition system, to think that you're actually, you know, someone else",
+      "start": 1207.64,
+      "end": 1220.87,
+      "confidence": 0.90879065
+    },
+    {
+      "text": " or you can post these stickers on stop signs and get this. Save our system to think that it's a speed limit sign.",
+      "start": 1220.87,
+      "end": 1230.71,
+      "confidence": 0.92411506
+    },
+    {
+      "text": " So there's obviously there's clearly these are, you know, big problems. If we think about the widespread deployment deployment of AI,",
+      "start": 1230.71,
+      "end": 1238.62,
+      "confidence": 0.9552132
+    },
+    {
+      "text": " There's also less catastrophically but also pretty, you know, upsetting which is a biases that you many of you probably have read in the news about. So for example, if you take Malay which is the language that doesn't distinguish in the writing form between he and she and you sick into Google translate, you see that she works as a nurse but he works as a programmer which is encoding certain societal biases in the actual models and one to kind of important point. I want to bring up is that",
+      "start": 1238.62,
+      "end": 1272.67,
+      "confidence": 0.86010873
+    },
+    {
+      "text": " You know, how is machine learning and kind of working today? Well, it's, you know, Society exists.",
+      "start": 1272.67,
+      "end": 1281.03,
+      "confidence": 0.85995156
+    },
+    {
+      "text": "Society is generating a lot of data. We're training on this data and kind of trying to fit the data and trying to mimic what it's doing and then using predictions on it. What could possibly go wrong, right. And so, so certainly people a lot of people have been thinking about how these biases are kind of creeping up as an open active area of research.",
+      "start": 1281.03,
+      "end": 1300.53,
+      "confidence": 0.95983946
+    },
+    {
+      "text": " something a little bit more kind of sensitive is",
+      "start": 1300.53,
+      "end": 1304.81,
+      "confidence": 0.9643455
+    },
+    {
+      "text": " You know, asking, well, these systems are being deployed to all these, all these people, whether they kind of wanted or wanted or not, and this, this actually touches on, you know, people's livelihoods actually, impacts people's lives in a serious way. So Northwind was his company developed a software called Compass at tries to predict how risky",
+      "start": 1304.81,
+      "end": 1329.35,
+      "confidence": 0.8957162
+    },
+    {
+      "text": " Criminal risk score. How is someone how risky someone is essentially and a public holiday? This organization realized whoa, you have the system that individual didn't respond is actually more twice as likely to classify. Blacks is incorrectly as you know, non blacks. So this is a seems pretty problematic and the North Point comes back and says, actually, you know, I think I think we're bringing fair. So give a risk score of 7. We were Fair because 60% of whites were offended and 60% of blacks reoffended",
+      "start": 1329.35,
+      "end": 1364.01,
+      "confidence": 0.76896703
+    },
+    {
+      "text": "um, the point here is that there's there's actually",
+      "start": 1364.01,
+      "end": 1369.96,
+      "confidence": 0.9470573
+    },
+    {
+      "text": " No solution to this in some sense. Sadly, so, people have finding a formulated different Notions of fairness and equality between how you predict chord on different kind of groups.",
+      "start": 1369.96,
+      "end": 1383.89,
+      "confidence": 0.96376324
+    },
+    {
+      "text": " But all you can have different Notions of fairness and which all seemed reasonable from first principles, but mathematically, they can be incompatible with each other.",
+      "start": 1383.89,
+      "end": 1395.7,
+      "confidence": 0.96662116
+    },
+    {
+      "text": " So this is again an open area of research where we're trying to figure out as a society, how to deal with the skim and that machine learning might be used in these kind of critical situations.",
+      "start": 1395.7,
+      "end": 1408.01,
+      "confidence": 0.9081422
+    },
+    {
+      "text": " Okay, so summary so far.",
+      "start": 1408.01,
+      "end": 1412.07,
+      "confidence": 0.88983727
+    },
+    {
+      "text": " There's an agent's View.",
+      "start": 1412.07,
+      "end": 1414.16,
+      "confidence": 0.72358763
+    },
+    {
+      "text": " we're trying to really kind of dream and think about how do you",
+      "start": 1414.16,
+      "end": 1419.11,
+      "confidence": 0.9884046
+    },
+    {
+      "text": " get these capabilities like learning from very few examples that humans have into, you know, machines and a whole maybe opening up, I'll kind of a different set of technical capabilities, but at the same time, we really need to be thinking about how these AI systems are affecting the real world.",
+      "start": 1419.11,
+      "end": 1439.09,
+      "confidence": 0.9387417
+    },
+    {
+      "text": "And things like security and biases and fairness. All kind of show up. It's also interesting to note that, you know, a lot of the challenges in deployment of AI system. Don't really have necessary to do with, you know, humans at all. I'm humans are incredibly biased but doesn't mean we want to build systems kind of in our",
+      "start": 1439.09,
+      "end": 1461.18,
+      "confidence": 0.957095
+    },
+    {
+      "text": " that mimic humans and kind of inherit all the kind of the flaws that humans have.",
+      "start": 1461.18,
+      "end": 1467.63,
+      "confidence": 0.9728962
+    },
+    {
+      "text": " Okay.",
+      "start": 1467.63,
+      "end": 1470.61,
+      "confidence": 0.679037
+    },
+    {
+      "text": " Any questions about this pause for a moment?",
+      "start": 1470.61,
+      "end": 1475.17,
+      "confidence": 0.95714164
+    },
+    {
+      "text": " So, let's go on.",
+      "start": 1475.17,
+      "end": 1492.17,
+      "confidence": 0.9589757
+    },
+    {
+      "text": " So, what I want to do next is give overview of the different topics in the course.",
+      "start": 1492.17,
+      "end": 1498.8,
+      "confidence": 0.9745041
+    },
+    {
+      "text": " and,",
+      "start": 1498.8,
+      "end": 1500.62,
+      "confidence": 0.9234585
+    },
+    {
+      "text": " the way to think about all of this is that",
+      "start": 1500.62,
+      "end": 1504.05,
+      "confidence": 0.9611562
+    },
+    {
+      "text": " In AI, we're trying to solve really complex problems. So real world is really complicated and but at the end of the day, we want to produce some software or maybe some hard work that actually runs and does stuff.",
+      "start": 1504.05,
+      "end": 1517.94,
+      "confidence": 0.94254
+    },
+    {
+      "text": "Right. And so there's a very considerable gap between these things and so how do you even approach something like self-driving cars, or you know, diagnosing diseases? You probably shouldn't just like go sit down at a terminal and start typing because then there's no kind of know Arbor arching structure.",
+      "start": 1517.94,
+      "end": 1537.47,
+      "confidence": 0.9359962
+    },
+    {
+      "text": " So,",
+      "start": 1537.47,
+      "end": 1538.9,
+      "confidence": 0.89734715
+    },
+    {
+      "text": " What this class is going to do is to give you one example of a structure, which will hopefully help you approach heart problems and think about how to solve them in a kind of more principled way.",
+      "start": 1538.9,
+      "end": 1550.61,
+      "confidence": 0.98295766
+    },
+    {
+      "text": " So this is a paradigm that I call the modeling inference and learning Paradigm. So the idea here is that",
+      "start": 1550.61,
+      "end": 1561.03,
+      "confidence": 0.9621409
+    },
+    {
+      "text": " There's three pillars which I'll explain in a bit.",
+      "start": 1561.03,
+      "end": 1565.55,
+      "confidence": 0.96590877
+    },
+    {
+      "text": " And we can focus on each one of these things, kind of intern.",
+      "start": 1565.55,
+      "end": 1574.14,
+      "confidence": 0.98016936
+    },
+    {
+      "text": " So the first pillar is modeling.",
+      "start": 1574.14,
+      "end": 1576.58,
+      "confidence": 0.9227169
+    },
+    {
+      "text": " So what is modeling?",
+      "start": 1576.58,
+      "end": 1578.43,
+      "confidence": 0.88908565
+    },
+    {
+      "text": " The modeling is taking the real world which is really complicated and building a model out of it. So what is a model model is a simplification that is mathematically precise, so that you can, you know, do something with it on a computer.",
+      "start": 1578.43,
+      "end": 1592.84,
+      "confidence": 0.943527
+    },
+    {
+      "text": "Um, one of the things that's necessary is that modeling necessary has to simplify things and, you know, throw away information. So one of the kind of the, you know, the art is to figure out what information to pay attention to and what information to keep.",
+      "start": 1592.84,
+      "end": 1609.09,
+      "confidence": 0.9627521
+    },
+    {
+      "text": " So this is going to be an important. For example, when you work on your final projects and you have a real world problem, you need to figure out, you can't have everything and you have to figure out your Justice League, how to manage your resources.",
+      "start": 1609.09,
+      "end": 1621.35,
+      "confidence": 0.9577603
+    },
+    {
+      "text": " so, here's an example, if you want to, for example, build a",
+      "start": 1621.35,
+      "end": 1624.91,
+      "confidence": 0.9795156
+    },
+    {
+      "text": " system that can find the best way to get from point A to point B in a graph and the city you can formulate the model as a graph where",
+      "start": 1624.91,
+      "end": 1635.16,
+      "confidence": 0.9409544
+    },
+    {
+      "text": " nodes are points in the city and edges represent ability to go between these points with some sort of cost on the edges.",
+      "start": 1635.16,
+      "end": 1644.03,
+      "confidence": 0.9769947
+    },
+    {
+      "text": " Okay, so now once you have your model,",
+      "start": 1644.03,
+      "end": 1648.26,
+      "confidence": 0.96742606
+    },
+    {
+      "text": " you can do inference. And what inference means is asking questions about your model. So here's a model you can ask, for example, how does a shortest path from this point to this point?",
+      "start": 1648.26,
+      "end": 1663.87,
+      "confidence": 0.9677508
+    },
+    {
+      "text": "Right? And that's because now you're a model. Land is a mathematically well-defined problem. Now you can. It's within the realm of, you know, devoted algorithms to, you know, solve that problem.",
+      "start": 1663.87,
+      "end": 1676.61,
+      "confidence": 0.87753224
+    },
+    {
+      "text": " And most of inferences being able to do these computations really efficiently.",
+      "start": 1676.61,
+      "end": 1683.13,
+      "confidence": 0.9554863
+    },
+    {
+      "text": " The problem. Where does this model come from?",
+      "start": 1683.13,
+      "end": 1689.8,
+      "confidence": 0.9575611
+    },
+    {
+      "text": " So in any, in a realistic setting, the model might have a lot of parameters. Maybe it has millions of parameters and how do you if it's wants to be full to the real world? How do you get all this information? There manually encoding, this information. Turns out not to be a good idea. This is in some sense. What AI from the 80s was trying to do.",
+      "start": 1689.8,
+      "end": 1716.15,
+      "confidence": 0.9565731
+    },
+    {
+      "text": " So, the learning Paradigm is as follows. What we're going to do is specify a model without parameters. Think about it as a skeleton.",
+      "start": 1716.15,
+      "end": 1725.85,
+      "confidence": 0.93203694
+    },
+    {
+      "text": " so in this case, we have a graph but we don't know what the edge weights are",
+      "start": 1725.85,
+      "end": 1729.84,
+      "confidence": 0.96968234
+    },
+    {
+      "text": " And now we have some data.",
+      "start": 1729.84,
+      "end": 1734.22,
+      "confidence": 0.94745487
+    },
+    {
+      "text": "So maybe we have data of the form. People try to go from X to Y and they took 10 minutes or an hour or so on. And then from this data we can learn to fit the parameters of the model we can assign cost to the edges. That kind of a representative of what the data is telling us.",
+      "start": 1734.22,
+      "end": 1752.95,
+      "confidence": 0.9648769
+    },
+    {
+      "text": " Okay, so now in this way, we can write down a model without parameters.",
+      "start": 1752.95,
+      "end": 1757.48,
+      "confidence": 0.97659683
+    },
+    {
+      "text": " Feed a data, apply a generic learning algorithm, and get a model with parameters. And now we can go back and do inference and ask questions, you know about this.",
+      "start": 1757.48,
+      "end": 1766.63,
+      "confidence": 0.9178946
+    },
+    {
+      "text": " Okay, so this is kind of the the Paradigm and I want to really emphasize that, you know, learning is not as I presented, is really not about any one particular algorithm like nearest neighbors or neural networks. It's really a kind of a philosophy of how you go about approaching Problems by defining a model and then not having to specify all the details. But filling them and later.",
+      "start": 1766.63,
+      "end": 1791.95,
+      "confidence": 0.9452925
+    },
+    {
+      "text": " Okay, so here is the plan for the course, we're going to go from low level intelligence to high level intelligence, and this is an intelligence of of the of the models that we're going to be talking about. So first, we're going to talk about machine learning and like I've kind of alluded to earlier a machine learning is going to be such a kind of a important building block of that can be applied to any of the models that we develop.",
+      "start": 1791.95,
+      "end": 1821.61,
+      "confidence": 0.90299124
+    },
+    {
+      "text": "So the central tenant and machine learning is you have data and you go to model, its main us driver of a lot of assess successes in AI because of allows you to in software engineering terms move the complexity from code to data, rather having, you know, a million lines of code which is a manageable, you have a lot of data, which is collected in kind of a more natural way and the smaller amount of code that can operate on this data and this Paradigm has really been introverted powerful.",
+      "start": 1821.61,
+      "end": 1852.55,
+      "confidence": 0.87275374
+    },
+    {
+      "text": " One thing to think about, in terms of machine learning, is that it is requires a leap of faith.",
+      "start": 1852.55,
+      "end": 1858.95,
+      "confidence": 0.9630457
+    },
+    {
+      "text": " Right? So you can go through a mechanics of, you know, down downloading, some machine learning code and you train them all, but fundamentally, it's about generalization, right? You have your data, you fit a model, but you don't care about how a performance on that data. You care about how it performs on new experiences and that leap of faith is something that's I think gives machine learning its power, but it's also a little bit at First Class magical.",
+      "start": 1858.95,
+      "end": 1885.66,
+      "confidence": 0.9223261
+    },
+    {
+      "text": " It turns out you can actually formalize a lot of this using.",
+      "start": 1885.66,
+      "end": 1890.8,
+      "confidence": 0.97365373
+    },
+    {
+      "text": " Probability Theory and statistics but that's kind of a topic for another time.",
+      "start": 1890.8,
+      "end": 1895.73,
+      "confidence": 0.97211087
+    },
+    {
+      "text": "Okay, so after we talk about machine learning, we're going to go back and talk about the simplest of models, right? So a reflex model is this? So here's a quiz. Okay, what is this animal?",
+      "start": 1895.73,
+      "end": 1908.9,
+      "confidence": 0.9377775
+    },
+    {
+      "text": " Okay, zebra. How did you get it so fast? Well, it's kind of reflects, right? You're human visual system is so good at doing these things without thinking, and so reflex models. Are these are models which just require a fixed set of computations. So examples, like are linear classifiers, they don't know networks. And most of these models are the ones that people use machine. Learning use models is almost synonymous with reflex in machine learning and important thing that there's no feed for it, just like you get your input. Bam, Bam, Bam, and here's your output.",
+      "start": 1908.9,
+      "end": 1944.64,
+      "confidence": 0.8352925
+    },
+    {
+      "text": " Okay, so that's that's great because it's fast.",
+      "start": 1944.64,
+      "end": 1948.28,
+      "confidence": 0.9304904
+    },
+    {
+      "text": " But there's some problems that require a little bit more than that, right? So for example, here's another problem. Okay quick, why to move? Where should you go?",
+      "start": 1948.28,
+      "end": 1958.5,
+      "confidence": 0.94909054
+    },
+    {
+      "text": " Okay, there's probably like a few of you who are like chess Geniuses, but for the rest of us, I have no idea and even no way who's moving again. So,",
+      "start": 1958.5,
+      "end": 1969.14,
+      "confidence": 0.91834223
+    },
+    {
+      "text": "And this kind of situations, we need something, perhaps a little bit more powerful than a reflex. We need agents that can kind of plan and think ahead. So the idea behind stay based models is that we model the world as a set of states, which capture any given situation like a position in a",
+      "start": 1969.14,
+      "end": 1986.44,
+      "confidence": 0.9559328
+    },
+    {
+      "text": " in a game.",
+      "start": 1986.44,
+      "end": 1987.8,
+      "confidence": 0.90020007
+    },
+    {
+      "text": " And actions that take us between states, which correspond to things that you can do in the, in this game.",
+      "start": 1987.8,
+      "end": 1995.07,
+      "confidence": 0.9631244
+    },
+    {
+      "text": " So a lot of game applications following this category, robotics motion planning navigation all. So some things that are not be, you might think of planning such as generation in natural language or generating an image, you know are can be cast in this way as well.",
+      "start": 1995.07,
+      "end": 2014.98,
+      "confidence": 0.9183826
+    },
+    {
+      "text": " So, there's three types of state-based models Each of, which were cover in, you know, weeks of time. So search problems are the classic you control everything. So you're just trying to find the optimal path, there are cases where there's Randomness. For example, if you're trying to go from point A to point B, maybe there's traffic that you don't, you know, don't know about or in a game there might be a dice or die which are Road and there's a third category which are adversarial games, which is cases where you're playing an opponent. Who's actively trying to destroy your. So what do you do about that?",
+      "start": 2014.98,
+      "end": 2047.66,
+      "confidence": 0.81571114
+    },
+    {
+      "text": "So, one of the games that we're going to be talking about, when we talk about games is a Pac-Man. And one of the assignments is actually building a Pac-Man agent such as this. So while you're looking at this, think about how what are the states and what are the actions and how would you go about, you know, devising a strategy for Pac-Man to eat all the dots and avoid all the ghosts.",
+      "start": 2047.66,
+      "end": 2071.55,
+      "confidence": 0.93331176
+    },
+    {
+      "text": " So that's something to maybe look forward to. There's also going to be a competition, so we'll see who ends up on top.",
+      "start": 2071.55,
+      "end": 2077.97,
+      "confidence": 0.9237236
+    },
+    {
+      "text": " Okay, so database models.",
+      "start": 2077.97,
+      "end": 2082.55,
+      "confidence": 0.82732177
+    },
+    {
+      "text": " Are very powerful other value to kind of have foresight but some problems are not really most natural space models. For example, you know how many places to go through or have played it before. So the goal of Sudoku is to fill in these",
+      "start": 2082.55,
+      "end": 2098.97,
+      "confidence": 0.87533605
+    },
+    {
+      "text": " Blanks with numbers. So that every road column and three by three subhlok has, it is just one through nine. So it's a bunch of constraints and there's no",
+      "start": 2098.97,
+      "end": 2108.91,
+      "confidence": 0.863512
+    },
+    {
+      "text": " kind of sense in which you have to do in a certain order, right? Whereas the order in how you move in chess or something, as you know, pretty important,",
+      "start": 2108.91,
+      "end": 2119.14,
+      "confidence": 0.9550876
+    },
+    {
+      "text": "Um, so so these type of problems are captured by these variable based models where you kind of think about a solution to the problem, as an assignment, to the individual variables, under some constraints. So constraints satisfaction problems were spent a week on that. These are hard constraints. For example, two people can't be a person, can't be in two places at once. For example, there's also Beijing networks which we'll talk about which are variable based models with soft dependencies. For example, if you're trying to track, you know, a car",
+      "start": 2119.14,
+      "end": 2154.56,
+      "confidence": 0.767668
+    },
+    {
+      "text": " Over time, these are the positions of the car. These variables representation of the cars and these ease represent the",
+      "start": 2154.56,
+      "end": 2163.68,
+      "confidence": 0.91577655
+    },
+    {
+      "text": " Sensor readings of the position of the car adapt particular position and inference looks like trying to figure out where the car was given all this kind of Northeast Center Reading.",
+      "start": 2163.68,
+      "end": 2175.45,
+      "confidence": 0.901707
+    },
+    {
+      "text": " So that's all going to be another assignment that you're going to deal with.",
+      "start": 2175.45,
+      "end": 2178.61,
+      "confidence": 0.78925276
+    },
+    {
+      "text": " Okay, so finally, now we get to high level. What's so what is high level intelligence here? And I put logic here for a reason that you'll see. Clear. Yeah. Is there a question?",
+      "start": 2178.61,
+      "end": 2190.85,
+      "confidence": 0.8713428
+    },
+    {
+      "text": "Example, can you explain why? It's not a state baseball? Yeah, so the question is, why is not the why is the socio problem not a space space model? You can actually formulate this as a state-based model by just thinking about the sequence of assignments, but it turns out that you can",
+      "start": 2190.85,
+      "end": 2210.73,
+      "confidence": 0.9060944
+    },
+    {
+      "text": " formulate in a kind of more natural way as a variable based model which allows you to take advantage, some kind of more efficient algorithm to solve it, right? It's it think about these models as kind of different analogy is like, a programming language. So yes you could write everything in, you know, C, plus plus. But sometimes riding in, you know, python or or sequel for something's might be more.",
+      "start": 2210.73,
+      "end": 2234.69,
+      "confidence": 0.9307244
+    },
+    {
+      "text": " Might be easier.",
+      "start": 2234.69,
+      "end": 2236.22,
+      "confidence": 0.9208321
+    },
+    {
+      "text": " Yeah.",
+      "start": 2236.22,
+      "end": 2237.48,
+      "confidence": 0.7691523
+    },
+    {
+      "text": " So question is, how do you categorize say based models where there's both Randomness and an adversary? We're going to talk about those as well and those would be, I would classify them as adversarial, but there's also a random component that you have to deal with.",
+      "start": 2237.48,
+      "end": 2259.14,
+      "confidence": 0.91149276
+    },
+    {
+      "text": " Games like back on.",
+      "start": 2259.14,
+      "end": 2260.77,
+      "confidence": 0.64734715
+    },
+    {
+      "text": " Yeah, we just",
+      "start": 2260.77,
+      "end": 2264.57,
+      "confidence": 0.6121433
+    },
+    {
+      "text": "like,",
+      "start": 2264.57,
+      "end": 2265.17,
+      "confidence": 0.94157326
+    },
+    {
+      "text": " go from.",
+      "start": 2265.17,
+      "end": 2266.7,
+      "confidence": 0.90763694
+    },
+    {
+      "text": " The Street Station to like continuous spaces. So it feels like we have like problems that are quantify will be like this.",
+      "start": 2266.7,
+      "end": 2274.83,
+      "confidence": 0.73496455
+    },
+    {
+      "text": " I didn't end up farther, right? We get the more we need like approximates.",
+      "start": 2274.83,
+      "end": 2278.22,
+      "confidence": 0.8584943
+    },
+    {
+      "text": " yeah, so a question is about whether some of these are more continuous and some of the more discreet I know necessarily think of",
+      "start": 2278.22,
+      "end": 2287.68,
+      "confidence": 0.94346595
+    },
+    {
+      "text": " So, a lot of the reflex models actually can work in continuous spaces, for example, images actually. It's it's almost a little bit of opposite where the logic based models are in some sense more, you know, discrete but you can also have continuous elements, you know, in there as well.",
+      "start": 2287.68,
+      "end": 2305.06,
+      "confidence": 0.9415108
+    },
+    {
+      "text": " So in this class, we're mostly going to focus on time discrete objects because they're just going to be simpler to work with",
+      "start": 2305.06,
+      "end": 2311.44,
+      "confidence": 0.9225953
+    },
+    {
+      "text": " Okay. So what is this logic? So the motivation here is that supposed you wanted a little companion who you could boss around and and help or help you do things. Let's say, that's a better way to say it. So you like to be able to say, okay, you know, tell us some information and, you know, then later you want to be able to ask some questions and have the system be able to",
+      "start": 2311.44,
+      "end": 2339.73,
+      "confidence": 0.9462436
+    },
+    {
+      "text": "Reply to you.",
+      "start": 2339.73,
+      "end": 2340.99,
+      "confidence": 0.72469884
+    },
+    {
+      "text": " So you know, how would you go about doing this? One way you could think about is building a system that you can actually talk to using natural language?",
+      "start": 2340.99,
+      "end": 2352.39,
+      "confidence": 0.9669853
+    },
+    {
+      "text": " Okay. So I'm actually going to show you a little demo which is going to come up in the last assignment on logic. And well let's see what you think of that.",
+      "start": 2352.39,
+      "end": 2363.73,
+      "confidence": 0.94313204
+    },
+    {
+      "text": " Okay. So this is going to be a system that is based on logic that I'm going to tell the system. A bunch of things and then I'm going to ask some questions. So I want you all to fall along and see if you can, you know, play the role of the vision. Okay. So I'm going to teach you a few things like Alice is a student.",
+      "start": 2363.73,
+      "end": 2387.28,
+      "confidence": 0.9428157
+    },
+    {
+      "text": " okay, so as I learned something, now let's let's quiz to his Alice a student",
+      "start": 2387.28,
+      "end": 2394.96,
+      "confidence": 0.7763335
+    },
+    {
+      "text": " Okay good. So that worked is Bob a student.",
+      "start": 2394.96,
+      "end": 2400.81,
+      "confidence": 0.86506087
+    },
+    {
+      "text": " Should answer me.",
+      "start": 2400.81,
+      "end": 2402.5,
+      "confidence": 0.7256878
+    },
+    {
+      "text": " I don't know who's Bob. Okay, so now let's do students are people.",
+      "start": 2402.5,
+      "end": 2410.64,
+      "confidence": 0.91066414
+    },
+    {
+      "text": "A.",
+      "start": 2410.64,
+      "end": 2412.64,
+      "confidence": 0.15581906
+    },
+    {
+      "text": " LS is not a person.",
+      "start": 2412.64,
+      "end": 2415.73,
+      "confidence": 0.9496708
+    },
+    {
+      "text": " And by that. Okay, so okay, it's you know it's doing some reasoning, right? It's using logic it's not just",
+      "start": 2415.73,
+      "end": 2425.36,
+      "confidence": 0.92154825
+    },
+    {
+      "text": " Okay, so now let's do Alice is from Phoenix.",
+      "start": 2425.36,
+      "end": 2431.63,
+      "confidence": 0.95610726
+    },
+    {
+      "text": " Phoenix is a hot City. I know because I love their CDs are places.",
+      "start": 2431.63,
+      "end": 2439.12,
+      "confidence": 0.95587367
+    },
+    {
+      "text": " And if it is snowing, it is then it is cold.",
+      "start": 2439.12,
+      "end": 2447.45,
+      "confidence": 0.9479965
+    },
+    {
+      "text": " Okay.",
+      "start": 2447.45,
+      "end": 2449.3,
+      "confidence": 0.7347658
+    },
+    {
+      "text": " Got it.",
+      "start": 2449.3,
+      "end": 2450.49,
+      "confidence": 0.7867129
+    },
+    {
+      "text": " So, is it snowing?",
+      "start": 2450.49,
+      "end": 2453.07,
+      "confidence": 0.9125565
+    },
+    {
+      "text": " I don't know.",
+      "start": 2453.07,
+      "end": 2457.03,
+      "confidence": 0.83825207
+    },
+    {
+      "text": " So, how about this? Okay, so if",
+      "start": 2457.03,
+      "end": 2461.63,
+      "confidence": 0.9468788
+    },
+    {
+      "text": " A person is from a hot place and it is cold, then she is not happy.",
+      "start": 2461.63,
+      "end": 2467.15,
+      "confidence": 0.94723564
+    },
+    {
+      "text": " Okay.",
+      "start": 2467.15,
+      "end": 2468.67,
+      "confidence": 0.62444824
+    },
+    {
+      "text": " True.",
+      "start": 2468.67,
+      "end": 2469.81,
+      "confidence": 0.71490216
+    },
+    {
+      "text": " Right.",
+      "start": 2469.81,
+      "end": 2470.78,
+      "confidence": 0.7923149
+    },
+    {
+      "text": " I guess those of you who are sent all your live in California with him, maybe appreciate this. But okay, so is it snowing now?",
+      "start": 2470.78,
+      "end": 2479.63,
+      "confidence": 0.89157563
+    },
+    {
+      "text": " I mean, you say yeah, it's snowing.",
+      "start": 2479.63,
+      "end": 2483.83,
+      "confidence": 0.83630043
+    },
+    {
+      "text": "How do you say no?",
+      "start": 2483.83,
+      "end": 2485.56,
+      "confidence": 0.8710245
+    },
+    {
+      "text": " Don't know.",
+      "start": 2485.56,
+      "end": 2486.84,
+      "confidence": 0.9239393
+    },
+    {
+      "text": " Okay.",
+      "start": 2486.84,
+      "end": 2488.11,
+      "confidence": 0.8096261
+    },
+    {
+      "text": " oh,",
+      "start": 2488.11,
+      "end": 2493.07,
+      "confidence": 0.57583416
+    },
+    {
+      "text": " to wait.",
+      "start": 2493.07,
+      "end": 2494.04,
+      "confidence": 0.642359
+    },
+    {
+      "text": " How about if I say, Alice is happy.",
+      "start": 2494.04,
+      "end": 2498.86,
+      "confidence": 0.9071623
+    },
+    {
+      "text": " Okay, so is it snowing now?",
+      "start": 2498.86,
+      "end": 2502.18,
+      "confidence": 0.84909123
+    },
+    {
+      "text": " Know. It should be no. Okay, so you guys were able to do this. Okay? So this is kind of an example of an interaction which if you think about it has is very different from what you would see kind of in a typical, you know, ml system where you have to show it. You know, millions of examples of one particular thing and it can do kind of one task. This is much more of a very",
+      "start": 2502.18,
+      "end": 2525.42,
+      "confidence": 0.96228856
+    },
+    {
+      "text": " Open-ended set of.",
+      "start": 2525.42,
+      "end": 2527.95,
+      "confidence": 0.8518916
+    },
+    {
+      "text": " I want to say the experience is our super rich but they're doing diverse I teach. I just give one statement. I say it once and then all the sudden has all the ramifications and kind of consequences that bill in and it kind of understands and kind of deeper level. Of course, this is based on, you know, logic systems. So it is brittle but this is kind of just a proof of Concepts to give you a taste of what I mean. When I say logic,",
+      "start": 2527.95,
+      "end": 2556.03,
+      "confidence": 0.913775
+    },
+    {
+      "text": "So so these systems need to be able to digest these heterogeneous information and recently with that information and we'll see how kind of how logic systems can do that.",
+      "start": 2556.03,
+      "end": 2566.64,
+      "confidence": 0.9761855
+    },
+    {
+      "text": " Okay.",
+      "start": 2566.64,
+      "end": 2568.31,
+      "confidence": 0.73269075
+    },
+    {
+      "text": " So, that completes the tour of the topics of this class.",
+      "start": 2568.31,
+      "end": 2573.09,
+      "confidence": 0.9929819
+    },
+    {
+      "text": " Now, I want to spend a little bit of time on course Logistics. So,",
+      "start": 2573.09,
+      "end": 2580.08,
+      "confidence": 0.9632321
+    },
+    {
+      "text": " I want to all the details here are online, so I'm not going to be complete in my coverage, but I just want to give you a general sense of what's going on here.",
+      "start": 2580.08,
+      "end": 2591.04,
+      "confidence": 0.94770545
+    },
+    {
+      "text": " Okay, so what are we trying to do in this course?",
+      "start": 2591.04,
+      "end": 2594.19,
+      "confidence": 0.9659328
+    },
+    {
+      "text": " So prerequisites.",
+      "start": 2594.19,
+      "end": 2596.92,
+      "confidence": 0.8874299
+    },
+    {
+      "text": " There's programming the screen math and probably. So you need to code you need to be able to do some math and some kind of basic proofs. Right? So these are the classes that are",
+      "start": 2596.92,
+      "end": 2611.73,
+      "confidence": 0.9080086
+    },
+    {
+      "text": " Required or at least recommended that you or if you have something equivalent experience that's you know, fine too.",
+      "start": 2611.73,
+      "end": 2617.69,
+      "confidence": 0.9006697
+    },
+    {
+      "text": " And what we what should you hope to get out of this course. Right. So one had the course is meant to be giving you a set of tools using the modeling inference learning Paradigm. It gives you a set of tools and a way of thinking about problems, I hopefully will be really useful for you when you go out in the world and try to solve real world problems,",
+      "start": 2617.69,
+      "end": 2638.54,
+      "confidence": 0.94806695
+    },
+    {
+      "text": "Um, and also by as a side product. I also want all of you to be more proficient at math and programming because those are kind of the core elements that are enable you to kind of interesting, you know, things and AI.",
+      "start": 2638.54,
+      "end": 2652.53,
+      "confidence": 0.91909426
+    },
+    {
+      "text": " So a lot of AI, you know you read about it is very flashy but really the foundations are still just you know math and programming in some sense.",
+      "start": 2652.53,
+      "end": 2661.76,
+      "confidence": 0.9104571
+    },
+    {
+      "text": " Okay, so the coursework is homeworks exam in a project. That's where you have to do homework, there's eight homeworks. Each homework is a mix of writing and programming problems centered on a particular application. Covering one particular type of model essentially like I mentioned before, there's a competition for extra credit. There's also some extra credit problems in the and the homeworks, and when you submit code, we're going to run. We have Auto greater that runs. It's going to run on all the test cases. But you get a feedback only a subset. So you can it's like, you know, a machine learning. You have a train set and you have a test set, so don't train on your test set. Okay,",
+      "start": 2661.76,
+      "end": 2703.99,
+      "confidence": 0.6978244
+    },
+    {
+      "text": " so, the exam is",
+      "start": 2703.99,
+      "end": 2708.17,
+      "confidence": 0.9505223
+    },
+    {
+      "text": " testing your ability to use the knowledge that you learn to solve a new problems, right? So there's",
+      "start": 2708.17,
+      "end": 2715.35,
+      "confidence": 0.93744206
+    },
+    {
+      "text": "And I think it's worth taking a look at exam because it's kind of surprises people. Every the exam is a little bit different than the types of problems that you see on, on the homework and they're kind of more problem, you know, solving. So the exam isn't going to be like a multiple choice like okay, you know, you know when was you know, perceptions published you know, something like that, it's going to be here's a real life problem, how do you model it and how do you come up with it, you know, solution. They're all going to be written. It's closed book except for you have a one-page of notes and this is a great opportunity to actually review all the material and actually learn the content in the class.",
+      "start": 2715.35,
+      "end": 2754.03,
+      "confidence": 0.77649075
+    },
+    {
+      "text": " So the project I think is a really good opportunity to take all of the things that we've been talking about in the class and try to find something you really care about and try to apply it.",
+      "start": 2754.03,
+      "end": 2769.06,
+      "confidence": 0.9790305
+    },
+    {
+      "text": "Um, working groups of three. And I really recommend finding a group early. And as I emphasized as your responsibility to find, you know, a good group, right? Don't come to us later like one week before the projected line and say, oh, you know, my group members, they dictionary or something, really, try to try to nail this down, use Piazza to, or your other social networks, to find a good group. So throughout the quarter, there's going to be these milestones for the projects so to prevent you guys from procrastinating into the very end. So there's going to be a proposal where you try and brainstorm some ideas progress, report poster session, which is actually a whole week before the final report is due and the project is very open so this can be really liberating, but also might be a little bit daunting.",
+      "start": 2769.06,
+      "end": 2820.47,
+      "confidence": 0.6340148
+    },
+    {
+      "text": " We will hopefully give you a lot of structure. In terms of saying, okay, how do you define your task? How do you implement different baselines Oracles, which I'll explain later, how do you evaluate? How do you analyze what you've done and each of you will each project group of the assign a CA mentor to help you through the process. In your always work on to come to my office hours or doors or any of the ca's to get additional help either brainstorming or figuring out what the next step is.",
+      "start": 2820.47,
+      "end": 2851.53,
+      "confidence": 0.88996536
+    },
+    {
+      "text": "Um, some policies, all assignments will be submitted on great scope.",
+      "start": 2851.53,
+      "end": 2857.51,
+      "confidence": 0.88006073
+    },
+    {
+      "text": " There's seven total late days you can use and most to per assignment after that there's no credit. We're going to use Piazza for all communication so don't email us directly. Leave a post on Piazza if a current you to make a public if it's it's not sensitive but if it's you know personal then obviously make a private and try to help each other. Well actually award some Edge for credit for students who help answer",
+      "start": 2857.51,
+      "end": 2884.79,
+      "confidence": 0.92430556
+    },
+    {
+      "text": " You know, other students questions.",
+      "start": 2884.79,
+      "end": 2886.85,
+      "confidence": 0.863036
+    },
+    {
+      "text": " So, all of the details on the course website,",
+      "start": 2886.85,
+      "end": 2889.66,
+      "confidence": 0.7446058
+    },
+    {
+      "text": "Okay, so one last thing, and it's really important and that's the honor code, okay? So it's special, if you're, you know, you've probably heard this. If you've been at Stanford if you haven't, then I want to really kind of make this clear. So I encourage you all to kind of collaborate discuss together, but when you come to actually the homeworks, you have to write up your homework and you know, code independently. So you should be looking at someone's right up. You shouldn't be looking at their code and you definitely shouldn't be copying code off of GitHub. That's hopefully should be obvious and maybe less obvious, you should not please do not post your homework assignments on GitHub, I know, you're probably proud of that you're Pac-Man. Agent is doing really well, but please don't post on GitHub because then that's going to be an honor code violation.",
+      "start": 2889.66,
+      "end": 2943.63,
+      "confidence": 0.63099265
+    },
+    {
+      "text": " When debugging with, if you're working together, it's fine to as long as it's kind of looking at input output Behavior. So you can say to your partner, oh hey, I put in this input to my test case. I'm getting like three. What are you getting? So that's fine but you can't remember. Don't look at each other's code.",
+      "start": 2943.63,
+      "end": 2962.57,
+      "confidence": 0.93106616
+    },
+    {
+      "text": "And there's even forces we're going to be running mosque, which is a software program that looks for code duplication to make sure that the rules are being followed. And, you know, changing one variable name is or you'll be. So anyway, enough said,",
+      "start": 2962.57,
+      "end": 2980.51,
+      "confidence": 0.8808964
+    },
+    {
+      "text": " Just don't.",
+      "start": 2980.51,
+      "end": 2981.55,
+      "confidence": 0.96147263
+    },
+    {
+      "text": " Don't do it.",
+      "start": 2981.55,
+      "end": 2982.98,
+      "confidence": 0.8250733
+    },
+    {
+      "text": " Okay.",
+      "start": 2982.98,
+      "end": 2984,
+      "confidence": 0.7315031
+    },
+    {
+      "text": " Any questions about this? I want to make sure this is important or about any of those Logistics. Yeah.",
+      "start": 2984,
+      "end": 2989.28,
+      "confidence": 0.92877537
+    },
+    {
+      "text": " The final project you can put on GitHub.",
+      "start": 2989.28,
+      "end": 2993.59,
+      "confidence": 0.977688
+    },
+    {
+      "text": " Yeah. Yeah. Private gate Hub, repos is fine.",
+      "start": 2993.59,
+      "end": 3006.73,
+      "confidence": 0.7416253
+    },
+    {
+      "text": " Yeah, question in the back. Yes. The question is, can you can you do a solo project? You can do a solo project. You can do a project with two people. You can do project with three, I would encourage you to try to work in groups of three because you'll be able to do more as a group. And there's definitely, you know, it's not like if you do",
+      "start": 3006.73,
+      "end": 3036.31,
+      "confidence": 0.9358639
+    },
+    {
+      "text": "Solo project will be expecting like 1/3 of the work. So",
+      "start": 3036.31,
+      "end": 3040.79,
+      "confidence": 0.92046446
+    },
+    {
+      "text": " Okay, anything else?",
+      "start": 3040.79,
+      "end": 3045.66,
+      "confidence": 0.89793533
+    },
+    {
+      "text": " All right.",
+      "start": 3045.66,
+      "end": 3047.55,
+      "confidence": 0.62856674
+    },
+    {
+      "text": " Okay. So in the final section,",
+      "start": 3047.55,
+      "end": 3052.66,
+      "confidence": 0.9534443
+    },
+    {
+      "text": " I want to actually delve into some technical details and one thing we're going to focus on right now, is the kind of inference and learning components of this course. So I'm going to talk about how you can approach these through the lens of, you know, optimization. So this is going to be. It might be a review for some of you, but hopefully it's going to be a good.",
+      "start": 3052.66,
+      "end": 3078.46,
+      "confidence": 0.9571486
+    },
+    {
+      "text": " You know, way to get everyone on the same page.",
+      "start": 3078.46,
+      "end": 3081.89,
+      "confidence": 0.88672316
+    },
+    {
+      "text": " Okay, so, what is optimization? There's two flavors of optimization that we care about. There's a discrete optimization where you're trying to find the best discrete object. For example, you're trying to find the best path or some the path P that minimizes the cost of that path.",
+      "start": 3081.89,
+      "end": 3099.69,
+      "confidence": 0.9428521
+    },
+    {
+      "text": " We're going to talk about one algorithmic tool based on dynamic programming, which is a very powerful way of solving these complex optimization problems and the key.",
+      "start": 3099.69,
+      "end": 3113.27,
+      "confidence": 0.97069365
+    },
+    {
+      "text": "you know, property here is that",
+      "start": 3113.27,
+      "end": 3115.72,
+      "confidence": 0.90147877
+    },
+    {
+      "text": " the set of paths is huge and you can't just try all of them and compute their cost and choose the best one. So you have to do something clever.",
+      "start": 3115.72,
+      "end": 3124.13,
+      "confidence": 0.94106954
+    },
+    {
+      "text": " The second brand of optimization.",
+      "start": 3124.13,
+      "end": 3127.14,
+      "confidence": 0.9123904
+    },
+    {
+      "text": " is continuous optimization and",
+      "start": 3127.14,
+      "end": 3129.95,
+      "confidence": 0.96212083
+    },
+    {
+      "text": " formally. This is just finding the best of vector of real numbers that satisfies or minimize the sum objective function. So typical place to shows up is in learning where you define objective function like the training error.",
+      "start": 3129.95,
+      "end": 3144.83,
+      "confidence": 0.9579227
+    },
+    {
+      "text": " And you're trying to find a weight Vector W. So this decision just means it's a list of numbers. The numbers.",
+      "start": 3144.83,
+      "end": 3151.85,
+      "confidence": 0.91404885
+    },
+    {
+      "text": " That minimizes a training app.",
+      "start": 3151.85,
+      "end": 3153.98,
+      "confidence": 0.6350015
+    },
+    {
+      "text": " And we're going to show that gradient descent is.",
+      "start": 3153.98,
+      "end": 3157.33,
+      "confidence": 0.8350852
+    },
+    {
+      "text": " A you know easy and a very surprisingly effective way of solving these continuous optimization problems.",
+      "start": 3157.33,
+      "end": 3164.46,
+      "confidence": 0.8617543
+    },
+    {
+      "text": " Okay, so to introduce these to ideas, I'm going to look at two problems and trying to kind of work through them. So this might be also a good",
+      "start": 3164.46,
+      "end": 3175.81,
+      "confidence": 0.95826805
+    },
+    {
+      "text": " You know, way to think about how you might go approach, homework problems. You know, trying to kind of talk through this a bit more detail. Okay, so the first problem is, you know, Computing at this distance",
+      "start": 3175.81,
+      "end": 3191.23,
+      "confidence": 0.8839802
+    },
+    {
+      "text": "And you know, this might not look, you know, like an AI problem, but a lot of AI problems have this as kind of a building block. If you want to do some sort of matching between, you know, two words or two biological sequences,",
+      "start": 3191.23,
+      "end": 3205.27,
+      "confidence": 0.96290535
+    },
+    {
+      "text": " So, the input is you're given two strings.",
+      "start": 3205.27,
+      "end": 3208.87,
+      "confidence": 0.9480462
+    },
+    {
+      "text": " I'm going to start writing over here on the board, just to work this out.",
+      "start": 3208.87,
+      "end": 3213.17,
+      "confidence": 0.9030098
+    },
+    {
+      "text": " So you're given two strings S&T.",
+      "start": 3213.17,
+      "end": 3216.26,
+      "confidence": 0.7850459
+    },
+    {
+      "text": " So for example, a cat",
+      "start": 3216.26,
+      "end": 3222.41,
+      "confidence": 0.9614085
+    },
+    {
+      "text": " And the cats.",
+      "start": 3222.41,
+      "end": 3225.89,
+      "confidence": 0.8955989
+    },
+    {
+      "text": " Okay, so these are two strings and you want to find the minimum number of edits that is needed to take, transform s into t.",
+      "start": 3225.89,
+      "end": 3233.82,
+      "confidence": 0.96521264
+    },
+    {
+      "text": " And by edits, I mean, you can insert a character, like, you can sort of s, you can delete characters. I can delete this a, and you can substitute one character for another so you can replace this with a t.",
+      "start": 3233.82,
+      "end": 3247.37,
+      "confidence": 0.94484144
+    },
+    {
+      "text": " Okay, so here's some examples. What's the edit distance of cat and Cat at 0? You know, how to do anything kind of dog is three? Can add is one you insert the a or certainly the Cadence is one.",
+      "start": 3247.37,
+      "end": 3262.1,
+      "confidence": 0.7601613
+    },
+    {
+      "text": "And it had and the cats is 4.",
+      "start": 3262.1,
+      "end": 3265.8,
+      "confidence": 0.665481
+    },
+    {
+      "text": " Okay.",
+      "start": 3265.8,
+      "end": 3267.12,
+      "confidence": 0.6977763
+    },
+    {
+      "text": " so, the challenge here is that there are",
+      "start": 3267.12,
+      "end": 3271.52,
+      "confidence": 0.9898965
+    },
+    {
+      "text": " quite a different number of ways to insert and delete, right? So if you have a string of that's very long, they're just way too many things to like just try out all of them.",
+      "start": 3271.52,
+      "end": 3282.68,
+      "confidence": 0.9868623
+    },
+    {
+      "text": " Okay, so then how do we how do we go about?",
+      "start": 3282.68,
+      "end": 3287.28,
+      "confidence": 0.97256047
+    },
+    {
+      "text": " Coming up with a solution.",
+      "start": 3287.28,
+      "end": 3289.16,
+      "confidence": 0.9913362
+    },
+    {
+      "text": " so,",
+      "start": 3289.16,
+      "end": 3291.4,
+      "confidence": 0.9163143
+    },
+    {
+      "text": " any ideas?",
+      "start": 3291.4,
+      "end": 3293.22,
+      "confidence": 0.92570245
+    },
+    {
+      "text": " Yeah.",
+      "start": 3293.22,
+      "end": 3294.43,
+      "confidence": 0.7338343
+    },
+    {
+      "text": " Yeah, so let's try to simplify those the problem a bit and building off on, you know, what you what was said. So",
+      "start": 3294.43,
+      "end": 3319.78,
+      "confidence": 0.8122313
+    },
+    {
+      "text": " One thing to note is that, okay, we're so the general principle, let me just write that General principle.",
+      "start": 3319.78,
+      "end": 3328.86,
+      "confidence": 0.9259648
+    },
+    {
+      "text": " Oh, is to, you know, reduce the problems.",
+      "start": 3328.86,
+      "end": 3332.9,
+      "confidence": 0.87127364
+    },
+    {
+      "text": "To a simpler problem.",
+      "start": 3332.9,
+      "end": 3335.61,
+      "confidence": 0.97168905
+    },
+    {
+      "text": " Because that you can hopefully solve if it's easier to solve and then you can maybe keep on doing that and you get something that's trivial.",
+      "start": 3335.61,
+      "end": 3343.46,
+      "confidence": 0.96737874
+    },
+    {
+      "text": " Okay, so there's maybe two observations we can make one, is that? Well, we're technically saying, we can, you know, insert into s.",
+      "start": 3343.46,
+      "end": 3353.65,
+      "confidence": 0.9577569
+    },
+    {
+      "text": " Right.",
+      "start": 3353.65,
+      "end": 3354.85,
+      "confidence": 0.8524481
+    },
+    {
+      "text": " But if we insert into s, it makes the problem kind of larger in some sounds. Right? I mean, that's not, that's not good, that's not reducing the problem.",
+      "start": 3354.85,
+      "end": 3362.98,
+      "confidence": 0.97646976
+    },
+    {
+      "text": " But but whenever you insert into s, we probably want to insert things which are in tea we want to like cancel something out, right? So we want to insert a k there for any reason you probably want to insert a s and which case you know s matches that and then we've reduced that problem, right?",
+      "start": 3362.98,
+      "end": 3380.9,
+      "confidence": 0.8839807
+    },
+    {
+      "text": " so, we can actually think about, you know, inserting",
+      "start": 3380.9,
+      "end": 3384.47,
+      "confidence": 0.92475915
+    },
+    {
+      "text": " Into s.",
+      "start": 3384.47,
+      "end": 3385.99,
+      "confidence": 0.77855724
+    },
+    {
+      "text": " To S as equivalent to kind of deleting from from t.",
+      "start": 3385.99,
+      "end": 3393.7,
+      "confidence": 0.859098
+    },
+    {
+      "text": " Okay. Does that make sense?",
+      "start": 3393.7,
+      "end": 3396.71,
+      "confidence": 0.87877655
+    },
+    {
+      "text": " All right.",
+      "start": 3396.71,
+      "end": 3398.85,
+      "confidence": 0.6093968
+    },
+    {
+      "text": " so, another observation we can make is that",
+      "start": 3398.85,
+      "end": 3404.24,
+      "confidence": 0.979004
+    },
+    {
+      "text": "You know, we can start inserting anywhere, we can start inserting here, and then jump over here and do this. But this just introduces, a lot of, you know, ways of doing it, which all kind of result in the same answer, so why don't we just starts more systematically at one end and then just proceed and try to Chisel off the problem. Kind of let's say from the end,",
+      "start": 3404.24,
+      "end": 3426.38,
+      "confidence": 0.95747334
+    },
+    {
+      "text": " Okay, so",
+      "start": 3426.38,
+      "end": 3429.92,
+      "confidence": 0.90203536
+    },
+    {
+      "text": " Start.",
+      "start": 3429.92,
+      "end": 3431.61,
+      "confidence": 0.8868189
+    },
+    {
+      "text": " At the end.",
+      "start": 3431.61,
+      "end": 3434.67,
+      "confidence": 0.73288035
+    },
+    {
+      "text": " Okay, so so now we have this",
+      "start": 3434.67,
+      "end": 3440.95,
+      "confidence": 0.9663838
+    },
+    {
+      "text": " Problem. I'm going to drop problem in a little box here.",
+      "start": 3440.95,
+      "end": 3447.1,
+      "confidence": 0.8160867
+    },
+    {
+      "text": " So let's start at the end? Yeah, question.",
+      "start": 3447.1,
+      "end": 3451.15,
+      "confidence": 0.942224
+    },
+    {
+      "text": " To reach that principals start at the end.",
+      "start": 3451.15,
+      "end": 3454.91,
+      "confidence": 0.59525764
+    },
+    {
+      "text": " Oh the question is why are we starting at the end as a? Well the idea is that if you started the end then you have kind of a more systematic and consistent way of, you know, reducing the problem. So you don't have to think about all the permutations of War I can you know, delete and substitute.",
+      "start": 3454.91,
+      "end": 3472.81,
+      "confidence": 0.94994444
+    },
+    {
+      "text": " The right to the left. Then on the left, we can also do love to ride. So the end or the start is both fine. This is just I just picked the end.",
+      "start": 3472.81,
+      "end": 3483.36,
+      "confidence": 0.88986695
+    },
+    {
+      "text": "Yeah, or let me know. Starting at one end can give us the optimal strategy. Yeah. The question is, how do we know that starting at one end can give you the optimal strategy? So,",
+      "start": 3483.36,
+      "end": 3498.84,
+      "confidence": 0.92799485
+    },
+    {
+      "text": " You know, if you wanted to prove this more rigorously there's some work but I'll just try to give you a, you know, intuitive answer suppose you didn't start at the end and you just made a sequence of steps. Like I insert here. I delete here and then I went over here and did all those operations to us. I could have equivalently also, just sort of those by, you know, where I was happening. And then just proceeded from one end to the other. And I would arrive at the exact same answer. So without lots of generality, I can start that.",
+      "start": 3498.84,
+      "end": 3531.86,
+      "confidence": 0.9038282
+    },
+    {
+      "text": " Another question.",
+      "start": 3531.86,
+      "end": 3534.94,
+      "confidence": 0.31702584
+    },
+    {
+      "text": " Okay, so yeah.",
+      "start": 3534.94,
+      "end": 3543.54,
+      "confidence": 0.8387907
+    },
+    {
+      "text": "Instead of doing this one of the more viable approach, the China, recognize some patterns of doing this. I mean, between the two strings. Smt, like some kind of some sort of fact, that",
+      "start": 3543.54,
+      "end": 3557.66,
+      "confidence": 0.8215504
+    },
+    {
+      "text": " The S&T string. Yeah, so question is, maybe you can recognize some patterns. Wow. It's like, oh cat. That's, that's maybe those should be lined up.",
+      "start": 3557.66,
+      "end": 3569.26,
+      "confidence": 0.8666728
+    },
+    {
+      "text": " I guess these examples are chosen so that these patterns exist but we want to solve the problem for cases where the pattern might not be obvious. It could be we want to work for it to work for all strings. Maybe there is no pattern and we still want to kind of efficient algorithm to do it.",
+      "start": 3569.26,
+      "end": 3585.62,
+      "confidence": 0.9606261
+    },
+    {
+      "text": " Yeah.",
+      "start": 3585.62,
+      "end": 3587.61,
+      "confidence": 0.76299155
+    },
+    {
+      "text": " Just like used dynamic programming. Like we go one by one. There was always like they just said we're doing substitution or otherwise it's like the same character or we have to insert. Yeah. And then we keep going and we just like each flight to just drinks that we have at one point so that if we calculated that to do it again. Yeah, that's it. Yeah, yeah, great idea. Let's do dynamic programming. So, that's what I'm kind of trying to build up from a build up to. Okay? So,",
+      "start": 3587.61,
+      "end": 3623.76,
+      "confidence": 0.8238605
+    },
+    {
+      "text": "A, you know, delete these two. And that's, it's going to be the same, right? So we can get, we can get some free rides there.",
+      "start": 3623.76,
+      "end": 3647.25,
+      "confidence": 0.8923944
+    },
+    {
+      "text": " Okay, but when they differ now, we have many options.",
+      "start": 3647.25,
+      "end": 3652.55,
+      "confidence": 0.9758558
+    },
+    {
+      "text": " So what we, what could we do?",
+      "start": 3652.55,
+      "end": 3654.88,
+      "confidence": 0.92404616
+    },
+    {
+      "text": " Well, we could",
+      "start": 3654.88,
+      "end": 3657.19,
+      "confidence": 0.98999596
+    },
+    {
+      "text": " You know, substitute? Okay, we can change the T to an s.",
+      "start": 3657.19,
+      "end": 3662.28,
+      "confidence": 0.90835357
+    },
+    {
+      "text": " So, what does that leave us with? So I can do a",
+      "start": 3662.28,
+      "end": 3667.45,
+      "confidence": 0.9622736
+    },
+    {
+      "text": " T is the cat. The",
+      "start": 3667.45,
+      "end": 3673.6,
+      "confidence": 0.8601867
+    },
+    {
+      "text": " okay, so I can substitute",
+      "start": 3673.6,
+      "end": 3679.13,
+      "confidence": 0.92386645
+    },
+    {
+      "text": " Okay, what else can I do?",
+      "start": 3679.13,
+      "end": 3687.42,
+      "confidence": 0.9437223
+    },
+    {
+      "text": " Someone say something I can do.",
+      "start": 3687.42,
+      "end": 3690.14,
+      "confidence": 0.949172
+    },
+    {
+      "text": " so, I can insert",
+      "start": 3690.14,
+      "end": 3694.41,
+      "confidence": 0.95687675
+    },
+    {
+      "text": " insert where into",
+      "start": 3694.41,
+      "end": 3698.74,
+      "confidence": 0.80584294
+    },
+    {
+      "text": " So I'm going to insert a us, right? But that's the same as you know, by one deleting from T. So but I can basically also just delete this us.",
+      "start": 3698.74,
+      "end": 3708.38,
+      "confidence": 0.80998784
+    },
+    {
+      "text": " So this is a cat.",
+      "start": 3708.38,
+      "end": 3714.18,
+      "confidence": 0.93646413
+    },
+    {
+      "text": "and,",
+      "start": 3714.18,
+      "end": 3715.72,
+      "confidence": 0.9330467
+    },
+    {
+      "text": " I deleted this s from t.",
+      "start": 3715.72,
+      "end": 3720.79,
+      "confidence": 0.927718
+    },
+    {
+      "text": " Okay, so this is let's call it, you know.",
+      "start": 3720.79,
+      "end": 3727.67,
+      "confidence": 0.9325868
+    },
+    {
+      "text": " I guess let's call this insertion. It's technically insertion.",
+      "start": 3727.67,
+      "end": 3733.79,
+      "confidence": 0.92740154
+    },
+    {
+      "text": " And then finally, what can I do?",
+      "start": 3733.79,
+      "end": 3739.16,
+      "confidence": 0.9652098
+    },
+    {
+      "text": " I can also remove t.",
+      "start": 3739.16,
+      "end": 3748.37,
+      "confidence": 0.9458626
+    },
+    {
+      "text": " So, a KCA.",
+      "start": 3748.37,
+      "end": 3752.51,
+      "confidence": 0.6974917
+    },
+    {
+      "text": " Okay, so this is the lead.",
+      "start": 3752.51,
+      "end": 3757.51,
+      "confidence": 0.8699673
+    },
+    {
+      "text": " And right now, you're probably looking at this like well obviously you know you should do this one but in general, it's hard to tell, right? I just gave you some arbitrary strings. You know who knows what the right answer is.",
+      "start": 3757.51,
+      "end": 3768.82,
+      "confidence": 0.9191047
+    },
+    {
+      "text": " so,",
+      "start": 3768.82,
+      "end": 3770.51,
+      "confidence": 0.7964675
+    },
+    {
+      "text": " In general, how do you pick?",
+      "start": 3770.51,
+      "end": 3772.36,
+      "confidence": 0.95888543
+    },
+    {
+      "text": " that's,",
+      "start": 3772.36,
+      "end": 3779.83,
+      "confidence": 0.24139208
+    },
+    {
+      "text": " Giving this one. So here, I inserted a s.",
+      "start": 3779.83,
+      "end": 3784.49,
+      "confidence": 0.80695987
+    },
+    {
+      "text": "Right. But then because there's two s's here, I just cancel them out and I'm just so.",
+      "start": 3784.49,
+      "end": 3791.15,
+      "confidence": 0.74798316
+    },
+    {
+      "text": " It's really the leading from.",
+      "start": 3791.15,
+      "end": 3794.25,
+      "confidence": 0.8497571
+    },
+    {
+      "text": " Considering.",
+      "start": 3794.25,
+      "end": 3796.06,
+      "confidence": 0.8152769
+    },
+    {
+      "text": " Like in the original problem we said we're transforming S&P. Yeah, yeah. So I'm because of this, I'm kind of trying to reframe the problems",
+      "start": 3796.06,
+      "end": 3807.52,
+      "confidence": 0.84443337
+    },
+    {
+      "text": " Okay, so which one should I choose?",
+      "start": 3807.52,
+      "end": 3810.31,
+      "confidence": 0.9644747
+    },
+    {
+      "text": " Yeah.",
+      "start": 3810.31,
+      "end": 3811.17,
+      "confidence": 0.746774
+    },
+    {
+      "text": " The substitution the other way, meaning change.",
+      "start": 3811.17,
+      "end": 3818.47,
+      "confidence": 0.9393891
+    },
+    {
+      "text": " sorry, there's too many s's here, which",
+      "start": 3818.47,
+      "end": 3826.31,
+      "confidence": 0.8738138
+    },
+    {
+      "text": " oh, you could.",
+      "start": 3826.31,
+      "end": 3830.03,
+      "confidence": 0.904885
+    },
+    {
+      "text": " That's you can think about that as kind of equivalent. So if you identify two letters that you want to make the same, then you could",
+      "start": 3830.03,
+      "end": 3843.08,
+      "confidence": 0.9834721
+    },
+    {
+      "text": " you can replace some one to be the other or the other to be that, I mean officially we've been kind of framing it as we're only editing us, which is the reason that it's",
+      "start": 3843.08,
+      "end": 3853.44,
+      "confidence": 0.87826353
+    },
+    {
+      "text": " Okay, so",
+      "start": 3853.44,
+      "end": 3856.93,
+      "confidence": 0.8531883
+    },
+    {
+      "text": "Which one of these?",
+      "start": 3856.93,
+      "end": 3858.45,
+      "confidence": 0.9476935
+    },
+    {
+      "text": " Door Aid or B or Dorsey.",
+      "start": 3858.45,
+      "end": 3861.33,
+      "confidence": 0.5550227
+    },
+    {
+      "text": " yeah, would you look for some lady that",
+      "start": 3861.33,
+      "end": 3865.15,
+      "confidence": 0.7160499
+    },
+    {
+      "text": " You.",
+      "start": 3865.15,
+      "end": 3867.32,
+      "confidence": 0.30152944
+    },
+    {
+      "text": " Yeah. So you could try to look inside but but remember these are might be really complicated. So we want to kind of a simple mechanized procedure to tell.",
+      "start": 3867.32,
+      "end": 3881.21,
+      "confidence": 0.97151047
+    },
+    {
+      "text": " The next letter.",
+      "start": 3881.21,
+      "end": 3884.18,
+      "confidence": 0.96291906
+    },
+    {
+      "text": " Yeah, let's let's pretend. These are you can't see inside.",
+      "start": 3884.18,
+      "end": 3890.27,
+      "confidence": 0.9517212
+    },
+    {
+      "text": " Yeah, okay. So let's keep on going. So I'm not gonna draw everything, but you can also try to break this down into maybe there's three actions here and three actions here, right?",
+      "start": 3890.27,
+      "end": 3901.2,
+      "confidence": 0.932109
+    },
+    {
+      "text": " And at the end of the day, you hopefully have a problem. That's simple enough that we're asked equals to your something, then you're done. But then, you know, how do I, how do I know suppose I've solved this supposed to, someone just told you, okay, I know this cost I know this cost, I know this cost, what should you do?",
+      "start": 3901.2,
+      "end": 3922.92,
+      "confidence": 0.9360769
+    },
+    {
+      "text": " Yeah, you should take the minimum right? Like remember we want to minimize the edit distance so there's three things you can do.",
+      "start": 3922.92,
+      "end": 3930.15,
+      "confidence": 0.95055854
+    },
+    {
+      "text": "Each of them has some costs of doing that action, which is, you know, one every edit is the same cost and then there's a cost of, you know, continuing do whatever you're doing. And so we're just going to take the minimum over the",
+      "start": 3930.15,
+      "end": 3941.85,
+      "confidence": 0.9313266
+    },
+    {
+      "text": " Course, yeah.",
+      "start": 3941.85,
+      "end": 3943.76,
+      "confidence": 0.59044874
+    },
+    {
+      "text": " We know that. Yeah, so I was trying to argue that with, if you go into right to left, it's without loss of generality. Because if you when left to ride or in some other order, you can also Replay that edits",
+      "start": 3943.76,
+      "end": 3965.82,
+      "confidence": 0.9034158
+    },
+    {
+      "text": " and looks like they're all not.",
+      "start": 3965.82,
+      "end": 3976.13,
+      "confidence": 0.5270035
+    },
+    {
+      "text": " Working. Yeah, I think it works.",
+      "start": 3976.13,
+      "end": 3984.34,
+      "confidence": 0.80774564
+    },
+    {
+      "text": " Okay, so let's try to code this up and see if we can make this program work. Okay, so I'm going to do edit distance and everyone, see this",
+      "start": 3984.34,
+      "end": 3996.75,
+      "confidence": 0.91104865
+    },
+    {
+      "text": " Okay, so",
+      "start": 3996.75,
+      "end": 3999.38,
+      "confidence": 0.9016851
+    },
+    {
+      "text": " I'm going to define a function, it takes two strings, and then I'm going to define a recurrence.",
+      "start": 3999.38,
+      "end": 4008.15,
+      "confidence": 0.9701252
+    },
+    {
+      "text": "So recurrences are is I guess one word to haven't really used but this is really the way you should kind of think about Dynamic programs and this idea of taking complex problems and breaking it down. It's going to show up in search problems mdp's and you know games. So I guess it's something that you should really be comfortable with.",
+      "start": 4008.15,
+      "end": 4027.95,
+      "confidence": 0.9476091
+    },
+    {
+      "text": " So, let's",
+      "start": 4027.95,
+      "end": 4031.62,
+      "confidence": 0.91530097
+    },
+    {
+      "text": " Define a recurrence as follows. So remember, at any point in time I have let's say a sub-problem. And since I'm going right to left, I'm only considering the first M letters of s and the first letters and letters of t. Okay, so recurse is going to return the minimum at a distance between two things. The first letters of s and the first and letters of t, I'm going to post this online. So you guys don't have to copy. Try to copy this.",
+      "start": 4031.62,
+      "end": 4068.56,
+      "confidence": 0.92945975
+    },
+    {
+      "text": " Okay, so",
+      "start": 4068.56,
+      "end": 4070.48,
+      "confidence": 0.815745
+    },
+    {
+      "text": " Okay, suppose I'm going to Define this function if I have this function. What should I return?",
+      "start": 4070.48,
+      "end": 4077.15,
+      "confidence": 0.89731616
+    },
+    {
+      "text": " recurse of",
+      "start": 4077.15,
+      "end": 4082.24,
+      "confidence": 0.8762557
+    },
+    {
+      "text": "Yes, so m is an integer, right? So n is",
+      "start": 4082.24,
+      "end": 4090.59,
+      "confidence": 0.8554182
+    },
+    {
+      "text": " an integer. So I'm going to return the length of M and the length of M",
+      "start": 4090.59,
+      "end": 4094.64,
+      "confidence": 0.89625835
+    },
+    {
+      "text": " Okay, so that's kind of the initial state.",
+      "start": 4094.64,
+      "end": 4100.26,
+      "confidence": 0.94133806
+    },
+    {
+      "text": " Yep.",
+      "start": 4100.26,
+      "end": 4102.48,
+      "confidence": 0.6105586
+    },
+    {
+      "text": " Okay.",
+      "start": 4102.48,
+      "end": 4105.45,
+      "confidence": 0.6784356
+    },
+    {
+      "text": " All right, so now I need to fill out this function.",
+      "start": 4105.45,
+      "end": 4108.66,
+      "confidence": 0.8996668
+    },
+    {
+      "text": " okay, so let's let's",
+      "start": 4108.66,
+      "end": 4111.05,
+      "confidence": 0.8681787
+    },
+    {
+      "text": " consider a bunch of cases. So here's some easy cases, suppose that",
+      "start": 4111.05,
+      "end": 4117.54,
+      "confidence": 0.9485781
+    },
+    {
+      "text": " M is 0, right? So I have comparing empty string with something that has end letters.",
+      "start": 4117.54,
+      "end": 4123.38,
+      "confidence": 0.84711313
+    },
+    {
+      "text": " So what should the cost of that be?",
+      "start": 4123.38,
+      "end": 4126.38,
+      "confidence": 0.95639473
+    },
+    {
+      "text": " Anne and symmetrically if n is 0, then result should be m.",
+      "start": 4126.38,
+      "end": 4137.07,
+      "confidence": 0.7200847
+    },
+    {
+      "text": " and then, if",
+      "start": 4137.07,
+      "end": 4140.05,
+      "confidence": 0.95668817
+    },
+    {
+      "text": " Now we come to the kind of initial case that we consider which is the end actually match. So if s",
+      "start": 4140.05,
+      "end": 4149.36,
+      "confidence": 0.922034
+    },
+    {
+      "text": " The last letter of this is zero based indexing. So that's why there's a minus one. So this matches",
+      "start": 4149.36,
+      "end": 4158.21,
+      "confidence": 0.8690331
+    },
+    {
+      "text": "Then, what should I do?",
+      "start": 4158.21,
+      "end": 4162.88,
+      "confidence": 0.97867143
+    },
+    {
+      "text": " So now I reduce this to a subproblem, right?",
+      "start": 4162.88,
+      "end": 4168.81,
+      "confidence": 0.93756986
+    },
+    {
+      "text": " So I have n minus 1 and minus 1.",
+      "start": 4168.81,
+      "end": 4172.1,
+      "confidence": 0.8309685
+    },
+    {
+      "text": " Okay. And now homes a fun case which we looked at. So there's in this case, the last letter doesn't match. I'm going to have to do some sort of edit can't just let it. Yeah.",
+      "start": 4172.1,
+      "end": 4191.27,
+      "confidence": 0.92639285
+    },
+    {
+      "text": " That's probably a way you can make this more efficient. I'm just gonna try to get the basic thing.",
+      "start": 4191.27,
+      "end": 4207.2,
+      "confidence": 0.8958093
+    },
+    {
+      "text": " Okay, so substitution. Okay. So what's the cost of a substitution? I pay one to do the substitution but and in as a reward I get to reduce the problem to a minus one and minus one. Right? So I Lop off a letter from s and a lot of the letter from t.",
+      "start": 4207.2,
+      "end": 4225.24,
+      "confidence": 0.8420068
+    },
+    {
+      "text": " So what else can I do? So I can",
+      "start": 4225.24,
+      "end": 4230.02,
+      "confidence": 0.9631289
+    },
+    {
+      "text": "You know, delete.",
+      "start": 4230.02,
+      "end": 4231.77,
+      "confidence": 0.85182875
+    },
+    {
+      "text": " so that also costs one and when I delete,",
+      "start": 4231.77,
+      "end": 4235.56,
+      "confidence": 0.95572525
+    },
+    {
+      "text": " I delete from s and then n. So, this Remains the Same.",
+      "start": 4235.56,
+      "end": 4240.67,
+      "confidence": 0.96453923
+    },
+    {
+      "text": " and then now you can think about the insertion,",
+      "start": 4240.67,
+      "end": 4245.91,
+      "confidence": 0.9806809
+    },
+    {
+      "text": " Is an A minus 1, right? Because remember insertion into s is deletion from T. That's why this is n, minus 1.",
+      "start": 4245.91,
+      "end": 4253.92,
+      "confidence": 0.89738804
+    },
+    {
+      "text": " Okay, and then the result is just going to be a minimum of all these things.",
+      "start": 4253.92,
+      "end": 4262,
+      "confidence": 0.9718773
+    },
+    {
+      "text": " Okay, return result.",
+      "start": 4262,
+      "end": 4264.78,
+      "confidence": 0.8127578
+    },
+    {
+      "text": " Okay. So just and then how do I call this function? A cat?",
+      "start": 4264.78,
+      "end": 4274.88,
+      "confidence": 0.9552253
+    },
+    {
+      "text": " The cats.",
+      "start": 4274.88,
+      "end": 4276.62,
+      "confidence": 0.7920454
+    },
+    {
+      "text": " So, let me print out the answer.",
+      "start": 4276.62,
+      "end": 4281.29,
+      "confidence": 0.9593545
+    },
+    {
+      "text": " Let's see if it works.",
+      "start": 4281.29,
+      "end": 4287.33,
+      "confidence": 0.88779086
+    },
+    {
+      "text": " okay, now four",
+      "start": 4287.33,
+      "end": 4290.54,
+      "confidence": 0.7717126
+    },
+    {
+      "text": " Therefore I conclude it works now. I mean if you were doing this you probably want to test this a more but instead of time I'll kind of move on. So let me just kind of refresh. Okay so I'm Computing. This edit distance between two strings and we're going to define a recurrence that works on subproblems where the subproblem is the first M letters of s and the first and letters of t.",
+      "start": 4290.54,
+      "end": 4313.19,
+      "confidence": 0.89848316
+    },
+    {
+      "text": "Up. And the reason I'm using integers instead of strings is to avoid like string copying implementation detail, but it doesn't really matter. So base cases",
+      "start": 4313.19,
+      "end": 4324.51,
+      "confidence": 0.9301916
+    },
+    {
+      "text": " So you want to reduce your problem to case where it's trivial to solve.",
+      "start": 4324.51,
+      "end": 4330.49,
+      "confidence": 0.95218056
+    },
+    {
+      "text": " And then we have the last letter matches and then we have the letter, it doesn't match and you have to pay some sort of cost. I don't know which action to take. So I'm going to take them, you know, minimum of all of them.",
+      "start": 4330.49,
+      "end": 4340.89,
+      "confidence": 0.9532076
+    },
+    {
+      "text": " And then I call it by just calling, you know, recurs",
+      "start": 4340.89,
+      "end": 4344.37,
+      "confidence": 0.8266725
+    },
+    {
+      "text": " Okay, so this is great, right? So now how we're working thing, let's try another test case.",
+      "start": 4344.37,
+      "end": 4351.43,
+      "confidence": 0.9320922
+    },
+    {
+      "text": " so, I'm going to make this",
+      "start": 4351.43,
+      "end": 4353.95,
+      "confidence": 0.80758905
+    },
+    {
+      "text": " So if I do times 10, this basically replicates this string 10 times.",
+      "start": 4353.95,
+      "end": 4360.84,
+      "confidence": 0.88159573
+    },
+    {
+      "text": " So it's a it's a long string longer string.",
+      "start": 4360.84,
+      "end": 4363.77,
+      "confidence": 0.9257044
+    },
+    {
+      "text": " Okay, so now I'm going to run it.",
+      "start": 4363.77,
+      "end": 4367.36,
+      "confidence": 0.83677924
+    },
+    {
+      "text": " Maybe I shouldn't wait for this.",
+      "start": 4367.36,
+      "end": 4374,
+      "confidence": 0.9139355
+    },
+    {
+      "text": " There is a base case, I think it works. But it's what's wrong with this code?",
+      "start": 4374,
+      "end": 4380.94,
+      "confidence": 0.9146542
+    },
+    {
+      "text": " Yes, it's very slow. Why is it slow? Yeah right so I'm recursing",
+      "start": 4380.94,
+      "end": 4390.51,
+      "confidence": 0.9266702
+    },
+    {
+      "text": "Every point recurs is three times so you kind of get this exponential blow-up.",
+      "start": 4390.51,
+      "end": 4395.47,
+      "confidence": 0.882901
+    },
+    {
+      "text": " So there's kind of a, how do you solve this problem.",
+      "start": 4395.47,
+      "end": 4399.62,
+      "confidence": 0.956744
+    },
+    {
+      "text": " Yeah, you can memo. I think I heard the warm memoized, which is another way to kind of think about memoized. Plus I guess recurrences is dynamic programming, I guess.",
+      "start": 4399.62,
+      "end": 4414.38,
+      "confidence": 0.9314745
+    },
+    {
+      "text": " so I'm going to show you kind of this way to do it, which is pretty uninvent",
+      "start": 4414.38,
+      "end": 4421.96,
+      "confidence": 0.8505919
+    },
+    {
+      "text": " And generally I recommend people. Well get the slow version working and then try to make it faster. Don't try to be you know too slick at once.",
+      "start": 4421.96,
+      "end": 4432.6,
+      "confidence": 0.9365426
+    },
+    {
+      "text": " Okay, so I'm going to make this cache, right? And I'm going to say if MN is in the cache, then I'm going to return whatever's in the cash. So, cash is just the dictionary mapping the key, which is identification of the problem. I'm interested in solving and the result, which is the answer that computed",
+      "start": 4432.6,
+      "end": 4452.6,
+      "confidence": 0.90847826
+    },
+    {
+      "text": " So if I've already computed it, I don't need a computer again. Just return it",
+      "start": 4452.6,
+      "end": 4456.1,
+      "confidence": 0.90322125
+    },
+    {
+      "text": " and then, at the end,",
+      "start": 4456.1,
+      "end": 4457.78,
+      "confidence": 0.9531832
+    },
+    {
+      "text": " If I have to compute it, then I have to put this in the cache.",
+      "start": 4457.78,
+      "end": 4464.02,
+      "confidence": 0.97599393
+    },
+    {
+      "text": "Okay.",
+      "start": 4464.02,
+      "end": 4469.22,
+      "confidence": 0.86258656
+    },
+    {
+      "text": " So, three lines.",
+      "start": 4469.22,
+      "end": 4471,
+      "confidence": 0.9175064
+    },
+    {
+      "text": " Or four lines, I guess. Yeah.",
+      "start": 4471,
+      "end": 4473.37,
+      "confidence": 0.8522381
+    },
+    {
+      "text": " Yeah, that's a great point. This should be outside of the recursion.",
+      "start": 4473.37,
+      "end": 4480.21,
+      "confidence": 0.93737286
+    },
+    {
+      "text": " Yeah, glad you guys are paying attention.",
+      "start": 4480.21,
+      "end": 4483.15,
+      "confidence": 0.8977771
+    },
+    {
+      "text": " Otherwise yeah, it would do basically nothing.",
+      "start": 4483.15,
+      "end": 4487,
+      "confidence": 0.9615184
+    },
+    {
+      "text": " Any other mistakes?",
+      "start": 4487,
+      "end": 4489.01,
+      "confidence": 0.8533335
+    },
+    {
+      "text": " Yeah.",
+      "start": 4489.01,
+      "end": 4490.14,
+      "confidence": 0.6782923
+    },
+    {
+      "text": " She decorators that like Implement memorizing for you in this class. Are you okay if we use that or would you rather us like make our own in this case?",
+      "start": 4490.14,
+      "end": 4498.45,
+      "confidence": 0.91830474
+    },
+    {
+      "text": " Um, you can use the decor, you can be found if you want. Yeah, but but I think this is, you know, pretty transparent easy for learning purposes.",
+      "start": 4498.45,
+      "end": 4508.54,
+      "confidence": 0.8530936
+    },
+    {
+      "text": " Okay, so let's run this.",
+      "start": 4508.54,
+      "end": 4510.53,
+      "confidence": 0.95102566
+    },
+    {
+      "text": " so now it runs instantaneously as a post to, I actually don't know how long it would have taken otherwise",
+      "start": 4510.53,
+      "end": 4517.77,
+      "confidence": 0.91702193
+    },
+    {
+      "text": " Okay.",
+      "start": 4517.77,
+      "end": 4519.73,
+      "confidence": 0.6721445
+    },
+    {
+      "text": " And Sandy check for the is probably the right answer because there's four was original answer I multiply by town.",
+      "start": 4519.73,
+      "end": 4526.83,
+      "confidence": 0.7704779
+    },
+    {
+      "text": " Okay, any other questions about this?",
+      "start": 4526.83,
+      "end": 4530.72,
+      "confidence": 0.87037826
+    },
+    {
+      "text": " So this is an example of, you know, kind of basic dynamic programming. Which are you solve a problem trying to formulate as a recurrence of a complicated problem in terms of smaller problems? And like I said before, this is going to kind of show up over and over again in this class.",
+      "start": 4530.72,
+      "end": 4551.58,
+      "confidence": 0.9220822
+    },
+    {
+      "text": "Yeah.",
+      "start": 4551.58,
+      "end": 4554.64,
+      "confidence": 0.5976274
+    },
+    {
+      "text": " So the question is, why does this reduce redundancy? Is that right? So maybe I can do a kind of pictorial. If you think about, let's say, you have a problem here,",
+      "start": 4554.64,
+      "end": 4572.52,
+      "confidence": 0.9465711
+    },
+    {
+      "text": " Right. And this gets",
+      "start": 4572.52,
+      "end": 4575.11,
+      "confidence": 0.9848081
+    },
+    {
+      "text": " you know, reduced to",
+      "start": 4575.11,
+      "end": 4577.93,
+      "confidence": 0.7534757
+    },
+    {
+      "text": " I'm just making kind of a arbitrary diagram here. So this problem gets reduced to these two and this problem gets reduced to these two and and so on.",
+      "start": 4577.93,
+      "end": 4590.26,
+      "confidence": 0.9638322
+    },
+    {
+      "text": " Right. So",
+      "start": 4590.26,
+      "end": 4594.05,
+      "confidence": 0.9168184
+    },
+    {
+      "text": " If you think about, if you didn't have memoization, you would just be pain for the number of paths. Every path is a kind of you have to compute from scratch.",
+      "start": 4594.05,
+      "end": 4603.84,
+      "confidence": 0.97356546
+    },
+    {
+      "text": " Whereas, if you do memorize Asian, you pay in the number of nodes here, which a lot of this is shared. Like here, you know, once you compute this, no matter if you're coming from here or here, you're kind of using the same value.",
+      "start": 4603.84,
+      "end": 4617.35,
+      "confidence": 0.929048
+    },
+    {
+      "text": " Okay, so let's let's move on.",
+      "start": 4617.35,
+      "end": 4621.72,
+      "confidence": 0.9086003
+    },
+    {
+      "text": "so, the second problem,",
+      "start": 4621.72,
+      "end": 4624,
+      "confidence": 0.9915623
+    },
+    {
+      "text": " We're going to talk about.",
+      "start": 4624,
+      "end": 4626.56,
+      "confidence": 0.9274782
+    },
+    {
+      "text": " Is it has to do with continuous optimization and the motivating question here is, how do you do regression, which is a kind of a bread, and butter of, you know, machine learning here.",
+      "start": 4626.56,
+      "end": 4638.76,
+      "confidence": 0.9218321
+    },
+    {
+      "text": " so,",
+      "start": 4638.76,
+      "end": 4643.31,
+      "confidence": 0.9086657
+    },
+    {
+      "text": " So, here we go.",
+      "start": 4643.31,
+      "end": 4649.25,
+      "confidence": 0.93276536
+    },
+    {
+      "text": " Regression.",
+      "start": 4649.25,
+      "end": 4651.17,
+      "confidence": 0.9383114
+    },
+    {
+      "text": " Okay, so imagine",
+      "start": 4651.17,
+      "end": 4654.42,
+      "confidence": 0.9101751
+    },
+    {
+      "text": " you get some points.",
+      "start": 4654.42,
+      "end": 4656.13,
+      "confidence": 0.9851008
+    },
+    {
+      "text": " Okay, so I give you a point.",
+      "start": 4656.13,
+      "end": 4660.18,
+      "confidence": 0.93893427
+    },
+    {
+      "text": " Which is you know, two four.",
+      "start": 4660.18,
+      "end": 4662.6,
+      "confidence": 0.81106585
+    },
+    {
+      "text": " And then I give you another Point. Let's say four two.",
+      "start": 4662.6,
+      "end": 4668.43,
+      "confidence": 0.8777465
+    },
+    {
+      "text": " And so these are data points. You want to say, predict",
+      "start": 4668.43,
+      "end": 4674.95,
+      "confidence": 0.96596813
+    },
+    {
+      "text": "Housing price from, you know, square footage or something like that. You want to predict Health score from, you know, blood pressure and some other things. So this is pretty common in machine learning. And the question is, how do you fit? You know, a line I'm going to kind of consider the case where your line has to go through the origin just for Simplicity. So you might want to like find you know a fit I mean two points is maybe kind of a little bit degenerate but that's the simple example. We're going to work with in general. You have lots of points and you want to fit the line that best kind of is close to the points?",
+      "start": 4674.95,
+      "end": 4712.15,
+      "confidence": 0.7924155
+    },
+    {
+      "text": " Okay, so how do you do this?",
+      "start": 4712.15,
+      "end": 4717.25,
+      "confidence": 0.9671535
+    },
+    {
+      "text": " So there's a principle called least Square's, which says well.",
+      "start": 4717.25,
+      "end": 4723.11,
+      "confidence": 0.8432549
+    },
+    {
+      "text": " If you give me a line which is given in this case by a slope w.",
+      "start": 4723.11,
+      "end": 4729.02,
+      "confidence": 0.95071524
+    },
+    {
+      "text": " I'm going to tell you how bad this is.",
+      "start": 4729.02,
+      "end": 4733.03,
+      "confidence": 0.96018726
+    },
+    {
+      "text": " And Badness is measured by looking at all the training points.",
+      "start": 4733.03,
+      "end": 4737.61,
+      "confidence": 0.8973374
+    },
+    {
+      "text": " And looking at these distances.",
+      "start": 4737.61,
+      "end": 4740.13,
+      "confidence": 0.94790447
+    },
+    {
+      "text": " Right. So here I have",
+      "start": 4740.13,
+      "end": 4743.72,
+      "confidence": 0.97460306
+    },
+    {
+      "text": "You know, this particular a particular, let's say point you know x i if I hit it with a W, then I get basically the you know the y-intercept here, not the y-intercept but like the Y value here. That's my prediction. The real value was, you know, why I, which is up here.",
+      "start": 4743.72,
+      "end": 4766.24,
+      "confidence": 0.90385467
+    },
+    {
+      "text": " And so, if I look at the difference, I want a difference to be 0.",
+      "start": 4766.24,
+      "end": 4770.08,
+      "confidence": 0.9016075
+    },
+    {
+      "text": " Right? So, in least squares, I Square this. And I say, I want this to be a smallest possible.",
+      "start": 4770.08,
+      "end": 4776.9,
+      "confidence": 0.96749765
+    },
+    {
+      "text": " Right now, this is only for one point. So I'm going to look at all the points. Let's suppose I have endpoints and that's",
+      "start": 4776.9,
+      "end": 4786.47,
+      "confidence": 0.98165554
+    },
+    {
+      "text": " A function that I'm going to call F of w.",
+      "start": 4786.47,
+      "end": 4790.51,
+      "confidence": 0.8406118
+    },
+    {
+      "text": " Which basically says for a given.",
+      "start": 4790.51,
+      "end": 4794.1,
+      "confidence": 0.9421269
+    },
+    {
+      "text": " Weight factor which is a slope give you a number of that characterizes how bad of a fit. This is where zero means that. I fit everything perfectly and large numbers mean that I fit.",
+      "start": 4794.1,
+      "end": 4806.74,
+      "confidence": 0.95066977
+    },
+    {
+      "text": " Okay.",
+      "start": 4806.74,
+      "end": 4808.57,
+      "confidence": 0.63073266
+    },
+    {
+      "text": " All right, so that's no regression. So how do I solve a regression problem?",
+      "start": 4808.57,
+      "end": 4816.23,
+      "confidence": 0.9322606
+    },
+    {
+      "text": "How do I optimize this?",
+      "start": 4816.23,
+      "end": 4818.79,
+      "confidence": 0.9799155
+    },
+    {
+      "text": " Can you do this in your head? So if I actually had these two points, which at WB,",
+      "start": 4818.79,
+      "end": 4825.02,
+      "confidence": 0.9327989
+    },
+    {
+      "text": " Okay. It doesn't matter. We'll compute it.",
+      "start": 4825.02,
+      "end": 4836.54,
+      "confidence": 0.92261916
+    },
+    {
+      "text": " So how do I go about doing this?",
+      "start": 4836.54,
+      "end": 4839.97,
+      "confidence": 0.9741932
+    },
+    {
+      "text": " so, one principle, which is maybe another General, takeaway is abstract away the details,",
+      "start": 4839.97,
+      "end": 4852.31,
+      "confidence": 0.96231186
+    },
+    {
+      "text": " right? This is also true with the dynamic program. But sometimes, you know, you get if you're too close to boring and you're looking at, oh man, this these points are here and I need to fit this slide. You know, how do I do that? You kind of get kind of a little bit stuck.",
+      "start": 4852.31,
+      "end": 4869.5,
+      "confidence": 0.9590396
+    },
+    {
+      "text": " But why don't we think about this F as say, some function I don't really care about what it is.",
+      "start": 4869.5,
+      "end": 4875.37,
+      "confidence": 0.9775397
+    },
+    {
+      "text": " Let's plot this function.",
+      "start": 4875.37,
+      "end": 4877.53,
+      "confidence": 0.9492445
+    },
+    {
+      "text": " Okay, so now this is a different plot. Now this is a the weight and this is f of w.",
+      "start": 4877.53,
+      "end": 4884.65,
+      "confidence": 0.92797124
+    },
+    {
+      "text": " Always label your axes and let's say this function, looks like this.",
+      "start": 4884.65,
+      "end": 4891.16,
+      "confidence": 0.9437246
+    },
+    {
+      "text": "Okay, so which means that for this slope, I pay, you know, this amount for this slope, I pay this amount and so on.",
+      "start": 4891.16,
+      "end": 4900.31,
+      "confidence": 0.9550772
+    },
+    {
+      "text": " And what do I want to do? I want to minimize F of w which means I want to find the W which",
+      "start": 4900.31,
+      "end": 4909.84,
+      "confidence": 0.9719494
+    },
+    {
+      "text": " Has the least value of f of w.",
+      "start": 4909.84,
+      "end": 4912.41,
+      "confidence": 0.94851154
+    },
+    {
+      "text": " Right.",
+      "start": 4912.41,
+      "end": 4913.47,
+      "confidence": 0.85959053
+    },
+    {
+      "text": " Question.",
+      "start": 4913.47,
+      "end": 4915.39,
+      "confidence": 0.86281717
+    },
+    {
+      "text": " Okay, so you take the derivative so what is the derivative give you?",
+      "start": 4915.39,
+      "end": 4921.85,
+      "confidence": 0.930105
+    },
+    {
+      "text": " It tells you where to move, right? So if you look over here,",
+      "start": 4921.85,
+      "end": 4927.39,
+      "confidence": 0.9685823
+    },
+    {
+      "text": " So you can't in general. You might not be able to get there directly in this actually particular case you can because you can solve them in closed form, but I'm going to try to be more General. So if you start here this, this derivative tells you. Well, the function is decreasing, if you move to the right, so then you should move to a right? Whereas over here, if you end up over here, the derivative says, the function is decreasing if you move to the left, so you move to the left.",
+      "start": 4927.39,
+      "end": 4953.64,
+      "confidence": 0.88814294
+    },
+    {
+      "text": " alright, so what I'm going to",
+      "start": 4953.64,
+      "end": 4957.13,
+      "confidence": 0.8121292
+    },
+    {
+      "text": " Introduce is this album called gradient descent.",
+      "start": 4957.13,
+      "end": 4961.19,
+      "confidence": 0.8792281
+    },
+    {
+      "text": "It's a very simple algorithm.",
+      "start": 4961.19,
+      "end": 4963.49,
+      "confidence": 0.9933845
+    },
+    {
+      "text": " Basically says start with some.",
+      "start": 4963.49,
+      "end": 4966.89,
+      "confidence": 0.99091464
+    },
+    {
+      "text": " Place. And then compute the derivative and just follow your nose, right? If the derivative says, it's negative and just go this way. And now you're on a new Point, new compute, the derivative again, you descend, and now you compute it again and then maybe you compute the derivatives as keep on going this way, maybe overshoot and then you come back and then, you know, hopefully you'll end up kind of at the minimum",
+      "start": 4966.89,
+      "end": 4991.18,
+      "confidence": 0.93699276
+    },
+    {
+      "text": " Okay.",
+      "start": 4991.18,
+      "end": 4992.46,
+      "confidence": 0.7104596
+    },
+    {
+      "text": " so, let's try to",
+      "start": 4992.46,
+      "end": 4995.2,
+      "confidence": 0.8885052
+    },
+    {
+      "text": " see what this looks like in code.",
+      "start": 4995.2,
+      "end": 4997.74,
+      "confidence": 0.9036681
+    },
+    {
+      "text": " So, gradient descent is, you know, one of the simplest algorithms, but it really underlies, essentially, all the algorithms that you people use a machine learning. So let's do points. We have two points here.",
+      "start": 4997.74,
+      "end": 5017.96,
+      "confidence": 0.92737633
+    },
+    {
+      "text": " I'm not going to Define.",
+      "start": 5017.96,
+      "end": 5020.63,
+      "confidence": 0.7370399
+    },
+    {
+      "text": " Some functions.",
+      "start": 5020.63,
+      "end": 5022.53,
+      "confidence": 0.9702985
+    },
+    {
+      "text": " Okay, so F of w.",
+      "start": 5022.53,
+      "end": 5024.66,
+      "confidence": 0.86600846
+    },
+    {
+      "text": " So what is this function?",
+      "start": 5024.66,
+      "end": 5027.28,
+      "confidence": 0.9493723
+    },
+    {
+      "text": " So I'm going to sum over all the different, you know, and basically at this point is converting math into python. So I'm going to look at all the",
+      "start": 5027.28,
+      "end": 5037.81,
+      "confidence": 0.9140714
+    },
+    {
+      "text": "Some points.",
+      "start": 5037.81,
+      "end": 5039.66,
+      "confidence": 0.62802666
+    },
+    {
+      "text": " so for every XY what the model predicts is W Times x minus y and if I square that that's going to be the",
+      "start": 5039.66,
+      "end": 5050.59,
+      "confidence": 0.9656767
+    },
+    {
+      "text": " error that it get on that point.",
+      "start": 5050.59,
+      "end": 5053.3,
+      "confidence": 0.9739475
+    },
+    {
+      "text": " And then, if I sum over all these errors, then I get my objective function.",
+      "start": 5053.3,
+      "end": 5058.9,
+      "confidence": 0.96746695
+    },
+    {
+      "text": " Okay.",
+      "start": 5058.9,
+      "end": 5059.96,
+      "confidence": 0.623217
+    },
+    {
+      "text": " array of",
+      "start": 5059.96,
+      "end": 5066.87,
+      "confidence": 0.9214493
+    },
+    {
+      "text": " Yeah. So you can put a ray here if you want but it doesn't matter. It's actually fine.",
+      "start": 5066.87,
+      "end": 5072.81,
+      "confidence": 0.9560124
+    },
+    {
+      "text": " okay, so now I need to compute the derivative",
+      "start": 5072.81,
+      "end": 5076.89,
+      "confidence": 0.95131356
+    },
+    {
+      "text": " So how do you compute the derivative? So if your Calculus is a little bit Rusty, you might want to brush up on that. So what's the derivative? Remember we're taking a derivative with respect to W, right? There's a lot of symbols here. Always remember what you're taking the derivative with respect to",
+      "start": 5076.89,
+      "end": 5091.72,
+      "confidence": 0.9247513
+    },
+    {
+      "text": " Okay, so derivative of the sum is the sum of the derivative.",
+      "start": 5091.72,
+      "end": 5095.67,
+      "confidence": 0.8699885
+    },
+    {
+      "text": " So now I need to take the derivative of this.",
+      "start": 5095.67,
+      "end": 5098.37,
+      "confidence": 0.9865017
+    },
+    {
+      "text": " Right. And what's the derivative of this?",
+      "start": 5098.37,
+      "end": 5100.91,
+      "confidence": 0.9548394
+    },
+    {
+      "text": " While something squared, you bring the two down here. And now you multiply by the derivative of this",
+      "start": 5100.91,
+      "end": 5107.91,
+      "confidence": 0.9508716
+    },
+    {
+      "text": "And what's the derivative of this?",
+      "start": 5107.91,
+      "end": 5109.97,
+      "confidence": 0.9076801
+    },
+    {
+      "text": " Should be X.",
+      "start": 5109.97,
+      "end": 5112.51,
+      "confidence": 0.9623971
+    },
+    {
+      "text": " Right? Because this is a why this is a constant and W. Derivative W Times x with respect to W is X.",
+      "start": 5112.51,
+      "end": 5120.08,
+      "confidence": 0.93358344
+    },
+    {
+      "text": " Okay, so that's it.",
+      "start": 5120.08,
+      "end": 5121.54,
+      "confidence": 0.9088908
+    },
+    {
+      "text": " Okay. So now let's do gradient descent. That's a nice lies with W, = 0 and then I'm going to just, you know, just iterate 100 times. Normally you would set some sort of stopping condition but let's just keep it simple for now.",
+      "start": 5121.54,
+      "end": 5139.16,
+      "confidence": 0.91928583
+    },
+    {
+      "text": " okay, so for every moment I'm going to have a w",
+      "start": 5139.16,
+      "end": 5142.94,
+      "confidence": 0.94345754
+    },
+    {
+      "text": " I can compute the value of the function and I'll take the gradient of the derivative gradient. Just means derivative and higher to Dimensions, which will want later.",
+      "start": 5142.94,
+      "end": 5153.24,
+      "confidence": 0.908926
+    },
+    {
+      "text": " Okay.",
+      "start": 5153.24,
+      "end": 5155.24,
+      "confidence": 0.62534106
+    },
+    {
+      "text": " And then, what do I do?",
+      "start": 5155.24,
+      "end": 5157.73,
+      "confidence": 0.96895814
+    },
+    {
+      "text": " I take W and I subtract the gradient.",
+      "start": 5157.73,
+      "end": 5164.49,
+      "confidence": 0.93012583
+    },
+    {
+      "text": " Okay.",
+      "start": 5164.49,
+      "end": 5165.68,
+      "confidence": 0.7011335
+    },
+    {
+      "text": " So remember.",
+      "start": 5165.68,
+      "end": 5166.98,
+      "confidence": 0.9117031
+    },
+    {
+      "text": " okay, I'll be out of",
+      "start": 5166.98,
+      "end": 5171,
+      "confidence": 0.84751475
+    },
+    {
+      "text": " yes. So I",
+      "start": 5171,
+      "end": 5173.65,
+      "confidence": 0.7817337
+    },
+    {
+      "text": " Take the gradient. Remember I want to have the gradient, gradient tells me where the function is increasing. So I want to move in the opposite direction and 8 is just going to be this step size to keep things under control. We'll talk more about next time.",
+      "start": 5173.65,
+      "end": 5189.15,
+      "confidence": 0.9177758
+    },
+    {
+      "text": "Okay, so now I want to do Purnell, what's going on here. So, iteration,",
+      "start": 5189.15,
+      "end": 5195.89,
+      "confidence": 0.94904095
+    },
+    {
+      "text": " print out the function, and",
+      "start": 5195.89,
+      "end": 5201.37,
+      "confidence": 0.9597632
+    },
+    {
+      "text": " T value. Okay.",
+      "start": 5201.37,
+      "end": 5203.9,
+      "confidence": 0.76108384
+    },
+    {
+      "text": " All right, so let's compute the gradient.",
+      "start": 5203.9,
+      "end": 5209.73,
+      "confidence": 0.9155659
+    },
+    {
+      "text": " And you can see that the iteration we first start out with W goes 0. Then it moves to point three and then it moves to point. Seven nine, nine nine nine nine and then they're looks like it's converging to 0.8 and meanwhile the function value is going down from 20 to 27.2, which happens to be the optimal answer. So the correct answer here is pointing",
+      "start": 5209.73,
+      "end": 5231.55,
+      "confidence": 0.8459627
+    },
+    {
+      "text": " Okay, so that's it. Next time, we're going to keep",
+      "start": 5231.55,
+      "end": 5235.91,
+      "confidence": 0.8589656
+    },
+    {
+      "text": " We're going to start on the machine learning lecture.",
+      "start": 5235.91,
+      "end": 5238.67,
+      "confidence": 0.80243814
+    }
+  ],
+  "full_transcript": "All right, let's get started.  Please try to have a seat if you can find a seat and let's get the show on the road. So welcome everyone to cs21. This is artificial intelligence. And if you're new to Stanford, welcome to Stanford. So first, let's do some introduction. So I'm Percy, I'm going to be one of your instructors teaching this class with dorsal over there. So if Dorset wants to say hi,  Stand up.  Great. So we're gonna be trading off throughout the quarter and we also have a wonderful teaching team. So these are your ca. So if all the ca's could stand up, and I'll give you each person an opportunity to say three words about what you're interested in.  Let's start with.  The heads here. I'm a PhD student and I'm interested in natural language processing. Yeah, I'm a second year, Master's student. I mean, go straight machine learning and data mining.  hi, I'm my second year Masters and I'm interested in machine learning and that's  just,  First year. I've got an interesting I am over there.  I'm in my name, everyone. I'm also coaching and I'm interested in. Okay?  Well there are on the slide okay so as you can see we kind of have a very diverse team and so when you're thinking about kind of final projects later in the quarter you can tap into the center incredible resource.  So, three quick announcements.  So there's going to be a section every week, which will cover both kind of a review topics and all of advanced topics. So this Thursday there's going to be a overview if you're kind of rusty on python or Rusty on probability, come to this and we'll get you up to speed homework. The first homework is out, it's posted on the website, it's due next Tuesday at 11 p.m. So remember the time that matters all submissions will be on done on great scope. There's going to be a great scope Coast code that will be posted on Piazza. So look out for that later. Jeopardy or play Go, Dota 2, even poker. All these kind of games at superhuman level performance, it can also read documents and answer questions do speech, recognition, face recognition, even kind of Medical Imaging and all these tasks. Are you read about how successful these technologies have been? And then if you take a look at the kind of the technical circles, there's a lot of people in policy and trying to ask what is going on with AI and you hear about these kind of very broad claims of how transformative AI will be to the future of work and the society and so on and even some kind of boring on a pretty  You know, Castro consequences.  so,  What's going to happen in the future? No one knows. But  It is fair to say that AI will be transformative, but how do we get here and to do that? I want to take a step back to the summer of 1956. So the place was Dartmouth College, John McCarthy who was then at MIT. And then after that he founded the Stanford, AI lab organized, a workshop at Dartmouth College with some of the best and brightest minds of the Time. Marvin Minsky. Claude Shannon and so on, and they had this not so modest goal of trying to think that every aspect of learning or any feature of intelligence can be precisely captured, so a machine can be just simulate it.  So they were after the big question of, how do you kind of solve AI? So now they didn't make that much progress over the summer, but a lot of programs and interesting artifacts came about from that time there were programs that could play checkers or prove theorems and sometimes even better than what the human proof would look like. And there was a lot of  Optimism people are really, really excited. And you can see these quotes by all these excited, people who Proclaim, that AI would be solved in a matter of years. But we know that didn't really happen and there's just kind of float. Lore example, people are trying to do machine translation, so you take an English sentence. Like the spirit is willing, but the flesh is weak, you translate into Russian, which is what the choice Language by the US government at that time. And you could translate back into English. And this is what you get. The vodka is good, by the meat is run. So the government didn't think that was too funny, so they cut off the funding and it became the first AI winter.  So, there's a period where, you know, AI research was not very active and was not, well very well funded. So what went wrong here, these were really smart people, right? There's just got a little, maybe a little out of themselves. So, two problems. One is that the compute was simply not there, right? It was millions or even billions of order magnitude compared less than what we have right now. And also the problem is the way they formulated them intrinsically rely on exponential search which no matter how much compute you have. You're never going to you know up when that race they also have a limited information and this is maybe a kind of a more subtle point that if I gave you infinite compute and ask you to translate, I don't think you would be able to figure it out because it's not a computation problem. You just need to learn the language and you need to experience all the subtleties of language to be over to translate. But on the other hand I wasn't solved but a lot of interesting.  Contributions to computer, science came out of it. Lisp was just a lot of ideas that underlay many of the high-level program. Languages we have garbage collection time sharing allowing multiple people to use the same one computer at the same time which is something that we kind of take for granted and also this Paradigm of separating what you want to compute which is modeling and how you do it, which is inference, which we'll get to a little bit later.  Okay, so people forget quickly and in the 70s 80s, there was in renewed, generation of people, getting excited about AI again and this time it was all about knowledge, right? Knowledge is power and there were a lot of expert systems which are created and the idea is that if you could encode experts knowledge about the world that you could do kind of amazing things. And at the time, the knowledge was encoded in generally a set of rules and there were a lot of programs I was written. And you notice that the scope is much narrower. Now the goal is to solve it all of AI but to really focus on some choice. The problems like diagnosing diseases or converting customer's order parts and their parts and a customer orders into parts and this was the first time that AI I think really had a real impact on Industries. So people were actually able to make useful products out of this and knowledge. Did actually play a key ingredient in curbing, this in your exponential growth that people are worried about.  but of course it didn't last long knowledge, as deterministic rules was simply not rich enough to capture all the nuances of the world, a required, a lot of manual effort to maintain and Afghan a pattern of  over-promising and under livering that seems to play AI. People led to the collapse and of the field and the kind of a second AI winter.  Okay, so that's not the end of the story either, but actually, it's not kind of really the beginning either. So, I'm going to step back further in time to 1943. So what happened in 1943? So there was a neuroscientist McCulloch and a logician pits who are wondering and marveling at how the human brain is able to do all these kind of complicated things and they want to kind of formulate a theory about how this could all happen. So they developed a theory of artificial neural networks and this is kind of you can think about the root as of, you know, deep learning in some sense. And what was interesting is that they looked at neurons and logic which are two things that you might not kind of necessary associated with each other and showed how they were kind of connected mathematically. And a lot of the early work in this era were around artificial neural. Networks was about studying them kind of from a mathematical perspective because at that time the computer was in there, you couldn't really run any kind of training models or  and then 1969, something interesting happens. So there's this book by Minsky and papa called perceptron and this book did a lot of mathematical analysis and it also showed that linear models. One of the results of many was showing that linear classifiers. Couldn't solve the xor problem. The problem is Another way to think about the problem is basically given two inputs. Can you tell whether the same or not, or different? And so, it kind of not a shouldn't be a hard problem but linear cost value can do it and for some reason, which I don't quite understand it killed off neural Nets research, even though they said nothing about. If you had a deeper Network, what it could do. But it's often cited that this book swung, things from people who are interested in their own networks to Field of AI, being very symbolic and logic driven  But there was always this kind of minority group who were really invested and believes in the power of neural networks and I thought I was just kind of a matter of time.  So in the 80s, there was a new interest.  People got to discover to ReDiscover the back propagation algorithm which allowed our kind of a for a generic algorithm that could train these multi-layer known networks because single layer remember was insufficient to do a lot of things and then one of the kind of the early success stories as Gene and in 1989 apply to convolutional neural network and was able to recognize hand digit ridden digits. And this actually got deployed by the USPS and was reading kind of zip codes. So this was, you know, great. Um but it wasn't until this decade that the this area of neural networks, really kind of took off under the moniker deep learning and you know alexnet in 2012 was kind of a huge transformation where they show gains on the image, net Benchmark and overnight transformed their computer vision Community. Alpha go as you know, many of, you know, and many kind of other and they were kind of, the rest is history.  Okay, so, so there's these kind of two intellectual Traditions, you know, the name AI has always been associated. With the time John McCarthy, logical division, that's kind of where it started. But as you can see that there was a kind of, this Neuroscience inspired a tradition of AI in a two were kind of really had some deep philosophical differences. And over the decades, fought with each other kind of quite a bit. But I want to pause for a moment and really think about maybe there are actually to have deeper connections here. Remember McCullum pits, they were studying artificial, neural networks, but the connection was to logic, right? So from even in the very beginning there is kind of this Synergy that, you know, some some people can kind of often overlooked. And if you take a look at alphago, which if you think about the game of Go or many games, it's a mathematically, you can write down the rules of Go in logic and just a few lines. So it's a mathematically, well-defined logical, logic puzzle. And some sense. Let's somehow  The power of neural networks allows you to develop these models that actually play go really, really well.  So this is kind of one of the deep Mysteries that has kind of, I think is a kind of opens standing challenge, you know, in AI  as with any story, it's not the full picture, and I want to point out on this slide that AI has drawn from a lot of different fields, many of the techniques that we're going to look at. For example, maximum likelihood came from your statistics or games came from kind of Economics optimizations gradient descent. Hymns from was you know in the 50s completely unrelated to AI but these techniques kind of developed in a different context. And so AI is kind of like, you know, it's kind of like a New York City. It's it's a Melting Pot where a lot of these techniques get kind of unified and apply to kind of interesting problems. And that's what makes it. I think really interesting because of the new avenues that are opened up by kind of unique combinations of existing techniques  Okay, so that was a really, really brief history of, you know, where how we got here. Now, I want to pause for a moment and think about, you know, what is, what is the goal? What were AI people trying to do?  And again, this is kind of, there's two ways to think about this.  Which and sometimes the conflation of these causes a lot of confusion.  So I like to think about it as AI as agents and AI is a tools. So the first view asks, the kind of the scientific question of how can we create or recreate Intelligence.  And the second one asked, you know, how can we use technology to kind of benefit, you know, society. And these two are obviously very related and they have a lot of shared technical overlap, but, you know, philosophically they're kind of different. So let me kind of explain this a little bit. So the idea with AI agents is and this is, I think a lot of what gets associated with AI and, you know, with science fiction, that kind of, portrayal certainly kind of encourages this kind of view where,  Your human, we're human beings. And what you do is you look in the mirror and you say, wow, that's a must, that's a really smart person. And you think, okay? How what, what can humans do that is, you know, so you know amazing, well, they can, they can see and they can perceive the world recognize objects, they can grasp cups and drink water and not spill it.  They can communicate using language as I'm doing to you right now, we know facts about the world declarative knowledge such as what's the capital France and procedural knowledge, how to write a bike. We can reason with this knowledge and maybe write a bike to the Capitol France. And then really importantly, we're not born with all of this, right? We're born with basically nothing, none of these capabilities, but with born with a capacity and potential to acquire these over time through experience and learning, it seems to be kind of this critical ingredient, which drives a lot of a success in AI today. But also, with human intelligence is clear that I learning plays as such a central role in getting us to the level that we are operating at  so each of these areas has kind of Spawn entire subfields and people in, it are kind of wondering about how to can make artificial systems that have the language or the motor or the visual perceptual capabilities that you know, humans have  And I would, I would like to think that we are very far. So if you look at the way that machines are having successful, it's always narrow set of tasks and you know, millions of billions of examples and you're just crunch a lot of computation and you can really kind of optimize  Every any task, you're going to come up with? Whereas humans operating a very different regime.  They don't necessarily do any, you know, one thing well but they are have such a kind of diverse set of you know, experiences can solve the diverse set of tasks and learn from each individual task from very few examples.  And still it's a kind of a Grand Challenge. And from, you know, Congress perspective, how you can build systems with this level of capability in that humans have  So the other view is, you know, AI tools. Basically we say, okay, well, you know, it's kind of cool to think about how we can, you know, recreate challenges. But, you know, we don't really care about making more things like humans. We already have a way of, you know, doing that that's called babies. So when it said we really like to do is not making something that's like a human but making system that help humans because you know after all we're humans I guess it's a little bit selfish but we're in charge right now. Um and a lot of these, this View and a lot of the success stories in AI are really different from the things that you expect, you know, this this humanoid robot to comment to your house and be able to do. For example, this is a project from Stefano orman's group. There's a lot of poverty in the world and part of it is just kind of understanding what what's what's going on. And they had us idea of using computer vision on satellite imagery to predict things like, you know, GDP,  So this is obviously not a task that, you know, the our ancestors and Africa were like you know, getting really good at but nonetheless use this conversation on networks which is a technique that was inspired by you know, the brain. And so that's that's kind of interesting. You can also have another application for a saving energy by trying to figure out. When to cool data centers, as AI is being deployed in more, kind of mission critical situations such as self-driving, cars or Authentication.  There are few new issues that come up. So, for example,  there are this phenomenon called adversarial examples where you can take these cool looking glasses, you can put them on your face and you can fool the computer as save, our face recognition system, to think that you're actually, you know, someone else  or you can post these stickers on stop signs and get this. Save our system to think that it's a speed limit sign.  So there's obviously there's clearly these are, you know, big problems. If we think about the widespread deployment deployment of AI,  There's also less catastrophically but also pretty, you know, upsetting which is a biases that you many of you probably have read in the news about. So for example, if you take Malay which is the language that doesn't distinguish in the writing form between he and she and you sick into Google translate, you see that she works as a nurse but he works as a programmer which is encoding certain societal biases in the actual models and one to kind of important point. I want to bring up is that  You know, how is machine learning and kind of working today? Well, it's, you know, Society exists. Society is generating a lot of data. We're training on this data and kind of trying to fit the data and trying to mimic what it's doing and then using predictions on it. What could possibly go wrong, right. And so, so certainly people a lot of people have been thinking about how these biases are kind of creeping up as an open active area of research.  something a little bit more kind of sensitive is  You know, asking, well, these systems are being deployed to all these, all these people, whether they kind of wanted or wanted or not, and this, this actually touches on, you know, people's livelihoods actually, impacts people's lives in a serious way. So Northwind was his company developed a software called Compass at tries to predict how risky  Criminal risk score. How is someone how risky someone is essentially and a public holiday? This organization realized whoa, you have the system that individual didn't respond is actually more twice as likely to classify. Blacks is incorrectly as you know, non blacks. So this is a seems pretty problematic and the North Point comes back and says, actually, you know, I think I think we're bringing fair. So give a risk score of 7. We were Fair because 60% of whites were offended and 60% of blacks reoffended um, the point here is that there's there's actually  No solution to this in some sense. Sadly, so, people have finding a formulated different Notions of fairness and equality between how you predict chord on different kind of groups.  But all you can have different Notions of fairness and which all seemed reasonable from first principles, but mathematically, they can be incompatible with each other.  So this is again an open area of research where we're trying to figure out as a society, how to deal with the skim and that machine learning might be used in these kind of critical situations.  Okay, so summary so far.  There's an agent's View.  we're trying to really kind of dream and think about how do you  get these capabilities like learning from very few examples that humans have into, you know, machines and a whole maybe opening up, I'll kind of a different set of technical capabilities, but at the same time, we really need to be thinking about how these AI systems are affecting the real world. And things like security and biases and fairness. All kind of show up. It's also interesting to note that, you know, a lot of the challenges in deployment of AI system. Don't really have necessary to do with, you know, humans at all. I'm humans are incredibly biased but doesn't mean we want to build systems kind of in our  that mimic humans and kind of inherit all the kind of the flaws that humans have.  Okay.  Any questions about this pause for a moment?  So, let's go on.  So, what I want to do next is give overview of the different topics in the course.  and,  the way to think about all of this is that  In AI, we're trying to solve really complex problems. So real world is really complicated and but at the end of the day, we want to produce some software or maybe some hard work that actually runs and does stuff. Right. And so there's a very considerable gap between these things and so how do you even approach something like self-driving cars, or you know, diagnosing diseases? You probably shouldn't just like go sit down at a terminal and start typing because then there's no kind of know Arbor arching structure.  So,  What this class is going to do is to give you one example of a structure, which will hopefully help you approach heart problems and think about how to solve them in a kind of more principled way.  So this is a paradigm that I call the modeling inference and learning Paradigm. So the idea here is that  There's three pillars which I'll explain in a bit.  And we can focus on each one of these things, kind of intern.  So the first pillar is modeling.  So what is modeling?  The modeling is taking the real world which is really complicated and building a model out of it. So what is a model model is a simplification that is mathematically precise, so that you can, you know, do something with it on a computer. Um, one of the things that's necessary is that modeling necessary has to simplify things and, you know, throw away information. So one of the kind of the, you know, the art is to figure out what information to pay attention to and what information to keep.  So this is going to be an important. For example, when you work on your final projects and you have a real world problem, you need to figure out, you can't have everything and you have to figure out your Justice League, how to manage your resources.  so, here's an example, if you want to, for example, build a  system that can find the best way to get from point A to point B in a graph and the city you can formulate the model as a graph where  nodes are points in the city and edges represent ability to go between these points with some sort of cost on the edges.  Okay, so now once you have your model,  you can do inference. And what inference means is asking questions about your model. So here's a model you can ask, for example, how does a shortest path from this point to this point? Right? And that's because now you're a model. Land is a mathematically well-defined problem. Now you can. It's within the realm of, you know, devoted algorithms to, you know, solve that problem.  And most of inferences being able to do these computations really efficiently.  The problem. Where does this model come from?  So in any, in a realistic setting, the model might have a lot of parameters. Maybe it has millions of parameters and how do you if it's wants to be full to the real world? How do you get all this information? There manually encoding, this information. Turns out not to be a good idea. This is in some sense. What AI from the 80s was trying to do.  So, the learning Paradigm is as follows. What we're going to do is specify a model without parameters. Think about it as a skeleton.  so in this case, we have a graph but we don't know what the edge weights are  And now we have some data. So maybe we have data of the form. People try to go from X to Y and they took 10 minutes or an hour or so on. And then from this data we can learn to fit the parameters of the model we can assign cost to the edges. That kind of a representative of what the data is telling us.  Okay, so now in this way, we can write down a model without parameters.  Feed a data, apply a generic learning algorithm, and get a model with parameters. And now we can go back and do inference and ask questions, you know about this.  Okay, so this is kind of the the Paradigm and I want to really emphasize that, you know, learning is not as I presented, is really not about any one particular algorithm like nearest neighbors or neural networks. It's really a kind of a philosophy of how you go about approaching Problems by defining a model and then not having to specify all the details. But filling them and later.  Okay, so here is the plan for the course, we're going to go from low level intelligence to high level intelligence, and this is an intelligence of of the of the models that we're going to be talking about. So first, we're going to talk about machine learning and like I've kind of alluded to earlier a machine learning is going to be such a kind of a important building block of that can be applied to any of the models that we develop. So the central tenant and machine learning is you have data and you go to model, its main us driver of a lot of assess successes in AI because of allows you to in software engineering terms move the complexity from code to data, rather having, you know, a million lines of code which is a manageable, you have a lot of data, which is collected in kind of a more natural way and the smaller amount of code that can operate on this data and this Paradigm has really been introverted powerful.  One thing to think about, in terms of machine learning, is that it is requires a leap of faith.  Right? So you can go through a mechanics of, you know, down downloading, some machine learning code and you train them all, but fundamentally, it's about generalization, right? You have your data, you fit a model, but you don't care about how a performance on that data. You care about how it performs on new experiences and that leap of faith is something that's I think gives machine learning its power, but it's also a little bit at First Class magical.  It turns out you can actually formalize a lot of this using.  Probability Theory and statistics but that's kind of a topic for another time. Okay, so after we talk about machine learning, we're going to go back and talk about the simplest of models, right? So a reflex model is this? So here's a quiz. Okay, what is this animal?  Okay, zebra. How did you get it so fast? Well, it's kind of reflects, right? You're human visual system is so good at doing these things without thinking, and so reflex models. Are these are models which just require a fixed set of computations. So examples, like are linear classifiers, they don't know networks. And most of these models are the ones that people use machine. Learning use models is almost synonymous with reflex in machine learning and important thing that there's no feed for it, just like you get your input. Bam, Bam, Bam, and here's your output.  Okay, so that's that's great because it's fast.  But there's some problems that require a little bit more than that, right? So for example, here's another problem. Okay quick, why to move? Where should you go?  Okay, there's probably like a few of you who are like chess Geniuses, but for the rest of us, I have no idea and even no way who's moving again. So, And this kind of situations, we need something, perhaps a little bit more powerful than a reflex. We need agents that can kind of plan and think ahead. So the idea behind stay based models is that we model the world as a set of states, which capture any given situation like a position in a  in a game.  And actions that take us between states, which correspond to things that you can do in the, in this game.  So a lot of game applications following this category, robotics motion planning navigation all. So some things that are not be, you might think of planning such as generation in natural language or generating an image, you know are can be cast in this way as well.  So, there's three types of state-based models Each of, which were cover in, you know, weeks of time. So search problems are the classic you control everything. So you're just trying to find the optimal path, there are cases where there's Randomness. For example, if you're trying to go from point A to point B, maybe there's traffic that you don't, you know, don't know about or in a game there might be a dice or die which are Road and there's a third category which are adversarial games, which is cases where you're playing an opponent. Who's actively trying to destroy your. So what do you do about that? So, one of the games that we're going to be talking about, when we talk about games is a Pac-Man. And one of the assignments is actually building a Pac-Man agent such as this. So while you're looking at this, think about how what are the states and what are the actions and how would you go about, you know, devising a strategy for Pac-Man to eat all the dots and avoid all the ghosts.  So that's something to maybe look forward to. There's also going to be a competition, so we'll see who ends up on top.  Okay, so database models.  Are very powerful other value to kind of have foresight but some problems are not really most natural space models. For example, you know how many places to go through or have played it before. So the goal of Sudoku is to fill in these  Blanks with numbers. So that every road column and three by three subhlok has, it is just one through nine. So it's a bunch of constraints and there's no  kind of sense in which you have to do in a certain order, right? Whereas the order in how you move in chess or something, as you know, pretty important, Um, so so these type of problems are captured by these variable based models where you kind of think about a solution to the problem, as an assignment, to the individual variables, under some constraints. So constraints satisfaction problems were spent a week on that. These are hard constraints. For example, two people can't be a person, can't be in two places at once. For example, there's also Beijing networks which we'll talk about which are variable based models with soft dependencies. For example, if you're trying to track, you know, a car  Over time, these are the positions of the car. These variables representation of the cars and these ease represent the  Sensor readings of the position of the car adapt particular position and inference looks like trying to figure out where the car was given all this kind of Northeast Center Reading.  So that's all going to be another assignment that you're going to deal with.  Okay, so finally, now we get to high level. What's so what is high level intelligence here? And I put logic here for a reason that you'll see. Clear. Yeah. Is there a question? Example, can you explain why? It's not a state baseball? Yeah, so the question is, why is not the why is the socio problem not a space space model? You can actually formulate this as a state-based model by just thinking about the sequence of assignments, but it turns out that you can  formulate in a kind of more natural way as a variable based model which allows you to take advantage, some kind of more efficient algorithm to solve it, right? It's it think about these models as kind of different analogy is like, a programming language. So yes you could write everything in, you know, C, plus plus. But sometimes riding in, you know, python or or sequel for something's might be more.  Might be easier.  Yeah.  So question is, how do you categorize say based models where there's both Randomness and an adversary? We're going to talk about those as well and those would be, I would classify them as adversarial, but there's also a random component that you have to deal with.  Games like back on.  Yeah, we just like,  go from.  The Street Station to like continuous spaces. So it feels like we have like problems that are quantify will be like this.  I didn't end up farther, right? We get the more we need like approximates.  yeah, so a question is about whether some of these are more continuous and some of the more discreet I know necessarily think of  So, a lot of the reflex models actually can work in continuous spaces, for example, images actually. It's it's almost a little bit of opposite where the logic based models are in some sense more, you know, discrete but you can also have continuous elements, you know, in there as well.  So in this class, we're mostly going to focus on time discrete objects because they're just going to be simpler to work with  Okay. So what is this logic? So the motivation here is that supposed you wanted a little companion who you could boss around and and help or help you do things. Let's say, that's a better way to say it. So you like to be able to say, okay, you know, tell us some information and, you know, then later you want to be able to ask some questions and have the system be able to Reply to you.  So you know, how would you go about doing this? One way you could think about is building a system that you can actually talk to using natural language?  Okay. So I'm actually going to show you a little demo which is going to come up in the last assignment on logic. And well let's see what you think of that.  Okay. So this is going to be a system that is based on logic that I'm going to tell the system. A bunch of things and then I'm going to ask some questions. So I want you all to fall along and see if you can, you know, play the role of the vision. Okay. So I'm going to teach you a few things like Alice is a student.  okay, so as I learned something, now let's let's quiz to his Alice a student  Okay good. So that worked is Bob a student.  Should answer me.  I don't know who's Bob. Okay, so now let's do students are people. A.  LS is not a person.  And by that. Okay, so okay, it's you know it's doing some reasoning, right? It's using logic it's not just  Okay, so now let's do Alice is from Phoenix.  Phoenix is a hot City. I know because I love their CDs are places.  And if it is snowing, it is then it is cold.  Okay.  Got it.  So, is it snowing?  I don't know.  So, how about this? Okay, so if  A person is from a hot place and it is cold, then she is not happy.  Okay.  True.  Right.  I guess those of you who are sent all your live in California with him, maybe appreciate this. But okay, so is it snowing now?  I mean, you say yeah, it's snowing. How do you say no?  Don't know.  Okay.  oh,  to wait.  How about if I say, Alice is happy.  Okay, so is it snowing now?  Know. It should be no. Okay, so you guys were able to do this. Okay? So this is kind of an example of an interaction which if you think about it has is very different from what you would see kind of in a typical, you know, ml system where you have to show it. You know, millions of examples of one particular thing and it can do kind of one task. This is much more of a very  Open-ended set of.  I want to say the experience is our super rich but they're doing diverse I teach. I just give one statement. I say it once and then all the sudden has all the ramifications and kind of consequences that bill in and it kind of understands and kind of deeper level. Of course, this is based on, you know, logic systems. So it is brittle but this is kind of just a proof of Concepts to give you a taste of what I mean. When I say logic, So so these systems need to be able to digest these heterogeneous information and recently with that information and we'll see how kind of how logic systems can do that.  Okay.  So, that completes the tour of the topics of this class.  Now, I want to spend a little bit of time on course Logistics. So,  I want to all the details here are online, so I'm not going to be complete in my coverage, but I just want to give you a general sense of what's going on here.  Okay, so what are we trying to do in this course?  So prerequisites.  There's programming the screen math and probably. So you need to code you need to be able to do some math and some kind of basic proofs. Right? So these are the classes that are  Required or at least recommended that you or if you have something equivalent experience that's you know, fine too.  And what we what should you hope to get out of this course. Right. So one had the course is meant to be giving you a set of tools using the modeling inference learning Paradigm. It gives you a set of tools and a way of thinking about problems, I hopefully will be really useful for you when you go out in the world and try to solve real world problems, Um, and also by as a side product. I also want all of you to be more proficient at math and programming because those are kind of the core elements that are enable you to kind of interesting, you know, things and AI.  So a lot of AI, you know you read about it is very flashy but really the foundations are still just you know math and programming in some sense.  Okay, so the coursework is homeworks exam in a project. That's where you have to do homework, there's eight homeworks. Each homework is a mix of writing and programming problems centered on a particular application. Covering one particular type of model essentially like I mentioned before, there's a competition for extra credit. There's also some extra credit problems in the and the homeworks, and when you submit code, we're going to run. We have Auto greater that runs. It's going to run on all the test cases. But you get a feedback only a subset. So you can it's like, you know, a machine learning. You have a train set and you have a test set, so don't train on your test set. Okay,  so, the exam is  testing your ability to use the knowledge that you learn to solve a new problems, right? So there's And I think it's worth taking a look at exam because it's kind of surprises people. Every the exam is a little bit different than the types of problems that you see on, on the homework and they're kind of more problem, you know, solving. So the exam isn't going to be like a multiple choice like okay, you know, you know when was you know, perceptions published you know, something like that, it's going to be here's a real life problem, how do you model it and how do you come up with it, you know, solution. They're all going to be written. It's closed book except for you have a one-page of notes and this is a great opportunity to actually review all the material and actually learn the content in the class.  So the project I think is a really good opportunity to take all of the things that we've been talking about in the class and try to find something you really care about and try to apply it. Um, working groups of three. And I really recommend finding a group early. And as I emphasized as your responsibility to find, you know, a good group, right? Don't come to us later like one week before the projected line and say, oh, you know, my group members, they dictionary or something, really, try to try to nail this down, use Piazza to, or your other social networks, to find a good group. So throughout the quarter, there's going to be these milestones for the projects so to prevent you guys from procrastinating into the very end. So there's going to be a proposal where you try and brainstorm some ideas progress, report poster session, which is actually a whole week before the final report is due and the project is very open so this can be really liberating, but also might be a little bit daunting.  We will hopefully give you a lot of structure. In terms of saying, okay, how do you define your task? How do you implement different baselines Oracles, which I'll explain later, how do you evaluate? How do you analyze what you've done and each of you will each project group of the assign a CA mentor to help you through the process. In your always work on to come to my office hours or doors or any of the ca's to get additional help either brainstorming or figuring out what the next step is. Um, some policies, all assignments will be submitted on great scope.  There's seven total late days you can use and most to per assignment after that there's no credit. We're going to use Piazza for all communication so don't email us directly. Leave a post on Piazza if a current you to make a public if it's it's not sensitive but if it's you know personal then obviously make a private and try to help each other. Well actually award some Edge for credit for students who help answer  You know, other students questions.  So, all of the details on the course website, Okay, so one last thing, and it's really important and that's the honor code, okay? So it's special, if you're, you know, you've probably heard this. If you've been at Stanford if you haven't, then I want to really kind of make this clear. So I encourage you all to kind of collaborate discuss together, but when you come to actually the homeworks, you have to write up your homework and you know, code independently. So you should be looking at someone's right up. You shouldn't be looking at their code and you definitely shouldn't be copying code off of GitHub. That's hopefully should be obvious and maybe less obvious, you should not please do not post your homework assignments on GitHub, I know, you're probably proud of that you're Pac-Man. Agent is doing really well, but please don't post on GitHub because then that's going to be an honor code violation.  When debugging with, if you're working together, it's fine to as long as it's kind of looking at input output Behavior. So you can say to your partner, oh hey, I put in this input to my test case. I'm getting like three. What are you getting? So that's fine but you can't remember. Don't look at each other's code. And there's even forces we're going to be running mosque, which is a software program that looks for code duplication to make sure that the rules are being followed. And, you know, changing one variable name is or you'll be. So anyway, enough said,  Just don't.  Don't do it.  Okay.  Any questions about this? I want to make sure this is important or about any of those Logistics. Yeah.  The final project you can put on GitHub.  Yeah. Yeah. Private gate Hub, repos is fine.  Yeah, question in the back. Yes. The question is, can you can you do a solo project? You can do a solo project. You can do a project with two people. You can do project with three, I would encourage you to try to work in groups of three because you'll be able to do more as a group. And there's definitely, you know, it's not like if you do Solo project will be expecting like 1/3 of the work. So  Okay, anything else?  All right.  Okay. So in the final section,  I want to actually delve into some technical details and one thing we're going to focus on right now, is the kind of inference and learning components of this course. So I'm going to talk about how you can approach these through the lens of, you know, optimization. So this is going to be. It might be a review for some of you, but hopefully it's going to be a good.  You know, way to get everyone on the same page.  Okay, so, what is optimization? There's two flavors of optimization that we care about. There's a discrete optimization where you're trying to find the best discrete object. For example, you're trying to find the best path or some the path P that minimizes the cost of that path.  We're going to talk about one algorithmic tool based on dynamic programming, which is a very powerful way of solving these complex optimization problems and the key. you know, property here is that  the set of paths is huge and you can't just try all of them and compute their cost and choose the best one. So you have to do something clever.  The second brand of optimization.  is continuous optimization and  formally. This is just finding the best of vector of real numbers that satisfies or minimize the sum objective function. So typical place to shows up is in learning where you define objective function like the training error.  And you're trying to find a weight Vector W. So this decision just means it's a list of numbers. The numbers.  That minimizes a training app.  And we're going to show that gradient descent is.  A you know easy and a very surprisingly effective way of solving these continuous optimization problems.  Okay, so to introduce these to ideas, I'm going to look at two problems and trying to kind of work through them. So this might be also a good  You know, way to think about how you might go approach, homework problems. You know, trying to kind of talk through this a bit more detail. Okay, so the first problem is, you know, Computing at this distance And you know, this might not look, you know, like an AI problem, but a lot of AI problems have this as kind of a building block. If you want to do some sort of matching between, you know, two words or two biological sequences,  So, the input is you're given two strings.  I'm going to start writing over here on the board, just to work this out.  So you're given two strings S&T.  So for example, a cat  And the cats.  Okay, so these are two strings and you want to find the minimum number of edits that is needed to take, transform s into t.  And by edits, I mean, you can insert a character, like, you can sort of s, you can delete characters. I can delete this a, and you can substitute one character for another so you can replace this with a t.  Okay, so here's some examples. What's the edit distance of cat and Cat at 0? You know, how to do anything kind of dog is three? Can add is one you insert the a or certainly the Cadence is one. And it had and the cats is 4.  Okay.  so, the challenge here is that there are  quite a different number of ways to insert and delete, right? So if you have a string of that's very long, they're just way too many things to like just try out all of them.  Okay, so then how do we how do we go about?  Coming up with a solution.  so,  any ideas?  Yeah.  Yeah, so let's try to simplify those the problem a bit and building off on, you know, what you what was said. So  One thing to note is that, okay, we're so the general principle, let me just write that General principle.  Oh, is to, you know, reduce the problems. To a simpler problem.  Because that you can hopefully solve if it's easier to solve and then you can maybe keep on doing that and you get something that's trivial.  Okay, so there's maybe two observations we can make one, is that? Well, we're technically saying, we can, you know, insert into s.  Right.  But if we insert into s, it makes the problem kind of larger in some sounds. Right? I mean, that's not, that's not good, that's not reducing the problem.  But but whenever you insert into s, we probably want to insert things which are in tea we want to like cancel something out, right? So we want to insert a k there for any reason you probably want to insert a s and which case you know s matches that and then we've reduced that problem, right?  so, we can actually think about, you know, inserting  Into s.  To S as equivalent to kind of deleting from from t.  Okay. Does that make sense?  All right.  so, another observation we can make is that You know, we can start inserting anywhere, we can start inserting here, and then jump over here and do this. But this just introduces, a lot of, you know, ways of doing it, which all kind of result in the same answer, so why don't we just starts more systematically at one end and then just proceed and try to Chisel off the problem. Kind of let's say from the end,  Okay, so  Start.  At the end.  Okay, so so now we have this  Problem. I'm going to drop problem in a little box here.  So let's start at the end? Yeah, question.  To reach that principals start at the end.  Oh the question is why are we starting at the end as a? Well the idea is that if you started the end then you have kind of a more systematic and consistent way of, you know, reducing the problem. So you don't have to think about all the permutations of War I can you know, delete and substitute.  The right to the left. Then on the left, we can also do love to ride. So the end or the start is both fine. This is just I just picked the end. Yeah, or let me know. Starting at one end can give us the optimal strategy. Yeah. The question is, how do we know that starting at one end can give you the optimal strategy? So,  You know, if you wanted to prove this more rigorously there's some work but I'll just try to give you a, you know, intuitive answer suppose you didn't start at the end and you just made a sequence of steps. Like I insert here. I delete here and then I went over here and did all those operations to us. I could have equivalently also, just sort of those by, you know, where I was happening. And then just proceeded from one end to the other. And I would arrive at the exact same answer. So without lots of generality, I can start that.  Another question.  Okay, so yeah. Instead of doing this one of the more viable approach, the China, recognize some patterns of doing this. I mean, between the two strings. Smt, like some kind of some sort of fact, that  The S&T string. Yeah, so question is, maybe you can recognize some patterns. Wow. It's like, oh cat. That's, that's maybe those should be lined up.  I guess these examples are chosen so that these patterns exist but we want to solve the problem for cases where the pattern might not be obvious. It could be we want to work for it to work for all strings. Maybe there is no pattern and we still want to kind of efficient algorithm to do it.  Yeah.  Just like used dynamic programming. Like we go one by one. There was always like they just said we're doing substitution or otherwise it's like the same character or we have to insert. Yeah. And then we keep going and we just like each flight to just drinks that we have at one point so that if we calculated that to do it again. Yeah, that's it. Yeah, yeah, great idea. Let's do dynamic programming. So, that's what I'm kind of trying to build up from a build up to. Okay? So, A, you know, delete these two. And that's, it's going to be the same, right? So we can get, we can get some free rides there.  Okay, but when they differ now, we have many options.  So what we, what could we do?  Well, we could  You know, substitute? Okay, we can change the T to an s.  So, what does that leave us with? So I can do a  T is the cat. The  okay, so I can substitute  Okay, what else can I do?  Someone say something I can do.  so, I can insert  insert where into  So I'm going to insert a us, right? But that's the same as you know, by one deleting from T. So but I can basically also just delete this us.  So this is a cat. and,  I deleted this s from t.  Okay, so this is let's call it, you know.  I guess let's call this insertion. It's technically insertion.  And then finally, what can I do?  I can also remove t.  So, a KCA.  Okay, so this is the lead.  And right now, you're probably looking at this like well obviously you know you should do this one but in general, it's hard to tell, right? I just gave you some arbitrary strings. You know who knows what the right answer is.  so,  In general, how do you pick?  that's,  Giving this one. So here, I inserted a s. Right. But then because there's two s's here, I just cancel them out and I'm just so.  It's really the leading from.  Considering.  Like in the original problem we said we're transforming S&P. Yeah, yeah. So I'm because of this, I'm kind of trying to reframe the problems  Okay, so which one should I choose?  Yeah.  The substitution the other way, meaning change.  sorry, there's too many s's here, which  oh, you could.  That's you can think about that as kind of equivalent. So if you identify two letters that you want to make the same, then you could  you can replace some one to be the other or the other to be that, I mean officially we've been kind of framing it as we're only editing us, which is the reason that it's  Okay, so Which one of these?  Door Aid or B or Dorsey.  yeah, would you look for some lady that  You.  Yeah. So you could try to look inside but but remember these are might be really complicated. So we want to kind of a simple mechanized procedure to tell.  The next letter.  Yeah, let's let's pretend. These are you can't see inside.  Yeah, okay. So let's keep on going. So I'm not gonna draw everything, but you can also try to break this down into maybe there's three actions here and three actions here, right?  And at the end of the day, you hopefully have a problem. That's simple enough that we're asked equals to your something, then you're done. But then, you know, how do I, how do I know suppose I've solved this supposed to, someone just told you, okay, I know this cost I know this cost, I know this cost, what should you do?  Yeah, you should take the minimum right? Like remember we want to minimize the edit distance so there's three things you can do. Each of them has some costs of doing that action, which is, you know, one every edit is the same cost and then there's a cost of, you know, continuing do whatever you're doing. And so we're just going to take the minimum over the  Course, yeah.  We know that. Yeah, so I was trying to argue that with, if you go into right to left, it's without loss of generality. Because if you when left to ride or in some other order, you can also Replay that edits  and looks like they're all not.  Working. Yeah, I think it works.  Okay, so let's try to code this up and see if we can make this program work. Okay, so I'm going to do edit distance and everyone, see this  Okay, so  I'm going to define a function, it takes two strings, and then I'm going to define a recurrence. So recurrences are is I guess one word to haven't really used but this is really the way you should kind of think about Dynamic programs and this idea of taking complex problems and breaking it down. It's going to show up in search problems mdp's and you know games. So I guess it's something that you should really be comfortable with.  So, let's  Define a recurrence as follows. So remember, at any point in time I have let's say a sub-problem. And since I'm going right to left, I'm only considering the first M letters of s and the first letters and letters of t. Okay, so recurse is going to return the minimum at a distance between two things. The first letters of s and the first and letters of t, I'm going to post this online. So you guys don't have to copy. Try to copy this.  Okay, so  Okay, suppose I'm going to Define this function if I have this function. What should I return?  recurse of Yes, so m is an integer, right? So n is  an integer. So I'm going to return the length of M and the length of M  Okay, so that's kind of the initial state.  Yep.  Okay.  All right, so now I need to fill out this function.  okay, so let's let's  consider a bunch of cases. So here's some easy cases, suppose that  M is 0, right? So I have comparing empty string with something that has end letters.  So what should the cost of that be?  Anne and symmetrically if n is 0, then result should be m.  and then, if  Now we come to the kind of initial case that we consider which is the end actually match. So if s  The last letter of this is zero based indexing. So that's why there's a minus one. So this matches Then, what should I do?  So now I reduce this to a subproblem, right?  So I have n minus 1 and minus 1.  Okay. And now homes a fun case which we looked at. So there's in this case, the last letter doesn't match. I'm going to have to do some sort of edit can't just let it. Yeah.  That's probably a way you can make this more efficient. I'm just gonna try to get the basic thing.  Okay, so substitution. Okay. So what's the cost of a substitution? I pay one to do the substitution but and in as a reward I get to reduce the problem to a minus one and minus one. Right? So I Lop off a letter from s and a lot of the letter from t.  So what else can I do? So I can You know, delete.  so that also costs one and when I delete,  I delete from s and then n. So, this Remains the Same.  and then now you can think about the insertion,  Is an A minus 1, right? Because remember insertion into s is deletion from T. That's why this is n, minus 1.  Okay, and then the result is just going to be a minimum of all these things.  Okay, return result.  Okay. So just and then how do I call this function? A cat?  The cats.  So, let me print out the answer.  Let's see if it works.  okay, now four  Therefore I conclude it works now. I mean if you were doing this you probably want to test this a more but instead of time I'll kind of move on. So let me just kind of refresh. Okay so I'm Computing. This edit distance between two strings and we're going to define a recurrence that works on subproblems where the subproblem is the first M letters of s and the first and letters of t. Up. And the reason I'm using integers instead of strings is to avoid like string copying implementation detail, but it doesn't really matter. So base cases  So you want to reduce your problem to case where it's trivial to solve.  And then we have the last letter matches and then we have the letter, it doesn't match and you have to pay some sort of cost. I don't know which action to take. So I'm going to take them, you know, minimum of all of them.  And then I call it by just calling, you know, recurs  Okay, so this is great, right? So now how we're working thing, let's try another test case.  so, I'm going to make this  So if I do times 10, this basically replicates this string 10 times.  So it's a it's a long string longer string.  Okay, so now I'm going to run it.  Maybe I shouldn't wait for this.  There is a base case, I think it works. But it's what's wrong with this code?  Yes, it's very slow. Why is it slow? Yeah right so I'm recursing Every point recurs is three times so you kind of get this exponential blow-up.  So there's kind of a, how do you solve this problem.  Yeah, you can memo. I think I heard the warm memoized, which is another way to kind of think about memoized. Plus I guess recurrences is dynamic programming, I guess.  so I'm going to show you kind of this way to do it, which is pretty uninvent  And generally I recommend people. Well get the slow version working and then try to make it faster. Don't try to be you know too slick at once.  Okay, so I'm going to make this cache, right? And I'm going to say if MN is in the cache, then I'm going to return whatever's in the cash. So, cash is just the dictionary mapping the key, which is identification of the problem. I'm interested in solving and the result, which is the answer that computed  So if I've already computed it, I don't need a computer again. Just return it  and then, at the end,  If I have to compute it, then I have to put this in the cache. Okay.  So, three lines.  Or four lines, I guess. Yeah.  Yeah, that's a great point. This should be outside of the recursion.  Yeah, glad you guys are paying attention.  Otherwise yeah, it would do basically nothing.  Any other mistakes?  Yeah.  She decorators that like Implement memorizing for you in this class. Are you okay if we use that or would you rather us like make our own in this case?  Um, you can use the decor, you can be found if you want. Yeah, but but I think this is, you know, pretty transparent easy for learning purposes.  Okay, so let's run this.  so now it runs instantaneously as a post to, I actually don't know how long it would have taken otherwise  Okay.  And Sandy check for the is probably the right answer because there's four was original answer I multiply by town.  Okay, any other questions about this?  So this is an example of, you know, kind of basic dynamic programming. Which are you solve a problem trying to formulate as a recurrence of a complicated problem in terms of smaller problems? And like I said before, this is going to kind of show up over and over again in this class. Yeah.  So the question is, why does this reduce redundancy? Is that right? So maybe I can do a kind of pictorial. If you think about, let's say, you have a problem here,  Right. And this gets  you know, reduced to  I'm just making kind of a arbitrary diagram here. So this problem gets reduced to these two and this problem gets reduced to these two and and so on.  Right. So  If you think about, if you didn't have memoization, you would just be pain for the number of paths. Every path is a kind of you have to compute from scratch.  Whereas, if you do memorize Asian, you pay in the number of nodes here, which a lot of this is shared. Like here, you know, once you compute this, no matter if you're coming from here or here, you're kind of using the same value.  Okay, so let's let's move on. so, the second problem,  We're going to talk about.  Is it has to do with continuous optimization and the motivating question here is, how do you do regression, which is a kind of a bread, and butter of, you know, machine learning here.  so,  So, here we go.  Regression.  Okay, so imagine  you get some points.  Okay, so I give you a point.  Which is you know, two four.  And then I give you another Point. Let's say four two.  And so these are data points. You want to say, predict Housing price from, you know, square footage or something like that. You want to predict Health score from, you know, blood pressure and some other things. So this is pretty common in machine learning. And the question is, how do you fit? You know, a line I'm going to kind of consider the case where your line has to go through the origin just for Simplicity. So you might want to like find you know a fit I mean two points is maybe kind of a little bit degenerate but that's the simple example. We're going to work with in general. You have lots of points and you want to fit the line that best kind of is close to the points?  Okay, so how do you do this?  So there's a principle called least Square's, which says well.  If you give me a line which is given in this case by a slope w.  I'm going to tell you how bad this is.  And Badness is measured by looking at all the training points.  And looking at these distances.  Right. So here I have You know, this particular a particular, let's say point you know x i if I hit it with a W, then I get basically the you know the y-intercept here, not the y-intercept but like the Y value here. That's my prediction. The real value was, you know, why I, which is up here.  And so, if I look at the difference, I want a difference to be 0.  Right? So, in least squares, I Square this. And I say, I want this to be a smallest possible.  Right now, this is only for one point. So I'm going to look at all the points. Let's suppose I have endpoints and that's  A function that I'm going to call F of w.  Which basically says for a given.  Weight factor which is a slope give you a number of that characterizes how bad of a fit. This is where zero means that. I fit everything perfectly and large numbers mean that I fit.  Okay.  All right, so that's no regression. So how do I solve a regression problem? How do I optimize this?  Can you do this in your head? So if I actually had these two points, which at WB,  Okay. It doesn't matter. We'll compute it.  So how do I go about doing this?  so, one principle, which is maybe another General, takeaway is abstract away the details,  right? This is also true with the dynamic program. But sometimes, you know, you get if you're too close to boring and you're looking at, oh man, this these points are here and I need to fit this slide. You know, how do I do that? You kind of get kind of a little bit stuck.  But why don't we think about this F as say, some function I don't really care about what it is.  Let's plot this function.  Okay, so now this is a different plot. Now this is a the weight and this is f of w.  Always label your axes and let's say this function, looks like this. Okay, so which means that for this slope, I pay, you know, this amount for this slope, I pay this amount and so on.  And what do I want to do? I want to minimize F of w which means I want to find the W which  Has the least value of f of w.  Right.  Question.  Okay, so you take the derivative so what is the derivative give you?  It tells you where to move, right? So if you look over here,  So you can't in general. You might not be able to get there directly in this actually particular case you can because you can solve them in closed form, but I'm going to try to be more General. So if you start here this, this derivative tells you. Well, the function is decreasing, if you move to the right, so then you should move to a right? Whereas over here, if you end up over here, the derivative says, the function is decreasing if you move to the left, so you move to the left.  alright, so what I'm going to  Introduce is this album called gradient descent. It's a very simple algorithm.  Basically says start with some.  Place. And then compute the derivative and just follow your nose, right? If the derivative says, it's negative and just go this way. And now you're on a new Point, new compute, the derivative again, you descend, and now you compute it again and then maybe you compute the derivatives as keep on going this way, maybe overshoot and then you come back and then, you know, hopefully you'll end up kind of at the minimum  Okay.  so, let's try to  see what this looks like in code.  So, gradient descent is, you know, one of the simplest algorithms, but it really underlies, essentially, all the algorithms that you people use a machine learning. So let's do points. We have two points here.  I'm not going to Define.  Some functions.  Okay, so F of w.  So what is this function?  So I'm going to sum over all the different, you know, and basically at this point is converting math into python. So I'm going to look at all the Some points.  so for every XY what the model predicts is W Times x minus y and if I square that that's going to be the  error that it get on that point.  And then, if I sum over all these errors, then I get my objective function.  Okay.  array of  Yeah. So you can put a ray here if you want but it doesn't matter. It's actually fine.  okay, so now I need to compute the derivative  So how do you compute the derivative? So if your Calculus is a little bit Rusty, you might want to brush up on that. So what's the derivative? Remember we're taking a derivative with respect to W, right? There's a lot of symbols here. Always remember what you're taking the derivative with respect to  Okay, so derivative of the sum is the sum of the derivative.  So now I need to take the derivative of this.  Right. And what's the derivative of this?  While something squared, you bring the two down here. And now you multiply by the derivative of this And what's the derivative of this?  Should be X.  Right? Because this is a why this is a constant and W. Derivative W Times x with respect to W is X.  Okay, so that's it.  Okay. So now let's do gradient descent. That's a nice lies with W, = 0 and then I'm going to just, you know, just iterate 100 times. Normally you would set some sort of stopping condition but let's just keep it simple for now.  okay, so for every moment I'm going to have a w  I can compute the value of the function and I'll take the gradient of the derivative gradient. Just means derivative and higher to Dimensions, which will want later.  Okay.  And then, what do I do?  I take W and I subtract the gradient.  Okay.  So remember.  okay, I'll be out of  yes. So I  Take the gradient. Remember I want to have the gradient, gradient tells me where the function is increasing. So I want to move in the opposite direction and 8 is just going to be this step size to keep things under control. We'll talk more about next time. Okay, so now I want to do Purnell, what's going on here. So, iteration,  print out the function, and  T value. Okay.  All right, so let's compute the gradient.  And you can see that the iteration we first start out with W goes 0. Then it moves to point three and then it moves to point. Seven nine, nine nine nine nine and then they're looks like it's converging to 0.8 and meanwhile the function value is going down from 20 to 27.2, which happens to be the optimal answer. So the correct answer here is pointing  Okay, so that's it. Next time, we're going to keep  We're going to start on the machine learning lecture.",
+  "transcribed_at": "2025-12-04T00:56:43.923Z"
+}

@@ -1,13 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
 import * as fs from "fs";
 import * as path from "path";
-import { zodToGeminiSchema } from "../../lib/gemini-utils.js";
+import { zodToGeminiSchema } from "../../lib/gemini-utils";
 import {
   audioTranscriptSchema,
   conceptGraphSchema,
   type AudioTranscript,
   type ConceptGraph,
-} from "./types.js";
+} from "./types";
 
 // ============================================================================
 // Prompt Construction
@@ -16,13 +16,11 @@ import {
 function buildPrompt(transcript: string, videoDuration: number, videoId: string): string {
   return `You are an expert at analyzing educational programming tutorials and extracting pedagogical concept graphs.
 
-Analyze this 3-hour programming tutorial transcript and extract 20-30 salient PEDAGOGICAL concepts that are taught in depth.
+Analyze this educational video transcript and extract 20-30 salient PEDAGOGICAL concepts that are taught in depth.
 
 IMPORTANT DISTINCTIONS:
 - ✅ Extract concepts that are TAUGHT DEEPLY (explained, demonstrated, implemented)
 - ❌ Ignore tools that are merely MENTIONED IN PASSING (VS Code, terminal commands, etc.)
-- ✅ "Attention Mechanism" - taught over 30 minutes with theory + implementation
-- ❌ "Git" - mentioned once as a tool used incidentally
 
 For each concept:
 1. **Precise pedagogical description** - What is being taught, not just named
@@ -34,17 +32,25 @@ Guidelines:
 - Distinguish between "core concepts" and "implementation details"
 - Look for concepts that span multiple segments (theory → implementation → examples)
 - Use snake_case for IDs (e.g., "attention_mechanism")
+- Extract the video title and author/instructor name from the transcript content itself
 
 Video Details:
 - Duration: ${Math.floor(videoDuration)} seconds (${Math.floor(videoDuration / 60)} minutes)
 - Video ID: ${videoId}
-- Title: "Let's build GPT: from scratch, in code, spelled out"
-- Author: "Andrej Karpathy"
 
 TRANSCRIPT:
 ${transcript}
 
-Return a complete concept graph with metadata and 20-30 pedagogical concepts.`;
+Return a complete concept graph with metadata including:
+- title: Extract the actual video title from the transcript
+- author: Extract the instructor/presenter name from the transcript
+- source: "YouTube"
+- video_id: "${videoId}"
+- total_duration: ${Math.floor(videoDuration)}
+- total_concepts: (number of concepts extracted)
+- extracted_at: (timestamp will be added automatically)
+
+And 20-30 pedagogical concepts as nodes.`;
 }
 
 // ============================================================================

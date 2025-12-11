@@ -2,17 +2,18 @@ import fs from 'fs';
 import path from 'path';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { z } from 'zod';
-import { zodToGeminiSchema } from '../../lib/gemini-utils.js';
+import { zodToGeminiSchema } from '../../lib/gemini-utils';
 import {
   conceptMappingSchema,
   videoAnalysisSchema,
   conceptGraphSchema,
+  audioTranscriptSchema,
   type ConceptMapping,
   type VideoSegment,
   type MappedSegment,
   type ConceptGraph,
   type VideoAnalysis,
-} from './types.js';
+} from './types';
 
 // Batch mapping schema for processing multiple segments at once
 const batchMappingSchema = z.object({
@@ -25,13 +26,45 @@ const batchMappingSchema = z.object({
   }))
 });
 
-function loadVideoAnalysis(videoId: string): VideoAnalysis {
+function loadVideoAnalysis(videoId: string): VideoAnalysis | null {
   const analysisPath = path.join(
     process.cwd(),
     `youtube/${videoId}/video-analysis.json`
   );
+  if (!fs.existsSync(analysisPath)) {
+    return null;
+  }
   const raw = JSON.parse(fs.readFileSync(analysisPath, 'utf-8'));
   return videoAnalysisSchema.parse(raw);
+}
+
+function loadTranscript(videoId: string): any {
+  const transcriptPath = path.join(
+    process.cwd(),
+    `youtube/${videoId}/audio-transcript.json`
+  );
+  const raw = JSON.parse(fs.readFileSync(transcriptPath, 'utf-8'));
+  return audioTranscriptSchema.parse(raw);
+}
+
+// Convert transcript segments to VideoSegment format for compatibility
+function transcriptToVideoSegments(transcript: any): VideoSegment[] {
+  return transcript.segments.map((seg: any, idx: number) => ({
+    segment_index: idx,
+    timestamp: seg.start,
+    audio_text: seg.text,
+    audio_start: seg.start,
+    audio_end: seg.end,
+    frame_path: '', // Not available from transcript
+    analysis: {
+      visual_description: '', // Not available from transcript
+      code_content: undefined, // Not available from transcript
+      slide_content: undefined, // Not available from transcript
+      visual_audio_alignment: 'highly_relevant' as const,
+      key_concepts: [],
+      is_code_readable: false,
+    },
+  }));
 }
 
 function loadConceptGraph(videoId: string): ConceptGraph {
@@ -51,7 +84,7 @@ function buildConceptList(conceptGraph: ConceptGraph): string {
 
 function buildBatchMappingPrompt(segments: VideoSegment[], conceptList: string): string {
   const segmentDescriptions = segments.map(seg => {
-    const hasCode = seg.analysis.code_content && seg.analysis.code_content.trim().length > 0;
+    const hasCode = seg.analysis?.code_content && seg.analysis.code_content.trim().length > 0;
     return `
 Segment ${seg.segment_index} at ${formatTime(seg.timestamp)}:
 Audio: "${seg.audio_text}"
@@ -234,7 +267,18 @@ async function mapSegmentsToConcepts(videoId: string): Promise<void> {
   const videoAnalysis = loadVideoAnalysis(videoId);
   const conceptGraph = loadConceptGraph(videoId);
   
-  console.log(`   ✓ Loaded ${videoAnalysis.results.length} segments`);
+  // Use video analysis if available, otherwise use transcript
+  let segments: VideoSegment[];
+  if (videoAnalysis) {
+    console.log(`   ✓ Using video analysis with ${videoAnalysis.results.length} segments`);
+    segments = videoAnalysis.results;
+  } else {
+    console.log(`   ⚠️  Video analysis not found, using transcript instead`);
+    const transcript = loadTranscript(videoId);
+    segments = transcriptToVideoSegments(transcript);
+    console.log(`   ✓ Loaded ${segments.length} segments from transcript`);
+  }
+  
   console.log(`   ✓ Loaded ${conceptGraph.nodes.length} concepts\n`);
   
   // 2. Build concept list for prompt
@@ -255,8 +299,8 @@ async function mapSegmentsToConcepts(videoId: string): Promise<void> {
   const batches: VideoSegment[][] = [];
   
   // Create batches
-  for (let i = 0; i < videoAnalysis.results.length; i += BATCH_SIZE) {
-    batches.push(videoAnalysis.results.slice(i, i + BATCH_SIZE));
+  for (let i = 0; i < segments.length; i += BATCH_SIZE) {
+    batches.push(segments.slice(i, i + BATCH_SIZE));
   }
   
   console.log(`   Total batches: ${batches.length}\n`);

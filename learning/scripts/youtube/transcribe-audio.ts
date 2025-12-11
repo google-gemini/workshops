@@ -71,9 +71,9 @@ async function transcribeAudio(audioFile: string): Promise<TranscriptResult> {
   let audioUri: string | undefined;
   let audioContent: Buffer | undefined;
   
-  // Force batch mode for all files (testing batch code path)
-  if (fileSizeMB > 0) {
-    console.log(`🧪 Forcing batch mode for testing...\n`);
+  // Use GCS for files > 10MB (API limit)
+  if (fileSizeMB > 10) {
+    console.log(`📦 File too large for inline upload, using GCS...\n`);
     audioUri = await uploadToGCS(audioFile, projectId);
   } else {
     console.log(`✅ File size OK for direct upload\n`);
