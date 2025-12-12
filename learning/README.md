@@ -98,9 +98,39 @@ learning/
 └── NOTES.md                     # Detailed design documentation
 ```
 
-## Getting Started
 
-### Prerequisites
+### 🚀 Quick Start with GitHub Codespaces
+
+The fastest way to get started is using GitHub Codespaces - no local setup required!
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/google-gemini/workshops)
+
+1. **Open in Codespaces**
+   - Navigate to the [workshops repository](https://github.com/google-gemini/workshops)
+   - Click **Code** → **Codespaces** → **Create codespace on main**
+   - Wait for the environment to initialize (~2-3 minutes)
+
+2. **Set up your API key**
+   ```bash
+   # A .env.local file is automatically created for you when the Codespace starts.
+   # Edit .env.local and add your GOOGLE_API_KEY from https://aistudio.google.com/app/apikey
+   ```
+
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open the app**
+   - VSCode will show a notification to open the forwarded port
+   - Click **Open in Browser** or navigate to the **Ports** tab
+
+That's it! The application is now running in your browser. 🎉
+
+---
+
+### Prerequisites (Local Development)
+
 
 - Node.js 18+ and npm
 - Google API Key with access to Gemini API
