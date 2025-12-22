@@ -1371,9 +1371,9 @@ markupsafe==2.1.5 \
     --hash=sha256:fce659a462a1be54d2ffcacea5e3ba2d74daa74f30f5f143fe0c58636e355fdd \
     --hash=sha256:ffee1f21e5ef0d712f9033568f8344d5da8cc2869dbd08d87c84656e6a2d2f68
     # via mako
-marshmallow==3.21.2 \
-    --hash=sha256:70b54a6282f4704d12c0a41599682c5c5450e843b9ec406308653b47c59648a1 \
-    --hash=sha256:82408deadd8b33d56338d2182d455db632c6313aa2af61916672146bb32edc56
+marshmallow==3.26.2 \
+    --hash=sha256:013fa8a3c4c276c24d26d84ce934dc964e2aa794345a0f8c7e5a7191482c8a73 \
+    --hash=sha256:bbe2adb5a03e6e3571b573f42527c6fe926e17467833660bebd11593ab8dfd57
     # via dataclasses-json
 matplotlib==3.9.0 \
     --hash=sha256:063af8587fceeac13b0936c42a2b6c732c2ab1c98d38abc3337e430e1ff75e38 \
