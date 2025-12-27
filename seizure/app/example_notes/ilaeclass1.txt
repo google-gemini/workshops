@@ -1,0 +1,65 @@
+**_This is a fictional clinical note for illustrative purposes only. It does not contain real patient information or PHI._**
+
+EPILEPSY CLINIC FOLLOW-UP NOTE
+
+Date: November 18, 2024
+Time: 10:30 AM
+
+PATIENT IDENTIFICATION
+Name: Sarah Johnson
+DOB: 03/15/1990
+MRN: 123456789
+
+CHIEF COMPLAINT
+Routine follow-up for epilepsy management
+
+HISTORY OF PRESENT ILLNESS
+34-year-old female with history of focal epilepsy s/p left temporal lobectomy in 2022 presents for routine follow-up. Patient reports complete seizure freedom since surgery. No auras. No episodes of loss of consciousness, automatisms, or focal aware sensory phenomena. Maintains regular sleep schedule. Medication compliance is excellent with no missed doses.
+
+CURRENT MEDICATIONS
+- Levetiracetam 1000mg BID
+- Lamotrigine 200mg BID
+
+REVIEW OF SYSTEMS
+- Constitutional: Denies fatigue, sleep problems
+- Neurological: No headaches, no dizziness, no focal deficits
+- Psychiatric: Good mood, no depression or anxiety
+- All other systems reviewed and negative
+
+PHYSICAL EXAMINATION
+Vital Signs: BP 118/76, HR 72, RR 16, T 98.6°F
+General: Well-appearing, alert and oriented x3
+Neurological:
+- Mental Status: Clear, fluent speech
+- Cranial Nerves: II-XII intact
+- Motor: 5/5 strength throughout
+- Sensory: Intact to light touch
+- Cerebellar: Normal finger-to-nose
+- Gait: Normal, steady
+
+LABORATORY/DIAGNOSTIC STUDIES
+- Recent AED levels within therapeutic range
+- Last EEG (3 months ago): No epileptiform abnormalities
+
+ASSESSMENT
+1. Focal Epilepsy (ICD-10: G40.209)
+   - Post-left temporal lobectomy
+   - ILAE Outcome Class 1 (completely seizure free, no auras)
+   - Excellent medication compliance
+   - Stable on current AED regimen
+
+PLAN
+1. Continue current AED regimen unchanged
+2. Continue driving (meets local regulations for seizure-free duration)
+3. Maintain regular sleep schedule and lifestyle modifications
+4. Return to clinic in 6 months
+5. Obtain repeat AED levels prior to next visit
+6. Call if any seizure activity or concerning symptoms develop
+
+Patient understands and agrees with plan.
+
+___________________________
+Dr. Michael Chen, MD
+Epileptologist
+Board Certified in Neurology
+Time spent: 30 minutes

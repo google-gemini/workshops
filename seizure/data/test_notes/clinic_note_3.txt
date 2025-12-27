@@ -1,0 +1,76 @@
+Epilepsy Surgery Clinic Note
+Date: November 17, 2024
+Patient: Ms. Emily Watson
+Age: 32 years
+Hospital Number: 87654321
+Referring Physician: Dr. Robert Johnson, Neurology
+
+Reason for Review:
+Post-operative follow-up after right anterior temporal lobectomy for drug-resistant epilepsy.
+
+Diagnosis:
+- Pre-surgical: Drug-resistant focal epilepsy with confirmed right temporal lobe seizure onset.
+- Post-surgical: Focal epilepsy, post-resection, with ongoing seizures but significantly reduced frequency.
+
+History:
+Current Antiepileptic Medication:
+Lacosamide 200 mg twice daily, well-tolerated without significant side effects.
+
+Previous Antiepileptic Medications:
+- Levetiracetam: Discontinued in 2019 due to mood changes and inadequate seizure control.
+- Valproic acid: Discontinued in 2020 due to weight gain and tremors.
+- Oxcarbazepine: Discontinued in 2021 due to hyponatremia and suboptimal seizure control.
+
+Pre-Surgical Seizure History:
+- Auras: Experienced an aura of a rising epigastric sensation preceding her seizures.
+- Seizure Frequency Pre-Surgery: Approximately 120 days per year with seizures.
+- Seizure Type: Focal impaired awareness seizures with occasional secondary generalization.
+- Childhood History: No history of febrile or other childhood seizures.
+- Family History: No known family history of epilepsy or neurological disorders.
+
+Surgical History:
+- Surgery Date: May 5, 2023.
+- Procedure: Right anterior temporal lobectomy.
+- Intraoperative Findings: Resected area included the right hippocampus and anterior temporal cortex, with pathology confirming focal cortical dysplasia.
+- Post-operative Course: Complicated by a small subdural hematoma, managed conservatively without surgical intervention. No other complications.
+
+Post-Surgical Seizure Status:
+- Seizure Frequency Post-Surgery: Approximately 30 days per year with seizures, a significant reduction from pre-surgical frequency.
+- Functional Outcomes: Able to resume part-time work as a graphic designer, but unable to drive due to ongoing seizures.
+
+Investigations:
+Pre-surgical Workup:
+- MRI (2022): Demonstrated right mesial temporal sclerosis with cortical dysplasia in the right anterior temporal lobe.
+- Video EEG Monitoring (2022): Recorded eight clinical seizures, all with onset in the right temporal lobe. Two events showed secondary generalization.
+- Neuropsychological Assessment: Mild impairment in visuospatial abilities consistent with right temporal dysfunction.
+- PET Scan (2022): Hypometabolism localized to the right temporal lobe, supporting focal epilepsy diagnosis.
+
+Post-surgical Investigations:
+- MRI (2023): Post-resection changes in the right anterior temporal lobe, with a small subdural hematoma that resolved on subsequent imaging.
+- EEG (2023): Persistent epileptiform discharges arising from the right temporal region.
+
+Clinical Assessment:
+Ms. Watson was seen in the epilepsy clinic today for her routine post-surgical follow-up. She reports ongoing seizures, although significantly less frequent than before her surgery. Her seizures are preceded by her typical aura of a rising epigastric sensation, followed by impaired awareness and occasional generalization. She reports no significant side effects from her current medication, lacosamide.
+
+Neurological examination was unremarkable, with no focal deficits. Cognitive testing in clinic revealed no significant changes in memory or attention compared to her pre-surgical neuropsychological assessment. Physical examination, including gait and coordination, was normal.
+
+Discussion and Plan:
+I discussed with Ms. Watson the positive outcome of her surgery, with a substantial reduction in seizure frequency, although not complete seizure freedom. We reviewed her current treatment regimen and the importance of strict medication adherence. The following key points were emphasized:
+1. Continuation of lacosamide to maintain seizure control.
+2. Lifestyle modifications, including adequate sleep, regular meals, stress management, and avoiding known triggers such as excessive alcohol.
+3. The ongoing risk of seizures and the potential need for further treatment adjustments or alternative therapies if seizures persist.
+4. The risk of sudden unexpected death in epilepsy (SUDEP), which remains elevated due to her ongoing seizures.
+
+We discussed the possibility of adding or switching to a different antiepileptic medication if her seizures continue at the current frequency. I emphasized the need for close monitoring and follow-up to assess her response to any treatment changes.
+
+Follow-up Plan:
+- Follow-up in 6 months to re-evaluate seizure control and consider treatment adjustments if needed.
+- Referral to neuropsychology for repeat cognitive testing in 2025 to assess long-term memory outcomes post-surgery.
+- Counseling on driving restrictions due to ongoing seizures and the need to meet seizure-free guidelines before resuming driving.
+
+Ms. Watson expressed her understanding of the current situation and her willingness to continue working closely with the epilepsy team to optimize her treatment. She understands she can contact the clinic if her seizures worsen or if she has any other concerns.
+
+Signed:
+[Your Name, MD]
+Consultant Epileptologist
+[Hospital Name]

@@ -1,0 +1,72 @@
+Epilepsy Surgery Clinic Note
+Date: November 17, 2024
+Patient: Ms. Emily Watkins
+Age: 32 years
+Hospital Number: 87654321
+Referring Physician: Dr. Robert Jones, Neurology
+
+Reason for Review:
+Post-operative follow-up after right anterior temporal lobectomy for drug-resistant epilepsy.
+
+Diagnosis:
+- Pre-surgical: Drug-resistant focal epilepsy with confirmed right temporal lobe seizure onset.
+- Post-surgical: Focal epilepsy, post-resection, seizure-free since March 2024 surgery.
+
+History:
+Current Antiepileptic Medication:
+Lamotrigine 200 mg twice daily, well-tolerated without side effects.
+
+Previous Antiepileptic Medications:
+- Levetiracetam: Discontinued in 2019 due to mood disturbances and inadequate seizure control.
+- Valproic acid: Discontinued in 2021 due to weight gain and tremor.
+
+Pre-Surgical Seizure History:
+- First Seizures (2016): Experienced several focal impaired awareness seizures with auras of rising epigastric sensation and déjà vu. Seizures would progress to impaired awareness and automatisms like lip-smacking and hand fumbling.
+- "Absence-like" Episodes (2016–2024): Multiple daily episodes of staring and unresponsiveness lasting 10–30 seconds, often preceded by aura of déjà vu.
+- Childhood History: No seizures or neurological disorders in childhood.
+- Family History: No family history of epilepsy or neurological conditions.
+
+Surgical History:
+- Surgery Date: March 10, 2024.
+- Procedure: Right anterior temporal lobectomy.
+- Intraoperative Findings: Resected area included the right hippocampus and anterior temporal cortex, with pathology confirming focal cortical dysplasia.
+- Post-operative Course: Uncomplicated recovery, with no neurological deficits or infections.
+
+Post-Surgical Seizure Status:
+- Seizure-Free Period: 8 months since surgery.
+- Functional Outcomes: Resumed part-time work as a teacher in July 2024 and hopes to return to full-time in the near future.
+
+Investigations:
+Pre-surgical Workup:
+- MRI (2023): Demonstrated right mesial temporal focal cortical dysplasia, no other structural abnormalities.
+- Video EEG Monitoring (2023): Recorded eight clinical seizures, all with onset in the right temporal lobe. No secondary generalization observed.
+- Neuropsychological Assessment: Mild impairment in visual-spatial memory consistent with right temporal dysfunction.
+- PET Scan (2023): Hypometabolism localized to the right temporal lobe, supporting focal epilepsy diagnosis.
+
+Post-surgical Investigations:
+- MRI (2024): Post-resection changes in the right anterior temporal lobe without evidence of residual or new pathology.
+- EEG (2024): Normal background activity without epileptiform discharges.
+
+Clinical Assessment:
+Ms. Watkins was seen in the epilepsy clinic today for her routine post-surgical follow-up. She reports no seizures, auras, or staring spells since her surgery. She has experienced no medication side effects and feels well overall. She has returned to part-time work as a teacher and hopes to increase her hours soon. Her sleep quality and mood are good, and she denies symptoms of anxiety or depression.
+
+Neurological examination was unremarkable, with no focal deficits. Cognitive testing in clinic revealed no changes in memory or attention since the pre-surgical neuropsychological assessment. Physical examination, including gait and coordination, was normal.
+
+Discussion and Plan:
+I congratulated Ms. Watkins on her excellent post-surgical outcome and discussed the importance of maintaining her current treatment regimen. She was counseled on the ongoing, albeit reduced, risk of seizure recurrence even after successful surgery. The following key points were emphasized:
+1. Long-term continuation of lamotrigine to minimize the risk of recurrence.
+2. Lifestyle modifications, including adequate sleep, regular meals, stress management, and avoiding known triggers such as excessive alcohol.
+3. The rare but serious risk of sudden unexpected death in epilepsy (SUDEP), which is significantly lower given her seizure freedom.
+
+We discussed her prognosis, including the likelihood of sustained seizure freedom and potential medication tapering in the distant future if seizure freedom persists. I emphasized the need for close monitoring before any changes are made to her treatment.
+
+Follow-up Plan:
+- Routine follow-up in 6 months, or sooner if symptoms recur or if she has questions.
+- Referral to neuropsychology for repeat cognitive testing in 2025 to assess long-term memory outcomes post-surgery.
+
+Ms. Watkins expressed her satisfaction with her care and stated she feels optimistic about her quality of life moving forward. She understands she can contact the clinic if needed.
+
+Signed:
+[Your Name, MD]
+Consultant Epileptologist
+[Hospital Name]

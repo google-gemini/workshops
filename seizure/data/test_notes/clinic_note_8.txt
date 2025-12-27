@@ -1,0 +1,77 @@
+Epilepsy Surgery Clinic Note
+Date: November 17, 2024
+Patient: Ms. Emily Richards
+Age: 32 years
+Hospital Number: 87654321
+Referring Physician: Dr. Robert Anderson, Neurology
+
+Reason for Review:
+Post-operative follow-up after right anterior temporal lobectomy for drug-resistant epilepsy.
+
+Diagnosis:
+- Pre-surgical: Drug-resistant focal epilepsy with confirmed right temporal lobe seizure onset.
+- Post-surgical: Focal epilepsy, post-resection, with rare seizures since March 2024 surgery.
+
+History:
+Current Antiepileptic Medication:
+Lacosamide 200 mg twice daily, well-tolerated with mild dizziness.
+
+Previous Antiepileptic Medications:
+- Levetiracetam: Discontinued in 2018 due to irritability and inadequate seizure control.
+- Valproic acid: Discontinued in 2020 due to weight gain and tremor.
+
+Pre-Surgical Seizure History:
+- Auras (2016–2024): Experienced recurrent auras of an intense déjà vu sensation and nausea lasting 30–60 seconds, often preceding seizures.
+- Focal Impaired Awareness Seizures (2016–2024): Weekly episodes of staring, lip-smacking, and unresponsiveness lasting 1–2 minutes. Ms. Richards was sometimes aware of these events.
+- Generalized Tonic-Clonic Seizures (2016–2024): Occurred approximately 120 days per year, often following auras or focal seizures. Postictal confusion lasting up to 2 hours.
+- Childhood History: No febrile seizures or other neurological issues.
+- Family History: Paternal uncle with epilepsy of unknown etiology.
+
+Surgical History:
+- Surgery Date: March 18, 2024.
+- Procedure: Right anterior temporal lobectomy.
+- Intraoperative Findings: Resected area included the right hippocampus and anterior temporal cortex, with pathology confirming focal cortical dysplasia.
+- Post-operative Course: Uncomplicated recovery, with mild word-finding difficulties that resolved within 2 months.
+
+Post-Surgical Seizure Status:
+- Seizure Frequency: Rare focal impaired awareness seizures, approximately 10 days per year since surgery.
+- Auras: Persistent déjà vu auras occurring 1–2 times per month, occasionally preceding seizures.
+- Functional Outcomes: Resumed part-time work as a graphic designer in July 2024. Driving privileges reinstated in September 2024.
+
+Investigations:
+Pre-surgical Workup:
+- MRI (2023): Demonstrated right mesial temporal cortical dysplasia, no other structural abnormalities.
+- Video EEG Monitoring (2023): Recorded eight clinical seizures, all with onset in the right temporal lobe. Three seizures generalized.
+- Neuropsychological Assessment: Mild impairment in visual memory consistent with right temporal dysfunction.
+- PET Scan (2023): Hypometabolism localized to the right temporal lobe, supporting focal epilepsy diagnosis.
+
+Post-surgical Investigations:
+- MRI (2024): Post-resection changes in the right anterior temporal lobe without evidence of residual or new pathology.
+- EEG (2024): Rare epileptiform discharges over the right temporal region, consistent with residual epilepsy.
+
+Clinical Assessment:
+Ms. Richards was seen in the epilepsy clinic today for her routine post-surgical follow-up. She reports a significant reduction in seizure frequency since her surgery, with rare focal impaired awareness seizures occurring approximately 10 days per year. She continues to experience déjà vu auras 1–2 times per month, occasionally preceding seizures. She denies any generalized tonic-clonic seizures since surgery.
+
+She reports mild persistent word-finding difficulties but denies other cognitive issues. Her sleep quality and mood are good, and she denies symptoms of anxiety or depression. She has experienced mild dizziness attributed to her lacosamide medication.
+
+Neurological examination was unremarkable, with no focal deficits. Cognitive testing in clinic revealed mild word-finding difficulties consistent with her self-report. Physical examination, including gait and coordination, was normal.
+
+Discussion and Plan:
+I discussed Ms. Richards' overall positive post-surgical outcome, with a significant reduction in seizure frequency and no generalized tonic-clonic seizures since her surgery. However, I emphasized the importance of maintaining her current treatment regimen given the persistence of focal seizures and auras. The following key points were discussed:
+
+1. Long-term continuation of lacosamide to minimize the risk of seizure recurrence.
+2. Lifestyle modifications, including adequate sleep, regular meals, stress management, and avoiding known triggers such as excessive alcohol.
+3. The ongoing risk of sudden unexpected death in epilepsy (SUDEP), although lower than her pre-surgical risk.
+
+We discussed her prognosis, including the possibility of further seizure freedom with time and the potential for medication tapering in the future if seizure freedom persists for an extended period. I emphasized the need for close monitoring before any changes are made to her treatment.
+
+Follow-up Plan:
+- Routine follow-up in 6 months, or sooner if symptoms worsen or if she has questions.
+- Referral to neuropsychology for repeat cognitive testing in 2025 to assess long-term memory outcomes post-surgery.
+
+Ms. Richards expressed her satisfaction with her care and stated she feels optimistic about her quality of life moving forward. She understands she can contact the clinic if needed.
+
+Signed:
+[Your Name, MD]
+Consultant Epileptologist
+[Hospital Name]

@@ -1,0 +1,75 @@
+Epilepsy Surgery Clinic Note
+Date: November 17, 2024
+Patient: Ms. Emily Richards
+Age: 32 years
+Hospital Number: 87654321
+Referring Physician: Dr. Robert Johnson, Neurology
+
+Reason for Review:
+Post-operative follow-up after right anterior temporal lobectomy for drug-resistant epilepsy.
+
+Diagnosis:
+- Pre-surgical: Drug-resistant focal epilepsy with confirmed right temporal lobe seizure onset.
+- Post-surgical: Focal epilepsy, post-resection, with significant reduction in seizure frequency.
+
+History:
+Current Antiepileptic Medication:
+Lamotrigine 300 mg daily, Levetiracetam 1000 mg twice daily, both well-tolerated.
+
+Previous Antiepileptic Medications:
+- Carbamazepine: Discontinued in 2018 due to adverse effects (dizziness, nausea).
+- Valproic acid: Discontinued in 2020 due to weight gain and suboptimal seizure control.
+
+Pre-Surgical Seizure History:
+- Auras: Experienced an intense déjà vu sensation, lasting 30-60 seconds, preceding many of her seizures.
+- Seizure Frequency Pre-Surgery: Approximately 120 days per year with seizures, often occurring in clusters.
+- Seizure Types: Complex partial seizures with impaired awareness, occasional secondary generalization.
+- Childhood History: No significant medical history until seizure onset at age 14.
+- Family History: No known family history of epilepsy or neurological disorders.
+
+Surgical History:
+- Surgery Date: May 20, 2024.
+- Procedure: Right anterior temporal lobectomy.
+- Intraoperative Findings: Resected area included the right hippocampus and anterior temporal cortex, with pathology confirming hippocampal sclerosis.
+- Post-operative Course: Uncomplicated recovery, with no neurological deficits or infections.
+
+Post-Surgical Seizure Status:
+- Seizure Frequency Post-Surgery: Approximately 20 days per year with seizures, a significant improvement.
+- Current Seizure Freedom: Seizure-free for the past 3 months.
+- Functional Outcomes: Resumed part-time work as a graphic designer in September 2024.
+
+Investigations:
+Pre-surgical Workup:
+- MRI (2023): Demonstrated right mesial temporal sclerosis with hippocampal atrophy, no other structural abnormalities.
+- Video EEG Monitoring (2023): Recorded multiple clinical seizures, all with onset in the right temporal lobe. No secondary generalization observed.
+- Neuropsychological Assessment: Mild impairment in visuospatial abilities consistent with right temporal dysfunction.
+- PET Scan (2023): Hypometabolism localized to the right temporal lobe, supporting focal epilepsy diagnosis.
+
+Post-surgical Investigations:
+- MRI (2024): Post-resection changes in the right anterior temporal lobe without evidence of residual or new pathology.
+- EEG (2024): Mild background slowing over the right temporal region, without epileptiform discharges.
+
+Clinical Assessment:
+Ms. Richards was seen in the epilepsy clinic today for her routine post-surgical follow-up. She reports a significant reduction in seizure frequency since her surgery, with only a few brief episodes of impaired awareness over the past 6 months. She has been seizure-free for the past 3 months. She denies any medication side effects and feels her overall quality of life has improved.
+
+Neurological examination was unremarkable, with no focal deficits. Cognitive testing in clinic revealed mild impairments in visuospatial abilities consistent with her pre-surgical assessment. Physical examination, including gait and coordination, was normal.
+
+Discussion and Plan:
+I commended Ms. Richards on her positive post-surgical outcome and discussed the importance of maintaining her current treatment regimen. We reviewed the following key points:
+1. Continuation of lamotrigine and levetiracetam to maintain seizure control.
+2. Lifestyle modifications, including adequate sleep, regular meals, stress management, and avoiding known triggers such as excessive alcohol.
+3. The ongoing, albeit reduced, risk of seizure recurrence even after successful surgery.
+4. The rare but serious risk of sudden unexpected death in epilepsy (SUDEP), which is lower given her improved seizure control.
+
+We discussed her prognosis, including the potential for further seizure reduction or complete freedom with time. I emphasized the need for close monitoring before considering any medication adjustments.
+
+Follow-up Plan:
+- Routine follow-up in 6 months, or sooner if symptoms recur or if she has questions.
+- Referral to neuropsychology for repeat cognitive testing in 2025 to assess long-term memory and visuospatial outcomes post-surgery.
+
+Ms. Richards expressed her satisfaction with her care and stated she feels optimistic about her quality of life moving forward. She understands she can contact the clinic if needed.
+
+Signed:
+[Your Name, MD]
+Consultant Epileptologist
+[Hospital Name]

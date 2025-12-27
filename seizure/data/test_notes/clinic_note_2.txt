@@ -1,0 +1,76 @@
+Epilepsy Surgery Clinic Note
+Date: November 17, 2024
+Patient: Ms. Emily Callahan
+Age: 32 years
+Hospital Number: 87654321
+Referring Physician: Dr. Robert Johnson, Neurology
+
+Reason for Review:
+Post-operative follow-up after right anterior temporal lobectomy for drug-resistant epilepsy.
+
+Diagnosis:
+- Pre-surgical: Drug-resistant focal epilepsy with confirmed right temporal lobe seizure onset.
+- Post-surgical: Focal epilepsy, post-resection, with ongoing seizures but reduced frequency.
+
+History:
+Current Antiepileptic Medication:
+Lacosamide 200 mg twice daily, well-tolerated.
+
+Previous Antiepileptic Medications:
+- Levetiracetam: Discontinued in 2019 due to behavioral side effects and suboptimal seizure control.
+- Valproic acid: Discontinued in 2020 due to weight gain and tremor.
+
+Pre-Surgical Seizure History:
+- Auras: Reported an intense déjà vu feeling lasting 30-60 seconds before some seizures.
+- Seizure Frequency: Approximately 120 days per year with seizures prior to surgery.
+- Seizure Types: Focal impaired awareness seizures with staring and automatisms, occasionally evolving to bilateral tonic-clonic seizures.
+- Childhood History: No seizures or neurological issues in childhood.
+- Family History: Paternal aunt with a history of febrile seizures in childhood.
+
+Surgical History:
+- Surgery Date: March 22, 2024.
+- Procedure: Right anterior temporal lobectomy.
+- Intraoperative Findings: Resected area included the right hippocampus and anterior temporal cortex, with pathology showing focal cortical dysplasia.
+- Post-operative Course: Uncomplicated recovery, with no neurological deficits or infections.
+
+Post-Surgical Seizure Status:
+- Seizure Frequency: Approximately 30 days per year with seizures after surgery, a significant reduction from pre-operative levels.
+- Current Seizure Freedom: No seizures in the past 4 months.
+- Functional Outcomes: Resumed part-time work as an accountant in July 2024, still restricted from driving due to ongoing seizures.
+
+Investigations:
+Pre-surgical Workup:
+- MRI (2023): Demonstrated right temporal lobe abnormality consistent with focal cortical dysplasia.
+- Video EEG Monitoring (2023): Recorded eight clinical seizures, all with onset in the right temporal lobe. Secondary generalization observed in three seizures.
+- Neuropsychological Assessment: Mild impairment in visual memory consistent with right temporal dysfunction.
+- PET Scan (2023): Hypometabolism localized to the right temporal lobe, supporting focal epilepsy diagnosis.
+
+Post-surgical Investigations:
+- MRI (2024): Post-resection changes in the right anterior temporal lobe without evidence of residual or new pathology.
+- EEG (2024): Intermittent epileptiform discharges over the right temporal region, consistent with residual epileptogenic tissue.
+
+Clinical Assessment:
+Ms. Callahan was seen in the epilepsy clinic today for her routine post-surgical follow-up. She reports a significant reduction in seizure frequency since her surgery, with no seizures in the past 4 months. Her auras of déjà vu have also decreased in frequency. She denies any side effects from her current medication, lacosamide.
+
+Neurological examination was unremarkable, with no focal deficits. Cognitive testing in clinic revealed mild impairments in visual memory, consistent with her pre-surgical neuropsychological assessment. Physical examination, including gait and coordination, was normal.
+
+Discussion and Plan:
+I discussed Ms. Callahan's post-surgical course, noting the substantial improvement in seizure control but the persistence of occasional seizures. The following key points were emphasized:
+1. Continuation of lacosamide to maintain seizure control.
+2. Lifestyle modifications, including adequate sleep, regular meals, stress management, and avoiding known triggers such as excessive alcohol.
+3. The ongoing risk of seizure-related injuries and the importance of adhering to driving restrictions until seizure freedom is achieved.
+4. The potential need for additional surgical intervention or alternative treatments if seizures persist or increase in frequency.
+
+We discussed her prognosis, including the possibility of achieving complete seizure freedom with time or additional treatment adjustments. I emphasized the need for close monitoring and open communication regarding any changes in her seizure pattern or side effects.
+
+Follow-up Plan:
+- Routine follow-up in 6 months, or sooner if her seizure frequency increases or she experiences side effects.
+- Referral for repeat neuropsychological testing in 12 months to assess any cognitive changes.
+- Consideration of additional treatment options, including potential for further surgery or neurostimulation, if seizures persist or increase in frequency.
+
+Ms. Callahan expressed her understanding of the plan and her commitment to adhering to her treatment regimen. She feels optimistic about the potential for further seizure control and improved quality of life.
+
+Signed:
+[Your Name, MD]
+Consultant Epileptologist
+[Hospital Name]

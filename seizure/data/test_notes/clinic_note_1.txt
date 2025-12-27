@@ -1,0 +1,73 @@
+Epilepsy Surgery Clinic Note
+Date: November 17, 2024
+Patient: Ms. Emily Richards
+Age: 32 years
+Hospital Number: 87654321
+Referring Physician: Dr. Michael Johnson, Neurology
+
+Reason for Review:
+Post-operative follow-up after right anterior temporal lobectomy for drug-resistant epilepsy.
+
+Diagnosis:
+- Pre-surgical: Drug-resistant focal epilepsy with confirmed right temporal lobe seizure onset.
+- Post-surgical: Focal epilepsy, post-resection, with reduced seizure frequency since March 2023 surgery.
+
+History:
+Current Antiepileptic Medication:
+Lamotrigine 200 mg twice daily, well-tolerated without side effects.
+
+Previous Antiepileptic Medications:
+- Levetiracetam: Discontinued in 2017 due to irritability and inadequate seizure control.
+- Valproic acid: Discontinued in 2019 due to weight gain and tremors.
+
+Pre-Surgical Seizure History:
+- Auras: Experienced olfactory auras (burning smell) lasting 30-60 seconds before some seizures.
+- Seizure Frequency (2014-2023): Approximately 80-100 days per year with complex partial seizures involving altered awareness, staring, and automatisms.
+- Childhood Seizures: No history of seizures or neurological conditions in childhood.
+- Family History: Paternal aunt with a history of febrile seizures in childhood, no other family history of epilepsy.
+
+Surgical History:
+- Surgery Date: March 12, 2023.
+- Procedure: Right anterior temporal lobectomy.
+- Intraoperative Findings: Resected area included the right hippocampus and anterior temporal cortex, with pathology revealing focal cortical dysplasia.
+- Post-operative Course: Uncomplicated recovery, with no neurological deficits or infections.
+
+Post-Surgical Seizure Status:
+- Seizure Frequency (2023-2024): Approximately 20-25 days per year with brief staring spells and rare complex partial seizures.
+- Functional Outcomes: Resumed part-time work as a graphic designer in July 2024 but unable to drive due to ongoing seizures.
+
+Investigations:
+Pre-surgical Workup:
+- MRI (2022): Demonstrated right mesial temporal sclerosis with hippocampal atrophy and subtle cortical dysplasia in the right temporal lobe.
+- Video EEG Monitoring (2022): Recorded eight clinical seizures, all with onset in the right temporal lobe. No secondary generalization observed.
+- Neuropsychological Assessment: Mild impairment in visuospatial memory consistent with right temporal dysfunction.
+- PET Scan (2022): Hypometabolism localized to the right temporal lobe, supporting focal epilepsy diagnosis.
+
+Post-surgical Investigations:
+- MRI (2023): Post-resection changes in the right anterior temporal lobe without evidence of residual or new pathology.
+- EEG (2023): Occasional right temporal slowing without epileptiform discharges.
+
+Clinical Assessment:
+Ms. Richards was seen in the epilepsy clinic today for her routine post-surgical follow-up. She reports a significant reduction in seizure frequency since her surgery, with only brief staring spells and occasional complex partial seizures. Her last generalized tonic-clonic seizure was in January 2024. She has experienced no medication side effects and feels well overall. She has been able to resume part-time work but has not yet met the seizure-free guidelines for driving.
+
+Neurological examination was unremarkable, with no focal deficits. Cognitive testing in clinic revealed mild impairments in visuospatial memory and attention, consistent with her pre-surgical neuropsychological assessment. Physical examination, including gait and coordination, was normal.
+
+Discussion and Plan:
+I discussed Ms. Richards' positive response to surgery, with a substantial reduction in seizure frequency and severity. However, I emphasized the importance of maintaining her current treatment regimen and lifestyle modifications to optimize seizure control. The following key points were addressed:
+1. Long-term continuation of lamotrigine to maintain seizure control.
+2. Lifestyle modifications, including adequate sleep, regular meals, stress management, and avoiding known triggers such as excessive alcohol.
+3. The ongoing risk of seizure recurrence and the potential need for additional treatment options if seizures persist or worsen.
+
+We discussed her prognosis, including the possibility of further seizure reduction or complete freedom with time. I advised against any medication changes at this time but emphasized the need for close monitoring and potential adjustments in the future based on her response.
+
+Follow-up Plan:
+- Routine follow-up in 6 months to assess seizure control and consider treatment adjustments.
+- Referral to neuropsychology for repeat cognitive testing in 2025 to assess long-term memory outcomes post-surgery.
+- Driving assessment to be reconsidered if she achieves a sustained seizure-free period as per local guidelines.
+
+Ms. Richards expressed her gratitude for the improvement in her seizure control and quality of life since her surgery. She understands the importance of ongoing treatment and monitoring and will contact the clinic if needed.
+
+Signed:
+[Your Name, MD]
+Consultant Epileptologist
+[Hospital Name]

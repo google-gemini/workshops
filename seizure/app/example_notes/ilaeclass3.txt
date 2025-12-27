@@ -1,0 +1,72 @@
+**_This is a fictional clinical note for illustrative purposes only. It does not contain real patient information or PHI._**
+
+EPILEPSY CLINIC FOLLOW-UP NOTE
+
+Date: November 18, 2024
+Time: 3:45 PM
+
+PATIENT IDENTIFICATION
+Name: Emily Thompson
+DOB: 11/30/1995
+MRN: 456789123
+
+CHIEF COMPLAINT
+Follow-up for epilepsy management
+
+HISTORY OF PRESENT ILLNESS
+28-year-old female with history of focal epilepsy presents for routine follow-up. Since last visit 3 months ago, patient reports two breakthrough seizures: one in September during her menstrual period, and another in early November during a period of medication non-compliance due to insurance issues (now resolved). Seizures typically begin with metallic taste and right hand tingling, progressing to altered awareness and oral automatisms lasting 1-2 minutes. Post-ictal confusion lasts approximately 30 minutes. Prior to these events, patient had been seizure-free since February (total of 3 seizure days this year). Reports occasional auras without progression to full seizures approximately twice monthly.
+
+CURRENT MEDICATIONS
+- Oxcarbazepine 600mg BID
+- Lacosamide 200mg BID
+- Oral contraceptive (Continuous cycle for seizure control)
+
+REVIEW OF SYSTEMS
+- Constitutional: Mild fatigue
+- Neurological: Occasional headaches post-seizure
+- Psychiatric: Mild anxiety about recent breakthrough seizures
+- All other systems reviewed and negative
+
+PHYSICAL EXAMINATION
+Vital Signs: BP 115/70, HR 76, RR 16, T 98.7°F
+General: Well-appearing female in no acute distress
+Neurological:
+- Mental Status: Alert, oriented, normal language
+- Cranial Nerves: Intact II-XII
+- Motor: 5/5 throughout, no drift
+- Sensory: Intact to light touch and pinprick
+- Reflexes: 2+ symmetric
+- Coordination: Normal finger-to-nose and heel-to-shin
+- Gait: Normal
+
+LABORATORY/DIAGNOSTIC STUDIES
+- Recent AED levels: 
+  * Oxcarbazepine: 22 mcg/mL (therapeutic)
+  * Lacosamide: 8.5 mcg/mL (therapeutic)
+- EEG (1 month ago): Left temporal epileptiform discharges
+
+ASSESSMENT
+1. Focal Epilepsy (ICD-10: G40.209)
+   - Breakthrough seizures likely related to hormonal changes and temporary medication non-compliance
+   - Otherwise relatively stable with 3 total seizure days this year
+   - Good therapeutic drug levels
+   - Insurance issues now resolved
+
+PLAN
+1. Continue current AED regimen
+2. Provided 90-day prescription with 3 refills to prevent gaps in treatment
+3. Connected with hospital pharmacy assistance program
+4. Emphasized importance of medication compliance
+5. Continue oral contraceptive for hormonal regulation
+6. Maintain seizure diary
+7. Return to clinic in 3 months
+8. Advised to hold driving until seizure-free for state-mandated duration
+9. Call if seizure frequency increases
+
+Patient demonstrates understanding of treatment plan and risks.
+
+___________________________
+Dr. James Anderson, MD
+Epileptologist
+Board Certified in Neurology
+Time spent: 30 minutes

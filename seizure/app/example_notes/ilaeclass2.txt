@@ -1,0 +1,67 @@
+**_This is a fictional clinical note for illustrative purposes only. It does not contain real patient information or PHI._**
+
+EPILEPSY CLINIC FOLLOW-UP NOTE
+
+Date: November 18, 2024
+Time: 2:15 PM
+
+PATIENT IDENTIFICATION
+Name: Robert Martinez
+DOB: 08/22/1985
+MRN: 987654321
+
+CHIEF COMPLAINT
+Routine follow-up for epilepsy management
+
+HISTORY OF PRESENT ILLNESS
+38-year-old male with history of temporal lobe epilepsy presents for scheduled follow-up. Since last visit 3 months ago, patient reports no overt seizures but continues to experience brief episodes of déjà vu and rising epigastric sensation lasting 10-15 seconds, occurring approximately once monthly. These episodes are similar to his previous seizure auras but never progress to loss of awareness or motor symptoms. Last overt seizure was 18 months ago. Patient maintains medication compliance and regular sleep schedule. Triggers include sleep deprivation and excessive stress. Currently working full-time as an accountant without limitations.
+
+CURRENT MEDICATIONS
+- Carbamazepine XR 400mg BID
+- Zonisamide 200mg QD
+
+REVIEW OF SYSTEMS
+- Constitutional: No fatigue, normal sleep pattern
+- Neurological: Occasional mild headaches, no dizziness
+- Psychiatric: Stable mood, mild anxiety about aura symptoms
+- All other systems reviewed and negative
+
+PHYSICAL EXAMINATION
+Vital Signs: BP 122/78, HR 68, RR 16, T 98.4°F
+General: Well-developed, well-nourished male in no acute distress
+Neurological:
+- Mental Status: Alert, oriented x3
+- Cranial Nerves: Intact
+- Motor: Full strength throughout
+- Sensory: Intact to all modalities
+- Reflexes: 2+ symmetric
+- Coordination: Normal
+- Gait: Normal base and stride
+
+LABORATORY/DIAGNOSTIC STUDIES
+- Carbamazepine level: 9.2 mcg/mL (therapeutic)
+- Recent EEG: Rare right temporal sharp waves during sleep
+
+ASSESSMENT
+1. Temporal Lobe Epilepsy (ICD-10: G40.209)
+   - Well-controlled with only occasional auras
+   - No convulsive seizures in 18 months
+   - Medication compliance good
+   - Stable on current regimen
+
+PLAN
+1. Continue current medication regimen
+2. OK to continue driving as per state guidelines
+3. Advised to maintain sleep hygiene and stress management
+4. Patient to keep diary of aura episodes
+5. Return to clinic in 4 months
+6. Will obtain repeat AED levels at next visit
+7. Call if auras increase in frequency or new seizure types develop
+
+Patient verbalizes understanding of treatment plan and agrees to follow-up.
+
+___________________________
+Dr. Sarah Williams, MD
+Epileptologist
+Board Certified in Neurology
+Time spent: 25 minutes

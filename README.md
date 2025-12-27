@@ -164,6 +164,7 @@ Explore the diverse range of projects available in this repository. Each link ta
 *   [`recap/`](./recap/) - **Workshop Recap:** A summary of key learnings and advancements made since the inception of the Gemini workshops, presented as a slide deck. ([📊 slides](https://google-gemini.github.io/workshops/recap))
 *   [`roast/`](./roast/) - **AI Roast Battle Arena: Uncensored Wit with LLMs:** Showcases a dynamic, multi-agent AI system designed to host uncensored roast battles between different LLMs, with an independent third LLM acting as an impartial judge.
 *   [`scripts/`](./scripts/) - **LLM-Powered Content Generation & Developer Experience:** A robust framework for generating various content types, including presentation slides and factual summaries, powered by LLMs, emphasizing efficient developer workflows.
+*   [`seizure/`](./seizure/) - **SeizureScoreAI: Seizure outcome scoring with Gemini:** A multi-agent clinical reasoning system for ILAE seizure outcome scoring after epilepsy surgery (Streamlit + Google ADK + Gemini).
 *   [`startupcon/`](./startupcon/) - **StartupCon Talk:** Workshop presentation on building with Gemini and AI agents. ([📊 slides](https://google-gemini.github.io/workshops/startupcon))
 *   [`smash/`](./smash/) - **Smash Bot: An LLM-Powered Fighting Game Agent:** A cutting-edge AI agent capable of playing a fighting game (like Super Smash Bros.) by observing the game state and controlling a virtual gamepad, powered by a multimodal LLM. ([📊 slides](https://google-gemini.github.io/workshops/smash))
 *   [`tv/`](./tv/) - **TV Companion: Your AI Film Critic and Controller:** An advanced LLM-powered assistant that "watches" movies and shows in real-time, offering insightful commentary, deep-diving into film trivia, and controlling your TV through natural voice commands.
@@ -201,6 +202,7 @@ Projects focusing on practical applications of LLMs, multi-agent systems, and re
 *   [`factuality/`](./factuality/) - Factuality: News Summarization & Redaction
 *   [`kundali/`](./kundali/) - Kundali Milan: AI Jyotish Guru
 *   [`roast/`](./roast/) - AI Roast Battle Arena: Uncensored Wit with LLMs
+*   [`seizure/`](./seizure/) - SeizureScoreAI: ILAE seizure outcome scoring with Gemini
 *   [`tv/`](./tv/) - TV Companion: Your AI Film Critic and Controller
 *   [`utils/`](./utils/) - LLM Demonstration Workshop Project
 

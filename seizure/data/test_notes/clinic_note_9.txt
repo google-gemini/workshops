@@ -1,0 +1,73 @@
+Epilepsy Surgery Clinic Note
+Date: November 17, 2024
+Patient: Ms. Emily Roberts
+Age: 32 years
+Hospital Number: 87654321
+Referring Physician: Dr. Michael Johnson, Neurology
+
+Reason for Review:
+Post-operative follow-up after right anterior temporal lobectomy for drug-resistant epilepsy.
+
+Diagnosis:
+- Pre-surgical: Drug-resistant focal epilepsy with confirmed right temporal lobe seizure onset.
+- Post-surgical: Focal epilepsy, post-resection, seizure-free since March 2024 surgery.
+
+History:
+Current Antiepileptic Medication:
+Lamotrigine 200 mg twice daily, well-tolerated with no side effects.
+
+Previous Antiepileptic Medications:
+- Levetiracetam: Discontinued in 2018 due to irritability and mood disturbances.
+- Valproic acid: Discontinued in 2020 due to weight gain and tremors.
+
+Pre-Surgical Seizure History:
+- First Seizures (2016): Experienced recurrent focal impaired awareness seizures with aura of rising epigastric sensation and occasional progression to bilateral tonic-clonic seizures. Postictal confusion lasted 30-60 minutes.
+- Aura: Rising epigastric sensation lasting 30-60 seconds, followed by impaired awareness and automatisms (lip-smacking, hand fumbling).
+- Seizure Frequency: Approximately 120 days per year with seizures despite medication trials.
+- Childhood History: No history of febrile seizures or other neurological issues.
+- Family History: Paternal uncle with a history of childhood epilepsy, well-controlled on medication.
+
+Surgical History:
+- Surgery Date: March 12, 2024.
+- Procedure: Right anterior temporal lobectomy.
+- Intraoperative Findings: Resected area included the right hippocampus and anterior temporal cortex, with pathology confirming focal cortical dysplasia.
+- Post-operative Course: Uncomplicated recovery, with transient word-finding difficulties resolving within 2 weeks.
+
+Post-Surgical Seizure Status:
+- Seizure-Free Period: 8 months since surgery.
+- Functional Outcomes: Returned to work as an accountant in June 2024 after meeting seizure-free guidelines.
+
+Investigations:
+Pre-surgical Workup:
+- MRI (2023): Demonstrated subtle right hippocampal abnormality suggestive of focal cortical dysplasia, no other structural abnormalities.
+- Video EEG Monitoring (2023): Recorded seven clinical seizures, all with onset in the right temporal lobe. No secondary generalization observed.
+- Neuropsychological Assessment: Mild impairment in verbal memory consistent with right temporal dysfunction.
+- PET Scan (2023): Hypometabolism localized to the right temporal lobe, further supporting focal epilepsy diagnosis.
+
+Post-surgical Investigations:
+- MRI (2024): Post-resection changes in the right anterior temporal lobe without evidence of residual or new pathology.
+- EEG (2024): Normal background activity without epileptiform discharges.
+
+Clinical Assessment:
+Ms. Roberts was seen in the epilepsy clinic today for her routine post-surgical follow-up. She reports no seizures, auras, or other episodes suggestive of epilepsy since her surgery. She has experienced no medication side effects and feels well overall. She has returned to driving, as well as to full-time work. Her sleep quality and mood are good, and she denies symptoms of anxiety or depression.
+
+Neurological examination was unremarkable, with no focal deficits. Cognitive testing in clinic revealed mild improvement in verbal memory compared to pre-surgical testing, likely due to the resection of the dysfunctional right temporal lobe. Physical examination, including gait and coordination, was normal.
+
+Discussion and Plan:
+I congratulated Ms. Roberts on her excellent post-surgical outcome and discussed the importance of maintaining her current treatment regimen. She was counseled on the ongoing, albeit reduced, risk of seizure recurrence even after successful surgery. The following key points were emphasized:
+1. Long-term continuation of lamotrigine to minimize the risk of recurrence.
+2. Lifestyle modifications, including adequate sleep, regular meals, stress management, and avoiding known triggers such as excessive alcohol.
+3. The rare but serious risk of sudden unexpected death in epilepsy (SUDEP), which is significantly lower given her seizure freedom.
+
+We discussed her prognosis, including the likelihood of sustained seizure freedom and potential medication tapering in the distant future if seizure freedom persists. I emphasized the need for close monitoring before any changes are made to her treatment.
+
+Follow-up Plan:
+- Routine follow-up in 6 months, or sooner if symptoms recur or if she has questions.
+- Referral to neuropsychology for repeat cognitive testing in 2025 to assess long-term memory outcomes post-surgery.
+
+Ms. Roberts expressed her satisfaction with her care and stated she feels optimistic about her quality of life moving forward. She understands she can contact the clinic if needed.
+
+Signed:
+[Your Name, MD]
+Consultant Epileptologist
+[Hospital Name]

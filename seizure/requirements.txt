@@ -1,0 +1,7 @@
+# Core dependencies
+streamlit>=1.40.0
+python-dotenv>=1.0.0
+pillow>=10.0.0
+
+# Google Agent Development Kit (ADK)
+google-adk>=0.3.0
