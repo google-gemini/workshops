@@ -1,6 +1,6 @@
 # Pedagogical Concept Graph: Interactive Learning System
 
-An intelligent learning platform that transforms textbooks into interactive, guided learning experiences using concept graphs, Socratic dialogue, and retrieval-augmented generation (RAG).
+An intelligent learning platform that transforms textbooks into interactive, guided learning experiences using concept graphs, Socratic dialogue, retrieval-augmented generation (RAG), and conversational spaced repetition.
 
 ## Overview
 
@@ -76,6 +76,26 @@ To keep dialogue grounded in the actual textbook:
 
 **Result**: LLM uses Norvig's actual examples, terminology, and pedagogical approach
 
+### 5. **Conversational Spaced Repetition**
+
+The system automatically maintains long-term retention through natural dialogue-based reviews:
+
+- **No Manual Cards**: The agent automatically extracts what's worth remembering during learning sessions
+- **Proactive Reviews**: Instead of flipping flashcards, the agent initiates conversations: *"Hey, remember that concept we discussed last week? How does it work?"*
+- **Natural Assessment**: The agent interprets your answers and grades understanding (0.0-1.0) without requiring self-grading
+- **FSRS Algorithm**: Implements Free Spaced Repetition Scheduler with exponential decay forgetting curves
+- **Smart Scheduling**: Concepts are reviewed when retrievability drops below 90%, prioritized by urgency and difficulty
+- **Memory Persistence**: Past learning notes are used to personalize review questions
+
+**How it Works:**
+1. During Socratic dialogue, the system automatically creates "memories" (notes about what you learned)
+2. The FSRS algorithm tracks each concept's stability and retrievability over time
+3. When concepts are due for review (retrievability < 90%), the Review Dialogue opens
+4. The AI tutor probes your recall using past memories, assessing understanding naturally
+5. Based on your responses, the system updates stability and schedules the next review
+
+**Technology**: FSRS algorithm with exponential decay, localStorage persistence (backend sync planned)
+
 ## Architecture
 
 ```
@@ -86,12 +106,18 @@ learning/
 │   └── embeddings.json          # Vector embeddings (3072-dim)
 ├── app/
 │   ├── api/
-│   │   └── socratic-dialogue/   # RAG + LLM dialogue endpoint
+│   │   ├── socratic-dialogue/   # RAG + LLM dialogue endpoint
+│   │   └── review-dialogue/     # Spaced repetition review endpoint
 │   ├── components/
 │   │   ├── ConceptGraph.tsx     # Interactive graph visualization
 │   │   ├── ConceptDetails.tsx   # Concept info + prerequisites
-│   │   └── SocraticDialogue.tsx # AI tutor modal
+│   │   ├── SocraticDialogue.tsx # AI tutor modal
+│   │   └── ReviewDialogue.tsx   # Spaced repetition review modal
 │   └── page.tsx                 # Main application
+├── lib/
+│   ├── memory-store.ts          # Memory persistence & FSRS state
+│   ├── spaced-repetition.ts     # FSRS scheduling algorithm
+│   └── gemini-utils.ts          # Gemini API utilities
 ├── scripts/
 │   ├── chunk-paip.ts            # Semantic chunking script
 │   └── embed-chunks.ts          # Vector embedding generation
@@ -147,6 +173,16 @@ learning/
 4. **Track progress**: Watch as skills are marked as demonstrated
 5. **Achieve mastery**: When ready, mark the concept as mastered
 6. **Unlock new concepts**: Dependent concepts become available
+7. **Automatic memory creation**: The system saves notes about what you learned for future reviews
+
+### Reviewing with Conversational Spaced Repetition
+
+1. **Automatic notifications**: When concepts are due for review, a notification appears
+2. **Open Review Dialogue**: Click to start a natural conversation about concepts you've learned
+3. **Answer naturally**: The AI tutor asks questions based on your past learning notes
+4. **Automatic assessment**: Your understanding is evaluated from your responses (no self-grading needed)
+5. **Smart scheduling**: The system adjusts when you'll see each concept again based on your performance
+6. **Multi-concept reviews**: Multiple concepts can be reviewed in a single conversation
 
 ### Progress Tracking
 
@@ -155,7 +191,7 @@ learning/
 - **Green**: Ready to learn (prerequisites satisfied) ✅
 - **Faded**: Locked (missing prerequisites) 🔒
 
-Progress persists in your browser's localStorage across sessions.
+Progress and spaced repetition state persist in your browser's localStorage across sessions.
 
 ## Technical Highlights
 
@@ -194,6 +230,28 @@ The LLM returns both dialogue and evaluation in structured JSON:
 }
 ```
 
+### FSRS Spaced Repetition Algorithm
+
+The system implements a simplified Free Spaced Repetition Scheduler (FSRS) with exponential decay:
+
+**Core Formula:**
+$$ R(t) = 0.9^{\frac{t}{S}} $$
+
+Where:
+- $R(t)$ is retrievability (probability of recall) at time $t$
+- $t$ is days elapsed since last review
+- $S$ is stability (days until retrievability drops to 90%)
+
+**Review Scheduling:**
+- Concepts are marked "Due" when $R < 0.9$
+- Priority calculation considers: low retrievability, high difficulty, and overdue time
+- Understanding scores (0.0-1.0) from AI assessment update stability:
+  - Good recall (≥0.7): Large interval increase (2.2-2.5x)
+  - Medium recall (0.3-0.7): Maintenance interval (0.8-1.5x)
+  - Poor recall (<0.3): Reset with shorter interval (0.2-0.5x)
+
+**Implementation**: See `lib/spaced-repetition.ts` for the complete algorithm
+
 ## Development Scripts
 
 ```bash
@@ -218,11 +276,19 @@ See [NOTES.md](NOTES.md) for comprehensive documentation including:
 - UI/UX design decisions
 - Performance metrics and optimizations
 
+See [docs/conversational_spaced_repetition_implementation_summary.md](docs/conversational_spaced_repetition_implementation_summary.md) for detailed documentation on:
+- Conversational spaced repetition motivation and design
+- FSRS algorithm implementation
+- Active recall through review dialogue
+- Memory store architecture
+- Future enhancements
+
 ## Future Enhancements
 
 - [ ] Complete Pass 2 enrichment for all 33 concepts
-- [ ] Spaced repetition for long-term retention
+- [ ] Backend sync: Move spaced repetition state from localStorage to database
 - [ ] Voice interface with Gemini Live
+- [ ] Parameter tuning: Advanced FSRS parameter optimization based on aggregate user data
 - [ ] Model selector (Flash vs Pro vs Thinking)
 - [ ] Multi-chapter support
 - [ ] Exercise session flow
@@ -237,6 +303,7 @@ See [NOTES.md](NOTES.md) for comprehensive documentation including:
 - **Markdown Rendering**: react-markdown with syntax highlighting
 - **AI**: Google Gemini 2.5 Flash, Gemini Embedding 001
 - **State Management**: React hooks + localStorage
+- **Spaced Repetition**: FSRS algorithm with exponential decay forgetting curves
 
 ## License
 

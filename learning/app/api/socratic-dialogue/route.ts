@@ -23,6 +23,22 @@ type Message = {
   content: string;
 };
 
+// Memory types for conversational spaced repetition
+type Memory = {
+  id: string;
+  conceptId: string;
+  content: string;
+  understanding: number;
+  timestamp: number;
+  context?: string;
+};
+
+type DueConcept = {
+  conceptId: string;
+  retrievability: number;
+  priority: number;
+};
+
 // Compute cosine similarity between two vectors
 function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
@@ -187,7 +203,16 @@ async function loadConceptContext(
 
 export async function POST(request: NextRequest) {
   try {
-    const { conceptId, conversationHistory, conceptData, textbookContext, embeddingsPath } = await request.json();
+    const { 
+      conceptId, 
+      conversationHistory, 
+      conceptData, 
+      textbookContext, 
+      embeddingsPath,
+      // New fields for conversational spaced repetition
+      memories,        // Past memories for this concept
+      dueConcepts,     // Concepts that need probing (from FSRS)
+    } = await request.json();
 
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('🎓 NEW SOCRATIC DIALOGUE REQUEST');
@@ -196,6 +221,8 @@ export async function POST(request: NextRequest) {
     console.log('📌 Concept Name:', conceptData.name);
     console.log('📌 Conversation turns:', conversationHistory.length);
     console.log('📌 Textbook context:', textbookContext ? 'CACHED ✅' : 'NEEDS SEARCH 🔍');
+    console.log('📌 Memories:', memories?.length || 0);
+    console.log('📌 Due concepts:', dueConcepts?.length || 0);
 
     // Get API key from environment (prefer GOOGLE_API_KEY)
     const apiKey = process.env.GOOGLE_API_KEY;
@@ -234,8 +261,13 @@ export async function POST(request: NextRequest) {
       console.log(textbookSections.substring(0, 500) + '...\n');
     }
 
-    // Build system prompt with textbook grounding
-    const systemPrompt = buildSocraticPrompt(conceptData, textbookSections);
+    // Build system prompt with textbook grounding and memory context
+    const systemPrompt = buildSocraticPrompt(
+      conceptData, 
+      textbookSections,
+      memories as Memory[] | undefined,
+      dueConcepts as DueConcept[] | undefined
+    );
     
     console.log('\n📝 SYSTEM PROMPT CONSTRUCTED:');
     console.log(`   - Total length: ${systemPrompt.length} characters`);
@@ -303,6 +335,36 @@ export async function POST(request: NextRequest) {
                   },
                   required: ['indicators_demonstrated', 'confidence', 'ready_for_mastery'],
                 },
+                new_memory: {
+                  type: 'object',
+                  description: 'A memory note about this conversation turn (only if significant learning occurred)',
+                  properties: {
+                    content: {
+                      type: 'string',
+                      description: 'Free-form note about what the student demonstrated or struggled with',
+                    },
+                    understanding: {
+                      type: 'number',
+                      description: 'Understanding level demonstrated (0-1)',
+                    },
+                    context: {
+                      type: 'string',
+                      description: 'What prompted this observation',
+                    },
+                  },
+                  required: ['content', 'understanding'],
+                },
+                concept_assessment: {
+                  type: 'object',
+                  description: 'Overall assessment for FSRS scheduling',
+                  properties: {
+                    understanding: {
+                      type: 'number',
+                      description: 'Overall understanding level for this concept (0-1)',
+                    },
+                  },
+                  required: ['understanding'],
+                },
               },
               required: ['message', 'mastery_assessment'],
             },
@@ -355,6 +417,13 @@ export async function POST(request: NextRequest) {
       console.log('   - Indicators demonstrated:', parsedResponse.mastery_assessment.indicators_demonstrated);
       console.log('   - Confidence:', parsedResponse.mastery_assessment.confidence);
       console.log('   - Ready for mastery:', parsedResponse.mastery_assessment.ready_for_mastery);
+      if (parsedResponse.new_memory) {
+        console.log('   - New memory:', parsedResponse.new_memory.content?.substring(0, 50) + '...');
+        console.log('   - Understanding:', parsedResponse.new_memory.understanding);
+      }
+      if (parsedResponse.concept_assessment) {
+        console.log('   - Concept assessment:', parsedResponse.concept_assessment.understanding);
+      }
     } catch (e) {
       console.error('\n❌ JSON PARSE ERROR:', e);
       console.error('   - Raw response:', responseText);
@@ -381,13 +450,32 @@ export async function POST(request: NextRequest) {
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-    return NextResponse.json({
+    // Build response with new memory fields
+    const apiResponse: any = {
       message: parsedResponse.message,
       mastery_assessment: parsedResponse.mastery_assessment,
       textbookContext: textbookSections,
       sources: sourceChunks,
       usage: data.usageMetadata,
-    });
+    };
+
+    // Include new memory if the agent created one
+    if (parsedResponse.new_memory) {
+      apiResponse.new_memory = {
+        ...parsedResponse.new_memory,
+        conceptId,
+      };
+    }
+
+    // Include concept assessment for FSRS
+    if (parsedResponse.concept_assessment) {
+      apiResponse.concept_assessment = {
+        conceptId,
+        ...parsedResponse.concept_assessment,
+      };
+    }
+
+    return NextResponse.json(apiResponse);
 
   } catch (error) {
     console.error('\n💥 UNEXPECTED ERROR:');
@@ -441,14 +529,38 @@ function convertToGeminiFormat(systemPrompt: string, conversationHistory: Messag
 // Build a Socratic teaching prompt using the concept's pedagogical data
 function buildSocraticPrompt(
   conceptData: any, 
-  textbookSections?: string
+  textbookSections?: string,
+  memories?: Memory[],
+  dueConcepts?: DueConcept[]
 ): string {
   const { name, description, learning_objectives, mastery_indicators, examples, misconceptions } = conceptData;
+
+  // Build memory context section
+  let memoryContext = '';
+  if (memories && memories.length > 0) {
+    memoryContext = `
+**YOUR NOTES FROM PREVIOUS CONVERSATIONS WITH THIS STUDENT:**
+${memories.map(m => `- [${new Date(m.timestamp).toLocaleDateString()}] ${m.content} (understanding: ${Math.round(m.understanding * 100)}%)`).join('\n')}
+
+Use these notes to personalize your teaching. Reference past struggles or successes naturally.
+`;
+  }
+
+  // Build due concepts context section
+  let dueContext = '';
+  if (dueConcepts && dueConcepts.length > 0) {
+    dueContext = `
+**CONCEPTS DUE FOR REVIEW (weave these in naturally if relevant):**
+${dueConcepts.slice(0, 3).map(d => `- ${d.conceptId} (retrievability: ${Math.round(d.retrievability * 100)}%)`).join('\n')}
+
+If the conversation allows, probe these concepts to refresh the student's memory.
+`;
+  }
 
   return `You are a Socratic tutor teaching the concept: "${name}".
 
 **Concept Description:** ${description}
-
+${memoryContext}${dueContext}
 ${textbookSections ? `
 **YOUR TEACHING MATERIAL (internalize this as your own knowledge):**
 
@@ -502,8 +614,22 @@ Return JSON with:
     "confidence": 0.85,
     "ready_for_mastery": false,
     "next_focus": "Let's explore X next..."
+  },
+  "new_memory": {  // Optional - only include if significant learning occurred
+    "content": "Student demonstrated clear understanding of X but confused Y with Z",
+    "understanding": 0.7,
+    "context": "When explaining recursion"
+  },
+  "concept_assessment": {  // Optional - overall understanding for this exchange
+    "understanding": 0.75
   }
 }
+
+**Memory Writing Guidelines:**
+- Write a "new_memory" when the student demonstrates or struggles with something notable
+- Keep notes concise but specific (what they understood, what they confused)
+- Set understanding 0-0.3 for confusion/errors, 0.4-0.6 for partial understanding, 0.7-1.0 for strong grasp
+- Don't write a memory for every turn - only when there's something worth remembering
 
 **Example Interaction Pattern:**
 - Start with an open question about their understanding

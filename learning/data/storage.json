@@ -1,0 +1,167 @@
+{
+  "pcg-agent-memory-paip-ch1": {
+    "interactive_repl": {
+      "conceptId": "interactive_repl",
+      "stability": 14.399999999999999,
+      "difficulty": 0.2916000000000001,
+      "lastReview": 1767338949640,
+      "memories": [
+        {
+          "conceptId": "interactive_repl",
+          "content": "Student focused on a specific Lisp feature (symbols as first-class objects) rather than the general concept of an 'interactive REPL' itself, indicating a need to guide them back to the core definition.",
+          "understanding": 0.3,
+          "context": "Initial response to prompt about 'interactive REPL'",
+          "id": "343464f4-77af-4161-88c9-3ffbb9fe0890",
+          "timestamp": 1766991773993
+        },
+        {
+          "conceptId": "interactive_repl",
+          "content": "Student claims complete understanding, but I need to verify by asking about the core components of REPL and the distinction from batch mode, given previous focus on Lisp specifics.",
+          "understanding": 0.3,
+          "context": "Initial assessment of student's claimed understanding",
+          "id": "df2baa71-8bfc-453c-b3a1-1fec021c2427",
+          "timestamp": 1767337957195
+        },
+        {
+          "conceptId": "interactive_repl",
+          "content": "Student understands the immediate feedback and the difference from full compilation but needs to articulate the REPL cycle components and the 'batch mode' distinction more clearly.",
+          "understanding": 0.5,
+          "id": "84634239-0dbd-4443-9ba6-3e545fe5c439",
+          "timestamp": 1767337980851
+        },
+        {
+          "conceptId": "interactive_repl",
+          "content": "Student clearly articulated the REPL cycle components (Read, Eval, Print) and the distinction of 'batch mode' as running all code at once, addressing previous gaps.",
+          "understanding": 0.9,
+          "context": "Explaining REPL components and batch mode",
+          "id": "276cc236-928b-474a-8b8d-3ca91bc43184",
+          "timestamp": 1767338005813
+        },
+        {
+          "conceptId": "interactive_repl",
+          "content": "Student clearly and concisely articulated the REPL cycle components (Read, Eval, Print) and the distinction of 'batch mode' as running all code at once, confirming strong and consistent understanding.",
+          "understanding": 1,
+          "context": "When asked to describe the REPL cycle and compare it to batch mode.",
+          "id": "85e6b113-a191-4305-923f-94acf14443f1",
+          "timestamp": 1767338278473
+        }
+      ]
+    }
+  },
+  "pcg-mastery-paip-ch1": {
+    "interactive_repl": {
+      "conceptId": "interactive_repl",
+      "masteredAt": 1767338949641
+    }
+  },
+  "pcg-agent-memory-pytudes-tsp": {
+    "list_comprehensions": {
+      "conceptId": "list_comprehensions",
+      "stability": 1,
+      "difficulty": 0.3,
+      "lastReview": 1768002338175,
+      "memories": [
+        {
+          "conceptId": "list_comprehensions",
+          "content": "Student states they don't know the concept, indicating no prior knowledge or recall.",
+          "understanding": 0.1,
+          "context": "Initial question about 'list comprehension'",
+          "id": "36d4cea1-3515-424f-9319-bf81269f3277",
+          "timestamp": 1768002296664
+        },
+        {
+          "conceptId": "list_comprehensions",
+          "content": "Student has a vague idea of using loops for list creation but needs to articulate a concrete example.",
+          "understanding": 0.3,
+          "context": "Initial understanding of how to create lists.",
+          "id": "341d0557-20ce-42c5-9d34-9f5f74649de2",
+          "timestamp": 1768002338175
+        }
+      ]
+    }
+  },
+  "pcg-mastery-null": {
+    "interactive_repl": {
+      "conceptId": "interactive_repl",
+      "masteredAt": 1767338949641
+    }
+  },
+  "pcg-mastery-pytudes-tsp": {
+    "interactive_repl": {
+      "conceptId": "interactive_repl",
+      "masteredAt": 1767338949641
+    }
+  },
+  "pcg-mastery-karpathy-transformers": {
+    "interactive_repl": {
+      "conceptId": "interactive_repl",
+      "masteredAt": 1767338949641
+    }
+  },
+  "pcg-agent-memory-karpathy-transformers": {
+    "language_modeling": {
+      "conceptId": "language_modeling",
+      "stability": 1,
+      "difficulty": 0.3,
+      "lastReview": 1767829995019,
+      "memories": [
+        {
+          "id": "8c411119-31fe-4e9a-96cb-b4076444cc75",
+          "conceptId": "language_modeling",
+          "content": "Student showed initial understanding of Language Modeling but needs more practice with edge cases.",
+          "understanding": 0.6,
+          "timestamp": 1767829995019,
+          "context": "Initial learning session"
+        }
+      ]
+    },
+    "transformer_architecture": {
+      "conceptId": "transformer_architecture",
+      "stability": 1,
+      "difficulty": 0.4,
+      "lastReview": 1767786795019,
+      "memories": [
+        {
+          "id": "97e008f2-9b70-4b61-98ac-bb5bc3f0b031",
+          "conceptId": "transformer_architecture",
+          "content": "Student showed initial understanding of Transformer Architecture but needs more practice with edge cases.",
+          "understanding": 0.7,
+          "timestamp": 1767786795019,
+          "context": "Initial learning session"
+        }
+      ]
+    },
+    "character_level_language_modeling": {
+      "conceptId": "character_level_language_modeling",
+      "stability": 5.52,
+      "difficulty": 0.405,
+      "lastReview": 1768002833217,
+      "memories": [
+        {
+          "id": "a6b31e6e-87d7-498c-9a6a-788d92b130c5",
+          "conceptId": "character_level_language_modeling",
+          "content": "Student showed initial understanding of Character-level Language Modeling but needs more practice with edge cases.",
+          "understanding": 0.8,
+          "timestamp": 1767743595019,
+          "context": "Initial learning session"
+        },
+        {
+          "conceptId": "character_level_language_modeling",
+          "content": "Student accurately defined character-level language modeling, identifying character-by-character prediction. Needs to be probed on challenges/edge cases.",
+          "understanding": 0.8,
+          "context": "Initial explanation of character-level language modeling.",
+          "id": "b42ffee2-6e92-414d-ad1b-bd7cd5c3feab",
+          "timestamp": 1768002833217
+        },
+        {
+          "conceptId": "character_level_language_modeling",
+          "content": "Student clearly articulated challenges of character-level modeling, including long context dependency, small vocabulary/long sequences, and handling rare words/proper nouns, addressing the 'edge cases' noted previously.",
+          "understanding": 0.9,
+          "context": "When asked about challenges/unique situations in character-level language modeling.",
+          "id": "f7d817b8-efe6-419d-8519-1555b2710ede",
+          "timestamp": 1768002833217
+        }
+      ]
+    }
+  }
+}

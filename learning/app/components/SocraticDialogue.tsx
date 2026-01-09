@@ -37,6 +37,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 
+// Memory imports for spaced repetition
+import {
+  loadConceptStates,
+  saveConceptStates,
+  getMemoriesForConcept,
+  addMemory,
+  updateFSRSParameters,
+  Memory,
+} from '@/lib/memory-store';
+
 type ChunkSource = {
   text: string;
   topic: string;
@@ -82,6 +92,7 @@ type SocraticDialogueProps = {
   workspaceType?: 'python' | 'lisp';
   initialSourceFile?: string;
   libraryType?: string;
+  libraryId?: string;
   onMasteryAchieved?: (conceptId: string) => void;
 };
 
@@ -93,6 +104,7 @@ export default function SocraticDialogue({
   workspaceType = 'python',
   initialSourceFile = '/data/pytudes/tsp.md',
   libraryType,
+  libraryId,
   onMasteryAchieved,
 }: SocraticDialogueProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -123,8 +135,19 @@ export default function SocraticDialogue({
   const [sourceVideoId, setSourceVideoId] = useState<string | undefined>();
   const [sourceTimestamp, setSourceTimestamp] = useState<number | undefined>();
   const [videoAutoplay, setVideoAutoplay] = useState<boolean>(false);
+  const [conceptMemories, setConceptMemories] = useState<Memory[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Load memories for this concept when dialogue opens
+  useEffect(() => {
+    if (open && libraryId && conceptData?.id) {
+      const states = loadConceptStates(libraryId);
+      const memories = getMemoriesForConcept(states, conceptData.id);
+      setConceptMemories(memories);
+      console.log('📝 Loaded memories for concept:', conceptData.id, memories.length);
+    }
+  }, [open, libraryId, conceptData?.id]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -198,6 +221,7 @@ export default function SocraticDialogue({
           conceptData,
           textbookContext: null, // Signal: please do semantic search
           embeddingsPath,
+          memories: conceptMemories, // Send past memories for personalization
         }),
       });
 
@@ -223,6 +247,11 @@ export default function SocraticDialogue({
         setDemonstratedSkills(newSkills);
         setReadyForMastery(data.mastery_assessment.ready_for_mastery);
       }
+
+      // Save new memory if agent created one
+      if (data.new_memory && libraryId) {
+        saveNewMemory(data.new_memory);
+      }
       
       setMessages([{ 
         role: 'assistant', 
@@ -243,6 +272,25 @@ export default function SocraticDialogue({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper to save a new memory from the API response
+  const saveNewMemory = (newMemory: { content: string; understanding: number; context?: string }) => {
+    if (!libraryId) return;
+    
+    const states = loadConceptStates(libraryId);
+    const updatedStates = addMemory(states, conceptData.id, {
+      conceptId: conceptData.id,
+      content: newMemory.content,
+      understanding: newMemory.understanding,
+      context: newMemory.context,
+    });
+    saveConceptStates(libraryId, updatedStates);
+    
+    // Update local state
+    const newMemories = getMemoriesForConcept(updatedStates, conceptData.id);
+    setConceptMemories(newMemories);
+    console.log('💾 Saved new memory:', newMemory.content.substring(0, 50) + '...');
   };
 
   const sendMessage = async (retryData?: {
@@ -322,6 +370,7 @@ export default function SocraticDialogue({
           conceptData,
           textbookContext,
           embeddingsPath,
+          memories: conceptMemories, // Send past memories for personalization
         }),
       });
 
@@ -340,6 +389,11 @@ export default function SocraticDialogue({
         );
         setDemonstratedSkills(newSkills);
         setReadyForMastery(data.mastery_assessment.ready_for_mastery);
+      }
+
+      // Save new memory if agent created one
+      if (data.new_memory && libraryId) {
+        saveNewMemory(data.new_memory);
       }
       
       // Update tracking for next turn - only if they were actually sent
@@ -394,6 +448,15 @@ export default function SocraticDialogue({
 
   const handleMarkAsMastered = () => {
     console.log('Concept mastered:', conceptData.id);
+    
+    // Initialize FSRS state for this concept (for spaced repetition)
+    if (libraryId) {
+      const states = loadConceptStates(libraryId);
+      // Set initial high understanding since they just demonstrated mastery
+      const updatedStates = updateFSRSParameters(states, conceptData.id, 0.9);
+      saveConceptStates(libraryId, updatedStates);
+      console.log('📊 Initialized FSRS state for concept:', conceptData.id);
+    }
     
     // Call the parent callback to update mastery state
     if (onMasteryAchieved) {
