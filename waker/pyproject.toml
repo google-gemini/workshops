@@ -27,7 +27,7 @@ google-genai = "*"
 mss = "*"
 Pillow = "*"
 numpy = "*"
-mem0ai = "^0.1.114"
+mem0ai = ">=0.1.114,<2.1.0"
 evdev = "*"
 python-uinput = "*"
 
