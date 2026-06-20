@@ -24,7 +24,7 @@ package-mode = false
 python = ">=3.11,<3.13"
 litellm = "*"
 crewai = { git = "https://github.com/crewAIInc/crewAI" }
-langchain = "^0.3.18"
+langchain = ">=0.3.18,<1.4.0"
 streamlit = "^1.42.0"
 
 [build-system]
