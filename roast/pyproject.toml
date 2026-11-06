@@ -25,7 +25,7 @@ python = ">=3.11,<3.13"
 litellm = "*"
 crewai = { git = "https://github.com/crewAIInc/crewAI" }
 langchain = "^0.3.18"
-streamlit = "^1.42.0"
+streamlit = "^1.54.0"
 absl-py = "^2.1.0"
 
 [build-system]
