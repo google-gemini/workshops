@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> **This repository is archived and no longer maintained.** The workshop samples and dependencies in this repository are deprecated. See the current [Google Gemini API documentation](https://ai.google.dev/gemini-api/docs) and [Cookbook](https://github.com/google-gemini/cookbook) for active guides.
+
 # Gemini Meetup Workshops
 
 Welcome to the **Gemini Meetup Workshops** repository! This collection serves as a central hub for hands-on, educational, and experimental projects showcasing the power and versatility of Google's Gemini models and related AI technologies (such as CrewAI, PettingZoo, etc.).
