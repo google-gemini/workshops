@@ -5,10 +5,10 @@ description = ""
 readme = "README.md"
 requires-python = ">=3.10,<=3.12"
 dependencies = [
-    "fastapi (>=0.117.1,<0.118.0)",
+    "fastapi (>=0.124.1,<1.0.0)",
     "google-genai (>=1.38.0,<2.0.0)",
     "pandas (>=2.3.2,<3.0.0)",
-    "google-adk (==1.17.0)",
+    "google-adk (>=1.28.1,<2.0.0)",
     "rapidfuzz (>=3.14.1,<4.0.0)",
     "sortedcontainers (>=2.4.0,<3.0.0)",
     "aiolimiter (>=1.2.1,<2.0.0)",
