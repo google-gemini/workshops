@@ -1,0 +1,22 @@
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "bradlc.vscode-tailwindcss"
+            ]
+        }
+    },
+    "forwardPorts": [
+        3000
+    ],
+    "portsAttributes": {
+        "3000": {
+            "label": "Learning App",
+            "onAutoForward": "notify"
+        }
+    },
+    "postCreateCommand": "npm install",
+    "postStartCommand": "if [ ! -f .env.local ]; then cp .env.example .env.local && echo '✅ Created .env.local from .env.example.'; fi && echo '🚀 Ready! Run: npm run dev' && echo '📝 Set GOOGLE_API_KEY in .env.local'",
+    "remoteUser": "node"
+}
